@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36811.4 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinContextMenuManager", "WinContextMenuManager.csproj", "{1C04922D-AEF0-82DE-C69E-C3774C9BBDE8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C04922D-AEF0-82DE-C69E-C3774C9BBDE8}.Debug|x64.ActiveCfg = Debug|x64
+		{1C04922D-AEF0-82DE-C69E-C3774C9BBDE8}.Debug|x64.Build.0 = Debug|x64
+		{1C04922D-AEF0-82DE-C69E-C3774C9BBDE8}.Release|x64.ActiveCfg = Release|x64
+		{1C04922D-AEF0-82DE-C69E-C3774C9BBDE8}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {47965A67-60F8-4CCC-8C51-446F64532FFF}
+	EndGlobalSection
+EndGlobal
