@@ -1,6 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
+using System.Security.Principal;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -9,14 +8,50 @@ using WinContextMenuManager.Services;
 
 namespace WinContextMenuManager;
 
-public partial class MainWindow : Window
+public partial class ContextMenuManagerWindow : Window
 {
     private List<ContextMenuEntryViewModel> _allEntries = new();
+    private readonly bool _isElevated = IsElevated();
 
-    public MainWindow()
+    public ContextMenuManagerWindow()
     {
         InitializeComponent();
+        ApplyElevationState();
         LoadEntries();
+    }
+
+    private static bool IsElevated()
+    {
+        using var identity = WindowsIdentity.GetCurrent();
+        return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
+    private void ApplyElevationState()
+    {
+        if (_isElevated) return;
+
+        BtnAdd.IsEnabled      = false;
+        BtnPresets.IsEnabled  = false;
+        BtnElevate.Visibility = Visibility.Visible;
+        AdminBanner.Visibility = Visibility.Visible;
+        Title += " [Non admin]";
+    }
+
+    private void Elevate_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(Environment.ProcessPath!)
+            {
+                UseShellExecute = true,
+                Verb = "runas"
+            });
+            Application.Current.Shutdown();
+        }
+        catch
+        {
+            TxtStatus.Text = "Élévation annulée.";
+        }
     }
 
     private void LoadEntries()
@@ -58,7 +93,6 @@ public partial class MainWindow : Window
         LvEntries.ItemsSource = list;
         TxtEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        // Auto-resize columns to content after layout pass
         Dispatcher.InvokeAsync(AutoResizeColumns, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
@@ -116,7 +150,6 @@ public partial class MainWindow : Window
 
         try
         {
-            // If key or target changed, delete old entry first
             bool keyChanged = original.RegistryKey != updated.RegistryKey || original.Target != updated.Target;
             if (keyChanged)
                 RegistryService.Delete(original);
@@ -150,9 +183,9 @@ public partial class MainWindow : Window
         {
             DisplayName = vm.DisplayName + " (copie)",
             RegistryKey = vm.RegistryKey + "_copy",
-            Command = vm.Command,
-            IconPath = vm.IconPath,
-            Target = vm.Target
+            Command     = vm.Command,
+            IconPath    = vm.IconPath,
+            Target      = vm.Target
         };
 
         var dialog = new EntryDialog(copy) { Owner = this };
@@ -209,10 +242,10 @@ public partial class MainWindow : Window
 
     private void LvEntries_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        bool hasSelection = LvEntries.SelectedItem != null;
-        BtnEdit.IsEnabled = hasSelection;
+        bool hasSelection = LvEntries.SelectedItem != null && _isElevated;
+        BtnEdit.IsEnabled      = hasSelection;
         BtnDuplicate.IsEnabled = hasSelection;
-        BtnDelete.IsEnabled = hasSelection;
+        BtnDelete.IsEnabled    = hasSelection;
         if (LvEntries.ContextMenu != null)
             LvEntries.ContextMenu.IsEnabled = hasSelection;
     }
