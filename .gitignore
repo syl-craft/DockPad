@@ -26,3 +26,15 @@ desktop.ini
 
 # Logs
 *.log
+
+# Claude Code
+.claude/
+
+# CR
+.cr/
+
+# Claude Code
+.claude/
+
+# CR
+.cr/
