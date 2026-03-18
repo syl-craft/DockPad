@@ -213,5 +213,7 @@ public partial class MainWindow : Window
         BtnEdit.IsEnabled = hasSelection;
         BtnDuplicate.IsEnabled = hasSelection;
         BtnDelete.IsEnabled = hasSelection;
+        if (LvEntries.ContextMenu != null)
+            LvEntries.ContextMenu.IsEnabled = hasSelection;
     }
 }
