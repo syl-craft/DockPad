@@ -13,6 +13,7 @@ public static class PresetService
             BuildClaudeTerminal(),
             BuildPowerShell(),
             BuildVSCode(),
+            BuildSSMS(),
         ];
     }
 
@@ -111,6 +112,33 @@ public static class PresetService
             IconPath = icon,
             Target = ContextMenuTarget.FolderBackground,
             Description = "Ouvre ce dossier dans Visual Studio Code"
+        };
+    }
+
+    private static PresetEntry BuildSSMS()
+    {
+        // Scan dynamically to support any version (18, 19, 20, 21, ...)
+        string ssmsRoot = @"C:\Program Files (x86)";
+        string[] ssmsCandidates = Directory.Exists(ssmsRoot)
+            ? Directory.GetDirectories(ssmsRoot, "Microsoft SQL Server Management Studio *")
+                       .OrderByDescending(d => d)
+                       .Select(d => Path.Combine(d, @"Common7\IDE\Ssms.exe"))
+                       .ToArray()
+            : [];
+
+        string? exe = FindExe("Ssms.exe", ssmsCandidates);
+
+        string command = exe != null ? $"\"{exe}\" \"%V\"" : "ssms.exe \"%V\"";
+        string icon = exe ?? "";
+
+        return new PresetEntry
+        {
+            DisplayName = "Ouvrir dans SQL Server Management Studio",
+            RegistryKey = "OpenWithSSMS",
+            Command = command,
+            IconPath = icon,
+            Target = ContextMenuTarget.FolderBackground,
+            Description = "Ouvre ce dossier dans SQL Server Management Studio"
         };
     }
 
