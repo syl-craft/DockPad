@@ -1,0 +1,34 @@
+<Window x:Class="WinContextMenuManager.DashboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WinContextMenuManager"
+        Width="720" Height="480"
+        MinWidth="500" MinHeight="360"
+        WindowStartupLocation="CenterScreen"
+        Background="#F3F3F3"
+        FontFamily="Segoe UI">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Menu bar -->
+        <Menu Grid.Row="0" Background="White" FontSize="13"
+              BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+            <MenuItem Header="_Outils">
+                <MenuItem Header="Gestionnaire de menu contextuel" Click="OpenContextMenuManager_Click"/>
+                <Separator/>
+                <MenuItem Header="Paramètres" Click="Settings_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Contenu (vide pour l'instant) -->
+        <Grid Grid.Row="1">
+            <TextBlock Text="(Contenu à venir)"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="#BBBBBB" FontSize="15"/>
+        </Grid>
+    </Grid>
+</Window>
