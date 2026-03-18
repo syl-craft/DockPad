@@ -99,6 +99,14 @@
                 <ListView x:Name="LvEntries"
                           SelectionChanged="LvEntries_SelectionChanged"
                           MouseDoubleClick="LvEntries_MouseDoubleClick">
+                    <ListView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Modifier" Click="Edit_Click"/>
+                            <MenuItem Header="Dupliquer" Click="Duplicate_Click"/>
+                            <Separator/>
+                            <MenuItem Header="Supprimer" Click="Delete_Click" Foreground="#D13438"/>
+                        </ContextMenu>
+                    </ListView.ContextMenu>
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="Icône" Width="54">
