@@ -4,8 +4,8 @@
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
-        <!-- Requires admin to write to HKEY_CLASSES_ROOT -->
-        <requestedExecutionLevel level="requireAdministrator" uiAccess="false"/>
+        <!-- Admin elevation is requested on demand via the UI -->
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
       </requestedPrivileges>
     </security>
   </trustInfo>
