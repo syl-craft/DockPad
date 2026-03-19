@@ -51,15 +51,21 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 - Ajout / Modification / Suppression / Duplication
 - **Suppression** : pose `LegacyDisable` dans HKCU pour les entrées HKLM, suppression directe pour HKCU
 - Auto-resize des colonnes après chaque chargement
-- Raccourcis prédéfinis avec détection de mise à jour (comparaison commande + icône)
 - **Élévation à la demande** : bouton `🛡 Élever` + bandeau jaune si non-admin, relance l'app en admin via UAC
+
+### Raccourcis prédéfinis (PresetsDialog)
+- Ouvert depuis le bouton **Prédéfinis** de `QuickAccessWindow`
+- Détecte et propose l'installation / mise à jour des prédéfinis (comparaison commande + icône)
+- **Non-admin** : bouton "Installer" remplacé par `🛡 Élever` — relance en admin via UAC
+- Bouton **☰ Menu contextuel** → ouvre `ContextMenuManagerWindow` directement depuis le dialog
+- Bouton **↻ Actualiser** → relit l'état du registre sans fermer le dialog
 
 ### Accès rapide (QuickAccessWindow)
 - Grille 4 lignes × 6 colonnes de tuiles cliquables
 - Chaque tuile : icône + nom → exécute la commande au clic
 - Icônes supportées : `.exe`, `.dll`, `.ico`, `.png`, `.bmp`, `.jpg`
 - Cases vides affichées en `+` grisé
-- Bouton **Actualiser** (relit le JSON) + **Modifier la configuration** (ouvre le JSON)
+- Toolbar : **Prédéfinis** | **Paramètres** | **Actualiser** | **Modifier la configuration**
 - Config stockée dans `%APPDATA%\WinContextMenuManager\shortcuts.json`
 
 ### Raccourci clavier global
