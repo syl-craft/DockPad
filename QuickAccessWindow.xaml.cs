@@ -117,26 +117,181 @@ public partial class QuickAccessWindow : Window
     {
         PaginationBar.Children.Clear();
 
-        int maxPage = all.Count > 0 ? all.Max(s => s.Page) : 0;
-        int totalPages = maxPage + 2; // toujours une page vide supplémentaire à la fin
+        var configs     = PageConfigService.Load();
+        int maxUsed     = all.Count     > 0 ? all.Max(s => s.Page)      : -1;
+        int maxConfig   = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
+        // Uniquement les pages avec contenu + la page courante si elle est plus loin
+        int lastShown   = Math.Max(Math.Max(maxUsed, maxConfig), _currentPage);
 
-        for (int p = 0; p < totalPages; p++)
+        for (int p = 0; p <= lastShown; p++)
         {
-            int page = p;
-            var btn = new Button
-            {
-                Content = (page + 1).ToString(),
-                Style   = (Style)FindResource(page == _currentPage ? "PageButtonActive" : "PageButton"),
-                ToolTip = $"Page {page + 1}",
-            };
+            int page   = p;
+            var config = configs.FirstOrDefault(c => c.Index == page);
+            bool active = page == _currentPage;
+
+            var btn = BuildPageButton(page, config, active, lastShown);
             btn.Click += (_, _) => GoToPage(page);
             PaginationBar.Children.Add(btn);
         }
+
+        // Bouton "+" pour ajouter une page au-delà des existantes
+        var addBtn = new Button
+        {
+            Content  = "+",
+            Style    = (Style)FindResource("PageButton"),
+            ToolTip  = "Ajouter une page",
+            FontSize = 15,
+            FontWeight = FontWeights.Light,
+        };
+        addBtn.Click += (_, _) => GoToPage(lastShown + 1);
+        PaginationBar.Children.Add(addBtn);
+    }
+
+    private Button BuildPageButton(int page, PageConfig? config, bool active, int lastShown)
+    {
+        object content;
+        if (config != null && !string.IsNullOrEmpty(config.IconPath))
+        {
+            var src = LoadIcon(config.IconPath);
+            content = src != null
+                ? (object)new Image { Source = src, Width = 18, Height = 18, Stretch = Stretch.Uniform }
+                : (page + 1).ToString();
+        }
+        else
+        {
+            content = (page + 1).ToString();
+        }
+
+        var btn = new Button
+        {
+            Content = content,
+            Style   = (Style)FindResource(active ? "PageButtonActive" : "PageButton"),
+            ToolTip = $"Page {page + 1}",
+        };
+
+        var menu = new ContextMenu();
+
+        if (config != null && !string.IsNullOrEmpty(config.IconPath))
+        {
+            var removeIcon = new MenuItem { Header = "🗑 Supprimer l'icône" };
+            removeIcon.Click += (_, _) => SetPageIcon(page, "");
+            menu.Items.Add(removeIcon);
+        }
+        var changeIcon = new MenuItem { Header = "🖼 Changer l'icône" };
+        changeIcon.Click += (_, _) => ChangePageIcon(page);
+        menu.Items.Add(changeIcon);
+
+        menu.Items.Add(new Separator());
+
+        var moveLeft = new MenuItem { Header = "← Déplacer à gauche", IsEnabled = page > 0 };
+        moveLeft.Click += (_, _) => MovePage(page, page - 1);
+        menu.Items.Add(moveLeft);
+
+        var moveRight = new MenuItem { Header = "→ Déplacer à droite", IsEnabled = page < lastShown };
+        moveRight.Click += (_, _) => MovePage(page, page + 1);
+        menu.Items.Add(moveRight);
+
+        menu.Items.Add(new Separator());
+
+        var deletePage = new MenuItem { Header = "🗑 Supprimer la page" };
+        deletePage.Click += (_, _) => DeletePage(page);
+        menu.Items.Add(deletePage);
+
+        btn.ContextMenu = menu;
+        return btn;
     }
 
     private void GoToPage(int page)
     {
         _currentPage = page;
+        PopulateGrid();
+    }
+
+    private void ChangePageIcon(int pageIndex)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title  = "Choisir une icône pour la page",
+            Filter = "Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*",
+        };
+        var configs = PageConfigService.Load();
+        var current = configs.FirstOrDefault(p => p.Index == pageIndex);
+        if (current != null && File.Exists(current.IconPath))
+            dlg.InitialDirectory = Path.GetDirectoryName(current.IconPath);
+
+        if (dlg.ShowDialog() != true) return;
+        SetPageIcon(pageIndex, dlg.FileName);
+    }
+
+    private void SetPageIcon(int pageIndex, string iconPath)
+    {
+        var configs = PageConfigService.Load();
+        var config  = configs.FirstOrDefault(p => p.Index == pageIndex);
+        if (config == null)
+        {
+            config = new PageConfig { Index = pageIndex };
+            configs.Add(config);
+        }
+        config.IconPath = iconPath;
+        PageConfigService.Save(configs);
+        PopulateGrid();
+    }
+
+    private void MovePage(int fromIndex, int toIndex)
+    {
+        var shortcuts = ShortcutService.Load();
+        var configs   = PageConfigService.Load();
+
+        // Swap les entrées
+        foreach (var s in shortcuts)
+        {
+            if      (s.Page == fromIndex) s.Page = toIndex;
+            else if (s.Page == toIndex)   s.Page = fromIndex;
+        }
+
+        // Swap les configs
+        var fromCfg = configs.FirstOrDefault(p => p.Index == fromIndex);
+        var toCfg   = configs.FirstOrDefault(p => p.Index == toIndex);
+        if (fromCfg != null) fromCfg.Index = toIndex;
+        if (toCfg   != null) toCfg.Index   = fromIndex;
+
+        ShortcutService.Save(shortcuts);
+        PageConfigService.Save(configs);
+
+        if      (_currentPage == fromIndex) _currentPage = toIndex;
+        else if (_currentPage == toIndex)   _currentPage = fromIndex;
+
+        PopulateGrid();
+    }
+
+    private void DeletePage(int pageIndex)
+    {
+        var shortcuts    = ShortcutService.Load();
+        int entryCount   = shortcuts.Count(s => s.Page == pageIndex);
+        string msg = entryCount > 0
+            ? $"Supprimer la page {pageIndex + 1} et ses {entryCount} raccourci(s) ?"
+            : $"Supprimer la page {pageIndex + 1} ?";
+
+        if (MessageBox.Show(msg, "Supprimer la page",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+
+        // Supprimer les entrées de cette page et décaler les suivantes
+        shortcuts.RemoveAll(s => s.Page == pageIndex);
+        foreach (var s in shortcuts.Where(s => s.Page > pageIndex))
+            s.Page--;
+
+        var configs = PageConfigService.Load();
+        configs.RemoveAll(p => p.Index == pageIndex);
+        foreach (var c in configs.Where(c => c.Index > pageIndex))
+            c.Index--;
+
+        ShortcutService.Save(shortcuts);
+        PageConfigService.Save(configs);
+
+        int newMax = shortcuts.Count > 0 ? shortcuts.Max(s => s.Page) : 0;
+        _currentPage = Math.Min(_currentPage > pageIndex ? _currentPage - 1 : _currentPage, newMax);
+
         PopulateGrid();
     }
 
@@ -193,10 +348,13 @@ public partial class QuickAccessWindow : Window
         duplicate.Click += (_, _) => DuplicateTile(entry);
         var delete = new MenuItem { Header = "🗑 Supprimer" };
         delete.Click += (_, _) => DeleteTile(entry);
+        var moveToPage = BuildMoveToPageMenu(entry);
         menu.Items.Add(changeIcon);
         menu.Items.Add(new Separator());
         menu.Items.Add(edit);
         menu.Items.Add(duplicate);
+        menu.Items.Add(moveToPage);
+        menu.Items.Add(new Separator());
         menu.Items.Add(delete);
         btn.ContextMenu = menu;
 
@@ -303,6 +461,75 @@ public partial class QuickAccessWindow : Window
                 ExtraArgs         = entry.Terminal.ExtraArgs,
             },
         });
+        ShortcutService.Save(all);
+        PopulateGrid();
+    }
+
+    private MenuItem BuildMoveToPageMenu(ShortcutEntry entry)
+    {
+        var moveMenu = new MenuItem { Header = "↗ Déplacer vers la page" };
+
+        var all     = ShortcutService.Load();
+        var configs = PageConfigService.Load();
+        int maxUsed   = all.Count     > 0 ? all.Max(s => s.Page)      : -1;
+        int maxConfig = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
+        int lastPage  = Math.Max(maxUsed, maxConfig) + 1; // inclut une page vide
+
+        for (int p = 0; p <= lastPage; p++)
+        {
+            if (p == _currentPage) continue; // pas la page courante
+
+            int targetPage = p;
+            var config     = configs.FirstOrDefault(c => c.Index == p);
+            bool hasFreeSlot = !all.Any(s => s.Page == p && s.Row == entry.Row && s.Col == entry.Col);
+
+            // Construire le header avec icône si disponible
+            object header;
+            if (config != null && !string.IsNullOrEmpty(config.IconPath))
+            {
+                var src = LoadIcon(config.IconPath);
+                if (src != null)
+                {
+                    var sp = new StackPanel { Orientation = Orientation.Horizontal };
+                    sp.Children.Add(new Image { Source = src, Width = 14, Height = 14,
+                        Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 6, 0) });
+                    sp.Children.Add(new TextBlock { Text = $"Page {p + 1}" });
+                    header = sp;
+                }
+                else header = $"Page {p + 1}";
+            }
+            else header = $"Page {p + 1}";
+
+            var item = new MenuItem { Header = header };
+
+            // Vérifier si la case cible est libre
+            bool occupied = all.Any(s => s.Page == targetPage && s.Row == entry.Row && s.Col == entry.Col);
+            if (occupied)
+            {
+                item.IsEnabled = false;
+                item.ToolTip   = "La case est déjà occupée sur cette page";
+            }
+            else
+            {
+                item.Click += (_, _) => MoveTileToPage(entry, targetPage);
+            }
+
+            moveMenu.Items.Add(item);
+        }
+
+        if (moveMenu.Items.Count == 0)
+            moveMenu.IsEnabled = false;
+
+        return moveMenu;
+    }
+
+    private void MoveTileToPage(ShortcutEntry entry, int targetPage)
+    {
+        var all      = ShortcutService.Load();
+        var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
+        if (existing == null) return;
+
+        existing.Page = targetPage;
         ShortcutService.Save(all);
         PopulateGrid();
     }
@@ -505,6 +732,15 @@ public partial class QuickAccessWindow : Window
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => PopulateGrid();
+
+    private void Quit_Click(object sender, RoutedEventArgs e)
+    {
+        if (MessageBox.Show("Quitter WinContextMenuManager ?", "Confirmation",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        App.Exit();
+    }
 
     private void EditConfig_Click(object sender, RoutedEventArgs e)
     {
