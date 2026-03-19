@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Security.Principal;
 using System.Windows;
 using WinContextMenuManager.Models;
 using WinContextMenuManager.Services;
@@ -12,7 +14,30 @@ public partial class PresetsDialog : Window
     public PresetsDialog()
     {
         InitializeComponent();
+
+        using var identity = WindowsIdentity.GetCurrent();
+        bool isAdmin = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+        if (!isAdmin)
+        {
+            BtnInstall.Visibility = Visibility.Collapsed;
+            BtnElevate.Visibility = Visibility.Visible;
+        }
+
         LoadPresets();
+    }
+
+    private void Elevate_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(Environment.ProcessPath!)
+            {
+                UseShellExecute = true,
+                Verb = "runas"
+            });
+            App.Exit();
+        }
+        catch { /* UAC refusé par l'utilisateur */ }
     }
 
     private void LoadPresets()
@@ -81,6 +106,14 @@ public partial class PresetsDialog : Window
         DialogResult = InstalledCount > 0;
         Close();
     }
+
+    private void OpenContextMenuManager_Click(object sender, RoutedEventArgs e)
+    {
+        var win = new ContextMenuManagerWindow();
+        win.Show();
+    }
+
+    private void Refresh_Click(object sender, RoutedEventArgs e) => LoadPresets();
 
     private void Cancel_Click(object sender, RoutedEventArgs e)
     {

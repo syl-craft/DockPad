@@ -64,21 +64,17 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <Button Grid.Column="0" x:Name="BtnAdd" Content="+ Ajouter"
                         Style="{StaticResource PrimaryButton}"
                         Margin="0,0,8,0" Click="Add_Click"/>
-                <Button Grid.Column="1" x:Name="BtnPresets" Content="⭐ Prédéfinis"
-                        Style="{StaticResource SecondaryButton}"
-                        Margin="0,0,8,0" Click="Presets_Click"/>
-                <Button Grid.Column="2" Content="Modifier" Style="{StaticResource SecondaryButton}"
+                <Button Grid.Column="1" Content="Modifier" Style="{StaticResource SecondaryButton}"
                         x:Name="BtnEdit" Margin="0,0,8,0" IsEnabled="False" Click="Edit_Click"/>
-                <Button Grid.Column="3" Content="Dupliquer" Style="{StaticResource SecondaryButton}"
+                <Button Grid.Column="2" Content="Dupliquer" Style="{StaticResource SecondaryButton}"
                         x:Name="BtnDuplicate" Margin="0,0,8,0" IsEnabled="False" Click="Duplicate_Click"/>
-                <Button Grid.Column="4" Content="Supprimer" Style="{StaticResource DangerButton}"
+                <Button Grid.Column="3" Content="Supprimer" Style="{StaticResource DangerButton}"
                         x:Name="BtnDelete" IsEnabled="False" Click="Delete_Click"/>
 
                 <!-- Filtre cible -->
@@ -93,7 +89,7 @@
                 </StackPanel>
 
                 <!-- Élever (non-admin uniquement) -->
-                <Button Grid.Column="6" x:Name="BtnElevate" Content="🛡 Élever"
+                <Button Grid.Column="5" x:Name="BtnElevate" Content="🛡 Élever"
                         Style="{StaticResource SecondaryButton}"
                         Visibility="Collapsed" Click="Elevate_Click"/>
             </Grid>

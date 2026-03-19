@@ -9,6 +9,12 @@ public partial class App : Application
 {
     public static bool IsExiting { get; private set; }
 
+    public static void Exit()
+    {
+        IsExiting = true;
+        Current.Shutdown();
+    }
+
     private WinForms.NotifyIcon _trayIcon = null!;
     private QuickAccessWindow _mainWindow = null!;
     private Mutex? _mutex;
@@ -51,11 +57,7 @@ public partial class App : Application
 
         var menu = new WinForms.ContextMenuStrip();
         var closeItem = new WinForms.ToolStripMenuItem("Fermer");
-        closeItem.Click += (_, _) =>
-        {
-            IsExiting = true;
-            Current.Shutdown();
-        };
+        closeItem.Click += (_, _) => Exit();
         menu.Items.Add(closeItem);
 
         var tray = new WinForms.NotifyIcon

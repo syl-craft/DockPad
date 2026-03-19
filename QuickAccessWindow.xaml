@@ -61,8 +61,8 @@
             <Grid>
                 <!-- Actions principales (gauche) -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <Button Content="☰ Menu contextuel" Style="{StaticResource SecondaryButton}"
-                            Padding="10,6" Margin="0,0,8,0" Click="OpenContextMenuManager_Click"/>
+                    <Button Content="📋 Prédéfinis" Style="{StaticResource SecondaryButton}"
+                            Padding="10,6" Margin="0,0,8,0" Click="Presets_Click"/>
                     <Button Content="⚙ Paramètres" Style="{StaticResource SecondaryButton}"
                             Padding="10,6" Click="Settings_Click"/>
                 </StackPanel>

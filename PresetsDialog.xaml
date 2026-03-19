@@ -71,12 +71,23 @@
         <!-- Footer -->
         <Border Grid.Row="2" Background="White" Padding="24,12"
                 BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Annuler" Style="{StaticResource SecondaryButton}"
-                        Margin="0,0,12,0" Click="Cancel_Click"/>
-                <Button Content="Installer / Mettre à jour" Style="{StaticResource PrimaryButton}"
-                        x:Name="BtnInstall" Click="Install_Click"/>
-            </StackPanel>
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Button Content="☰ Menu contextuel" Style="{StaticResource SecondaryButton}"
+                            Margin="0,0,8,0" Click="OpenContextMenuManager_Click"/>
+                    <Button Content="↻ Actualiser" Style="{StaticResource SecondaryButton}"
+                            Click="Refresh_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Annuler" Style="{StaticResource SecondaryButton}"
+                            Margin="0,0,12,0" Click="Cancel_Click"/>
+                    <Button x:Name="BtnInstall" Content="Installer / Mettre à jour"
+                            Style="{StaticResource PrimaryButton}" Click="Install_Click"/>
+                    <Button x:Name="BtnElevate" Content="🛡 Élever"
+                            Style="{StaticResource PrimaryButton}" Visibility="Collapsed"
+                            Click="Elevate_Click"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>
