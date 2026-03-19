@@ -9,11 +9,15 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WinContextMenuManager.Models;
 using WinContextMenuManager.Services;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace WinContextMenuManager;
 
 public partial class QuickAccessWindow : Window
 {
+    private const int GridRows = 4;
+    private const int GridCols = 6;
+
     private IntPtr _hwnd;
     private Point _dragStartPoint;
     private ShortcutEntry? _dragSource;
@@ -87,9 +91,9 @@ public partial class QuickAccessWindow : Window
         ShortcutsGrid.Children.Clear();
         var shortcuts = ShortcutService.Load();
 
-        for (int row = 0; row < 4; row++)
+        for (int row = 0; row < GridRows; row++)
         {
-            for (int col = 0; col < 6; col++)
+            for (int col = 0; col < GridCols; col++)
             {
                 var entry = shortcuts.FirstOrDefault(s => s.Row == row && s.Col == col);
                 var btn = entry is { Name.Length: > 0 }
@@ -127,7 +131,8 @@ public partial class QuickAccessWindow : Window
         {
             Style = (Style)FindResource("TileButton"),
             ToolTip = $"[{TypeLabel(entry.Type)}] {entry.Command}",
-            Tag = entry,
+            DataContext = entry,
+            Tag = TypeBandBrush(entry.Type),
             Content = new StackPanel
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -137,6 +142,8 @@ public partial class QuickAccessWindow : Window
         };
 
         btn.Click += Tile_Click;
+        btn.MouseEnter += TileHover_Enter;
+        btn.MouseLeave += TileHover_Leave;
         btn.PreviewMouseLeftButtonDown += TileDrag_MouseDown;
         btn.PreviewMouseMove += TileDrag_MouseMove;
         btn.AllowDrop = true;
@@ -149,11 +156,14 @@ public partial class QuickAccessWindow : Window
         changeIcon.Click += (_, _) => ChangeIcon(btn, entry);
         var edit = new MenuItem { Header = "✏ Modifier" };
         edit.Click += (_, _) => EditTile(entry);
+        var duplicate = new MenuItem { Header = "⧉ Dupliquer" };
+        duplicate.Click += (_, _) => DuplicateTile(entry);
         var delete = new MenuItem { Header = "🗑 Supprimer" };
         delete.Click += (_, _) => DeleteTile(entry);
         menu.Items.Add(changeIcon);
         menu.Items.Add(new Separator());
         menu.Items.Add(edit);
+        menu.Items.Add(duplicate);
         menu.Items.Add(delete);
         btn.ContextMenu = menu;
 
@@ -210,7 +220,51 @@ public partial class QuickAccessWindow : Window
             existing.Type     = dlg.Entry.Type;
             existing.Command  = dlg.Entry.Command;
             existing.IconPath = dlg.Entry.IconPath;
+            existing.Terminal = dlg.Entry.Terminal;
         }
+        ShortcutService.Save(all);
+        PopulateGrid();
+    }
+
+    private void DuplicateTile(ShortcutEntry entry)
+    {
+        var all = ShortcutService.Load();
+        var occupied = all.Select(s => (s.Row, s.Col)).ToHashSet();
+
+        // Case vide la plus proche en distance de Chebyshev
+        (int row, int col)? nearest = null;
+        int bestDist = int.MaxValue;
+        for (int r = 0; r < GridRows; r++)
+        {
+            for (int c = 0; c < GridCols; c++)
+            {
+                if (occupied.Contains((r, c))) continue;
+                int dist = Math.Max(Math.Abs(r - entry.Row), Math.Abs(c - entry.Col));
+                if (dist < bestDist) { bestDist = dist; nearest = (r, c); }
+            }
+        }
+
+        if (nearest is null)
+        {
+            MessageBox.Show("Aucune case vide disponible.", "Dupliquer",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        all.Add(new ShortcutEntry
+        {
+            Row      = nearest.Value.row, Col = nearest.Value.col,
+            Name     = entry.Name,    Type     = entry.Type,
+            Command  = entry.Command, IconPath = entry.IconPath,
+            Terminal = entry.Terminal == null ? null : new TerminalConfig
+            {
+                ExePath           = entry.Terminal.ExePath,
+                StartingDirectory = entry.Terminal.StartingDirectory,
+                RunCommand        = entry.Terminal.RunCommand,
+                NewTab            = entry.Terminal.NewTab,
+                ExtraArgs         = entry.Terminal.ExtraArgs,
+            },
+        });
         ShortcutService.Save(all);
         PopulateGrid();
     }
@@ -229,7 +283,7 @@ public partial class QuickAccessWindow : Window
 
     private void Tile_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button { Tag: ShortcutEntry entry }) return;
+        if (sender is not Button btn || btn.DataContext is not ShortcutEntry entry) return;
         try
         {
             switch (entry.Type)
@@ -242,7 +296,7 @@ public partial class QuickAccessWindow : Window
                     Process.Start(new ProcessStartInfo(entry.Command) { UseShellExecute = true });
                     break;
                 case ShortcutType.OpenTerminal:
-                    OpenTerminal(entry.Command);
+                    ExecuteTerminal(entry);
                     break;
                 case ShortcutType.RunCommand:
                 default:
@@ -258,20 +312,27 @@ public partial class QuickAccessWindow : Window
         }
     }
 
-    private static void OpenTerminal(string folder)
+    private static void ExecuteTerminal(ShortcutEntry entry)
     {
-        // Essaie wt → pwsh → powershell → cmd
-        string[] candidates = ["wt.exe", "pwsh.exe", "powershell.exe", "cmd.exe"];
-        foreach (var term in candidates)
+        if (entry.Terminal is { ExePath.Length: > 0 } cfg)
+        {
+            var args = TerminalDetectionService.BuildArgs(cfg);
+            Process.Start(new ProcessStartInfo(cfg.ExePath, args) { UseShellExecute = true });
+            return;
+        }
+
+        // Fallback legacy : entry.Command = chemin du dossier, auto-détection du terminal
+        string folder = entry.Command;
+        foreach (var term in new[] { "wt.exe", "pwsh.exe", "powershell.exe", "cmd.exe" })
         {
             try
             {
                 string args = term switch
                 {
-                    "wt.exe"          => $"-w 0 new-tab --startingDirectory \"{folder}\"",
-                    "pwsh.exe"        => $"-NoExit -Command Set-Location \"{folder}\"",
-                    "powershell.exe"  => $"-NoExit -Command Set-Location \"{folder}\"",
-                    _                 => $"/k cd /d \"{folder}\"",
+                    "wt.exe"         => $"-w 0 new-tab --startingDirectory \"{folder}\"",
+                    "pwsh.exe"       => $"-NoExit -Command Set-Location \"{folder}\"",
+                    "powershell.exe" => $"-NoExit -Command Set-Location \"{folder}\"",
+                    _                => $"/k cd /d \"{folder}\"",
                 };
                 Process.Start(new ProcessStartInfo(term, args) { UseShellExecute = true });
                 return;
@@ -287,6 +348,36 @@ public partial class QuickAccessWindow : Window
         ShortcutType.OpenUrl      => "Navigateur",
         ShortcutType.OpenTerminal => "Terminal",
         _                         => "Commande",
+    };
+
+    private static readonly SolidColorBrush TileDefaultBackground = new(Colors.White);
+
+    private void TileHover_Enter(object sender, MouseEventArgs e)
+    {
+        if (sender is not Button { Tag: SolidColorBrush band } btn) return;
+        var c = band.Color;
+        btn.Background   = new SolidColorBrush(Color.FromArgb(60, c.R, c.G, c.B));
+        btn.BorderBrush  = band;
+    }
+
+    private void TileHover_Leave(object sender, MouseEventArgs e)
+    {
+        if (sender is not Button btn) return;
+        btn.Background  = TileDefaultBackground;
+        btn.BorderBrush = DefaultBorder;
+    }
+
+    private static readonly SolidColorBrush BandRunCommand   = new(Color.FromRgb(0xA8, 0xCC, 0xEA)); // bleu pastel
+    private static readonly SolidColorBrush BandOpenFolder   = new(Color.FromRgb(0xF5, 0xCC, 0x80)); // ambre pastel
+    private static readonly SolidColorBrush BandOpenUrl      = new(Color.FromRgb(0x92, 0xC6, 0x90)); // vert pastel
+    private static readonly SolidColorBrush BandOpenTerminal = new(Color.FromRgb(0xC4, 0xAD, 0xE0)); // violet pastel
+
+    private static SolidColorBrush TypeBandBrush(ShortcutType t) => t switch
+    {
+        ShortcutType.OpenFolder   => BandOpenFolder,
+        ShortcutType.OpenUrl      => BandOpenUrl,
+        ShortcutType.OpenTerminal => BandOpenTerminal,
+        _                         => BandRunCommand,
     };
 
     private void ChangeIcon(Button btn, ShortcutEntry entry)
@@ -322,7 +413,7 @@ public partial class QuickAccessWindow : Window
     private void TileDrag_MouseMove(object sender, MouseEventArgs e)
     {
         if (e.LeftButton != MouseButtonState.Pressed) return;
-        if (sender is not Button { Tag: ShortcutEntry entry }) return;
+        if (sender is not Button dragBtn || dragBtn.DataContext is not ShortcutEntry entry) return;
 
         var pos  = e.GetPosition(null);
         var diff = _dragStartPoint - pos;
