@@ -114,6 +114,28 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 Le champ `type` est optionnel — une entrée sans `type` utilise `RunCommand` (rétrocompatible).
 Les colonnes vont de 0 à 5, les lignes de 0 à 3.
 
+## Icône de l'application
+
+Fichier : `app.ico` (multi-taille : 16/32/48/256px)
+
+Source : **Microsoft Fluent UI System Icons** — `ic_fluent_apps_list_32_color.svg`
+- Page GitHub : `https://github.com/microsoft/fluentui-system-icons/blob/main/assets/Apps%20List/SVG/ic_fluent_apps_list_32_color.svg`
+- Raw SVG : `https://raw.githubusercontent.com/microsoft/fluentui-system-icons/main/assets/Apps%20List/SVG/ic_fluent_apps_list_32_color.svg`
+- Licence : MIT
+
+Configuré dans :
+- `.csproj` → `<ApplicationIcon>app.ico</ApplicationIcon>` (icône du `.exe`)
+- `QuickAccessWindow.xaml` → `Icon="pack://application:,,,/app.ico"`
+- `ContextMenuManagerWindow.xaml` → `Icon="app.ico"`
+
+Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
+- **Fluent UI System Icons** (Microsoft) — dossier, task-board
+- **PKief/vscode-material-icon-theme** — claude, azure, pipeline
+- **devicons/devicon** — visual-studio, vscode, fusion360
+- **BambuLab/BambuStudio** (GitHub officiel) — bambu-studio
+- **Simple Icons** — gmail, azure-devops
+- **GitHub Octicons** — pull-requests
+
 ## Build
 
 ```bash
