@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace WinContextMenuManager.Services;
+namespace DockPad.Services;
 
 public static class ResourceStringResolver
 {

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace WinContextMenuManager.Services;
+namespace DockPad.Services;
 
 public static class HotkeyService
 {

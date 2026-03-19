@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36811.4 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinContextMenuManager", "WinContextMenuManager.csproj", "{1C04922D-AEF0-82DE-C69E-C3774C9BBDE8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DockPad", "WinContextMenuManager.csproj", "{1C04922D-AEF0-82DE-C69E-C3774C9BBDE8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,15 +1,15 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
-using WinContextMenuManager.Models;
+using DockPad.Models;
 
-namespace WinContextMenuManager.Services;
+namespace DockPad.Services;
 
 public static class ShortcutService
 {
     public static readonly string FilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "WinContextMenuManager",
+        "DockPad",
         "shortcuts.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()

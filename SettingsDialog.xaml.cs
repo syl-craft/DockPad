@@ -1,7 +1,7 @@
 using System.Windows;
-using WinContextMenuManager.Services;
+using DockPad.Services;
 
-namespace WinContextMenuManager;
+namespace DockPad;
 
 public partial class SettingsDialog : Window
 {

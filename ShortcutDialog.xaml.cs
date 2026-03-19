@@ -2,11 +2,11 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using WinContextMenuManager.Models;
-using WinContextMenuManager.Services;
+using DockPad.Models;
+using DockPad.Services;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
-namespace WinContextMenuManager;
+namespace DockPad;
 
 public partial class ShortcutDialog : Window
 {
@@ -289,8 +289,7 @@ public partial class ShortcutDialog : Window
         string name = TxtName.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            MessageBox.Show("Le nom est obligatoire.", "Validation",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Warning("Le nom est obligatoire.", owner: this);
             TxtName.Focus();
             return;
         }
@@ -304,8 +303,7 @@ public partial class ShortcutDialog : Window
             var cfg = BuildTerminalConfig();
             if (cfg == null)
             {
-                MessageBox.Show("Veuillez sélectionner un terminal.", "Validation",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppDialog.Warning("Veuillez sélectionner un terminal.", owner: this);
                 CmbTerminal.Focus();
                 return;
             }
@@ -320,8 +318,7 @@ public partial class ShortcutDialog : Window
             string command = TxtCommand.Text.Trim();
             if (string.IsNullOrWhiteSpace(command))
             {
-                MessageBox.Show("La commande / le chemin est obligatoire.", "Validation",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppDialog.Warning("La commande / le chemin est obligatoire.", owner: this);
                 TxtCommand.Focus();
                 return;
             }

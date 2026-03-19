@@ -1,4 +1,4 @@
-<Window x:Class="WinContextMenuManager.PresetsDialog"
+<Window x:Class="DockPad.PresetsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Raccourcis prédéfinis"

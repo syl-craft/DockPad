@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Windows.Media.Imaging;
 
-namespace WinContextMenuManager.Models;
+namespace DockPad.Models;
 
 public class ContextMenuEntryViewModel
 {

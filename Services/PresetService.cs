@@ -1,8 +1,8 @@
 using System.Drawing;
 using System.IO;
-using WinContextMenuManager.Models;
+using DockPad.Models;
 
-namespace WinContextMenuManager.Services;
+namespace DockPad.Services;
 
 public static class PresetService
 {

@@ -1,12 +1,12 @@
 using Microsoft.Win32;
 
-namespace WinContextMenuManager.Services;
+namespace DockPad.Services;
 
 public static class SettingsService
 {
-    private const string RegPath    = @"Software\WinContextMenuManager\Settings";
+    private const string RegPath    = @"Software\DockPad\Settings";
     private const string RunPath    = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string AppName    = "WinContextMenuManager";
+    private const string AppName    = "DockPad";
 
     public static (uint Modifiers, uint Key) LoadHotkey()
     {

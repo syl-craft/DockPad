@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WinContextMenuManager.Models;
+namespace DockPad.Models;
 
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System.Security.Principal;
 using System.Windows;
-using WinContextMenuManager.Models;
-using WinContextMenuManager.Services;
+using DockPad.Models;
+using DockPad.Services;
 
-namespace WinContextMenuManager;
+namespace DockPad;
 
 public partial class PresetsDialog : Window
 {
@@ -73,8 +73,7 @@ public partial class PresetsDialog : Window
         var toInstall = _presets.Where(p => p.IsSelected && p.CanSelect).ToList();
         if (toInstall.Count == 0)
         {
-            MessageBox.Show("Aucun raccourci sélectionné.", "Information",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            AppDialog.Info("Aucun raccourci sélectionné.", owner: this);
             return;
         }
 
@@ -100,8 +99,7 @@ public partial class PresetsDialog : Window
         }
 
         if (errors.Count > 0)
-            MessageBox.Show($"Erreurs :\n{string.Join("\n", errors)}", "Erreur",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Error($"Erreurs :\n{string.Join("\n", errors)}", owner: this);
 
         DialogResult = InstalledCount > 0;
         Close();

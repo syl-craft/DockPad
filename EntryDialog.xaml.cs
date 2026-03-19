@@ -2,10 +2,10 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
-using WinContextMenuManager.Models;
+using DockPad.Models;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
-namespace WinContextMenuManager;
+namespace DockPad;
 
 public partial class EntryDialog : Window
 {
@@ -124,19 +124,19 @@ public partial class EntryDialog : Window
 
         if (string.IsNullOrWhiteSpace(displayName))
         {
-            MessageBox.Show("Le nom affiché est obligatoire.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Warning("Le nom affiché est obligatoire.", owner: this);
             TxtDisplayName.Focus();
             return;
         }
         if (string.IsNullOrWhiteSpace(regKey))
         {
-            MessageBox.Show("La clé de registre est obligatoire.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Warning("La clé de registre est obligatoire.", owner: this);
             TxtRegistryKey.Focus();
             return;
         }
         if (string.IsNullOrWhiteSpace(command))
         {
-            MessageBox.Show("La commande est obligatoire.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Warning("La commande est obligatoire.", owner: this);
             TxtCommand.Focus();
             return;
         }

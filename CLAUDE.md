@@ -1,4 +1,4 @@
-# WinContextMenuManager
+# DockPad
 
 Application WPF C# (.NET 8, x64) pour gérer le menu clic droit Windows via le registre.
 L'app démarre sans droits admin — l'élévation est demandée à la demande via un bouton UAC.
@@ -67,7 +67,7 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 - Icônes supportées : `.exe`, `.dll`, `.ico`, `.png`, `.bmp`, `.jpg`
 - Cases vides affichées en `+` grisé
 - Toolbar : **Prédéfinis** | **Paramètres** | **Actualiser** | **Modifier la configuration**
-- Config stockée dans `%APPDATA%\WinContextMenuManager\shortcuts.json`
+- Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
 - **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | 🗑 Supprimer
 - **Clic droit sur une case vide** : ➕ Ajouter
 
@@ -83,7 +83,7 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 - Hotkey configurable via `SettingsDialog` (Ctrl/Alt/Shift/Win + touche A-Z ou F1-F12)
 - Défaut : `Ctrl+Shift+M`
 - Affiche `QuickAccessWindow` (la remet au premier plan si déjà visible)
-- Config stockée dans `HKCU\Software\WinContextMenuManager\Settings`
+- Config stockée dans `HKCU\Software\DockPad\Settings`
 - Enregistrement géré par `QuickAccessWindow`
 
 ### Paramètres (SettingsDialog)
