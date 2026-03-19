@@ -1,4 +1,4 @@
-namespace WinContextMenuManager.Models;
+namespace DockPad.Models;
 
 public class PageConfig
 {

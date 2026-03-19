@@ -1,0 +1,401 @@
+<html lang="en" vid="0"><head vid="1">
+    <meta charset="UTF-8" vid="2">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" vid="3">
+    <title vid="4">WinContextMenuManager Design System</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17" vid="5"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web" vid="6"></script>
+    <style vid="7">
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            background-color: #E5E5E5; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cdcdcd;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a6a6a6;
+        }
+
+        
+        .win-shadow {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+        
+        
+        .dialog-shadow {
+            box-shadow: 0 24px 48px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05);
+        }
+
+        .kbd-key {
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1), inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+    </style>
+    <script vid="8">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        win: {
+                            bg: '#F3F3F3',
+                            surface: '#FFFFFF',
+                            border: '#E5E5E5',
+                            primary: '#005FB8',
+                            primaryHover: '#005CB2',
+                            primaryActive: '#0054A6',
+                            text: '#1A1A1A',
+                            textMuted: '#5C5C5C',
+                            tileHover: '#F6F6F6',
+                            tileActive: '#EAEAEA'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="w-screen h-screen" vid="9">
+
+    
+    <div class="relative w-[760px] h-[520px] bg-win-bg rounded-[8px] win-shadow flex flex-col overflow-hidden text-win-text select-none" vid="10">
+        
+        
+        <div class="h-[44px] flex items-center px-4 bg-win-bg border-b border-win-border shrink-0" vid="11">
+            <div class="flex items-center gap-3" vid="12">
+                <i class="ph-fill ph-grid-four text-[#005FB8] text-[18px]" vid="13"></i>
+                <span class="text-[13px] font-medium tracking-wide text-gray-800" vid="14">WinContextMenuManager</span>
+            </div>
+        </div>
+
+        
+        <div class="h-[44px] flex items-center justify-end px-4 bg-white border-b border-win-border shrink-0" vid="15">
+            <div class="flex items-center gap-2" vid="16">
+                <button class="h-[32px] px-4 flex items-center gap-2 rounded-[4px] text-[13px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900 active:bg-gray-300 active:scale-[0.98] transition-all" title="Refresh" vid="17">
+                    <i class="ph ph-arrows-clockwise text-[16px]" vid="18"></i>
+                    <span vid="19">Actualiser</span>
+                </button>
+                <button id="btn-open-settings" class="h-[32px] px-4 flex items-center gap-2 rounded-[4px] text-[13px] font-medium text-white bg-win-primary hover:bg-win-primaryHover active:bg-win-primaryActive active:scale-[0.98] transition-all shadow-sm" title="Configuration" vid="20">
+                    <i class="ph ph-gear text-[16px]" vid="21"></i>
+                    <span vid="22">Configuration</span>
+                </button>
+            </div>
+        </div>
+
+        
+        <div class="flex-1 p-6 bg-[#FAFAFA] overflow-hidden flex items-center justify-center" vid="23">
+            
+            <div class="grid grid-cols-6 grid-rows-4 gap-[14px] w-full h-full max-w-[700px] max-h-[440px] place-items-center" vid="24">
+                
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="25">
+                    <i class="ph ph-terminal-window text-[36px] text-gray-700 group-hover:text-win-primary transition-colors" vid="26"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="27">Windows Terminal</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="28">
+                    <i class="ph ph-code text-[36px] text-[#0066b8] group-hover:scale-105 transition-transform duration-200" vid="29"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="30">VS Code</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="31">
+                    <i class="ph ph-folder-open text-[36px] text-[#e8aa31] group-hover:scale-105 transition-transform duration-200" vid="32"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="33">Explorer</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="34">
+                    <i class="ph ph-note-pencil text-[36px] text-[#24a4d6] group-hover:scale-105 transition-transform duration-200" vid="35"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="36">Notepad</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="37">
+                    <i class="ph ph-calculator text-[36px] text-gray-700 group-hover:text-win-primary transition-colors" vid="38"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="39">Calculator</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="40">
+                    <i class="ph ph-browser text-[36px] text-gray-700 group-hover:text-win-primary transition-colors" vid="41"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="42">Browser</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="43">
+                    <i class="ph ph-scissors text-[36px] text-gray-700 group-hover:text-win-primary transition-colors" vid="44"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="45">Snipping Tool</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="46">
+                    <i class="ph ph-paint-brush text-[36px] text-[#db3a3a] group-hover:scale-105 transition-transform duration-200" vid="47"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="48">Paint</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex flex-col items-center justify-center gap-2 bg-win-surface rounded-[6px] border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:bg-win-tileHover hover:border-gray-300 hover:shadow-[0_2px_5px_rgba(0,0,0,0.06)] active:bg-win-tileActive active:scale-[0.97] transition-all duration-150 group" vid="49">
+                    <i class="ph ph-music-notes text-[36px] text-[#1db954] group-hover:scale-105 transition-transform duration-200" vid="50"></i>
+                    <span class="text-[12px] text-gray-700 truncate w-full px-2 text-center" vid="51">Spotify</span>
+                </button>
+
+                
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="52">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="53"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="54">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="55"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="56">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="57"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="58">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="59"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="60">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="61"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="62">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="63"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="64">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="65"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="66">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="67"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="68">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="69"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="70">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="71"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="72">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="73"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="74">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="75"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="76">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="77"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="78">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="79"></i>
+                </button>
+                <button class="w-[108px] h-[90px] flex items-center justify-center bg-transparent rounded-[6px] border border-dashed border-gray-300 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 active:scale-[0.97] transition-all duration-150 group" vid="80">
+                    <i class="ph ph-plus text-[24px] text-gray-300 group-hover:text-gray-400 transition-colors" vid="81"></i>
+                </button>
+            </div>
+        </div>
+
+        
+        <div id="modal-backdrop" class="absolute inset-0 bg-black/10 backdrop-blur-[1px] z-40 opacity-0 pointer-events-none transition-opacity duration-200" vid="82"></div>
+
+        
+        
+        <div id="settings-dialog" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[320px] bg-win-surface rounded-[8px] dialog-shadow border border-gray-200 flex flex-col overflow-hidden z-50 opacity-0 pointer-events-none transform scale-[0.95] transition-all duration-200" vid="83">
+            
+            
+            <div class="h-[40px] flex items-center justify-between px-4 border-b border-win-border bg-[#FBFBFB]" vid="84">
+                <span class="text-[13px] font-semibold text-gray-800" vid="85">Configuration</span>
+                <button id="btn-close-settings" class="w-[28px] h-[28px] flex items-center justify-center rounded-[4px] text-gray-500 hover:bg-red-500 hover:text-white transition-colors" vid="86">
+                    <i class="ph ph-x text-[14px]" vid="87"></i>
+                </button>
+            </div>
+
+            
+            <div class="flex-1 p-5 flex flex-col gap-5" vid="88">
+                <div vid="89">
+                    <h3 class="text-[14px] font-semibold text-gray-800 mb-1" vid="90">Global keyboard shortcut</h3>
+                    <p class="text-[12px] text-gray-500 mb-4" vid="91">Define the shortcut to open this menu anywhere.</p>
+                    
+                    
+                    <div class="flex flex-col gap-4" vid="92">
+                        
+                        <div class="grid grid-cols-2 gap-y-3 gap-x-6 pl-1" vid="93">
+                            
+                            
+                            <label class="flex items-center gap-3 cursor-pointer group" vid="94">
+                                <input type="checkbox" id="chk-ctrl" class="peer sr-only" checked="" onchange="updatePreview()" vid="95">
+                                <div class="w-5 h-5 rounded-[4px] border border-gray-400 bg-white peer-checked:bg-win-primary peer-checked:border-win-primary flex items-center justify-center transition-all" vid="96">
+                                    <svg class="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" vid="97"><rect width="256" height="256" fill="none" vid="98"></rect><polyline points="216 72.005 104 184 48 128.005" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24" vid="99"></polyline></svg>
+                                </div>
+                                <span class="text-[13px] text-gray-800 select-none group-hover:text-black" vid="100">Ctrl</span>
+                            </label>
+
+                            
+                            <label class="flex items-center gap-3 cursor-pointer group" vid="101">
+                                <input type="checkbox" id="chk-alt" class="peer sr-only" onchange="updatePreview()" vid="102">
+                                <div class="w-5 h-5 rounded-[4px] border border-gray-400 bg-white peer-checked:bg-win-primary peer-checked:border-win-primary flex items-center justify-center transition-all" vid="103">
+                                    <svg class="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" vid="104"><rect width="256" height="256" fill="none" vid="105"></rect><polyline points="216 72.005 104 184 48 128.005" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24" vid="106"></polyline></svg>
+                                </div>
+                                <span class="text-[13px] text-gray-800 select-none group-hover:text-black" vid="107">Alt</span>
+                            </label>
+
+                            
+                            <label class="flex items-center gap-3 cursor-pointer group" vid="108">
+                                <input type="checkbox" id="chk-shift" class="peer sr-only" onchange="updatePreview()" vid="109">
+                                <div class="w-5 h-5 rounded-[4px] border border-gray-400 bg-white peer-checked:bg-win-primary peer-checked:border-win-primary flex items-center justify-center transition-all" vid="110">
+                                    <svg class="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" vid="111"><rect width="256" height="256" fill="none" vid="112"></rect><polyline points="216 72.005 104 184 48 128.005" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24" vid="113"></polyline></svg>
+                                </div>
+                                <span class="text-[13px] text-gray-800 select-none group-hover:text-black" vid="114">Shift</span>
+                            </label>
+
+                            
+                            <label class="flex items-center gap-3 cursor-pointer group" vid="115">
+                                <input type="checkbox" id="chk-win" class="peer sr-only" onchange="updatePreview()" vid="116">
+                                <div class="w-5 h-5 rounded-[4px] border border-gray-400 bg-white peer-checked:bg-win-primary peer-checked:border-win-primary flex items-center justify-center transition-all" vid="117">
+                                    <svg class="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" vid="118"><rect width="256" height="256" fill="none" vid="119"></rect><polyline points="216 72.005 104 184 48 128.005" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24" vid="120"></polyline></svg>
+                                </div>
+                                <span class="text-[13px] text-gray-800 select-none group-hover:text-black" vid="121">Win</span>
+                            </label>
+                        </div>
+
+                        
+                        <div class="flex items-center gap-3 mt-1" vid="122">
+                            <span class="text-[13px] text-gray-800 min-w-[36px]" vid="123">Key:</span>
+                            <div class="relative w-[120px]" vid="124">
+                                <select id="sel-key" class="w-full appearance-none bg-white border border-gray-300 rounded-[4px] py-[5px] pl-3 pr-8 text-[13px] text-gray-800 outline-none focus:border-win-primary focus:ring-1 focus:ring-win-primary transition-all shadow-sm" onchange="updatePreview()" vid="125">
+                                    <option value="Space" vid="126">Space</option>
+                                    <option value="A" vid="127">A</option>
+                                    <option value="B" vid="128">B</option>
+                                    <option value="C" vid="129">C</option>
+                                    <option value="D" vid="130">D</option>
+                                    <option value="Enter" vid="131">Enter</option>
+                                    <option value="F1" vid="132">F1</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500" vid="133">
+                                    <i class="ph ph-caret-down text-[12px]" vid="134"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                
+                <div class="mt-auto" vid="135">
+                    <p class="text-[11px] text-gray-500 mb-1" vid="136">Preview</p>
+                    <div class="h-[44px] bg-[#F8F9FA] border border-gray-200 rounded-[6px] flex items-center justify-center gap-2" id="shortcut-preview-container" vid="137">
+                        
+                        <kbd class="kbd-key px-2.5 py-1 bg-white border border-gray-200 rounded-[4px] text-[12px] font-semibold text-gray-700 min-w-[24px] text-center" vid="138">Ctrl</kbd>
+                        <span class="text-gray-400 text-[14px] font-medium" vid="139">+</span>
+                        <kbd class="kbd-key px-2.5 py-1 bg-white border border-gray-200 rounded-[4px] text-[12px] font-semibold text-gray-700 min-w-[24px] text-center" vid="140">Space</kbd>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="h-[60px] flex items-center justify-end gap-3 px-5 bg-[#FBFBFB] border-t border-win-border" vid="141">
+                
+                <button id="btn-cancel-settings" class="px-6 py-[6px] rounded-[4px] text-[13px] font-medium text-gray-800 bg-white border border-gray-300 shadow-sm hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 transition-all select-none min-w-[80px]" vid="142">
+                    Annuler
+                </button>
+                
+                <button id="btn-save-settings" class="px-6 py-[6px] rounded-[4px] text-[13px] font-medium text-white bg-win-primary border border-transparent shadow-sm hover:bg-win-primaryHover active:bg-win-primaryActive transition-all select-none min-w-[80px]" vid="143">
+                    Sauvegarder
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script vid="144">
+        
+        const btnOpen = document.getElementById('btn-open-settings');
+        const btnClose = document.getElementById('btn-close-settings');
+        const btnCancel = document.getElementById('btn-cancel-settings');
+        const btnSave = document.getElementById('btn-save-settings');
+        const modal = document.getElementById('settings-dialog');
+        const backdrop = document.getElementById('modal-backdrop');
+
+        function openSettings() {
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100', 'pointer-events-auto');
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none', 'scale-[0.95]');
+            modal.classList.add('opacity-100', 'pointer-events-auto', 'scale-100');
+        }
+
+        function closeSettings() {
+            backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            
+            modal.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
+            modal.classList.add('opacity-0', 'pointer-events-none', 'scale-[0.95]');
+        }
+
+        btnOpen.addEventListener('click', openSettings);
+        btnClose.addEventListener('click', closeSettings);
+        btnCancel.addEventListener('click', closeSettings);
+        btnSave.addEventListener('click', closeSettings);
+
+        
+        function updatePreview() {
+            const container = document.getElementById('shortcut-preview-container');
+            container.innerHTML = ''; 
+
+            const mods = [
+                { id: 'chk-ctrl', label: 'Ctrl' },
+                { id: 'chk-alt', label: 'Alt' },
+                { id: 'chk-shift', label: 'Shift' },
+                { id: 'chk-win', label: 'Win' }
+            ];
+
+            const activeKeys = [];
+
+            mods.forEach(mod => {
+                if (document.getElementById(mod.id).checked) {
+                    activeKeys.push(mod.label);
+                }
+            });
+
+            const mainKey = document.getElementById('sel-key').value;
+            if (mainKey) {
+                activeKeys.push(mainKey);
+            }
+
+            if (activeKeys.length === 0) {
+                container.innerHTML = '<span class="text-[12px] text-gray-400 italic">None selected</span>';
+                return;
+            }
+
+            activeKeys.forEach((key, index) => {
+                
+                const kbd = document.createElement('kbd');
+                kbd.className = 'kbd-key px-2.5 py-1 bg-white border border-gray-200 rounded-[4px] text-[12px] font-semibold text-gray-700 min-w-[24px] text-center transition-all duration-200';
+                kbd.textContent = key;
+                container.appendChild(kbd);
+
+                
+                if (index < activeKeys.length - 1) {
+                    const plus = document.createElement('span');
+                    plus.className = 'text-gray-400 text-[14px] font-medium mx-0.5';
+                    plus.textContent = '+';
+                    container.appendChild(plus);
+                }
+            });
+        }
+
+        
+        updatePreview();
+    </script>
+
+</body></html>

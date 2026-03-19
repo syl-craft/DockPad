@@ -1,4 +1,4 @@
-<Window x:Class="WinContextMenuManager.EntryDialog"
+<Window x:Class="DockPad.EntryDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Nouveau raccourci"

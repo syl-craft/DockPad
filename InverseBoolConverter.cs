@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace WinContextMenuManager;
+namespace DockPad;
 
 public class InverseBoolConverter : IValueConverter
 {

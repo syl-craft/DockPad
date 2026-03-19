@@ -3,10 +3,10 @@ using System.Security.Principal;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WinContextMenuManager.Models;
-using WinContextMenuManager.Services;
+using DockPad.Models;
+using DockPad.Services;
 
-namespace WinContextMenuManager;
+namespace DockPad;
 
 public partial class ContextMenuManagerWindow : Window
 {
@@ -71,8 +71,7 @@ public partial class ContextMenuManagerWindow : Window
         catch (Exception ex)
         {
             TxtStatus.Text = $"Erreur de chargement : {ex.Message}";
-            MessageBox.Show($"Impossible de lire le registre :\n{ex.Message}",
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Error($"Impossible de lire le registre :\n{ex.Message}", owner: this);
         }
     }
 
@@ -114,10 +113,9 @@ public partial class ContextMenuManagerWindow : Window
 
         if (RegistryService.KeyExists(entry.Target, entry.RegistryKey))
         {
-            var r = MessageBox.Show(
-                $"Une entrée '{entry.RegistryKey}' existe déjà pour cette cible.\nVoulez-vous la remplacer ?",
-                "Conflit", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r != MessageBoxResult.Yes) return;
+            if (!AppDialog.Confirm(
+                    $"Une entrée '{entry.RegistryKey}' existe déjà pour cette cible.\nVoulez-vous la remplacer ?",
+                    "Conflit", this)) return;
         }
 
         try
@@ -128,8 +126,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Impossible d'écrire dans le registre :\n{ex.Message}",
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Error($"Impossible d'écrire dans le registre :\n{ex.Message}", owner: this);
         }
     }
 
@@ -159,8 +156,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors de la modification :\n{ex.Message}",
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Error($"Erreur lors de la modification :\n{ex.Message}", owner: this);
         }
     }
 
@@ -185,10 +181,9 @@ public partial class ContextMenuManagerWindow : Window
 
         if (RegistryService.KeyExists(entry.Target, entry.RegistryKey))
         {
-            var r = MessageBox.Show(
-                $"Une entrée '{entry.RegistryKey}' existe déjà pour cette cible.\nVoulez-vous la remplacer ?",
-                "Conflit", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r != MessageBoxResult.Yes) return;
+            if (!AppDialog.Confirm(
+                    $"Une entrée '{entry.RegistryKey}' existe déjà pour cette cible.\nVoulez-vous la remplacer ?",
+                    "Conflit", this)) return;
         }
 
         try
@@ -199,8 +194,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Impossible d'écrire dans le registre :\n{ex.Message}",
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Error($"Impossible d'écrire dans le registre :\n{ex.Message}", owner: this);
         }
     }
 
@@ -208,10 +202,9 @@ public partial class ContextMenuManagerWindow : Window
     {
         if (LvEntries.SelectedItem is not ContextMenuEntryViewModel vm) return;
 
-        var r = MessageBox.Show(
-            $"Supprimer le raccourci « {vm.DisplayName} » ({vm.TargetLabel}) ?\n\nCette action est irréversible.",
-            "Confirmer la suppression", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-        if (r != MessageBoxResult.Yes) return;
+        if (!AppDialog.Confirm(
+                $"Supprimer le raccourci « {vm.DisplayName} » ({vm.TargetLabel}) ?\n\nCette action est irréversible.",
+                "Confirmer la suppression", this)) return;
 
         try
         {
@@ -221,8 +214,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors de la suppression :\n{ex.Message}",
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Error($"Erreur lors de la suppression :\n{ex.Message}", owner: this);
         }
     }
 

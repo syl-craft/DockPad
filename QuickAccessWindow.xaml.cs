@@ -7,11 +7,11 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using WinContextMenuManager.Models;
-using WinContextMenuManager.Services;
+using DockPad.Models;
+using DockPad.Services;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
-namespace WinContextMenuManager;
+namespace DockPad;
 
 public partial class QuickAccessWindow : Window
 {
@@ -272,8 +272,7 @@ public partial class QuickAccessWindow : Window
             ? $"Supprimer la page {pageIndex + 1} et ses {entryCount} raccourci(s) ?"
             : $"Supprimer la page {pageIndex + 1} ?";
 
-        if (MessageBox.Show(msg, "Supprimer la page",
-                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (!AppDialog.Confirm(msg, "Supprimer la page", this))
             return;
 
         // Supprimer les entrées de cette page et décaler les suivantes
@@ -445,8 +444,7 @@ public partial class QuickAccessWindow : Window
 
         if (nearest is null)
         {
-            MessageBox.Show("Page pleine. Naviguez vers une autre page pour dupliquer.",
-                "Dupliquer", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppDialog.Info("Page pleine. Naviguez vers une autre page pour dupliquer.", "Dupliquer", this);
             return;
         }
 
@@ -567,8 +565,7 @@ public partial class QuickAccessWindow : Window
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Impossible d'exécuter :\n{ex.Message}",
-                        "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                    AppDialog.Error($"Impossible d'exécuter :\n{ex.Message}", owner: this);
                 }
             };
             menu.Items.Add(item);
@@ -577,9 +574,7 @@ public partial class QuickAccessWindow : Window
 
     private void DeleteTile(ShortcutEntry entry)
     {
-        var result = MessageBox.Show($"Supprimer « {entry.Name} » ?", "Confirmation",
-            MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (result != MessageBoxResult.Yes) return;
+        if (!AppDialog.Confirm($"Supprimer « {entry.Name} » ?", owner: this)) return;
 
         var all = ShortcutService.Load();
         all.RemoveAll(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
@@ -772,12 +767,17 @@ public partial class QuickAccessWindow : Window
         PopulateGrid();
     }
 
+    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed)
+            DragMove();
+    }
+
     private void Refresh_Click(object sender, RoutedEventArgs e) => PopulateGrid();
 
     private void Quit_Click(object sender, RoutedEventArgs e)
     {
-        if (MessageBox.Show("Quitter WinContextMenuManager ?", "Confirmation",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (!AppDialog.Confirm("Quitter DockPad ?", owner: this))
             return;
 
         App.Exit();

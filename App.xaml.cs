@@ -3,7 +3,7 @@ using System.Threading;
 using System.Windows;
 using WinForms = System.Windows.Forms;
 
-namespace WinContextMenuManager;
+namespace DockPad;
 
 public partial class App : Application
 {
@@ -23,7 +23,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        _mutex = new Mutex(initiallyOwned: true, "WinContextMenuManager_SingleInstance", out bool createdNew);
+        _mutex = new Mutex(initiallyOwned: true, "DockPad_SingleInstance", out bool createdNew);
         if (!createdNew)
         {
             _mutex.Dispose();
@@ -63,7 +63,7 @@ public partial class App : Application
         var tray = new WinForms.NotifyIcon
         {
             Icon = icon,
-            Text = "WinContextMenuManager",
+            Text = "DockPad",
             Visible = true,
             ContextMenuStrip = menu,
         };

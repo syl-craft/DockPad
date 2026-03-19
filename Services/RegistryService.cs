@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Microsoft.Win32;
-using WinContextMenuManager.Models;
+using DockPad.Models;
 
-namespace WinContextMenuManager.Services;
+namespace DockPad.Services;
 
 public static class RegistryService
 {
