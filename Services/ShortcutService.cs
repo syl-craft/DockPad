@@ -29,6 +29,12 @@ public static class ShortcutService
         catch { return []; }
     }
 
+    public static void Save(List<ShortcutEntry> entries)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+        File.WriteAllText(FilePath, JsonSerializer.Serialize(entries, JsonOptions));
+    }
+
     public static void OpenInEditor()
     {
         EnsureFileExists();
