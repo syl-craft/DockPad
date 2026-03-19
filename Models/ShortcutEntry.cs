@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace WinContextMenuManager.Models;
 
+
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ShortcutType
 {
@@ -19,4 +20,7 @@ public class ShortcutEntry
     public ShortcutType Type { get; set; } = ShortcutType.RunCommand;
     public string Command { get; set; } = "";
     public string IconPath { get; set; } = "";
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TerminalConfig? Terminal { get; set; }
 }
