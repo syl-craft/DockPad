@@ -1,7 +1,9 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WinContextMenuManager.Models;
@@ -11,10 +13,70 @@ namespace WinContextMenuManager;
 
 public partial class QuickAccessWindow : Window
 {
+    private IntPtr _hwnd;
+
     public QuickAccessWindow()
     {
         InitializeComponent();
         PopulateGrid();
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        _hwnd = new WindowInteropHelper(this).Handle;
+        HwndSource.FromHwnd(_hwnd)?.AddHook(WndProc);
+        RegisterHotkey();
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        if (!App.IsExiting)
+        {
+            e.Cancel = true;
+            Hide();
+            return;
+        }
+        UnregisterHotkey();
+        base.OnClosing(e);
+    }
+
+    private void RegisterHotkey()
+    {
+        var (mods, key) = SettingsService.LoadHotkey();
+        HotkeyService.RegisterHotKey(_hwnd, HotkeyService.HotkeyId, mods | HotkeyService.MOD_NOREPEAT, key);
+    }
+
+    private void UnregisterHotkey()
+    {
+        HotkeyService.UnregisterHotKey(_hwnd, HotkeyService.HotkeyId);
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == HotkeyService.WM_HOTKEY && wParam.ToInt32() == HotkeyService.HotkeyId)
+        {
+            WindowState = WindowState.Normal;
+            Show();
+            Activate();
+            handled = true;
+        }
+        return IntPtr.Zero;
+    }
+
+    private void OpenContextMenuManager_Click(object sender, RoutedEventArgs e)
+    {
+        var win = new ContextMenuManagerWindow();
+        win.Show();
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new SettingsDialog { Owner = this };
+        if (dialog.ShowDialog() != true) return;
+
+        UnregisterHotkey();
+        RegisterHotkey();
     }
 
     private void PopulateGrid()
