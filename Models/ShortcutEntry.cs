@@ -14,8 +14,9 @@ public enum ShortcutType
 
 public class ShortcutEntry
 {
-    public int Row { get; set; }
-    public int Col { get; set; }
+    public int Page { get; set; } = 0;
+    public int Row  { get; set; }
+    public int Col  { get; set; }
     public string Name { get; set; } = "";
     public ShortcutType Type { get; set; } = ShortcutType.RunCommand;
     public string Command { get; set; } = "";
