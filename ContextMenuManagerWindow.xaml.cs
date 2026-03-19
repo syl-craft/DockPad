@@ -31,7 +31,6 @@ public partial class ContextMenuManagerWindow : Window
         if (_isElevated) return;
 
         BtnAdd.IsEnabled      = false;
-        BtnPresets.IsEnabled  = false;
         BtnElevate.Visibility = Visibility.Visible;
         AdminBanner.Visibility = Visibility.Visible;
         Title += " [Non admin]";
@@ -165,15 +164,6 @@ public partial class ContextMenuManagerWindow : Window
         }
     }
 
-    private void Presets_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new PresetsDialog { Owner = this };
-        if (dialog.ShowDialog() == true)
-        {
-            LoadEntries();
-            TxtStatus.Text = $"{dialog.InstalledCount} raccourci(s) prédéfini(s) installé(s).";
-        }
-    }
 
     private void Duplicate_Click(object sender, RoutedEventArgs e)
     {

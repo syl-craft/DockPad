@@ -64,10 +64,10 @@ public partial class QuickAccessWindow : Window
         return IntPtr.Zero;
     }
 
-    private void OpenContextMenuManager_Click(object sender, RoutedEventArgs e)
+    private void Presets_Click(object sender, RoutedEventArgs e)
     {
-        var win = new ContextMenuManagerWindow();
-        win.Show();
+        var dialog = new PresetsDialog { Owner = this };
+        dialog.ShowDialog();
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
