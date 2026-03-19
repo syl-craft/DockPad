@@ -4,7 +4,9 @@ namespace WinContextMenuManager.Services;
 
 public static class SettingsService
 {
-    private const string RegPath = @"Software\WinContextMenuManager\Settings";
+    private const string RegPath    = @"Software\WinContextMenuManager\Settings";
+    private const string RunPath    = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    private const string AppName    = "WinContextMenuManager";
 
     public static (uint Modifiers, uint Key) LoadHotkey()
     {
@@ -24,6 +26,28 @@ public static class SettingsService
         using var regKey = Registry.CurrentUser.CreateSubKey(RegPath);
         regKey.SetValue("HotkeyModifiers", (int)modifiers, RegistryValueKind.DWord);
         regKey.SetValue("HotkeyKey",       (int)key,       RegistryValueKind.DWord);
+    }
+
+    public static bool LoadAutoStart()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RunPath);
+        return key?.GetValue(AppName) is not null;
+    }
+
+    public static void SaveAutoStart(bool enabled)
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RunPath, writable: true);
+        if (key is null) return;
+
+        if (enabled)
+        {
+            var exePath = Environment.ProcessPath ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+            key.SetValue(AppName, $"\"{exePath}\"", RegistryValueKind.String);
+        }
+        else
+        {
+            key.DeleteValue(AppName, throwOnMissingValue: false);
+        }
     }
 
     // Default: Ctrl+Shift+M
