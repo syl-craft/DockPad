@@ -94,7 +94,7 @@ public partial class QuickAccessWindow : Window
                 var entry = shortcuts.FirstOrDefault(s => s.Row == row && s.Col == col);
                 var btn = entry is { Name.Length: > 0 }
                     ? CreateTile(entry)
-                    : CreateEmptyTile();
+                    : CreateEmptyTile(row, col);
 
                 Grid.SetRow(btn, row);
                 Grid.SetColumn(btn, col);
@@ -126,7 +126,7 @@ public partial class QuickAccessWindow : Window
         var btn = new Button
         {
             Style = (Style)FindResource("TileButton"),
-            ToolTip = entry.Command,
+            ToolTip = $"[{TypeLabel(entry.Type)}] {entry.Command}",
             Tag = entry,
             Content = new StackPanel
             {
@@ -147,13 +147,20 @@ public partial class QuickAccessWindow : Window
         var menu = new ContextMenu();
         var changeIcon = new MenuItem { Header = "🖼 Changer l'icône" };
         changeIcon.Click += (_, _) => ChangeIcon(btn, entry);
+        var edit = new MenuItem { Header = "✏ Modifier" };
+        edit.Click += (_, _) => EditTile(entry);
+        var delete = new MenuItem { Header = "🗑 Supprimer" };
+        delete.Click += (_, _) => DeleteTile(entry);
         menu.Items.Add(changeIcon);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(edit);
+        menu.Items.Add(delete);
         btn.ContextMenu = menu;
 
         return btn;
     }
 
-    private Button CreateEmptyTile()
+    private Button CreateEmptyTile(int row, int col)
     {
         var btn = new Button
         {
@@ -169,7 +176,55 @@ public partial class QuickAccessWindow : Window
         btn.DragOver  += TileDrop_DragOver;
         btn.DragLeave += TileDrop_DragLeave;
         btn.Drop      += TileDrop_Drop;
+
+        var menu = new ContextMenu();
+        var add = new MenuItem { Header = "➕ Ajouter" };
+        add.Click += (_, _) => AddTile(row, col);
+        menu.Items.Add(add);
+        btn.ContextMenu = menu;
+
         return btn;
+    }
+
+    private void AddTile(int row, int col)
+    {
+        var dlg = new ShortcutDialog(row: row, col: col) { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+
+        var all = ShortcutService.Load();
+        all.Add(dlg.Entry);
+        ShortcutService.Save(all);
+        PopulateGrid();
+    }
+
+    private void EditTile(ShortcutEntry entry)
+    {
+        var dlg = new ShortcutDialog(entry) { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+
+        var all = ShortcutService.Load();
+        var existing = all.FirstOrDefault(s => s.Row == entry.Row && s.Col == entry.Col);
+        if (existing != null)
+        {
+            existing.Name     = dlg.Entry.Name;
+            existing.Type     = dlg.Entry.Type;
+            existing.Command  = dlg.Entry.Command;
+            existing.IconPath = dlg.Entry.IconPath;
+        }
+        ShortcutService.Save(all);
+        PopulateGrid();
+    }
+
+    private void DeleteTile(ShortcutEntry entry)
+    {
+        var result = MessageBox.Show($"Supprimer « {entry.Name} » ?", "Confirmation",
+            MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (result != MessageBoxResult.Yes) return;
+
+        var all = ShortcutService.Load();
+        all.RemoveAll(s => s.Row == entry.Row && s.Col == entry.Col);
+        ShortcutService.Save(all);
+        PopulateGrid();
     }
 
     private void Tile_Click(object sender, RoutedEventArgs e)
@@ -177,15 +232,62 @@ public partial class QuickAccessWindow : Window
         if (sender is not Button { Tag: ShortcutEntry entry }) return;
         try
         {
-            var (exe, args) = ParseCommand(entry.Command);
-            Process.Start(new ProcessStartInfo(exe, args) { UseShellExecute = true });
+            switch (entry.Type)
+            {
+                case ShortcutType.OpenFolder:
+                    Process.Start(new ProcessStartInfo("explorer.exe", $"\"{entry.Command}\"")
+                        { UseShellExecute = true });
+                    break;
+                case ShortcutType.OpenUrl:
+                    Process.Start(new ProcessStartInfo(entry.Command) { UseShellExecute = true });
+                    break;
+                case ShortcutType.OpenTerminal:
+                    OpenTerminal(entry.Command);
+                    break;
+                case ShortcutType.RunCommand:
+                default:
+                    var (exe, args) = ParseCommand(entry.Command);
+                    Process.Start(new ProcessStartInfo(exe, args) { UseShellExecute = true });
+                    break;
+            }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Impossible d'exécuter la commande :\n{ex.Message}",
+            MessageBox.Show($"Impossible d'exécuter :\n{ex.Message}",
                 "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+
+    private static void OpenTerminal(string folder)
+    {
+        // Essaie wt → pwsh → powershell → cmd
+        string[] candidates = ["wt.exe", "pwsh.exe", "powershell.exe", "cmd.exe"];
+        foreach (var term in candidates)
+        {
+            try
+            {
+                string args = term switch
+                {
+                    "wt.exe"          => $"-w 0 new-tab --startingDirectory \"{folder}\"",
+                    "pwsh.exe"        => $"-NoExit -Command Set-Location \"{folder}\"",
+                    "powershell.exe"  => $"-NoExit -Command Set-Location \"{folder}\"",
+                    _                 => $"/k cd /d \"{folder}\"",
+                };
+                Process.Start(new ProcessStartInfo(term, args) { UseShellExecute = true });
+                return;
+            }
+            catch { }
+        }
+        throw new InvalidOperationException("Aucun terminal trouvé (wt, pwsh, powershell, cmd).");
+    }
+
+    private static string TypeLabel(ShortcutType t) => t switch
+    {
+        ShortcutType.OpenFolder   => "Dossier",
+        ShortcutType.OpenUrl      => "Navigateur",
+        ShortcutType.OpenTerminal => "Terminal",
+        _                         => "Commande",
+    };
 
     private void ChangeIcon(Button btn, ShortcutEntry entry)
     {
