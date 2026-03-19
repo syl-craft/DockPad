@@ -134,6 +134,13 @@ public partial class QuickAccessWindow : Window
         };
 
         btn.Click += Tile_Click;
+
+        var menu = new ContextMenu();
+        var changeIcon = new MenuItem { Header = "🖼 Changer l'icône" };
+        changeIcon.Click += (_, _) => ChangeIcon(btn, entry);
+        menu.Items.Add(changeIcon);
+        btn.ContextMenu = menu;
+
         return btn;
     }
 
@@ -161,6 +168,31 @@ public partial class QuickAccessWindow : Window
             MessageBox.Show($"Impossible d'exécuter la commande :\n{ex.Message}",
                 "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void ChangeIcon(Button btn, ShortcutEntry entry)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Choisir une icône",
+            Filter = "Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*"
+        };
+
+        if (!string.IsNullOrEmpty(entry.IconPath) && File.Exists(entry.IconPath))
+            dlg.InitialDirectory = Path.GetDirectoryName(entry.IconPath);
+
+        if (dlg.ShowDialog() != true) return;
+
+        entry.IconPath = dlg.FileName;
+
+        var all = ShortcutService.Load();
+        var existing = all.FirstOrDefault(s => s.Row == entry.Row && s.Col == entry.Col);
+        if (existing != null)
+            existing.IconPath = dlg.FileName;
+        ShortcutService.Save(all);
+
+        if (btn.Content is StackPanel sp && sp.Children[0] is Image img)
+            img.Source = LoadIcon(dlg.FileName);
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => PopulateGrid();
