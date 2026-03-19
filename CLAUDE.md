@@ -5,7 +5,7 @@ L'app démarre sans droits admin — l'élévation est demandée à la demande v
 
 ## Stack
 
-- **WPF / .NET 8**  `net8.0-windows`, `UseWPF=true`
+- **WPF / .NET 8**  `net8.0-windows`, `UseWPF=true`, `UseWindowsForms=true` (pour NotifyIcon)
 - **Registre**  lecture/écriture via `Microsoft.Win32.Registry`
 - **Icônes**  `System.Drawing.Common` (NuGet) pour extraire les icônes `.exe`/`.dll`
 - **JSON**  `System.Text.Json` (built-in) pour la config des raccourcis rapides
@@ -23,18 +23,25 @@ Services/
     PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS)
     ResourceStringResolver.cs           Résolution des @dll,-id via SHLoadIndirectString
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
-    SettingsService.cs                   Lecture/écriture des paramètres dans HKCU
+    SettingsService.cs                   Lecture/écriture des paramètres dans HKCU + autostart
     ShortcutService.cs                   Lecture du fichier JSON de raccourcis rapides
-DashboardWindow.xaml/.cs                 Fenêtre principale (hub, menu Outils)
+App.xaml/.cs                             Point d'entrée : instance unique (Mutex), NotifyIcon systray
 ContextMenuManagerWindow.xaml/.cs        Gestion des entrées de menu contextuel Windows
 QuickAccessWindow.xaml/.cs               Grille 4×6 de raccourcis rapides (hotkey global)
-SettingsDialog.xaml/.cs                  Configuration du raccourci clavier global
+SettingsDialog.xaml/.cs                  Configuration du raccourci clavier global + démarrage auto
 EntryDialog.xaml/.cs                     Dialogue ajout/modification d'une entrée
 PresetsDialog.xaml/.cs                   Dialogue raccourcis prédéfinis
 InverseBoolConverter.cs                  Converter WPF bool inversé
 ```
 
 ## Fonctionnalités
+
+### Icône systray
+- L'app tourne en arrière-plan avec une icône dans la barre système
+- **Fermeture de la fenêtre** (croix) → masque la fenêtre, l'app continue de tourner
+- **Clic gauche** sur l'icône → réaffiche la fenêtre
+- **Clic droit** sur l'icône → menu contextuel avec "Fermer" pour quitter vraiment
+- **Instance unique** : un `Mutex` nommé empêche le lancement de plusieurs instances simultanées
 
 ### Gestionnaire de menu contextuel (ContextMenuManagerWindow)
 - Liste les entrées de menu contextuel (Fichiers, Dossiers, Fond de dossier uniquement)
@@ -58,9 +65,14 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 ### Raccourci clavier global
 - Hotkey configurable via `SettingsDialog` (Ctrl/Alt/Shift/Win + touche A-Z ou F1-F12)
 - Défaut : `Ctrl+Shift+M`
-- Ouvre `QuickAccessWindow` (singleton — remise au premier plan si déjà ouverte)
+- Affiche `QuickAccessWindow` (la remet au premier plan si déjà visible)
 - Config stockée dans `HKCU\Software\WinContextMenuManager\Settings`
-- Enregistrement géré par `DashboardWindow` (fenêtre principale)
+- Enregistrement géré par `QuickAccessWindow`
+
+### Paramètres (SettingsDialog)
+- Configuration du raccourci clavier global
+- **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+- Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 
 ## Prédéfinis
 
