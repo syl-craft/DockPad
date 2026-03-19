@@ -20,6 +20,10 @@ public partial class SettingsDialog : Window
 
         CmbKey.ItemsSource = Keys.Select(k => k.Name).ToList();
 
+        ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
+        TxtAutoStartPath.Text = Environment.ProcessPath
+            ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+
         var (mods, vk) = SettingsService.LoadHotkey();
         ChkCtrl.IsChecked  = (mods & HotkeyService.MOD_CONTROL) != 0;
         ChkAlt.IsChecked   = (mods & HotkeyService.MOD_ALT)     != 0;
@@ -70,6 +74,7 @@ public partial class SettingsDialog : Window
         SelectedKey = Keys[CmbKey.SelectedIndex].VK;
 
         SettingsService.SaveHotkey(SelectedModifiers, SelectedKey);
+        SettingsService.SaveAutoStart(ChkAutoStart.IsChecked == true);
         DialogResult = true;
     }
 
