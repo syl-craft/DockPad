@@ -18,6 +18,8 @@ public partial class QuickAccessWindow : Window
     private const int GridRows = 4;
     private const int GridCols = 6;
 
+    private int _currentPage = 0;
+
     private IntPtr _hwnd;
     private Point _dragStartPoint;
     private ShortcutEntry? _dragSource;
@@ -89,13 +91,17 @@ public partial class QuickAccessWindow : Window
     private void PopulateGrid()
     {
         ShortcutsGrid.Children.Clear();
-        var shortcuts = ShortcutService.Load();
+        var all = ShortcutService.Load();
+
+        UpdatePagination(all);
+
+        var pageEntries = all.Where(s => s.Page == _currentPage).ToList();
 
         for (int row = 0; row < GridRows; row++)
         {
             for (int col = 0; col < GridCols; col++)
             {
-                var entry = shortcuts.FirstOrDefault(s => s.Row == row && s.Col == col);
+                var entry = pageEntries.FirstOrDefault(s => s.Row == row && s.Col == col);
                 var btn = entry is { Name.Length: > 0 }
                     ? CreateTile(entry)
                     : CreateEmptyTile(row, col);
@@ -105,6 +111,33 @@ public partial class QuickAccessWindow : Window
                 ShortcutsGrid.Children.Add(btn);
             }
         }
+    }
+
+    private void UpdatePagination(List<ShortcutEntry> all)
+    {
+        PaginationBar.Children.Clear();
+
+        int maxPage = all.Count > 0 ? all.Max(s => s.Page) : 0;
+        int totalPages = maxPage + 2; // toujours une page vide supplémentaire à la fin
+
+        for (int p = 0; p < totalPages; p++)
+        {
+            int page = p;
+            var btn = new Button
+            {
+                Content = (page + 1).ToString(),
+                Style   = (Style)FindResource(page == _currentPage ? "PageButtonActive" : "PageButton"),
+                ToolTip = $"Page {page + 1}",
+            };
+            btn.Click += (_, _) => GoToPage(page);
+            PaginationBar.Children.Add(btn);
+        }
+    }
+
+    private void GoToPage(int page)
+    {
+        _currentPage = page;
+        PopulateGrid();
     }
 
     private Button CreateTile(ShortcutEntry entry)
@@ -201,6 +234,7 @@ public partial class QuickAccessWindow : Window
         var dlg = new ShortcutDialog(row: row, col: col) { Owner = this };
         if (dlg.ShowDialog() != true) return;
 
+        dlg.Entry.Page = _currentPage;
         var all = ShortcutService.Load();
         all.Add(dlg.Entry);
         ShortcutService.Save(all);
@@ -213,7 +247,7 @@ public partial class QuickAccessWindow : Window
         if (dlg.ShowDialog() != true) return;
 
         var all = ShortcutService.Load();
-        var existing = all.FirstOrDefault(s => s.Row == entry.Row && s.Col == entry.Col);
+        var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
         if (existing != null)
         {
             existing.Name     = dlg.Entry.Name;
@@ -229,9 +263,12 @@ public partial class QuickAccessWindow : Window
     private void DuplicateTile(ShortcutEntry entry)
     {
         var all = ShortcutService.Load();
-        var occupied = all.Select(s => (s.Row, s.Col)).ToHashSet();
+        var occupied = all
+            .Where(s => s.Page == _currentPage)
+            .Select(s => (s.Row, s.Col))
+            .ToHashSet();
 
-        // Case vide la plus proche en distance de Chebyshev
+        // Case vide la plus proche sur la page courante (distance de Chebyshev)
         (int row, int col)? nearest = null;
         int bestDist = int.MaxValue;
         for (int r = 0; r < GridRows; r++)
@@ -246,13 +283,14 @@ public partial class QuickAccessWindow : Window
 
         if (nearest is null)
         {
-            MessageBox.Show("Aucune case vide disponible.", "Dupliquer",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Page pleine. Naviguez vers une autre page pour dupliquer.",
+                "Dupliquer", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         all.Add(new ShortcutEntry
         {
+            Page     = _currentPage,
             Row      = nearest.Value.row, Col = nearest.Value.col,
             Name     = entry.Name,    Type     = entry.Type,
             Command  = entry.Command, IconPath = entry.IconPath,
@@ -276,7 +314,7 @@ public partial class QuickAccessWindow : Window
         if (result != MessageBoxResult.Yes) return;
 
         var all = ShortcutService.Load();
-        all.RemoveAll(s => s.Row == entry.Row && s.Col == entry.Col);
+        all.RemoveAll(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
         ShortcutService.Save(all);
         PopulateGrid();
     }
@@ -396,7 +434,7 @@ public partial class QuickAccessWindow : Window
         entry.IconPath = dlg.FileName;
 
         var all = ShortcutService.Load();
-        var existing = all.FirstOrDefault(s => s.Row == entry.Row && s.Col == entry.Col);
+        var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
         if (existing != null)
             existing.IconPath = dlg.FileName;
         ShortcutService.Save(all);
@@ -451,8 +489,8 @@ public partial class QuickAccessWindow : Window
         if (_dragSource.Row == targetRow && _dragSource.Col == targetCol) return;
 
         var all    = ShortcutService.Load();
-        var source = all.FirstOrDefault(s => s.Row == _dragSource.Row && s.Col == _dragSource.Col);
-        var target = all.FirstOrDefault(s => s.Row == targetRow       && s.Col == targetCol);
+        var source = all.FirstOrDefault(s => s.Page == _currentPage && s.Row == _dragSource.Row && s.Col == _dragSource.Col);
+        var target = all.FirstOrDefault(s => s.Page == _currentPage && s.Row == targetRow       && s.Col == targetCol);
 
         if (source == null) return;
 
