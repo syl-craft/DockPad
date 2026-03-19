@@ -354,6 +354,10 @@ public partial class QuickAccessWindow : Window
         menu.Items.Add(edit);
         menu.Items.Add(duplicate);
         menu.Items.Add(moveToPage);
+
+        if (entry.Type == ShortcutType.OpenFolder)
+            BuildFolderContextMenuSection(menu, entry.Command);
+
         menu.Items.Add(new Separator());
         menu.Items.Add(delete);
         btn.ContextMenu = menu;
@@ -532,6 +536,43 @@ public partial class QuickAccessWindow : Window
         existing.Page = targetPage;
         ShortcutService.Save(all);
         PopulateGrid();
+    }
+
+    private void BuildFolderContextMenuSection(ContextMenu menu, string folderPath)
+    {
+        var entries = RegistryService.LoadForTarget(ContextMenuTarget.FolderBackground)
+            .Where(e => !string.IsNullOrEmpty(e.Command))
+            .ToList();
+
+        if (entries.Count == 0) return;
+
+        menu.Items.Add(new Separator());
+
+        foreach (var e in entries)
+        {
+            var item = new MenuItem { Header = e.DisplayName };
+
+            var icon = LoadIcon(e.IconPath);
+            if (icon != null)
+                item.Icon = new Image { Source = icon, Width = 16, Height = 16, Stretch = Stretch.Uniform };
+
+            // Substitue %V par le chemin du dossier (déjà entre guillemets dans la commande)
+            string cmd = e.Command.Replace("%V", folderPath);
+            item.Click += (_, _) =>
+            {
+                try
+                {
+                    var (exe, args) = ParseCommand(cmd);
+                    Process.Start(new ProcessStartInfo(exe, args) { UseShellExecute = true });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Impossible d'exécuter :\n{ex.Message}",
+                        "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            };
+            menu.Items.Add(item);
+        }
     }
 
     private void DeleteTile(ShortcutEntry entry)
