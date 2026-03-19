@@ -13,26 +13,42 @@ L'app démarre sans droits admin — l'élévation est demandée à la demande v
 ## Structure
 
 ```
+App.xaml/.cs                             Point d'entrée : instance unique (Mutex), NotifyIcon systray
+GlobalUsings.cs                          Usings globaux
+DockPad.csproj / DockPad.sln
+
+Converters/
+    InverseBoolConverter.cs              Converter WPF bool inversé
+
 Models/
     ContextMenuEntry.cs                  Modèle de données + enum ContextMenuTarget
     ContextMenuEntryViewModel.cs         VM avec chargement d'icône (BitmapSource)
+    PageConfig.cs                        Config par page (icône du bouton de pagination)
     PresetEntry.cs                       Modèle preset avec enum PresetStatus
-    ShortcutEntry.cs                     Modèle raccourci rapide (row, col, name, type, command, iconPath)
+    ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath)
+    TerminalConfig.cs                    Config d'un terminal (exePath, startingDirectory, runCommand…)
+    TerminalInfo.cs                      Informations d'un terminal détecté
+
 Services/
-    RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
-    PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS)
-    ResourceStringResolver.cs           Résolution des @dll,-id via SHLoadIndirectString
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
-    SettingsService.cs                   Lecture/écriture des paramètres dans HKCU + autostart
-    ShortcutService.cs                   Lecture du fichier JSON de raccourcis rapides
-App.xaml/.cs                             Point d'entrée : instance unique (Mutex), NotifyIcon systray
-ContextMenuManagerWindow.xaml/.cs        Gestion des entrées de menu contextuel Windows
-QuickAccessWindow.xaml/.cs               Grille 4×6 de raccourcis rapides (hotkey global)
-SettingsDialog.xaml/.cs                  Configuration du raccourci clavier global + démarrage auto
-EntryDialog.xaml/.cs                     Dialogue ajout/modification d'une entrée de menu contextuel (registre)
-ShortcutDialog.xaml/.cs                  Dialogue ajout/modification d'une tuile d'accès rapide
-PresetsDialog.xaml/.cs                   Dialogue raccourcis prédéfinis
-InverseBoolConverter.cs                  Converter WPF bool inversé
+    PageConfigService.cs                 Load/Save pages.json (%APPDATA%\DockPad\pages.json)
+    PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS)
+    RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
+    ResourceStringResolver.cs            Résolution des @dll,-id via SHLoadIndirectString
+    SettingsService.cs                   Lecture/écriture paramètres HKCU + autostart
+    ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
+    TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
+
+Views/
+    ContextMenuManagerWindow.xaml/.cs    Gestion des entrées de menu contextuel Windows
+    QuickAccessWindow.xaml/.cs           Grille de tuiles multi-pages (hotkey global)
+
+Dialogs/
+    AppDialog.xaml/.cs                   Dialog custom styled (remplace MessageBox) — Confirm/Error/Warning/Info
+    EntryDialog.xaml/.cs                 Ajout/modification d'une entrée de menu contextuel (registre)
+    PresetsDialog.xaml/.cs               Raccourcis prédéfinis
+    SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto
+    ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
 ```
 
 ## Fonctionnalités
@@ -62,14 +78,21 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 - Bouton **↻ Actualiser** → relit l'état du registre sans fermer le dialog
 
 ### Accès rapide (QuickAccessWindow)
-- Grille 4 lignes × 6 colonnes de tuiles cliquables
+- Grille **4 lignes × 6 colonnes** de tuiles, sur plusieurs **pages**
+- Pagination en bas : boutons numérotés ou avec icône, bouton `+` pour ajouter une page
 - Chaque tuile : icône + nom → exécute l'action selon son **type**
+- Bande colorée (4px, droite) indique le type : bleu=RunCommand, ambre=OpenFolder, vert=OpenUrl, violet=OpenTerminal
 - Icônes supportées : `.exe`, `.dll`, `.ico`, `.png`, `.bmp`, `.jpg`
 - Cases vides affichées en `+` grisé
-- Toolbar : **Prédéfinis** | **Paramètres** | **Actualiser** | **Modifier la configuration**
+- Fenêtre sans barre Windows (`WindowStyle=None`), déplaçable par drag, icône `app.ico`
+- Toolbar : **Prédéfinis** | **Paramètres** | ✎ (config) | ↺ (actualiser) | ✕ (quitter)
 - Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
-- **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | 🗑 Supprimer
+- Config pages stockée dans `%APPDATA%\DockPad\pages.json`
+- **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | 🗑 Supprimer
+- **Clic droit sur une tuile OpenFolder** : section supplémentaire avec les entrées `Directory\Background\shell` du registre (substitution `%V` → chemin du dossier)
 - **Clic droit sur une case vide** : ➕ Ajouter
+- **Clic droit sur un bouton de page** : 🖼 Changer l'icône | ← / → Déplacer | 🗑 Supprimer la page
+- **Drag & drop** entre tuiles pour les réorganiser
 
 ### Types de tuiles (ShortcutType)
 | Type | Description | Champ `command` |
@@ -112,7 +135,8 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 ```
 
 Le champ `type` est optionnel — une entrée sans `type` utilise `RunCommand` (rétrocompatible).
-Les colonnes vont de 0 à 5, les lignes de 0 à 3.
+Le champ `terminal` est optionnel et uniquement présent pour le type `OpenTerminal`.
+Les colonnes vont de 0 à 5, les lignes de 0 à 3. Le champ `page` commence à 0.
 
 ## Icône de l'application
 
