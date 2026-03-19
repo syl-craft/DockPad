@@ -45,7 +45,6 @@
             <Setter Property="Background" Value="#FAFAFA"/>
             <Setter Property="BorderBrush" Value="#EBEBEB"/>
             <Setter Property="Opacity" Value="0.4"/>
-            <Setter Property="IsHitTestVisible" Value="False"/>
         </Style>
     </Window.Resources>
 
