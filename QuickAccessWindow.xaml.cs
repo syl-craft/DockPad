@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -14,6 +15,8 @@ namespace WinContextMenuManager;
 public partial class QuickAccessWindow : Window
 {
     private IntPtr _hwnd;
+    private Point _dragStartPoint;
+    private ShortcutEntry? _dragSource;
 
     public QuickAccessWindow()
     {
@@ -134,6 +137,12 @@ public partial class QuickAccessWindow : Window
         };
 
         btn.Click += Tile_Click;
+        btn.PreviewMouseLeftButtonDown += TileDrag_MouseDown;
+        btn.PreviewMouseMove += TileDrag_MouseMove;
+        btn.AllowDrop = true;
+        btn.DragOver  += TileDrop_DragOver;
+        btn.DragLeave += TileDrop_DragLeave;
+        btn.Drop      += TileDrop_Drop;
 
         var menu = new ContextMenu();
         var changeIcon = new MenuItem { Header = "🖼 Changer l'icône" };
@@ -144,16 +153,24 @@ public partial class QuickAccessWindow : Window
         return btn;
     }
 
-    private Button CreateEmptyTile() => new()
+    private Button CreateEmptyTile()
     {
-        Style = (Style)FindResource("EmptyTileButton"),
-        Content = new TextBlock
+        var btn = new Button
         {
-            Text = "+",
-            FontSize = 22,
-            Foreground = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
-        }
-    };
+            Style = (Style)FindResource("EmptyTileButton"),
+            Content = new TextBlock
+            {
+                Text = "+",
+                FontSize = 22,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
+            }
+        };
+        btn.AllowDrop = true;
+        btn.DragOver  += TileDrop_DragOver;
+        btn.DragLeave += TileDrop_DragLeave;
+        btn.Drop      += TileDrop_Drop;
+        return btn;
+    }
 
     private void Tile_Click(object sender, RoutedEventArgs e)
     {
@@ -193,6 +210,67 @@ public partial class QuickAccessWindow : Window
 
         if (btn.Content is StackPanel sp && sp.Children[0] is Image img)
             img.Source = LoadIcon(dlg.FileName);
+    }
+
+    private void TileDrag_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _dragStartPoint = e.GetPosition(null);
+    }
+
+    private void TileDrag_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed) return;
+        if (sender is not Button { Tag: ShortcutEntry entry }) return;
+
+        var pos  = e.GetPosition(null);
+        var diff = _dragStartPoint - pos;
+        if (Math.Abs(diff.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(diff.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+
+        _dragSource = entry;
+        DragDrop.DoDragDrop((Button)sender, entry, DragDropEffects.Move);
+        _dragSource = null;
+    }
+
+    private static readonly Brush DragOverBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD4));
+    private static readonly Brush DefaultBorder  = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
+
+    private void TileDrop_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = _dragSource != null ? DragDropEffects.Move : DragDropEffects.None;
+        if (sender is Button btn) btn.BorderBrush = DragOverBrush;
+        e.Handled = true;
+    }
+
+    private void TileDrop_DragLeave(object sender, DragEventArgs e)
+    {
+        if (sender is Button btn) btn.BorderBrush = DefaultBorder;
+    }
+
+    private void TileDrop_Drop(object sender, DragEventArgs e)
+    {
+        if (_dragSource == null || sender is not Button targetBtn) return;
+
+        if (sender is Button b) b.BorderBrush = DefaultBorder;
+
+        int targetRow = Grid.GetRow(targetBtn);
+        int targetCol = Grid.GetColumn(targetBtn);
+        if (_dragSource.Row == targetRow && _dragSource.Col == targetCol) return;
+
+        var all    = ShortcutService.Load();
+        var source = all.FirstOrDefault(s => s.Row == _dragSource.Row && s.Col == _dragSource.Col);
+        var target = all.FirstOrDefault(s => s.Row == targetRow       && s.Col == targetCol);
+
+        if (source == null) return;
+
+        if (target != null)
+            (source.Row, source.Col, target.Row, target.Col) =
+            (target.Row, target.Col, source.Row, source.Col);
+        else
+            (source.Row, source.Col) = (targetRow, targetCol);
+
+        ShortcutService.Save(all);
+        PopulateGrid();
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => PopulateGrid();
