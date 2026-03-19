@@ -5,59 +5,78 @@
         Width="580" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#FAFAFA"
+        Background="#F3F3F3"
         FontFamily="Segoe UI">
 
-    <StackPanel Margin="24">
-        <TextBlock Text="Sélectionnez les raccourcis à installer ou mettre à jour"
-                   FontSize="15" FontWeight="SemiBold" Foreground="#1A1A1A" Margin="0,0,0,20"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <ItemsControl x:Name="ItemsPresets">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Border Margin="0,0,0,10" Padding="14,12"
-                            BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6"
-                            Background="White" Opacity="{Binding Opacity}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#0078D4" Padding="20,14">
+            <TextBlock Text="Raccourcis prédéfinis" FontSize="16"
+                       FontWeight="SemiBold" Foreground="White"/>
+        </Border>
 
-                            <CheckBox Grid.Column="0" VerticalAlignment="Center"
-                                      IsChecked="{Binding IsSelected}"
-                                      IsEnabled="{Binding CanSelect}"
-                                      Margin="0,0,14,0"/>
+        <!-- Contenu -->
+        <StackPanel Grid.Row="1" Margin="24,20">
+            <TextBlock Text="Sélectionnez les raccourcis à installer ou mettre à jour"
+                       FontSize="13" Foreground="#555" Margin="0,0,0,16"/>
 
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="{Binding DisplayName}"
-                                           FontSize="13" FontWeight="SemiBold" Foreground="#1A1A1A"/>
-                                <TextBlock Text="{Binding Description}"
-                                           FontSize="12" Foreground="#666" Margin="0,3,0,0"/>
-                                <TextBlock Text="{Binding Command}" FontSize="11"
-                                           Foreground="#999" Margin="0,3,0,0"
-                                           TextTrimming="CharacterEllipsis"/>
-                            </StackPanel>
+            <ItemsControl x:Name="ItemsPresets">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,10" Padding="14,12"
+                                BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6"
+                                Background="White" Opacity="{Binding Opacity}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0"
-                                    Background="{Binding BadgeBackground}"
-                                    CornerRadius="4" Padding="8,4"
-                                    Visibility="{Binding ShowBadge, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="{Binding BadgeText}" FontSize="11"
-                                           Foreground="{Binding BadgeForeground}"/>
-                            </Border>
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                                <CheckBox Grid.Column="0" VerticalAlignment="Center"
+                                          IsChecked="{Binding IsSelected}"
+                                          IsEnabled="{Binding CanSelect}"
+                                          Margin="0,0,14,0"/>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Content="Annuler" Style="{StaticResource SecondaryButton}"
-                    Margin="0,0,12,0" Click="Cancel_Click"/>
-            <Button Content="Installer / Mettre à jour" Style="{StaticResource PrimaryButton}"
-                    x:Name="BtnInstall" Click="Install_Click"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               FontSize="13" FontWeight="SemiBold" Foreground="#1A1A1A"/>
+                                    <TextBlock Text="{Binding Description}"
+                                               FontSize="12" Foreground="#666" Margin="0,3,0,0"/>
+                                    <TextBlock Text="{Binding Command}" FontSize="11"
+                                               Foreground="#999" Margin="0,3,0,0"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+
+                                <Border Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0"
+                                        Background="{Binding BadgeBackground}"
+                                        CornerRadius="4" Padding="8,4"
+                                        Visibility="{Binding ShowBadge, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="{Binding BadgeText}" FontSize="11"
+                                               Foreground="{Binding BadgeForeground}"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </StackPanel>
-    </StackPanel>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="White" Padding="24,12"
+                BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Annuler" Style="{StaticResource SecondaryButton}"
+                        Margin="0,0,12,0" Click="Cancel_Click"/>
+                <Button Content="Installer / Mettre à jour" Style="{StaticResource PrimaryButton}"
+                        x:Name="BtnInstall" Click="Install_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Window>
