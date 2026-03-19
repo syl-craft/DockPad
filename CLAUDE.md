@@ -17,7 +17,7 @@ Models/
     ContextMenuEntry.cs                  Modèle de données + enum ContextMenuTarget
     ContextMenuEntryViewModel.cs         VM avec chargement d'icône (BitmapSource)
     PresetEntry.cs                       Modèle preset avec enum PresetStatus
-    ShortcutEntry.cs                     Modèle raccourci rapide (row, col, name, command, iconPath)
+    ShortcutEntry.cs                     Modèle raccourci rapide (row, col, name, type, command, iconPath)
 Services/
     RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
     PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS)
@@ -29,7 +29,8 @@ App.xaml/.cs                             Point d'entrée : instance unique (Mute
 ContextMenuManagerWindow.xaml/.cs        Gestion des entrées de menu contextuel Windows
 QuickAccessWindow.xaml/.cs               Grille 4×6 de raccourcis rapides (hotkey global)
 SettingsDialog.xaml/.cs                  Configuration du raccourci clavier global + démarrage auto
-EntryDialog.xaml/.cs                     Dialogue ajout/modification d'une entrée
+EntryDialog.xaml/.cs                     Dialogue ajout/modification d'une entrée de menu contextuel (registre)
+ShortcutDialog.xaml/.cs                  Dialogue ajout/modification d'une tuile d'accès rapide
 PresetsDialog.xaml/.cs                   Dialogue raccourcis prédéfinis
 InverseBoolConverter.cs                  Converter WPF bool inversé
 ```
@@ -62,11 +63,21 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 
 ### Accès rapide (QuickAccessWindow)
 - Grille 4 lignes × 6 colonnes de tuiles cliquables
-- Chaque tuile : icône + nom → exécute la commande au clic
+- Chaque tuile : icône + nom → exécute l'action selon son **type**
 - Icônes supportées : `.exe`, `.dll`, `.ico`, `.png`, `.bmp`, `.jpg`
 - Cases vides affichées en `+` grisé
 - Toolbar : **Prédéfinis** | **Paramètres** | **Actualiser** | **Modifier la configuration**
 - Config stockée dans `%APPDATA%\WinContextMenuManager\shortcuts.json`
+- **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | 🗑 Supprimer
+- **Clic droit sur une case vide** : ➕ Ajouter
+
+### Types de tuiles (ShortcutType)
+| Type | Description | Champ `command` |
+|------|-------------|-----------------|
+| `RunCommand` | Lance un exécutable ou une commande shell | ex: `notepad.exe`, `"C:\app.exe" arg` |
+| `OpenFolder` | Ouvre un dossier dans l'Explorateur | chemin du dossier |
+| `OpenUrl` | Ouvre une URL dans le navigateur par défaut | URL complète |
+| `OpenTerminal` | Ouvre un terminal dans un dossier (wt → pwsh → powershell → cmd) | chemin du dossier |
 
 ### Raccourci clavier global
 - Hotkey configurable via `SettingsDialog` (Ctrl/Alt/Shift/Win + touche A-Z ou F1-F12)
@@ -93,11 +104,15 @@ InverseBoolConverter.cs                  Converter WPF bool inversé
 
 ```json
 [
-  { "row": 0, "col": 0, "name": "Mon app", "command": "explorer.exe \"C:\\dev\\projet\"", "iconPath": "C:\\...\\icon.png" }
+  { "row": 0, "col": 0, "name": "Mon app",    "type": "RunCommand",   "command": "explorer.exe \"C:\\dev\\projet\"", "iconPath": "C:\\...\\icon.png" },
+  { "row": 0, "col": 1, "name": "C:\\dev",    "type": "OpenFolder",   "command": "C:\\dev",                         "iconPath": "C:\\Windows\\explorer.exe" },
+  { "row": 0, "col": 2, "name": "GitHub",     "type": "OpenUrl",      "command": "https://github.com",              "iconPath": "" },
+  { "row": 0, "col": 3, "name": "Terminal",   "type": "OpenTerminal", "command": "C:\\dev",                         "iconPath": "" }
 ]
 ```
 
-Les cases non définies s'affichent vides. Les colonnes vont de 0 à 5, les lignes de 0 à 3.
+Le champ `type` est optionnel — une entrée sans `type` utilise `RunCommand` (rétrocompatible).
+Les colonnes vont de 0 à 5, les lignes de 0 à 3.
 
 ## Build
 
