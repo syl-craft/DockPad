@@ -19,7 +19,9 @@
                         <ControlTemplate TargetType="Button">
                             <Border Background="{TemplateBinding Background}"
                                     CornerRadius="4"
-                                    Padding="{TemplateBinding Padding}">
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True"
+                                    UseLayoutRounding="True">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -76,7 +78,9 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="6"
-                                    Padding="{TemplateBinding Padding}">
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True"
+                                    UseLayoutRounding="True">
                                 <Border.Effect>
                                     <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15" Color="Black"/>
                                 </Border.Effect>
@@ -96,7 +100,8 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="MenuItem">
-                            <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}" Margin="4,1">
+                            <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}" Margin="4,1"
+                                    SnapsToDevicePixels="True" UseLayoutRounding="True">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="16"/>

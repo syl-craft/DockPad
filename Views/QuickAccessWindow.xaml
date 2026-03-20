@@ -28,14 +28,17 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="6"
-                                ClipToBounds="True">
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True">
                             <Grid>
                                 <ContentPresenter HorizontalAlignment="Center"
                                                   VerticalAlignment="Center"
                                                   Margin="0,0,5,0"/>
                                 <!-- Bande colorée selon le type -->
                                 <Border Width="4" HorizontalAlignment="Right" CornerRadius="0,6,6,0"
-                                        Background="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"/>
+                                        Background="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                                        SnapsToDevicePixels="True" UseLayoutRounding="True"/>
                             </Grid>
                         </Border>
                     </ControlTemplate>
@@ -85,6 +88,28 @@
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="Foreground" Value="#0078D4"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style x:Key="SearchTextBox" TargetType="TextBox">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="6,0"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#1A1A1A"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="#CCCCCC" BorderThickness="1"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
@@ -145,29 +170,11 @@
                 </Button>
 
                 <!-- Barre de recherche (centre) -->
-                <Grid Grid.Column="1" Margin="150,0" VerticalAlignment="Center">
+                <Grid Grid.Column="1" Margin="150,0" VerticalAlignment="Stretch" Background="AliceBlue">
                     <TextBox x:Name="SearchBox"
-                             Height="22" Padding="6,0"
-                             BorderBrush="#CCCCCC" BorderThickness="1"
-                             Background="White" FontSize="11"
-                             VerticalContentAlignment="Center"
+                             Style="{StaticResource SearchTextBox}"
                              TextChanged="SearchBox_TextChanged"
                              PreviewKeyDown="SearchBox_PreviewKeyDown"/>
-                    <TextBlock Text="Rechercher un raccourci…"
-                               IsHitTestVisible="False"
-                               VerticalAlignment="Center" Margin="8,0"
-                               Foreground="#BBBBBB" FontSize="11">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
                     <Popup x:Name="SearchPopup"
                            PlacementTarget="{Binding ElementName=SearchBox}"
                            Placement="Bottom"
@@ -176,7 +183,8 @@
                         <Border MinWidth="{Binding ActualWidth, ElementName=SearchBox}"
                                 Background="White"
                                 BorderBrush="#CCCCCC" BorderThickness="1"
-                                CornerRadius="0,0,4,4">
+                                CornerRadius="0,0,4,4"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True">
                             <Border.Effect>
                                 <DropShadowEffect BlurRadius="8" Opacity="0.15" ShadowDepth="3" Direction="270"/>
                             </Border.Effect>
@@ -203,7 +211,8 @@
                                                        TextTrimming="CharacterEllipsis"/>
                                             <Border CornerRadius="3" Padding="6,2" Margin="10,0,0,0"
                                                     VerticalAlignment="Center"
-                                                    Background="{Binding TypeBrush}">
+                                                    Background="{Binding TypeBrush}"
+                                                    SnapsToDevicePixels="True" UseLayoutRounding="True">
                                                 <TextBlock Text="{Binding TypeLabel}"
                                                            FontSize="10" Foreground="#444"
                                                            VerticalAlignment="Center"/>
@@ -257,7 +266,8 @@
                 <StackPanel x:Name="PaginationBar" Orientation="Horizontal" HorizontalAlignment="Center"/>
                 <Border HorizontalAlignment="Right" VerticalAlignment="Center"
                         Background="#F3F3F3" BorderBrush="#E0E0E0" BorderThickness="1"
-                        CornerRadius="4" Padding="8,3">
+                        CornerRadius="4" Padding="8,3"
+                        SnapsToDevicePixels="True" UseLayoutRounding="True">
                     <TextBlock x:Name="TxtHotkey" FontFamily="Consolas" FontSize="11"
                                Foreground="#666" ToolTip="Raccourci pour afficher DockPad"/>
                 </Border>

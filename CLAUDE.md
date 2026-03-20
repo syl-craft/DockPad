@@ -162,6 +162,8 @@ Configuré dans :
 
 > Toujours utiliser le pack URI (`pack://application:,,,/app.ico`) pour référencer `app.ico` dans les XAML situés dans des sous-dossiers, sinon WPF résout le chemin relatif depuis le sous-dossier (ex: `views/app.ico`) et lève une `IOException`.
 
+> Tout `Border` avec un `CornerRadius` non nul doit avoir `SnapsToDevicePixels="True"` et `UseLayoutRounding="True"` pour éviter le rendu flou des bords arrondis (sub-pixel rendering WPF).
+
 Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 - **Fluent UI System Icons** (Microsoft) — dossier, task-board
 - **PKief/vscode-material-icon-theme** — claude, azure, pipeline

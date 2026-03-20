@@ -90,7 +90,8 @@
                         Style="{StaticResource SecondaryButton}"
                         Click="BrowseIcon_Click"/>
                 <Border Grid.Column="2" Width="36" Height="36" Margin="6,0,0,0"
-                        BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4">
+                        BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4"
+                        SnapsToDevicePixels="True" UseLayoutRounding="True">
                     <Image x:Name="ImgIconPreview" Stretch="Uniform" Margin="4"/>
                 </Border>
             </Grid>
@@ -109,7 +110,8 @@
             <!-- Note fond de dossier -->
             <Border x:Name="PanelBgNote" Visibility="Collapsed"
                     Background="#FFF4CE" BorderBrush="#F0C519" BorderThickness="1"
-                    CornerRadius="4" Padding="12,8">
+                    CornerRadius="4" Padding="12,8"
+                    SnapsToDevicePixels="True" UseLayoutRounding="True">
                 <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#5C4800">
                     Pour "Fond de dossier", la variable <Bold>%V</Bold> contient le chemin du dossier courant (et non %1).
                 </TextBlock>

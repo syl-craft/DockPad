@@ -133,7 +133,8 @@
                              TextChanged="TerminalField_Changed"/>
 
                     <!-- Aperçu de la commande générée -->
-                    <Border Background="#F0F0F0" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="4" Padding="10,8">
+                    <Border Background="#F0F0F0" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="4" Padding="10,8"
+                            SnapsToDevicePixels="True" UseLayoutRounding="True">
                         <StackPanel>
                             <TextBlock Text="Aperçu :" FontSize="11" FontWeight="SemiBold"
                                        Foreground="#555" Margin="0,0,0,4"/>
@@ -157,7 +158,8 @@
                             Style="{StaticResource SecondaryButton}"
                             Click="BrowseIcon_Click"/>
                     <Border Grid.Column="2" Width="36" Height="36" Margin="6,0,0,0"
-                            BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4">
+                            BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4"
+                            SnapsToDevicePixels="True" UseLayoutRounding="True">
                         <Image x:Name="ImgIconPreview" Stretch="Uniform" Margin="4"/>
                     </Border>
                 </Grid>
