@@ -28,6 +28,7 @@ public partial class QuickAccessWindow : Window
     {
         InitializeComponent();
         PopulateGrid();
+        UpdateHotkeyDisplay();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -102,6 +103,53 @@ public partial class QuickAccessWindow : Window
 
         UnregisterHotkey();
         RegisterHotkey();
+        UpdateHotkeyDisplay();
+    }
+
+    private void UpdateHotkeyDisplay()
+    {
+        var (mods, vk) = SettingsService.LoadHotkey();
+        var parts = new List<string>();
+        if ((mods & HotkeyService.MOD_CONTROL) != 0) parts.Add("Ctrl");
+        if ((mods & HotkeyService.MOD_ALT)     != 0) parts.Add("Alt");
+        if ((mods & HotkeyService.MOD_SHIFT)   != 0) parts.Add("Shift");
+        if ((mods & HotkeyService.MOD_WIN)     != 0) parts.Add("Win");
+
+        string keyName = vk switch
+        {
+            >= 0x41 and <= 0x5A => ((char)vk).ToString(),
+            >= 0x70 and <= 0x7B => $"F{vk - 0x6F}",
+            _ => $"0x{vk:X2}"
+        };
+        parts.Add(keyName);
+
+        TxtHotkey.Text = string.Join(" + ", parts);
+    }
+
+    private void OpenConfigFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var folder = Path.GetDirectoryName(ShortcutService.FilePath)!;
+        Directory.CreateDirectory(folder);
+        Process.Start(new ProcessStartInfo("explorer.exe", folder) { UseShellExecute = true });
+    }
+
+    private void BackupConfig_Click(object sender, RoutedEventArgs e)
+    {
+        var backupDir = Path.Combine(
+            Path.GetDirectoryName(ShortcutService.FilePath)!, ".backup");
+        Directory.CreateDirectory(backupDir);
+
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+        foreach (var src in new[] { ShortcutService.FilePath, PageConfigService.FilePath })
+        {
+            if (!File.Exists(src)) continue;
+            var dest = Path.Combine(backupDir,
+                $"{Path.GetFileNameWithoutExtension(src)}_{timestamp}{Path.GetExtension(src)}");
+            File.Copy(src, dest);
+        }
+
+        AppDialog.Info($"Sauvegarde créée dans :\n{backupDir}", owner: this);
     }
 
     private void PopulateGrid()
@@ -790,6 +838,10 @@ public partial class QuickAccessWindow : Window
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => PopulateGrid();
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void HideToSystray_Click(object sender, RoutedEventArgs e) => Hide();
 
     private void Quit_Click(object sender, RoutedEventArgs e)
     {
