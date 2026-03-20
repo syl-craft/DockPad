@@ -73,6 +73,16 @@ public partial class QuickAccessWindow : Window
         return IntPtr.Zero;
     }
 
+    private void Menu_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.ContextMenu is ContextMenu menu)
+        {
+            menu.PlacementTarget = btn;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
+        }
+    }
+
     private void Presets_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new PresetsDialog { Owner = this };
