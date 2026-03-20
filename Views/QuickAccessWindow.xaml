@@ -117,11 +117,19 @@
                                 <MenuItem Header="Options" Click="Settings_Click">
                                     <MenuItem.Icon><TextBlock Text="⚙"/></MenuItem.Icon>
                                 </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Configuration" IsEnabled="False" FontWeight="SemiBold"/>
                                 <MenuItem Header="Actualiser" Click="Refresh_Click">
                                     <MenuItem.Icon><TextBlock Text="↺"/></MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="Modifier la configuration" Click="EditConfig_Click">
+                                <MenuItem Header="Modifier" Click="EditConfig_Click">
                                     <MenuItem.Icon><TextBlock Text="✎"/></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Sauvegarder" Click="BackupConfig_Click">
+                                    <MenuItem.Icon><TextBlock Text="💾"/></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Voir le dossier" Click="OpenConfigFolder_Click">
+                                    <MenuItem.Icon><TextBlock Text="📁"/></MenuItem.Icon>
                                 </MenuItem>
                                 <Separator/>
                                 <MenuItem Header="Quitter l'application" Click="Quit_Click">
@@ -134,9 +142,12 @@
 
                 <!-- Actions raccourcis (droite) -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="✕" Style="{StaticResource SecondaryButton}"
-                            Padding="10,6" Margin="0,0,8,0" ToolTip="Quitter l'application"
-                            Click="Quit_Click"/>
+                    <Button Content="─" Style="{StaticResource SecondaryButton}"
+                            Padding="10,6" Margin="0,0,8,0" ToolTip="Réduire"
+                            Click="Minimize_Click"/>
+                    <Button Content="⬇" Style="{StaticResource SecondaryButton}"
+                            Padding="10,6" Margin="0,0,8,0" ToolTip="Masquer dans la barre système"
+                            Click="HideToSystray_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -166,7 +177,15 @@
         <!-- Barre de pagination -->
         <Border Grid.Row="2" Background="White" Padding="12,10"
                 BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
-            <StackPanel x:Name="PaginationBar" Orientation="Horizontal" HorizontalAlignment="Center"/>
+            <Grid>
+                <StackPanel x:Name="PaginationBar" Orientation="Horizontal" HorizontalAlignment="Center"/>
+                <Border HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Background="#F3F3F3" BorderBrush="#E0E0E0" BorderThickness="1"
+                        CornerRadius="4" Padding="8,3">
+                    <TextBlock x:Name="TxtHotkey" FontFamily="Consolas" FontSize="11"
+                               Foreground="#666" ToolTip="Raccourci pour afficher DockPad"/>
+                </Border>
+            </Grid>
         </Border>
     </Grid>
 </Window>
