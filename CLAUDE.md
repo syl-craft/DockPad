@@ -9,6 +9,7 @@ L'app démarre sans droits admin — l'élévation est demandée à la demande v
 - **Registre**  lecture/écriture via `Microsoft.Win32.Registry`
 - **Icônes**  `System.Drawing.Common` (NuGet) pour extraire les icônes `.exe`/`.dll`
 - **JSON**  `System.Text.Json` (built-in) pour la config des raccourcis rapides
+- **WMI**  `System.Management` (NuGet) pour lire la ligne de commande des processus (`SwitchToProcess`)
 
 ## Structure
 
@@ -23,16 +24,19 @@ Converters/
 Models/
     ContextMenuEntry.cs                  Modèle de données + enum ContextMenuTarget
     ContextMenuEntryViewModel.cs         VM avec chargement d'icône (BitmapSource)
-    PageConfig.cs                        Config par page (icône du bouton de pagination)
+    PageConfig.cs                        Config par page (icône du bouton de pagination + IconProfilePath)
     PresetEntry.cs                       Modèle preset avec enum PresetStatus
-    ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath)
+    ProcessSwitchConfig.cs               Config SwitchToProcess (processName, executable, parameters)
+    ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath, iconProfilePath)
     TerminalConfig.cs                    Config d'un terminal (exePath, startingDirectory, runCommand…)
     TerminalInfo.cs                      Informations d'un terminal détecté
 
 Services/
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
+    IconCacheService.cs                  Cache d'icônes dans %APPDATA%\DockPad\icons\ (SHA1 dédup, extraction .exe/.dll → .png)
     PageConfigService.cs                 Load/Save pages.json (%APPDATA%\DockPad\pages.json)
     PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS)
+    ProcessSwitchService.cs              SwitchOrLaunch : cherche via WMI, SetForegroundWindow ou lance l'exe
     RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
     ResourceStringResolver.cs            Résolution des @dll,-id via SHLoadIndirectString
     SettingsService.cs                   Lecture/écriture paramètres HKCU + autostart
@@ -49,6 +53,10 @@ Dialogs/
     PresetsDialog.xaml/.cs               Raccourcis prédéfinis
     SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto + version
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
+
+tools/
+    get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
+    inject-startmenu-shortcuts.ps1       Script PowerShell : injecte des raccourcis SwitchToProcess dans shortcuts.json
 ```
 
 ## Fonctionnalités
@@ -81,7 +89,7 @@ Dialogs/
 - Grille **4 lignes × 6 colonnes** de tuiles, sur plusieurs **pages**
 - Pagination en bas : boutons numérotés ou avec icône, bouton `+` pour ajouter une page
 - Chaque tuile : icône + nom → exécute l'action selon son **type**
-- Bande colorée (4px, droite) indique le type : bleu=RunCommand, ambre=OpenFolder, vert=OpenUrl, violet=OpenTerminal
+- Bande colorée (4px, droite) indique le type : bleu=RunCommand, ambre=OpenFolder, vert=OpenUrl, violet=OpenTerminal, rouge=SwitchToProcess
 - Icônes supportées : `.exe`, `.dll`, `.ico`, `.png`, `.bmp`, `.jpg`
 - Cases vides affichées en `+` grisé
 - Fenêtre sans barre Windows (`WindowStyle=None`), déplaçable par drag, icône `app.ico`
@@ -100,14 +108,41 @@ Dialogs/
 - **Clic droit sur une case vide** : ➕ Ajouter
 - **Clic droit sur un bouton de page** : 🖼 Changer l'icône | ← / → Déplacer | 🗑 Supprimer la page
 - **Drag & drop** entre tuiles pour les réorganiser
+- **Déplacer vers la page** : place à la même position si libre, sinon première case disponible ; grisé seulement si la page est pleine
+
+### Barre de recherche globale
+- Champ de recherche dans la toolbar : filtre les raccourcis par nom sur toutes les pages
+- Résultats dans un popup avec icône, nom et type coloré
+- Navigation clavier : **↓** pour entrer dans la liste, **Entrée** pour exécuter, **Échap** pour fermer, **Retour arrière** depuis la liste → focus sur le champ
+
+### Raccourcis clavier par chiffre (overlay)
+- Appuyer sur **Ctrl** seul → overlay numéroté sur les 3×3 tuiles gauches ; **Shift** seul → tuiles droites
+- **Ctrl + 1-9** ou **Shift + 1-9** exécute directement la tuile correspondante
+- L'overlay se masque à la désactivation de la fenêtre ou à la frappe Échap
+- Les modificateurs trigger s'adaptent automatiquement au raccourci global configuré
+
+### Cache d'icônes (IconCacheService)
+- Les icônes sont copiées dans `%APPDATA%\DockPad\icons\` à la sauvegarde (déduplication SHA1)
+- Les `.exe`/`.dll` sont extraits et sauvegardés en `.png`
+- `IconProfilePath` (chemin relatif au profil) est prioritaire sur `IconPath` (chemin absolu source)
+- À la création/modification : si aucune icône spécifiée, l'icône de l'exe associé est utilisée automatiquement (RunCommand, SwitchToProcess, OpenTerminal)
+- **↻ Actualiser** : synchronise le cache pour toutes les entrées existantes
 
 ### Types de tuiles (ShortcutType)
-| Type | Description | Champ `command` |
-|------|-------------|-----------------|
-| `RunCommand` | Lance un exécutable ou une commande shell | ex: `notepad.exe`, `"C:\app.exe" arg` |
-| `OpenFolder` | Ouvre un dossier dans l'Explorateur | chemin du dossier |
-| `OpenUrl` | Ouvre une URL dans le navigateur par défaut | URL complète |
-| `OpenTerminal` | Ouvre un terminal dans un dossier (wt → pwsh → powershell → cmd) | chemin du dossier |
+| Type | Description | Champ `command` | Bande |
+|------|-------------|-----------------|-------|
+| `RunCommand` | Lance un exécutable ou une commande shell | ex: `notepad.exe`, `"C:\app.exe" arg` | bleu |
+| `OpenFolder` | Ouvre un dossier dans l'Explorateur | chemin du dossier | ambre |
+| `OpenUrl` | Ouvre une URL dans le navigateur par défaut | URL complète | vert |
+| `OpenTerminal` | Ouvre un terminal dans un dossier (wt → pwsh → powershell → cmd) | chemin du dossier | violet |
+| `SwitchToProcess` | Bascule vers un processus existant (même cmdline) ou le lance | `processName args` (tooltip) | rouge |
+
+### SwitchToProcess
+- Cherche un processus par nom via `Process.GetProcessesByName`
+- Lit la ligne de commande via WMI (`Win32_Process.CommandLine`) pour matcher les paramètres
+- Si trouvé : `SetForegroundWindow` + `ShowWindow(SW_RESTORE)` si minimisé
+- Si non trouvé : lance `Executable` avec `Parameters`
+- Config stockée dans `ShortcutEntry.ProcessSwitch` (`ProcessSwitchConfig`)
 
 ### Raccourci clavier global
 - Hotkey configurable via `SettingsDialog` (Ctrl/Alt/Shift/Win + touche A-Z ou F1-F12)
@@ -120,7 +155,7 @@ Dialogs/
 - Configuration du raccourci clavier global
 - **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
-- Affiche la version de l'application (ex: `v1.3.0`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
+- Affiche la version de l'application (ex: `v1.5.0`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 
 ## Prédéfinis
 
@@ -135,25 +170,34 @@ Dialogs/
 
 ```json
 [
-  { "row": 0, "col": 0, "name": "Mon app",    "type": "RunCommand",   "command": "explorer.exe \"C:\\dev\\projet\"", "iconPath": "C:\\...\\icon.png" },
-  { "row": 0, "col": 1, "name": "C:\\dev",    "type": "OpenFolder",   "command": "C:\\dev",                         "iconPath": "C:\\Windows\\explorer.exe" },
-  { "row": 0, "col": 2, "name": "GitHub",     "type": "OpenUrl",      "command": "https://github.com",              "iconPath": "" },
-  { "row": 0, "col": 3, "name": "Terminal",   "type": "OpenTerminal", "command": "C:\\dev",                         "iconPath": "" }
+  { "page": 0, "row": 0, "col": 0, "name": "Mon app",    "type": "RunCommand",      "command": "explorer.exe \"C:\\dev\\projet\"", "iconPath": "", "iconProfilePath": "icons\\abc123.png" },
+  { "page": 0, "row": 0, "col": 1, "name": "C:\\dev",    "type": "OpenFolder",      "command": "C:\\dev",                          "iconPath": "C:\\Windows\\explorer.exe" },
+  { "page": 0, "row": 0, "col": 2, "name": "GitHub",     "type": "OpenUrl",         "command": "https://github.com",               "iconPath": "" },
+  { "page": 0, "row": 0, "col": 3, "name": "Terminal",   "type": "OpenTerminal",    "command": "C:\\dev",                          "iconPath": "",
+    "terminal": { "exePath": "wt.exe", "startingDirectory": "C:\\dev", "runCommand": "", "newTab": true, "extraArgs": "" } },
+  { "page": 0, "row": 0, "col": 4, "name": "VS 2022",    "type": "SwitchToProcess", "command": "devenv.exe",                       "iconPath": "", "iconProfilePath": "icons\\def456.png",
+    "processSwitch": { "processName": "devenv.exe", "executable": "C:\\...\\devenv.exe", "parameters": "C:\\dev\\Shope.sln" } }
 ]
 ```
 
-Le champ `type` est optionnel — une entrée sans `type` utilise `RunCommand` (rétrocompatible).
-Le champ `terminal` est optionnel et uniquement présent pour le type `OpenTerminal`.
-Les colonnes vont de 0 à 5, les lignes de 0 à 3. Le champ `page` commence à 0.
+- `type` optionnel — défaut `RunCommand` (rétrocompatible)
+- `terminal` présent uniquement pour `OpenTerminal`
+- `processSwitch` présent uniquement pour `SwitchToProcess`
+- `iconProfilePath` chemin relatif au profil (`%APPDATA%\DockPad\`), prioritaire sur `iconPath`
+- Colonnes : 0–5 | Lignes : 0–3 | `page` commence à 0
+
+## Styles des menus contextuels (App.xaml)
+
+- `ContextMenu` : fond blanc, `CornerRadius=6`, `DropShadowEffect`, padding `0,4`
+- `MenuItem` : template custom avec icône (col 16px), header, flèche `►` si sous-menu (`HasItems=True`), `Popup` pour les sous-menus
+- `Separator` : ligne `#E0E0E0`, hauteur 1px, margin `8,4`
+- **Important** : le template `MenuItem` doit contenir `<Popup x:Name="PART_Popup">` avec `<ItemsPresenter/>` pour que les sous-menus fonctionnent
 
 ## Icône de l'application
 
 Fichier : `app.ico` (multi-taille : 16/32/48/256px)
 
 Source : **Microsoft Fluent UI System Icons** — `ic_fluent_apps_list_32_color.svg`
-- Page GitHub : `https://github.com/microsoft/fluentui-system-icons/blob/main/assets/Apps%20List/SVG/ic_fluent_apps_list_32_color.svg`
-- Raw SVG : `https://raw.githubusercontent.com/microsoft/fluentui-system-icons/main/assets/Apps%20List/SVG/ic_fluent_apps_list_32_color.svg`
-- Licence : MIT
 
 Configuré dans :
 - `.csproj` → `<ApplicationIcon>app.ico</ApplicationIcon>` (icône du `.exe`)
@@ -163,6 +207,8 @@ Configuré dans :
 > Toujours utiliser le pack URI (`pack://application:,,,/app.ico`) pour référencer `app.ico` dans les XAML situés dans des sous-dossiers, sinon WPF résout le chemin relatif depuis le sous-dossier (ex: `views/app.ico`) et lève une `IOException`.
 
 > Tout `Border` avec un `CornerRadius` non nul doit avoir `SnapsToDevicePixels="True"` et `UseLayoutRounding="True"` pour éviter le rendu flou des bords arrondis (sub-pixel rendering WPF).
+
+> Le template `MenuItem` dans `App.xaml` doit inclure `<Popup x:Name="PART_Popup">` avec `<ItemsPresenter/>` pour que les sous-menus (ex : "Déplacer vers la page") s'affichent correctement.
 
 Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 - **Fluent UI System Icons** (Microsoft) — dossier, task-board
@@ -174,7 +220,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.3.0</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.5.0</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 
@@ -189,7 +235,8 @@ dotnet publish -p:PublishProfile=FolderProfile
 
 Le publish via `FolderProfile` :
 1. Compile en Release framework-dependent (requiert .NET 8 sur la machine cible)
-2. Crée un zip `release\DockPad-{version}.zip`
-3. Supprime le dossier `publish\` intermédiaire
+2. Copie `CHANGELOG.md` dans le dossier publish
+3. Crée `release\DockPad-{version}.zip` et `release\DockPad-{version}-Changelog.md`
+4. Supprime le dossier `publish\` intermédiaire
 
 Après publish, vider `C:\DockPad\` et extraire le zip dedans.
