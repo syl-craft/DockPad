@@ -83,6 +83,12 @@ public partial class QuickAccessWindow : Window
         }
     }
 
+    private void OpenContextMenuManager_Click(object sender, RoutedEventArgs e)
+    {
+        var win = new ContextMenuManagerWindow();
+        win.Show();
+    }
+
     private void Presets_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new PresetsDialog { Owner = this };
