@@ -54,12 +54,16 @@
         <!-- Buttons -->
         <Border Grid.Row="2" Background="White" Padding="24,12"
                 BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Sauvegarder" Style="{StaticResource PrimaryButton}"
-                        Margin="0,0,8,0" Click="Save_Click"/>
-                <Button Content="Annuler" Style="{StaticResource SecondaryButton}"
-                        Click="Cancel_Click"/>
-            </StackPanel>
+            <Grid>
+                <TextBlock x:Name="TxtVersion" VerticalAlignment="Center"
+                           Foreground="#AAA" FontSize="11"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Sauvegarder" Style="{StaticResource PrimaryButton}"
+                            Margin="0,0,8,0" Click="Save_Click"/>
+                    <Button Content="Annuler" Style="{StaticResource SecondaryButton}"
+                            Click="Cancel_Click"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>
