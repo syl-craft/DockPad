@@ -44,11 +44,35 @@ public partial class QuickAccessWindow : Window
         if (!App.IsExiting)
         {
             e.Cancel = true;
+            ClearSearch();
             Hide();
             return;
         }
         UnregisterHotkey();
         base.OnClosing(e);
+    }
+
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        Dispatcher.BeginInvoke(() => SearchBox.Focus());
+    }
+
+    protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
+    {
+        base.OnPreviewMouseDown(e);
+        if (SearchPopup.IsOpen && !IsDescendant(e.OriginalSource as DependencyObject, SearchBox))
+            SearchPopup.IsOpen = false;
+    }
+
+    private static bool IsDescendant(DependencyObject? child, DependencyObject parent)
+    {
+        while (child != null)
+        {
+            if (child == parent) return true;
+            child = VisualTreeHelper.GetParent(child);
+        }
+        return false;
     }
 
     private void RegisterHotkey()
@@ -69,6 +93,7 @@ public partial class QuickAccessWindow : Window
             WindowState = WindowState.Normal;
             Show();
             Activate();
+            Dispatcher.BeginInvoke(() => SearchBox.Focus());
             handled = true;
         }
         return IntPtr.Zero;
@@ -643,6 +668,11 @@ public partial class QuickAccessWindow : Window
     private void Tile_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button btn || btn.DataContext is not ShortcutEntry entry) return;
+        ExecuteEntry(entry);
+    }
+
+    private void ExecuteEntry(ShortcutEntry entry)
+    {
         try
         {
             switch (entry.Type)
@@ -666,8 +696,7 @@ public partial class QuickAccessWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Impossible d'exécuter :\n{ex.Message}",
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Error($"Impossible d'exécuter :\n{ex.Message}", owner: this);
         }
     }
 
@@ -835,7 +864,11 @@ public partial class QuickAccessWindow : Window
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
-    private void HideToSystray_Click(object sender, RoutedEventArgs e) => Hide();
+    private void HideToSystray_Click(object sender, RoutedEventArgs e)
+    {
+        ClearSearch();
+        Hide();
+    }
 
     private void Quit_Click(object sender, RoutedEventArgs e)
     {
@@ -898,4 +931,115 @@ public partial class QuickAccessWindow : Window
 
     [System.Runtime.InteropServices.DllImport("gdi32.dll")]
     private static extern bool DeleteObject(IntPtr hObject);
+
+    // ── Recherche ────────────────────────────────────────────────────────────
+
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        var query = SearchBox.Text.Trim();
+        if (string.IsNullOrEmpty(query))
+        {
+            SearchPopup.IsOpen = false;
+            return;
+        }
+
+        var results = ShortcutService.Load()
+            .Where(s => s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(s => s.Name)
+            .Select(s => new SearchResultItem(s, LoadIcon(s.IconPath)))
+            .ToList();
+
+        SearchResults.ItemsSource = results;
+        SearchPopup.IsOpen = results.Count > 0;
+    }
+
+    private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Down when SearchPopup.IsOpen && SearchResults.Items.Count > 0:
+                SearchResults.SelectedIndex = 0;
+                (SearchResults.ItemContainerGenerator.ContainerFromIndex(0) as ListBoxItem)?.Focus();
+                e.Handled = true;
+                break;
+            case Key.Enter when SearchPopup.IsOpen:
+                int idx = SearchResults.SelectedIndex >= 0 ? SearchResults.SelectedIndex : 0;
+                if (SearchResults.Items.Count > 0 && SearchResults.Items[idx] is SearchResultItem hit)
+                    ExecuteSearchResult(hit);
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                ClearSearch();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void SearchResults_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Enter when SearchResults.SelectedItem is SearchResultItem item:
+                ExecuteSearchResult(item);
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                SearchBox.Focus();
+                SearchBox.SelectAll();
+                SearchPopup.IsOpen = false;
+                e.Handled = true;
+                break;
+            case Key.Up when SearchResults.SelectedIndex <= 0:
+                SearchBox.Focus();
+                e.Handled = true;
+                break;
+            case Key.Back when SearchBox.Text.Length > 0:
+                SearchBox.Text = SearchBox.Text[..^1];
+                SearchBox.Focus();
+                SearchBox.CaretIndex = SearchBox.Text.Length;
+                e.Handled = true;
+                break;
+            case Key.Back:
+                SearchBox.Focus();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void SearchResults_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (SearchResults.SelectedItem is SearchResultItem item)
+            ExecuteSearchResult(item);
+    }
+
+    private void ExecuteSearchResult(SearchResultItem result)
+    {
+        ClearSearch();
+        ExecuteEntry(result.Entry);
+    }
+
+    private void ClearSearch()
+    {
+        SearchBox.Text = "";
+        SearchPopup.IsOpen = false;
+    }
+
+    private sealed record SearchResultItem(ShortcutEntry Entry, BitmapSource? Icon)
+    {
+        public string TypeLabel => Entry.Type switch
+        {
+            ShortcutType.OpenFolder   => "Dossier",
+            ShortcutType.OpenUrl      => "URL",
+            ShortcutType.OpenTerminal => "Terminal",
+            _                         => "Commande",
+        };
+
+        public SolidColorBrush TypeBrush => Entry.Type switch
+        {
+            ShortcutType.OpenFolder   => new SolidColorBrush(Color.FromRgb(0xF5, 0xCC, 0x80)),
+            ShortcutType.OpenUrl      => new SolidColorBrush(Color.FromRgb(0x92, 0xC6, 0x90)),
+            ShortcutType.OpenTerminal => new SolidColorBrush(Color.FromRgb(0xC4, 0xAD, 0xE0)),
+            _                         => new SolidColorBrush(Color.FromRgb(0xA8, 0xCC, 0xEA)),
+        };
+    }
 }

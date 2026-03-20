@@ -99,49 +99,125 @@
         <Border Grid.Row="0" Background="White" Padding="12,8"
                 BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
             <Grid>
-                <!-- Actions principales (gauche) -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <Button Content="☰" Style="{StaticResource SecondaryButton}"
-                            Padding="10,6" ToolTip="Menu" Click="Menu_Click">
-                        <Button.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Menu contextuel" IsEnabled="False" FontWeight="SemiBold"/>
-                                <MenuItem Header="Gestion" Click="OpenContextMenuManager_Click">
-                                    <MenuItem.Icon><TextBlock Text="☰"/></MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Raccourcis prédéfinis" Click="Presets_Click">
-                                    <MenuItem.Icon><TextBlock Text="📋"/></MenuItem.Icon>
-                                </MenuItem>
-                                <Separator/>
-                                <MenuItem Header="Paramètres" IsEnabled="False" FontWeight="SemiBold"/>
-                                <MenuItem Header="Options" Click="Settings_Click">
-                                    <MenuItem.Icon><TextBlock Text="⚙"/></MenuItem.Icon>
-                                </MenuItem>
-                                <Separator/>
-                                <MenuItem Header="Configuration" IsEnabled="False" FontWeight="SemiBold"/>
-                                <MenuItem Header="Actualiser" Click="Refresh_Click">
-                                    <MenuItem.Icon><TextBlock Text="↺"/></MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Modifier" Click="EditConfig_Click">
-                                    <MenuItem.Icon><TextBlock Text="✎"/></MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Sauvegarder" Click="BackupConfig_Click">
-                                    <MenuItem.Icon><TextBlock Text="💾"/></MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Voir le dossier" Click="OpenConfigFolder_Click">
-                                    <MenuItem.Icon><TextBlock Text="📁"/></MenuItem.Icon>
-                                </MenuItem>
-                                <Separator/>
-                                <MenuItem Header="Quitter l'application" Click="Quit_Click">
-                                    <MenuItem.Icon><TextBlock Text="✕"/></MenuItem.Icon>
-                                </MenuItem>
-                            </ContextMenu>
-                        </Button.ContextMenu>
-                    </Button>
-                </StackPanel>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <!-- Actions raccourcis (droite) -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- Menu (gauche) -->
+                <Button Grid.Column="0" Content="☰" Style="{StaticResource SecondaryButton}"
+                        Padding="10,6" ToolTip="Menu" Click="Menu_Click">
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Menu contextuel" IsEnabled="False" FontWeight="SemiBold"/>
+                            <MenuItem Header="Gestion" Click="OpenContextMenuManager_Click">
+                                <MenuItem.Icon><TextBlock Text="☰"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Raccourcis prédéfinis" Click="Presets_Click">
+                                <MenuItem.Icon><TextBlock Text="📋"/></MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem Header="Paramètres" IsEnabled="False" FontWeight="SemiBold"/>
+                            <MenuItem Header="Options" Click="Settings_Click">
+                                <MenuItem.Icon><TextBlock Text="⚙"/></MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem Header="Configuration" IsEnabled="False" FontWeight="SemiBold"/>
+                            <MenuItem Header="Actualiser" Click="Refresh_Click">
+                                <MenuItem.Icon><TextBlock Text="↺"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Modifier" Click="EditConfig_Click">
+                                <MenuItem.Icon><TextBlock Text="✎"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Sauvegarder" Click="BackupConfig_Click">
+                                <MenuItem.Icon><TextBlock Text="💾"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Voir le dossier" Click="OpenConfigFolder_Click">
+                                <MenuItem.Icon><TextBlock Text="📁"/></MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem Header="Quitter l'application" Click="Quit_Click">
+                                <MenuItem.Icon><TextBlock Text="✕"/></MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+
+                <!-- Barre de recherche (centre) -->
+                <Grid Grid.Column="1" Margin="150,0" VerticalAlignment="Center">
+                    <TextBox x:Name="SearchBox"
+                             Height="22" Padding="6,0"
+                             BorderBrush="#CCCCCC" BorderThickness="1"
+                             Background="White" FontSize="11"
+                             VerticalContentAlignment="Center"
+                             TextChanged="SearchBox_TextChanged"
+                             PreviewKeyDown="SearchBox_PreviewKeyDown"/>
+                    <TextBlock Text="Rechercher un raccourci…"
+                               IsHitTestVisible="False"
+                               VerticalAlignment="Center" Margin="8,0"
+                               Foreground="#BBBBBB" FontSize="11">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <Popup x:Name="SearchPopup"
+                           PlacementTarget="{Binding ElementName=SearchBox}"
+                           Placement="Bottom"
+                           StaysOpen="True"
+                           AllowsTransparency="True">
+                        <Border MinWidth="{Binding ActualWidth, ElementName=SearchBox}"
+                                Background="White"
+                                BorderBrush="#CCCCCC" BorderThickness="1"
+                                CornerRadius="0,0,4,4">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" Opacity="0.15" ShadowDepth="3" Direction="270"/>
+                            </Border.Effect>
+                            <ListBox x:Name="SearchResults"
+                                     MaxHeight="280" BorderThickness="0"
+                                     Background="Transparent"
+                                     PreviewKeyDown="SearchResults_PreviewKeyDown"
+                                     MouseLeftButtonUp="SearchResults_MouseLeftButtonUp">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="6,4"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="24" Height="24" Margin="0,0,8,0">
+                                                <Image Source="{Binding Icon}" Stretch="Uniform"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Entry.Name}"
+                                                       VerticalAlignment="Center"
+                                                       MinWidth="120" MaxWidth="280"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <Border CornerRadius="3" Padding="6,2" Margin="10,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Background="{Binding TypeBrush}">
+                                                <TextBlock Text="{Binding TypeLabel}"
+                                                           FontSize="10" Foreground="#444"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Popup>
+                </Grid>
+
+                <!-- Boutons droite -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <Button Content="─" Style="{StaticResource SecondaryButton}"
                             Padding="10,6" Margin="0,0,8,0" ToolTip="Réduire"
                             Click="Minimize_Click"/>
