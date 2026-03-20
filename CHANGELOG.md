@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.4.0] — 2026-03-20
+
+### Nouveautés utilisateur
+
+#### Cache d'icônes (profil portable)
+- Les icônes sont automatiquement copiées dans `%APPDATA%\DockPad\icons\` lors de la sauvegarde d'un raccourci ou d'une icône de page
+- Les icônes `.exe`/`.dll` sont extraites et sauvegardées en `.png`
+- Déduplication par hash SHA1 : pas de doublon dans le cache
+- Si le fichier source d'icône n'existe plus, le cache profil est utilisé en fallback
+- Bouton **↻ Actualiser** : synchronise le cache profil pour toutes les entrées existantes
+
+#### Raccourcis clavier par chiffre (overlay)
+- Depuis la fenêtre principale : appuyer sur **Ctrl** seul affiche un overlay numéroté sur les 3×3 tuiles gauches, **Shift** seul sur les 3×3 tuiles droites
+- Maintenir **Ctrl + 1-9** ou **Shift + 1-9** exécute directement la tuile correspondante
+- L'overlay se masque à la désactivation de la fenêtre ou à la frappe Escape
+- Les modificateurs trigger s'adaptent automatiquement au raccourci global configuré
+
+---
+
 ## [1.3.0] — 2026-03-20
 
 ### Nouveautés utilisateur
@@ -31,6 +50,14 @@
 ---
 
 # Changelog technique (Architecture)
+
+## [1.4.0]
+
+- `Services/IconCacheService.cs` — nouveau service : `CopyToProfile` (copie avec dédup SHA1), `ResolveProfilePath`, `SyncAll`, `SyncAllPages` ; extraction .exe/.dll → .png via `System.Drawing`
+- `Models/ShortcutEntry.cs` — ajout `IconProfilePath` (`[JsonIgnore(WhenWritingNull)]`)
+- `Models/PageConfig.cs` — ajout `IconProfilePath` + `using System.Text.Json.Serialization`
+- `Dialogs/ShortcutDialog.xaml.cs` — copie `IconProfilePath` depuis `existing` ; affichage du chemin profil si IconPath manquant ; `GetIconInitialDir` ; sauvegarde via `IconCacheService.CopyToProfile`
+- `Views/QuickAccessWindow.xaml.cs` — overlay hints (`ShowHintOverlay`, `HideHintOverlay`, `_hintElements`, `_hintIsCtrl`) ; `UpdateTriggerMods` (adapte Ctrl/Shift selon hotkey) ; `OnPreviewKeyDown/Up` pour exécution par chiffre ; chargement icônes via `IconCacheService.ResolveProfilePath` partout ; `Refresh_Click` avec `SyncAll`/`SyncAllPages` ; `ClearPageIcon` remplace `SetPageIcon("")`
 
 ## [1.3.0]
 

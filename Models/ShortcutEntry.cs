@@ -22,6 +22,10 @@ public class ShortcutEntry
     public string Command { get; set; } = "";
     public string IconPath { get; set; } = "";
 
+    /// <summary>Chemin dans le dossier de profil (%APPDATA%\DockPad\icons\). Prioritaire pour l'affichage.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? IconProfilePath { get; set; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public TerminalConfig? Terminal { get; set; }
 }

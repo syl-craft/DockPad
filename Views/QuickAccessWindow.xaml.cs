@@ -24,11 +24,17 @@ public partial class QuickAccessWindow : Window
     private Point _dragStartPoint;
     private ShortcutEntry? _dragSource;
 
+    private readonly List<UIElement> _hintElements = [];
+    private bool? _hintIsCtrl; // null = caché, true = premier trigger, false = second trigger
+    private ModifierKeys _triggerFirst  = ModifierKeys.Control;
+    private ModifierKeys _triggerSecond = ModifierKeys.Shift;
+
     public QuickAccessWindow()
     {
         InitializeComponent();
         PopulateGrid();
         UpdateHotkeyDisplay();
+        UpdateTriggerMods();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -63,6 +69,83 @@ public partial class QuickAccessWindow : Window
         base.OnPreviewMouseDown(e);
         if (SearchPopup.IsOpen && !IsDescendant(e.OriginalSource as DependencyObject, SearchBox))
             SearchPopup.IsOpen = false;
+    }
+
+    protected override void OnDeactivated(EventArgs e)
+    {
+        base.OnDeactivated(e);
+        if (_hintIsCtrl != null) { _hintIsCtrl = null; HideHintOverlay(); }
+    }
+
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+        if (SearchBox.Text.Length > 0) return;
+
+        // Premier trigger seul → overlay gauche
+        if (IsAloneModifier(e, _triggerFirst) && _hintIsCtrl != true)
+        {
+            _hintIsCtrl = true;
+            ShowHintOverlay(isCtrl: true);
+            return;
+        }
+
+        // Second trigger seul → overlay droite
+        if (IsAloneModifier(e, _triggerSecond) && _hintIsCtrl != false)
+        {
+            _hintIsCtrl = false;
+            ShowHintOverlay(isCtrl: false);
+            return;
+        }
+
+        // Premier trigger + 1-9 → exécuter gauche
+        if (IsModHeld(_triggerFirst) && !IsModHeld(_triggerSecond) &&
+            GetHintDigit(e.Key) is int n1)
+        {
+            e.Handled = true;
+            _hintIsCtrl = null;
+            HideHintOverlay();
+            ExecuteByHintKey(n1, isCtrl: true);
+            return;
+        }
+
+        // Second trigger + 1-9 → exécuter droite
+        if (IsModHeld(_triggerSecond) && !IsModHeld(_triggerFirst) &&
+            GetHintDigit(e.Key) is int n2)
+        {
+            e.Handled = true;
+            _hintIsCtrl = null;
+            HideHintOverlay();
+            ExecuteByHintKey(n2, isCtrl: false);
+        }
+    }
+
+    protected override void OnPreviewKeyUp(KeyEventArgs e)
+    {
+        base.OnPreviewKeyUp(e);
+        if (_hintIsCtrl == null) return;
+
+        if (IsModifierReleased(e, _triggerFirst) || IsModifierReleased(e, _triggerSecond))
+        {
+            _hintIsCtrl = null;
+            HideHintOverlay();
+        }
+    }
+
+    private static string? GetIconInitialDir(string iconPath, string? iconProfilePath)
+    {
+        if (!string.IsNullOrEmpty(iconPath))
+        {
+            var dir = Path.GetDirectoryName(iconPath);
+            if (Directory.Exists(dir)) return dir;
+        }
+        var profileAbs = IconCacheService.ResolveProfilePath(iconProfilePath);
+        if (!string.IsNullOrEmpty(profileAbs))
+        {
+            var dir = Path.GetDirectoryName(profileAbs);
+            if (Directory.Exists(dir)) return dir;
+        }
+        return null;
     }
 
     private static bool IsDescendant(DependencyObject? child, DependencyObject parent)
@@ -129,6 +212,7 @@ public partial class QuickAccessWindow : Window
         UnregisterHotkey();
         RegisterHotkey();
         UpdateHotkeyDisplay();
+        UpdateTriggerMods();
     }
 
     private void UpdateHotkeyDisplay()
@@ -233,9 +317,12 @@ public partial class QuickAccessWindow : Window
     private Button BuildPageButton(int page, PageConfig? config, bool active, int lastShown)
     {
         object content;
-        if (config != null && !string.IsNullOrEmpty(config.IconPath))
+        if (config != null && (!string.IsNullOrEmpty(config.IconPath) || !string.IsNullOrEmpty(config.IconProfilePath)))
         {
-            var src = LoadIcon(config.IconPath);
+            string iconDisp = !string.IsNullOrEmpty(config.IconPath) && File.Exists(config.IconPath)
+                ? config.IconPath
+                : IconCacheService.ResolveProfilePath(config.IconProfilePath) ?? "";
+            var src = LoadIcon(iconDisp);
             content = src != null
                 ? (object)new Image { Source = src, Width = 18, Height = 18, Stretch = Stretch.Uniform }
                 : (page + 1).ToString();
@@ -254,10 +341,10 @@ public partial class QuickAccessWindow : Window
 
         var menu = new ContextMenu();
 
-        if (config != null && !string.IsNullOrEmpty(config.IconPath))
+        if (config != null && (!string.IsNullOrEmpty(config.IconPath) || !string.IsNullOrEmpty(config.IconProfilePath)))
         {
             var removeIcon = new MenuItem { Header = "🗑 Supprimer l'icône" };
-            removeIcon.Click += (_, _) => SetPageIcon(page, "");
+            removeIcon.Click += (_, _) => ClearPageIcon(page);
             menu.Items.Add(removeIcon);
         }
         var changeIcon = new MenuItem { Header = "🖼 Changer l'icône" };
@@ -299,23 +386,27 @@ public partial class QuickAccessWindow : Window
         };
         var configs = PageConfigService.Load();
         var current = configs.FirstOrDefault(p => p.Index == pageIndex);
-        if (current != null && File.Exists(current.IconPath))
-            dlg.InitialDirectory = Path.GetDirectoryName(current.IconPath);
+        var initDir = current != null ? GetIconInitialDir(current.IconPath, current.IconProfilePath) : null;
+        if (initDir != null) dlg.InitialDirectory = initDir;
 
         if (dlg.ShowDialog() != true) return;
-        SetPageIcon(pageIndex, dlg.FileName);
+
+        var configs2 = PageConfigService.Load();
+        var config   = configs2.FirstOrDefault(p => p.Index == pageIndex);
+        if (config == null) { config = new PageConfig { Index = pageIndex }; configs2.Add(config); }
+        config.IconPath        = dlg.FileName;
+        config.IconProfilePath = IconCacheService.CopyToProfile(dlg.FileName);
+        PageConfigService.Save(configs2);
+        PopulateGrid();
     }
 
-    private void SetPageIcon(int pageIndex, string iconPath)
+    private void ClearPageIcon(int pageIndex)
     {
         var configs = PageConfigService.Load();
         var config  = configs.FirstOrDefault(p => p.Index == pageIndex);
-        if (config == null)
-        {
-            config = new PageConfig { Index = pageIndex };
-            configs.Add(config);
-        }
-        config.IconPath = iconPath;
+        if (config == null) return;
+        config.IconPath        = "";
+        config.IconProfilePath = null;
         PageConfigService.Save(configs);
         PopulateGrid();
     }
@@ -385,7 +476,7 @@ public partial class QuickAccessWindow : Window
             Height = 36,
             Stretch = Stretch.Uniform,
             Margin = new Thickness(0, 0, 0, 6),
-            Source = LoadIcon(entry.IconPath)
+            Source = LoadIcon(IconCacheService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath)
         };
 
         var label = new TextBlock
@@ -494,11 +585,12 @@ public partial class QuickAccessWindow : Window
         var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
         if (existing != null)
         {
-            existing.Name     = dlg.Entry.Name;
-            existing.Type     = dlg.Entry.Type;
-            existing.Command  = dlg.Entry.Command;
-            existing.IconPath = dlg.Entry.IconPath;
-            existing.Terminal = dlg.Entry.Terminal;
+            existing.Name            = dlg.Entry.Name;
+            existing.Type            = dlg.Entry.Type;
+            existing.Command         = dlg.Entry.Command;
+            existing.IconPath        = dlg.Entry.IconPath;
+            existing.IconProfilePath = dlg.Entry.IconProfilePath;
+            existing.Terminal        = dlg.Entry.Terminal;
         }
         ShortcutService.Save(all);
         PopulateGrid();
@@ -570,9 +662,12 @@ public partial class QuickAccessWindow : Window
 
             // Construire le header avec icône si disponible
             object header;
-            if (config != null && !string.IsNullOrEmpty(config.IconPath))
+            if (config != null && (!string.IsNullOrEmpty(config.IconPath) || !string.IsNullOrEmpty(config.IconProfilePath)))
             {
-                var src = LoadIcon(config.IconPath);
+                string iconDisp2 = !string.IsNullOrEmpty(config.IconPath) && File.Exists(config.IconPath)
+                    ? config.IconPath
+                    : IconCacheService.ResolveProfilePath(config.IconProfilePath) ?? "";
+                var src = LoadIcon(iconDisp2);
                 if (src != null)
                 {
                     var sp = new StackPanel { Orientation = Orientation.Horizontal };
@@ -776,21 +871,27 @@ public partial class QuickAccessWindow : Window
             Filter = "Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*"
         };
 
-        if (!string.IsNullOrEmpty(entry.IconPath) && File.Exists(entry.IconPath))
-            dlg.InitialDirectory = Path.GetDirectoryName(entry.IconPath);
+        var initDir = GetIconInitialDir(entry.IconPath, entry.IconProfilePath);
+        if (initDir != null) dlg.InitialDirectory = initDir;
 
         if (dlg.ShowDialog() != true) return;
 
-        entry.IconPath = dlg.FileName;
+        string profilePath = IconCacheService.CopyToProfile(dlg.FileName) ?? "";
+
+        entry.IconPath        = dlg.FileName;
+        entry.IconProfilePath = profilePath;
 
         var all = ShortcutService.Load();
         var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
         if (existing != null)
-            existing.IconPath = dlg.FileName;
+        {
+            existing.IconPath        = dlg.FileName;
+            existing.IconProfilePath = profilePath;
+        }
         ShortcutService.Save(all);
 
         if (btn.Content is StackPanel sp && sp.Children[0] is Image img)
-            img.Source = LoadIcon(dlg.FileName);
+            img.Source = LoadIcon(IconCacheService.ResolveProfilePath(profilePath) ?? dlg.FileName);
     }
 
     private void TileDrag_MouseDown(object sender, MouseButtonEventArgs e)
@@ -860,7 +961,18 @@ public partial class QuickAccessWindow : Window
             DragMove();
     }
 
-    private void Refresh_Click(object sender, RoutedEventArgs e) => PopulateGrid();
+    private void Refresh_Click(object sender, RoutedEventArgs e)
+    {
+        var all = ShortcutService.Load();
+        if (IconCacheService.SyncAll(all))
+            ShortcutService.Save(all);
+
+        var pages = PageConfigService.Load();
+        if (IconCacheService.SyncAllPages(pages))
+            PageConfigService.Save(pages);
+
+        PopulateGrid();
+    }
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
@@ -932,6 +1044,138 @@ public partial class QuickAccessWindow : Window
     [System.Runtime.InteropServices.DllImport("gdi32.dll")]
     private static extern bool DeleteObject(IntPtr hObject);
 
+    // ── Triggers dynamiques ───────────────────────────────────────────────────
+
+    private void UpdateTriggerMods()
+    {
+        var (mods, _) = SettingsService.LoadHotkey();
+        if ((mods & HotkeyService.MOD_CONTROL) != 0)
+        {
+            // Hotkey Ctrl → triggers Shift / Alt
+            _triggerFirst  = ModifierKeys.Shift;
+            _triggerSecond = ModifierKeys.Alt;
+        }
+        else
+        {
+            // Hotkey Alt ou Shift → triggers Ctrl / Shift
+            _triggerFirst  = ModifierKeys.Control;
+            _triggerSecond = ModifierKeys.Shift;
+        }
+    }
+
+    // Vérifie si le modificateur est pressé seul (sans autre modificateur)
+    private static bool IsAloneModifier(KeyEventArgs e, ModifierKeys mod) => mod switch
+    {
+        ModifierKeys.Control => e.Key is Key.LeftCtrl  or Key.RightCtrl  && Keyboard.Modifiers == ModifierKeys.Control,
+        ModifierKeys.Shift   => e.Key is Key.LeftShift or Key.RightShift && Keyboard.Modifiers == ModifierKeys.Shift,
+        ModifierKeys.Alt     => (e.Key == Key.System && e.SystemKey is Key.LeftAlt or Key.RightAlt)
+                                && Keyboard.Modifiers == ModifierKeys.Alt,
+        _ => false
+    };
+
+    private static bool IsModHeld(ModifierKeys mod) => (Keyboard.Modifiers & mod) != 0;
+
+    private static bool IsModifierReleased(KeyEventArgs e, ModifierKeys mod) => mod switch
+    {
+        ModifierKeys.Control => e.Key is Key.LeftCtrl  or Key.RightCtrl,
+        ModifierKeys.Shift   => e.Key is Key.LeftShift or Key.RightShift,
+        ModifierKeys.Alt     => e.Key == Key.System && e.SystemKey is Key.LeftAlt or Key.RightAlt,
+        _ => false
+    };
+
+    // ── Overlay raccourcis clavier ────────────────────────────────────────────
+
+    // Mapping : 1-9 en lecture (gauche→droite, haut→bas) dans une zone 3×3
+    // Ctrl → cols 0-2 (gauche), Shift → cols 3-5 (droite), rows 0-2 seulement
+    private static (int Row, int Col) HintKeyToCell(int keyNum, bool isCtrl)
+    {
+        if (keyNum == 0) return (3, isCtrl ? 0 : 3); // 0 → sous le 1 (row 3)
+        int row = (keyNum - 1) / 3;
+        int col = (keyNum - 1) % 3 + (isCtrl ? 0 : 3);
+        return (row, col);
+    }
+
+    private void ShowHintOverlay(bool isCtrl)
+    {
+        HideHintOverlay();
+
+        for (int row = 0; row < GridRows; row++)
+        {
+            for (int col = 0; col < GridCols; col++)
+            {
+                bool active = row < 3 && (isCtrl ? col < 3 : col >= 3);
+                bool isZero = row == 3 && col == (isCtrl ? 0 : 3);
+
+                if (active || isZero)
+                {
+                    int keyNum = isZero ? 0 : row * 3 + (isCtrl ? col : col - 3) + 1;
+
+                    AddHintOverlayElement(row, col, new Border
+                    {
+                        Margin = new Thickness(5),
+                        Background = new SolidColorBrush(Color.FromArgb(0x55, 0x60, 0x60, 0x60)),
+                        IsHitTestVisible = false,
+                        CornerRadius = new CornerRadius(6),
+                        SnapsToDevicePixels = true, UseLayoutRounding = true,
+                    });
+
+                    AddHintOverlayElement(row, col, new Border
+                    {
+                        Width = 20, Height = 20,
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        VerticalAlignment = VerticalAlignment.Top,
+                        Margin = new Thickness(12, 12, 0, 0),
+                        Background = new SolidColorBrush(Color.FromArgb(0xBB, 0x55, 0x55, 0x55)),
+                        CornerRadius = new CornerRadius(4),
+                        IsHitTestVisible = false,
+                        SnapsToDevicePixels = true, UseLayoutRounding = true,
+                        Child = new TextBlock
+                        {
+                            Text = keyNum.ToString(),
+                            FontSize = 11, FontWeight = FontWeights.SemiBold,
+                            Foreground = Brushes.White,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center,
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    private void AddHintOverlayElement(int row, int col, UIElement element)
+    {
+        Grid.SetRow(element, row);
+        Grid.SetColumn(element, col);
+        ShortcutsGrid.Children.Add(element);
+        _hintElements.Add(element);
+    }
+
+    private void HideHintOverlay()
+    {
+        foreach (var el in _hintElements)
+            ShortcutsGrid.Children.Remove(el);
+        _hintElements.Clear();
+    }
+
+    private void ExecuteByHintKey(int keyNum, bool isCtrl)
+    {
+        var (row, col) = HintKeyToCell(keyNum, isCtrl);
+        var entry = ShortcutService.Load()
+            .FirstOrDefault(s => s.Page == _currentPage && s.Row == row && s.Col == col);
+        if (entry != null)
+            ExecuteEntry(entry);
+    }
+
+    // VK_0=0x30...VK_9=0x39, VK_NUMPAD0=0x60...VK_NUMPAD9=0x69
+    private static int? GetHintDigit(Key key)
+    {
+        int vk = KeyInterop.VirtualKeyFromKey(key);
+        if (vk is >= 0x30 and <= 0x39) return vk - 0x30;
+        if (vk is >= 0x60 and <= 0x69) return vk - 0x60;
+        return null;
+    }
+
     // ── Recherche ────────────────────────────────────────────────────────────
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -946,7 +1190,7 @@ public partial class QuickAccessWindow : Window
         var results = ShortcutService.Load()
             .Where(s => s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
             .OrderBy(s => s.Name)
-            .Select(s => new SearchResultItem(s, LoadIcon(s.IconPath)))
+            .Select(s => new SearchResultItem(s, LoadIcon(IconCacheService.ResolveProfilePath(s.IconProfilePath) ?? s.IconPath)))
             .ToList();
 
         SearchResults.ItemsSource = results;
@@ -1022,6 +1266,7 @@ public partial class QuickAccessWindow : Window
     {
         SearchBox.Text = "";
         SearchPopup.IsOpen = false;
+        if (_hintIsCtrl != null) { _hintIsCtrl = null; HideHintOverlay(); }
     }
 
     private sealed record SearchResultItem(ShortcutEntry Entry, BitmapSource? Icon)
