@@ -23,7 +23,9 @@ public partial class ShortcutDialog : Window
             {
                 Row = existing.Row, Col = existing.Col,
                 Name = existing.Name, Type = existing.Type,
-                Command = existing.Command, IconPath = existing.IconPath,
+                Command = existing.Command,
+                IconPath        = existing.IconPath,
+                IconProfilePath = existing.IconProfilePath,
                 Terminal = existing.Terminal == null ? null : new TerminalConfig
                 {
                     ExePath           = existing.Terminal.ExePath,
@@ -35,10 +37,16 @@ public partial class ShortcutDialog : Window
             }
             : new ShortcutEntry { Row = row, Col = col };
 
+        // Si le fichier source n'existe plus, effacer iconPath et afficher le chemin profil
+        if (!string.IsNullOrEmpty(Entry.IconPath) && !File.Exists(Entry.IconPath))
+            Entry.IconPath = "";
+
         TxtHeader.Text   = existing != null ? "Modifier le raccourci" : "Nouveau raccourci";
         TxtName.Text     = Entry.Name;
         TxtCommand.Text  = Entry.Command;
-        TxtIconPath.Text = Entry.IconPath;
+        TxtIconPath.Text = !string.IsNullOrEmpty(Entry.IconPath)
+            ? Entry.IconPath
+            : IconCacheService.ResolveProfilePath(Entry.IconProfilePath) ?? "";
 
         _terminals = TerminalDetectionService.Detect();
         CmbTerminal.ItemsSource = _terminals;
@@ -240,10 +248,26 @@ public partial class ShortcutDialog : Window
             Title  = "Choisir une icône",
             Filter = "Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*"
         };
-        if (File.Exists(TxtIconPath.Text))
-            dlg.InitialDirectory = Path.GetDirectoryName(TxtIconPath.Text);
+        var initDir = GetIconInitialDir(Entry.IconPath, Entry.IconProfilePath);
+        if (initDir != null) dlg.InitialDirectory = initDir;
         if (dlg.ShowDialog() == true)
             TxtIconPath.Text = dlg.FileName;
+    }
+
+    private static string? GetIconInitialDir(string iconPath, string? iconProfilePath)
+    {
+        if (!string.IsNullOrEmpty(iconPath))
+        {
+            var dir = Path.GetDirectoryName(iconPath);
+            if (Directory.Exists(dir)) return dir;
+        }
+        var profileAbs = IconCacheService.ResolveProfilePath(iconProfilePath);
+        if (!string.IsNullOrEmpty(profileAbs))
+        {
+            var dir = Path.GetDirectoryName(profileAbs);
+            if (Directory.Exists(dir)) return dir;
+        }
+        return null;
     }
 
     private void RefreshIconPreview()
@@ -307,11 +331,12 @@ public partial class ShortcutDialog : Window
                 CmbTerminal.Focus();
                 return;
             }
-            Entry.Name     = name;
-            Entry.Type     = type;
-            Entry.Terminal = cfg;
-            Entry.Command  = TxtCmdPreview.Text; // pour le tooltip
-            Entry.IconPath = TxtIconPath.Text.Trim();
+            Entry.Name            = name;
+            Entry.Type            = type;
+            Entry.Terminal        = cfg;
+            Entry.Command         = TxtCmdPreview.Text; // pour le tooltip
+            Entry.IconPath        = TxtIconPath.Text.Trim();
+            Entry.IconProfilePath = IconCacheService.CopyToProfile(Entry.IconPath);
         }
         else
         {
@@ -322,11 +347,12 @@ public partial class ShortcutDialog : Window
                 TxtCommand.Focus();
                 return;
             }
-            Entry.Name     = name;
-            Entry.Type     = type;
-            Entry.Command  = command;
-            Entry.Terminal = null;
-            Entry.IconPath = TxtIconPath.Text.Trim();
+            Entry.Name            = name;
+            Entry.Type            = type;
+            Entry.Command         = command;
+            Entry.Terminal        = null;
+            Entry.IconPath        = TxtIconPath.Text.Trim();
+            Entry.IconProfilePath = IconCacheService.CopyToProfile(Entry.IconPath);
         }
 
         DialogResult = true;
