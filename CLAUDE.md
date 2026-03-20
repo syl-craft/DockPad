@@ -192,4 +192,4 @@ Le publish via `FolderProfile` :
 2. Crée un zip `release\DockPad-{version}.zip`
 3. Supprime le dossier `publish\` intermédiaire
 
-Après publish, déployer le zip ou copier les fichiers vers `C:\Users\Sylvain\Documents\Afiliza@Drive\DockPad\`.
+Après publish, vider `C:\DockPad\` et extraire le zip dedans.

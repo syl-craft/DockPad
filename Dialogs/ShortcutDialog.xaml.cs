@@ -33,7 +33,13 @@ public partial class ShortcutDialog : Window
                     RunCommand        = existing.Terminal.RunCommand,
                     NewTab            = existing.Terminal.NewTab,
                     ExtraArgs         = existing.Terminal.ExtraArgs,
-                }
+                },
+                ProcessSwitch = existing.ProcessSwitch == null ? null : new ProcessSwitchConfig
+                {
+                    ProcessName = existing.ProcessSwitch.ProcessName,
+                    Executable  = existing.ProcessSwitch.Executable,
+                    Parameters  = existing.ProcessSwitch.Parameters,
+                },
             }
             : new ShortcutEntry { Row = row, Col = col };
 
@@ -76,28 +82,37 @@ public partial class ShortcutDialog : Window
         if (PanelCommand == null) return; // pas encore initialisé
 
         var tag = (CmbType.SelectedItem as ComboBoxItem)?.Tag?.ToString();
-        bool isTerminal = tag == "OpenTerminal";
+        bool isTerminal       = tag == "OpenTerminal";
+        bool isProcessSwitch  = tag == "SwitchToProcess";
+        bool isStandard       = !isTerminal && !isProcessSwitch;
 
-        PanelCommand.Visibility  = isTerminal ? Visibility.Collapsed : Visibility.Visible;
-        PanelTerminal.Visibility = isTerminal ? Visibility.Visible   : Visibility.Collapsed;
+        PanelCommand.Visibility       = isStandard       ? Visibility.Visible    : Visibility.Collapsed;
+        PanelTerminal.Visibility      = isTerminal        ? Visibility.Visible    : Visibility.Collapsed;
+        PanelProcessSwitch.Visibility = isProcessSwitch   ? Visibility.Visible    : Visibility.Collapsed;
 
-        if (!isTerminal)
+        if (isStandard)
         {
             LblCommand.Content = tag switch
             {
-                "OpenFolder" or "OpenTerminal" => "Chemin du dossier *",
-                "OpenUrl"                      => "URL *",
-                _                              => "Commande *",
+                "OpenFolder" => "Chemin du dossier *",
+                "OpenUrl"    => "URL *",
+                _            => "Commande *",
             };
             BtnBrowse.Visibility = tag == "OpenUrl" ? Visibility.Collapsed : Visibility.Visible;
         }
-        else
+        else if (isTerminal)
         {
             // Pré-remplir depuis Entry.Terminal si disponible
             if (Entry.Terminal != null && CmbTerminal.SelectedItem == null)
                 RestoreTerminalFields(Entry.Terminal);
             else if (CmbTerminal.SelectedItem == null && _terminals.Count > 0)
                 CmbTerminal.SelectedIndex = 0;
+        }
+        else if (isProcessSwitch && Entry.ProcessSwitch != null)
+        {
+            TxtPsExecutable.Text   = Entry.ProcessSwitch.Executable;
+            TxtPsProcessName.Text  = Entry.ProcessSwitch.ProcessName;
+            TxtPsParameters.Text   = Entry.ProcessSwitch.Parameters;
         }
     }
 
@@ -181,6 +196,33 @@ public partial class ShortcutDialog : Window
 
         if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             TxtTerminalDir.Text = dlg.SelectedPath;
+    }
+
+    // ── SwitchToProcess ──────────────────────────────────────────────────────
+
+    private void BrowsePsExecutable_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title  = "Choisir un exécutable",
+            Filter = "Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*"
+        };
+        if (!string.IsNullOrEmpty(TxtPsExecutable.Text))
+        {
+            var dir = Path.GetDirectoryName(TxtPsExecutable.Text);
+            if (Directory.Exists(dir)) dlg.InitialDirectory = dir;
+        }
+        if (dlg.ShowDialog() != true) return;
+        TxtPsExecutable.Text = dlg.FileName;
+    }
+
+    private void PsExecutable_Changed(object sender, TextChangedEventArgs e)
+    {
+        // Auto-remplir ProcessName depuis le nom de fichier de l'exécutable
+        if (TxtPsProcessName == null) return;
+        var path = TxtPsExecutable.Text.Trim();
+        if (!string.IsNullOrEmpty(path) && string.IsNullOrEmpty(TxtPsProcessName.Text))
+            TxtPsProcessName.Text = Path.GetFileName(path);
     }
 
     private void TerminalField_Changed(object sender, EventArgs e) => UpdatePreview();
@@ -334,7 +376,31 @@ public partial class ShortcutDialog : Window
             Entry.Name            = name;
             Entry.Type            = type;
             Entry.Terminal        = cfg;
+            Entry.ProcessSwitch   = null;
             Entry.Command         = TxtCmdPreview.Text; // pour le tooltip
+            Entry.IconPath        = TxtIconPath.Text.Trim();
+            Entry.IconProfilePath = IconCacheService.CopyToProfile(Entry.IconPath);
+        }
+        else if (type == ShortcutType.SwitchToProcess)
+        {
+            string exe = TxtPsExecutable.Text.Trim();
+            string procName = TxtPsProcessName.Text.Trim();
+            if (string.IsNullOrWhiteSpace(exe) || string.IsNullOrWhiteSpace(procName))
+            {
+                AppDialog.Warning("L'exécutable et le nom du processus sont obligatoires.", owner: this);
+                (string.IsNullOrWhiteSpace(exe) ? TxtPsExecutable : TxtPsProcessName).Focus();
+                return;
+            }
+            Entry.Name          = name;
+            Entry.Type          = type;
+            Entry.Terminal      = null;
+            Entry.ProcessSwitch = new ProcessSwitchConfig
+            {
+                Executable  = exe,
+                ProcessName = procName,
+                Parameters  = TxtPsParameters.Text.Trim(),
+            };
+            Entry.Command         = $"{procName} {Entry.ProcessSwitch.Parameters}".Trim();
             Entry.IconPath        = TxtIconPath.Text.Trim();
             Entry.IconProfilePath = IconCacheService.CopyToProfile(Entry.IconPath);
         }
@@ -351,12 +417,41 @@ public partial class ShortcutDialog : Window
             Entry.Type            = type;
             Entry.Command         = command;
             Entry.Terminal        = null;
+            Entry.ProcessSwitch   = null;
             Entry.IconPath        = TxtIconPath.Text.Trim();
             Entry.IconProfilePath = IconCacheService.CopyToProfile(Entry.IconPath);
         }
 
+        if (string.IsNullOrEmpty(Entry.IconPath) && string.IsNullOrEmpty(Entry.IconProfilePath))
+            TryAutoFillIcon();
+
         DialogResult = true;
         Close();
+    }
+
+    private void TryAutoFillIcon()
+    {
+        string? exePath = Entry.Type switch
+        {
+            ShortcutType.RunCommand      => ParseExe(Entry.Command),
+            ShortcutType.SwitchToProcess => Entry.ProcessSwitch?.Executable,
+            ShortcutType.OpenTerminal    => Entry.Terminal?.ExePath,
+            _                            => null,
+        };
+
+        if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath)) return;
+
+        Entry.IconPath        = exePath;
+        Entry.IconProfilePath = IconCacheService.CopyToProfile(exePath);
+    }
+
+    private static string? ParseExe(string command)
+    {
+        command = command.Trim();
+        string candidate = command.StartsWith('"')
+            ? command[1..Math.Max(command.IndexOf('"', 1), 1)]
+            : (command.IndexOf(' ') > 0 ? command[..command.IndexOf(' ')] : command);
+        return File.Exists(candidate) ? candidate : null;
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e)

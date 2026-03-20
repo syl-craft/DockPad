@@ -61,10 +61,11 @@
                 <Label Content="Type *"/>
                 <ComboBox x:Name="CmbType" Margin="0,0,0,16"
                           SelectionChanged="CmbType_SelectionChanged">
-                    <ComboBoxItem Content="Lancer une commande"       Tag="RunCommand"/>
-                    <ComboBoxItem Content="Ouvrir un dossier"         Tag="OpenFolder"/>
-                    <ComboBoxItem Content="Ouvrir dans le navigateur" Tag="OpenUrl"/>
-                    <ComboBoxItem Content="Ouvrir un terminal"        Tag="OpenTerminal"/>
+                    <ComboBoxItem Content="Lancer une commande"          Tag="RunCommand"/>
+                    <ComboBoxItem Content="Ouvrir un dossier"            Tag="OpenFolder"/>
+                    <ComboBoxItem Content="Ouvrir dans le navigateur"    Tag="OpenUrl"/>
+                    <ComboBoxItem Content="Ouvrir un terminal"           Tag="OpenTerminal"/>
+                    <ComboBoxItem Content="Basculer vers un processus"   Tag="SwitchToProcess"/>
                 </ComboBox>
 
                 <!-- Panel commande standard (RunCommand / OpenFolder / OpenUrl) -->
@@ -142,6 +143,36 @@
                                        FontFamily="Consolas" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
+
+                </StackPanel>
+
+                <!-- Panel SwitchToProcess -->
+                <StackPanel x:Name="PanelProcessSwitch" Visibility="Collapsed" Margin="0,0,0,16">
+
+                    <!-- Exécutable -->
+                    <Label Content="Exécutable *"/>
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="TxtPsExecutable" Grid.Column="0"
+                                 ToolTip="Chemin complet vers l'exécutable"
+                                 TextChanged="PsExecutable_Changed"/>
+                        <Button Grid.Column="1" Content="..." Width="36" Margin="6,0,0,0"
+                                Style="{StaticResource SecondaryButton}"
+                                Click="BrowsePsExecutable_Click"/>
+                    </Grid>
+
+                    <!-- Nom du processus -->
+                    <Label Content="Nom du processus *"/>
+                    <TextBox x:Name="TxtPsProcessName" Margin="0,0,0,16"
+                             ToolTip="Nom du processus tel qu'il apparaît dans le gestionnaire des tâches (ex: devenv.exe)"/>
+
+                    <!-- Paramètres -->
+                    <Label Content="Paramètres (optionnel)"/>
+                    <TextBox x:Name="TxtPsParameters" Margin="0,0,0,16"
+                             ToolTip="Arguments passés au lancement et recherchés dans la ligne de commande du processus existant"/>
 
                 </StackPanel>
 
