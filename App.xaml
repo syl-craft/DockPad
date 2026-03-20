@@ -90,16 +90,16 @@
             <!-- MenuItem standard -->
             <Style TargetType="MenuItem">
                 <Setter Property="FontFamily" Value="Segoe UI"/>
-                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontSize" Value="12"/>
                 <Setter Property="Foreground" Value="#1A1A1A"/>
-                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="Padding" Value="10,4"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="MenuItem">
                             <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}" Margin="4,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="16"/>
                                         <ColumnDefinition Width="8"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
@@ -118,7 +118,7 @@
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter Property="Foreground" Value="#999"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="12,8,12,2"/>
+                                    <Setter Property="Padding" Value="10,6,10,2"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
