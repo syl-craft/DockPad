@@ -105,8 +105,14 @@
                             Padding="10,6" ToolTip="Menu" Click="Menu_Click">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="📋 Prédéfinis" Click="Presets_Click"/>
-                                <MenuItem Header="⚙ Paramètres" Click="Settings_Click"/>
+                                <MenuItem Header="Menu contextuel" IsEnabled="False" FontWeight="SemiBold"/>
+                                <MenuItem Header="  Gestion" Click="OpenContextMenuManager_Click"/>
+                                <MenuItem Header="  Prédéfinis" Click="Presets_Click"/>
+                                <Separator/>
+                                <MenuItem Header="Paramètres" IsEnabled="False" FontWeight="SemiBold"/>
+                                <MenuItem Header="  Options" Click="Settings_Click"/>
+                                <MenuItem Header="  Actualiser" Click="Refresh_Click"/>
+                                <MenuItem Header="  Modifier la configuration" Click="EditConfig_Click"/>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
