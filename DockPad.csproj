@@ -18,6 +18,15 @@
     <Resource Include="app.ico"/>
   </ItemGroup>
 
+  <Target Name="ZipAfterPublish" AfterTargets="Publish">
+    <MakeDir Directories="$(MSBuildProjectDirectory)\release"/>
+    <ZipDirectory SourceDirectory="$(PublishDir)"
+                  DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip"
+                  Overwrite="true"/>
+    <RemoveDir Directories="$(PublishDir)"/>
+    <Message Text="Archive créée : release\DockPad-$(Version).zip" Importance="high"/>
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.0"/>
   </ItemGroup>

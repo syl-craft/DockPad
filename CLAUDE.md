@@ -47,7 +47,7 @@ Dialogs/
     AppDialog.xaml/.cs                   Dialog custom styled (remplace MessageBox) — Confirm/Error/Warning/Info
     EntryDialog.xaml/.cs                 Ajout/modification d'une entrée de menu contextuel (registre)
     PresetsDialog.xaml/.cs               Raccourcis prédéfinis
-    SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto
+    SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto + version
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
 ```
 
@@ -85,7 +85,14 @@ Dialogs/
 - Icônes supportées : `.exe`, `.dll`, `.ico`, `.png`, `.bmp`, `.jpg`
 - Cases vides affichées en `+` grisé
 - Fenêtre sans barre Windows (`WindowStyle=None`), déplaçable par drag, icône `app.ico`
-- Toolbar : **Prédéfinis** | **Paramètres** | ✎ (config) | ↺ (actualiser) | ✕ (quitter)
+- Toolbar : **☰ Menu** (déroulant) | **─** (réduire) | **⬇** (masquer dans la barre système)
+- **Menu ☰** organisé en sections :
+  - *Menu contextuel* : ☰ Gestion, 📋 Raccourcis prédéfinis
+  - *Paramètres* : ⚙ Options
+  - *Configuration* : ↺ Actualiser, ✎ Modifier, 💾 Sauvegarder, 📁 Voir le dossier
+  - ✕ Quitter l'application
+- **Raccourci clavier actif** affiché en bas à droite (badge `Consolas`, mis à jour après changement dans Options)
+- **Sauvegarder la configuration** : copie `shortcuts.json` et `pages.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
 - Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
 - Config pages stockée dans `%APPDATA%\DockPad\pages.json`
 - **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | 🗑 Supprimer
@@ -113,7 +120,7 @@ Dialogs/
 - Configuration du raccourci clavier global
 - **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
-- Affiche la version de l'application (`v1.0.0`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
+- Affiche la version de l'application (ex: `v1.3.0`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 
 ## Prédéfinis
 
@@ -165,7 +172,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.0.0</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.3.0</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 
@@ -173,12 +180,14 @@ Pour bumper la version, modifier ce champ puis commit + publish.
 
 ```bash
 dotnet build
-# Publish via le profil (framework-dependent, plusieurs fichiers, léger)
-dotnet publish -p:PublishProfile=FolderProfile
-# Sortie : bin\x64\Release\net8.0-windows\publish\
 
-# Ou publish self-contained (~155 Mo, .exe unique autonome)
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
+# Publish via le profil (méthode préférée)
+dotnet publish -p:PublishProfile=FolderProfile
 ```
 
-Le profil `Properties/PublishProfiles/FolderProfile.pubxml` est la méthode préférée — produit des fichiers légers mais requiert .NET 8 installé sur la machine cible.
+Le publish via `FolderProfile` :
+1. Compile en Release framework-dependent (requiert .NET 8 sur la machine cible)
+2. Crée un zip `release\DockPad-{version}.zip`
+3. Supprime le dossier `publish\` intermédiaire
+
+Après publish, déployer le zip ou copier les fichiers vers `C:\Users\Sylvain\Documents\Afiliza@Drive\DockPad\`.
