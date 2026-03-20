@@ -60,6 +60,83 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+
+            <!-- ContextMenu -->
+            <Style TargetType="ContextMenu">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="0,4"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContextMenu">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"
+                                    Padding="{TemplateBinding Padding}"
+                                    Effect="{DynamicResource {x:Static SystemParameters.DropShadowKey}}">
+                                <StackPanel IsItemsHost="True"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- MenuItem standard -->
+            <Style TargetType="MenuItem">
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Foreground" Value="#1A1A1A"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="MenuItem">
+                            <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}" Margin="4,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0" ContentSource="Icon"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <ContentPresenter Grid.Column="2" ContentSource="Header"
+                                                      VerticalAlignment="Center"
+                                                      RecognizesAccessKey="True"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#EEF6FC"/>
+                                    <Setter TargetName="Bd" Property="CornerRadius" Value="4"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="#999"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="12,8,12,2"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Separator dans les menus -->
+            <Style TargetType="Separator">
+                <Setter Property="Margin" Value="8,4"/>
+                <Setter Property="Background" Value="#E0E0E0"/>
+                <Setter Property="Height" Value="1"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Separator">
+                            <Border Height="1" Background="{TemplateBinding Background}" Margin="{TemplateBinding Margin}"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
