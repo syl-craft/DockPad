@@ -689,12 +689,14 @@ public partial class QuickAccessWindow : Window
 
             var item = new MenuItem { Header = header };
 
-            // Vérifier si la case cible est libre
-            bool occupied = all.Any(s => s.Page == targetPage && s.Row == entry.Row && s.Col == entry.Col);
-            if (occupied)
+            // Page pleine = toutes les cases occupées
+            var occupiedOnPage = all.Where(s => s.Page == targetPage).Select(s => (s.Row, s.Col)).ToHashSet();
+            bool pageFull = Enumerable.Range(0, GridRows).SelectMany(r => Enumerable.Range(0, GridCols).Select(c => (r, c)))
+                                      .All(cell => occupiedOnPage.Contains(cell));
+            if (pageFull)
             {
                 item.IsEnabled = false;
-                item.ToolTip   = "La case est déjà occupée sur cette page";
+                item.ToolTip   = "La page est pleine";
             }
             else
             {
@@ -716,7 +718,20 @@ public partial class QuickAccessWindow : Window
         var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
         if (existing == null) return;
 
+        // Chercher la case cible : même position si libre, sinon première case disponible
+        var occupied = all.Where(s => s.Page == targetPage).Select(s => (s.Row, s.Col)).ToHashSet();
+        (int row, int col) dest = (entry.Row, entry.Col);
+        if (occupied.Contains(dest))
+        {
+            bool found = false;
+            for (int r = 0; r < GridRows && !found; r++)
+                for (int c = 0; c < GridCols && !found; c++)
+                    if (!occupied.Contains((r, c))) { dest = (r, c); found = true; }
+        }
+
         existing.Page = targetPage;
+        existing.Row  = dest.row;
+        existing.Col  = dest.col;
         ShortcutService.Save(all);
         PopulateGrid();
     }
