@@ -11,7 +11,8 @@
         FontFamily="Segoe UI"
         ShowInTaskbar="False">
 
-    <Border Margin="16" CornerRadius="10" Background="White">
+    <Border Margin="16" CornerRadius="10" Background="White"
+            SnapsToDevicePixels="True" UseLayoutRounding="True">
         <Border.Effect>
             <DropShadowEffect BlurRadius="32" ShadowDepth="6" Opacity="0.18" Direction="270"/>
         </Border.Effect>
@@ -19,14 +20,16 @@
         <Grid>
             <!-- Bande colorée en haut -->
             <Border x:Name="AccentBar" Height="4" VerticalAlignment="Top"
-                    CornerRadius="10,10,0,0"/>
+                    CornerRadius="10,10,0,0"
+                    SnapsToDevicePixels="True" UseLayoutRounding="True"/>
 
             <StackPanel Margin="24,22,24,24">
 
                 <!-- Icône + Titre -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                     <Border x:Name="IconBadge" Width="34" Height="34" CornerRadius="17"
-                            Margin="0,0,12,0" VerticalAlignment="Center">
+                            Margin="0,0,12,0" VerticalAlignment="Center"
+                            SnapsToDevicePixels="True" UseLayoutRounding="True">
                         <TextBlock x:Name="IconText" FontSize="16" FontWeight="SemiBold"
                                    Foreground="White"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
