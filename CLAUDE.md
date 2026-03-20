@@ -113,6 +113,7 @@ Dialogs/
 - Configuration du raccourci clavier global
 - **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
+- Affiche la version de l'application (`v1.0.0`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 
 ## Prédéfinis
 
@@ -150,7 +151,9 @@ Source : **Microsoft Fluent UI System Icons** — `ic_fluent_apps_list_32_color.
 Configuré dans :
 - `.csproj` → `<ApplicationIcon>app.ico</ApplicationIcon>` (icône du `.exe`)
 - `QuickAccessWindow.xaml` → `Icon="pack://application:,,,/app.ico"`
-- `ContextMenuManagerWindow.xaml` → `Icon="app.ico"`
+- `ContextMenuManagerWindow.xaml` → `Icon="pack://application:,,,/app.ico"`
+
+> Toujours utiliser le pack URI (`pack://application:,,,/app.ico`) pour référencer `app.ico` dans les XAML situés dans des sous-dossiers, sinon WPF résout le chemin relatif depuis le sous-dossier (ex: `views/app.ico`) et lève une `IOException`.
 
 Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 - **Fluent UI System Icons** (Microsoft) — dossier, task-board
@@ -160,11 +163,22 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 - **Simple Icons** — gmail, azure-devops
 - **GitHub Octicons** — pull-requests
 
+## Versioning
+
+Version semver définie dans `DockPad.csproj` : `<Version>1.0.0</Version>`
+
+Pour bumper la version, modifier ce champ puis commit + publish.
+
 ## Build
 
 ```bash
 dotnet build
+# Publish via le profil (framework-dependent, plusieurs fichiers, léger)
+dotnet publish -p:PublishProfile=FolderProfile
+# Sortie : bin\x64\Release\net8.0-windows\publish\
+
+# Ou publish self-contained (~155 Mo, .exe unique autonome)
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
 ```
 
-Le `.exe` publié (~155 Mo) est autonome, sans dépendance .NET externe.
+Le profil `Properties/PublishProfiles/FolderProfile.pubxml` est la méthode préférée — produit des fichiers légers mais requiert .NET 8 installé sur la machine cible.
