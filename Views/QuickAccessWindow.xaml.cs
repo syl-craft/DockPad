@@ -591,6 +591,7 @@ public partial class QuickAccessWindow : Window
             existing.IconPath        = dlg.Entry.IconPath;
             existing.IconProfilePath = dlg.Entry.IconProfilePath;
             existing.Terminal        = dlg.Entry.Terminal;
+            existing.ProcessSwitch   = dlg.Entry.ProcessSwitch;
         }
         ShortcutService.Save(all);
         PopulateGrid();
@@ -636,6 +637,12 @@ public partial class QuickAccessWindow : Window
                 RunCommand        = entry.Terminal.RunCommand,
                 NewTab            = entry.Terminal.NewTab,
                 ExtraArgs         = entry.Terminal.ExtraArgs,
+            },
+            ProcessSwitch = entry.ProcessSwitch == null ? null : new ProcessSwitchConfig
+            {
+                ProcessName = entry.ProcessSwitch.ProcessName,
+                Executable  = entry.ProcessSwitch.Executable,
+                Parameters  = entry.ProcessSwitch.Parameters,
             },
         });
         ShortcutService.Save(all);
@@ -782,6 +789,10 @@ public partial class QuickAccessWindow : Window
                 case ShortcutType.OpenTerminal:
                     ExecuteTerminal(entry);
                     break;
+                case ShortcutType.SwitchToProcess:
+                    if (entry.ProcessSwitch != null)
+                        ProcessSwitchService.SwitchOrLaunch(entry.ProcessSwitch);
+                    break;
                 case ShortcutType.RunCommand:
                 default:
                     var (exe, args) = ParseCommand(entry.Command);
@@ -827,10 +838,11 @@ public partial class QuickAccessWindow : Window
 
     private static string TypeLabel(ShortcutType t) => t switch
     {
-        ShortcutType.OpenFolder   => "Dossier",
-        ShortcutType.OpenUrl      => "Navigateur",
-        ShortcutType.OpenTerminal => "Terminal",
-        _                         => "Commande",
+        ShortcutType.OpenFolder      => "Dossier",
+        ShortcutType.OpenUrl         => "Navigateur",
+        ShortcutType.OpenTerminal    => "Terminal",
+        ShortcutType.SwitchToProcess => "Processus",
+        _                            => "Commande",
     };
 
     private static readonly SolidColorBrush TileDefaultBackground = new(Colors.White);
@@ -850,17 +862,19 @@ public partial class QuickAccessWindow : Window
         btn.BorderBrush = DefaultBorder;
     }
 
-    private static readonly SolidColorBrush BandRunCommand   = new(Color.FromRgb(0xA8, 0xCC, 0xEA)); // bleu pastel
-    private static readonly SolidColorBrush BandOpenFolder   = new(Color.FromRgb(0xF5, 0xCC, 0x80)); // ambre pastel
-    private static readonly SolidColorBrush BandOpenUrl      = new(Color.FromRgb(0x92, 0xC6, 0x90)); // vert pastel
-    private static readonly SolidColorBrush BandOpenTerminal = new(Color.FromRgb(0xC4, 0xAD, 0xE0)); // violet pastel
+    private static readonly SolidColorBrush BandRunCommand      = new(Color.FromRgb(0xA8, 0xCC, 0xEA)); // bleu pastel
+    private static readonly SolidColorBrush BandOpenFolder      = new(Color.FromRgb(0xF5, 0xCC, 0x80)); // ambre pastel
+    private static readonly SolidColorBrush BandOpenUrl         = new(Color.FromRgb(0x92, 0xC6, 0x90)); // vert pastel
+    private static readonly SolidColorBrush BandOpenTerminal    = new(Color.FromRgb(0xC4, 0xAD, 0xE0)); // violet pastel
+    private static readonly SolidColorBrush BandSwitchToProcess = new(Color.FromRgb(0xF4, 0xA4, 0xA4)); // rouge pastel
 
     private static SolidColorBrush TypeBandBrush(ShortcutType t) => t switch
     {
-        ShortcutType.OpenFolder   => BandOpenFolder,
-        ShortcutType.OpenUrl      => BandOpenUrl,
-        ShortcutType.OpenTerminal => BandOpenTerminal,
-        _                         => BandRunCommand,
+        ShortcutType.OpenFolder      => BandOpenFolder,
+        ShortcutType.OpenUrl         => BandOpenUrl,
+        ShortcutType.OpenTerminal    => BandOpenTerminal,
+        ShortcutType.SwitchToProcess => BandSwitchToProcess,
+        _                            => BandRunCommand,
     };
 
     private void ChangeIcon(Button btn, ShortcutEntry entry)
@@ -1281,10 +1295,11 @@ public partial class QuickAccessWindow : Window
 
         public SolidColorBrush TypeBrush => Entry.Type switch
         {
-            ShortcutType.OpenFolder   => new SolidColorBrush(Color.FromRgb(0xF5, 0xCC, 0x80)),
-            ShortcutType.OpenUrl      => new SolidColorBrush(Color.FromRgb(0x92, 0xC6, 0x90)),
-            ShortcutType.OpenTerminal => new SolidColorBrush(Color.FromRgb(0xC4, 0xAD, 0xE0)),
-            _                         => new SolidColorBrush(Color.FromRgb(0xA8, 0xCC, 0xEA)),
+            ShortcutType.OpenFolder      => new SolidColorBrush(Color.FromRgb(0xF5, 0xCC, 0x80)),
+            ShortcutType.OpenUrl         => new SolidColorBrush(Color.FromRgb(0x92, 0xC6, 0x90)),
+            ShortcutType.OpenTerminal    => new SolidColorBrush(Color.FromRgb(0xC4, 0xAD, 0xE0)),
+            ShortcutType.SwitchToProcess => new SolidColorBrush(Color.FromRgb(0xF4, 0xA4, 0xA4)),
+            _                            => new SolidColorBrush(Color.FromRgb(0xA8, 0xCC, 0xEA)),
         };
     }
 }

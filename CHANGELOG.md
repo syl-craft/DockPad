@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.5.0] — 2026-03-20
+
+### Nouveautés utilisateur
+
+#### Nouveau type de tuile : Basculer vers un processus
+- Si un processus avec les mêmes paramètres est déjà en cours d'exécution, sa fenêtre est mise au premier plan (restaurée si réduite)
+- Sinon, le programme est lancé
+- Configuration : nom du processus (ex: `devenv.exe`), chemin de l'exécutable, paramètres optionnels
+- Le nom du processus est auto-rempli depuis le chemin de l'exécutable
+- Bande colorée rouge pastel
+
+#### Icône automatique depuis l'exécutable
+- À la création ou modification d'un raccourci, si aucune icône n'est spécifiée, l'icône est extraite automatiquement depuis l'exécutable associé
+- Fonctionne pour les types : `RunCommand`, `SwitchToProcess`, `OpenTerminal`
+
+---
+
 ## [1.4.0] — 2026-03-20
 
 ### Nouveautés utilisateur
@@ -56,6 +73,16 @@
 ---
 
 # Changelog technique (Architecture)
+
+## [1.5.0]
+
+- `Models/ProcessSwitchConfig.cs` — nouveau modèle : `ProcessName`, `Executable`, `Parameters`
+- `Models/ShortcutEntry.cs` — ajout `SwitchToProcess` dans l'enum + champ `ProcessSwitch`
+- `Services/ProcessSwitchService.cs` — `SwitchOrLaunch` : recherche via WMI (`Win32_Process.CommandLine`), `SetForegroundWindow` + `ShowWindow(SW_RESTORE)` si minimisé, sinon lance l'exe
+- `Dialogs/ShortcutDialog.xaml` — nouveau `ComboBoxItem` + `PanelProcessSwitch` (exe, processName, paramètres)
+- `Dialogs/ShortcutDialog.xaml.cs` — gestion du panel, auto-fill `ProcessName` depuis l'exe, `TryAutoFillIcon` (icône auto depuis l'exe si aucune icône spécifiée), `ParseExe`
+- `Views/QuickAccessWindow.xaml.cs` — bande rouge pastel `BandSwitchToProcess`, label "Processus", exécution via `ProcessSwitchService`, copie `ProcessSwitch` dans `EditTile` et `DuplicateTile`
+- `DockPad.csproj` — ajout `System.Management 8.0.0`
 
 ## [1.4.0]
 
