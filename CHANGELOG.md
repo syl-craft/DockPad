@@ -4,18 +4,24 @@
 
 ### Nouveautés utilisateur
 
-#### Cache d'icônes (profil portable)
-- Les icônes sont automatiquement copiées dans `%APPDATA%\DockPad\icons\` lors de la sauvegarde d'un raccourci ou d'une icône de page
-- Les icônes `.exe`/`.dll` sont extraites et sauvegardées en `.png`
-- Déduplication par hash SHA1 : pas de doublon dans le cache
-- Si le fichier source d'icône n'existe plus, le cache profil est utilisé en fallback
-- Bouton **↻ Actualiser** : synchronise le cache profil pour toutes les entrées existantes
+#### Barre de recherche globale
+- Champ de recherche dans la toolbar : filtre les raccourcis par nom sur toutes les pages
+- Résultats dans un popup avec icône, nom et type coloré
+- Navigation clavier : **↓** pour entrer dans la liste, **Entrée** pour exécuter, **Échap** pour fermer
+- **Retour arrière** depuis la liste remet le focus sur le champ de saisie
 
 #### Raccourcis clavier par chiffre (overlay)
 - Depuis la fenêtre principale : appuyer sur **Ctrl** seul affiche un overlay numéroté sur les 3×3 tuiles gauches, **Shift** seul sur les 3×3 tuiles droites
 - Maintenir **Ctrl + 1-9** ou **Shift + 1-9** exécute directement la tuile correspondante
 - L'overlay se masque à la désactivation de la fenêtre ou à la frappe Escape
 - Les modificateurs trigger s'adaptent automatiquement au raccourci global configuré
+
+#### Cache d'icônes (profil portable)
+- Les icônes sont automatiquement copiées dans `%APPDATA%\DockPad\icons\` lors de la sauvegarde d'un raccourci ou d'une icône de page
+- Les icônes `.exe`/`.dll` sont extraites et sauvegardées en `.png`
+- Déduplication par hash SHA1 : pas de doublon dans le cache
+- Si le fichier source d'icône n'existe plus, le cache profil est utilisé en fallback
+- Bouton **↻ Actualiser** : synchronise le cache profil pour toutes les entrées existantes
 
 ---
 
