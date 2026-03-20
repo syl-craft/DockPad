@@ -115,13 +115,7 @@ public partial class QuickAccessWindow : Window
         if ((mods & HotkeyService.MOD_SHIFT)   != 0) parts.Add("Shift");
         if ((mods & HotkeyService.MOD_WIN)     != 0) parts.Add("Win");
 
-        string keyName = vk switch
-        {
-            >= 0x41 and <= 0x5A => ((char)vk).ToString(),
-            >= 0x70 and <= 0x7B => $"F{vk - 0x6F}",
-            _ => $"0x{vk:X2}"
-        };
-        parts.Add(keyName);
+        parts.Add(HotkeyService.KeyName(vk));
 
         TxtHotkey.Text = string.Join(" + ", parts);
     }

@@ -11,14 +11,17 @@ public static class SettingsService
     public static (uint Modifiers, uint Key) LoadHotkey()
     {
         using var key = Registry.CurrentUser.OpenSubKey(RegPath);
-        if (key is null) return DefaultHotkey();
+        if (key is not null)
+        {
+            var mods = key.GetValue("HotkeyModifiers");
+            var vk   = key.GetValue("HotkeyKey");
+            if (mods is int m && vk is int k)
+                return ((uint)m, (uint)k);
+        }
 
-        var mods = key.GetValue("HotkeyModifiers");
-        var vk   = key.GetValue("HotkeyKey");
-
-        return mods is int m && vk is int k
-            ? ((uint)m, (uint)k)
-            : DefaultHotkey();
+        var def = DefaultHotkey();
+        SaveHotkey(def.Item1, def.Item2);
+        return def;
     }
 
     public static void SaveHotkey(uint modifiers, uint key)

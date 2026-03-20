@@ -8,11 +8,7 @@ public partial class SettingsDialog : Window
     public uint SelectedModifiers { get; private set; }
     public uint SelectedKey { get; private set; }
 
-    private static readonly (string Name, uint VK)[] Keys =
-    [
-        .. Enumerable.Range(0, 26).Select(i => (((char)('A' + i)).ToString(), (uint)('A' + i))),
-        .. Enumerable.Range(1, 12).Select(i => ($"F{i}", (uint)(0x6F + i))),
-    ];
+    private static readonly (string Name, uint VK)[] Keys = HotkeyService.Keys;
 
     public SettingsDialog()
     {
