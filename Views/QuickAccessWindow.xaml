@@ -101,10 +101,15 @@
             <Grid>
                 <!-- Actions principales (gauche) -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <Button Content="📋 Prédéfinis" Style="{StaticResource SecondaryButton}"
-                            Padding="10,6" Margin="0,0,8,0" Click="Presets_Click"/>
-                    <Button Content="⚙ Paramètres" Style="{StaticResource SecondaryButton}"
-                            Padding="10,6" Click="Settings_Click"/>
+                    <Button Content="☰" Style="{StaticResource SecondaryButton}"
+                            Padding="10,6" ToolTip="Menu" Click="Menu_Click">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="📋 Prédéfinis" Click="Presets_Click"/>
+                                <MenuItem Header="⚙ Paramètres" Click="Settings_Click"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
                 </StackPanel>
 
                 <!-- Actions raccourcis (droite) -->
