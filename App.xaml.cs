@@ -9,7 +9,7 @@ public partial class App : Application
 {
     public static bool IsExiting { get; private set; }
 
-    public static void Exit()
+    public static new void Exit()
     {
         IsExiting = true;
         Current.Shutdown();
