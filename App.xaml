@@ -76,8 +76,10 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="6"
-                                    Padding="{TemplateBinding Padding}"
-                                    Effect="{DynamicResource {x:Static SystemParameters.DropShadowKey}}">
+                                    Padding="{TemplateBinding Padding}">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15" Color="Black"/>
+                                </Border.Effect>
                                 <StackPanel IsItemsHost="True"/>
                             </Border>
                         </ControlTemplate>
