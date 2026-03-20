@@ -18,11 +18,18 @@
     <Resource Include="app.ico"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="CHANGELOG.md" CopyToPublishDirectory="Always"/>
+  </ItemGroup>
+
   <Target Name="ZipAfterPublish" AfterTargets="Publish">
     <MakeDir Directories="$(MSBuildProjectDirectory)\release"/>
     <ZipDirectory SourceDirectory="$(PublishDir)"
                   DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip"
                   Overwrite="true"/>
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md"
+          DestinationFiles="$(MSBuildProjectDirectory)\release\DockPad-$(Version)-Changelog.md"
+          OverwriteReadOnlyFiles="true"/>
     <RemoveDir Directories="$(PublishDir)"/>
     <Message Text="Archive créée : release\DockPad-$(Version).zip" Importance="high"/>
   </Target>
