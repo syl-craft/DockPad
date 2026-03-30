@@ -49,6 +49,15 @@
             <TextBlock x:Name="TxtAutoStartPath" Margin="0,8,0,0"
                        Foreground="#888" FontSize="11" TextWrapping="Wrap"
                        FontFamily="Consolas"/>
+
+            <Separator Margin="0,20,0,16"/>
+
+            <TextBlock Text="Claude Code" FontWeight="SemiBold"
+                       FontSize="13" Margin="0,0,0,14"/>
+            <TextBlock Text="Arguments supplémentaires :" Foreground="#555" Margin="0,0,0,8"/>
+            <TextBox x:Name="TxtClaudeArgs" FontFamily="Consolas" FontSize="12"
+                     Padding="6,5" BorderBrush="#CCCCCC" BorderThickness="1"
+                     ToolTip="Ex : --enable-auto-mode"/>
         </StackPanel>
 
         <!-- Buttons -->

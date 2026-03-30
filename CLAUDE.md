@@ -18,6 +18,9 @@ App.xaml/.cs                             Point d'entrée : instance unique (Mute
 GlobalUsings.cs                          Usings globaux
 DockPad.csproj / DockPad.sln
 
+Assets/
+    folder.png                           Icône dossier par défaut (jaune, style Windows 11) — ressource embarquée
+
 Converters/
     InverseBoolConverter.cs              Converter WPF bool inversé
 
@@ -108,6 +111,7 @@ tools/
 - **Clic droit sur une case vide** : ➕ Ajouter
 - **Clic droit sur un bouton de page** : 🖼 Changer l'icône | ← / → Déplacer | 🗑 Supprimer la page
 - **Drag & drop** entre tuiles pour les réorganiser
+- **Drag & drop depuis l'Explorateur** : glisser un dossier → raccourci `OpenFolder` (icône dossier par défaut `Assets/folder.png`) ; glisser un `.url` → raccourci `OpenUrl` (icône navigateur par défaut détectée via registre)
 - **Déplacer vers la page** : place à la même position si libre, sinon première case disponible ; grisé seulement si la page est pleine
 
 ### Barre de recherche globale
@@ -155,7 +159,8 @@ tools/
 - Configuration du raccourci clavier global
 - **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
-- Affiche la version de l'application (ex: `v1.5.0`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
+- Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
+- **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
 ## Prédéfinis
 
@@ -220,7 +225,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.5.0</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.5.2</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 

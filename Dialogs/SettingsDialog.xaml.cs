@@ -17,6 +17,7 @@ public partial class SettingsDialog : Window
         CmbKey.ItemsSource = Keys.Select(k => k.Name).ToList();
 
         ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
+        TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
         TxtAutoStartPath.Text = Environment.ProcessPath
             ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
 
@@ -74,6 +75,7 @@ public partial class SettingsDialog : Window
 
         SettingsService.SaveHotkey(SelectedModifiers, SelectedKey);
         SettingsService.SaveAutoStart(ChkAutoStart.IsChecked == true);
+        SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
         DialogResult = true;
     }
 

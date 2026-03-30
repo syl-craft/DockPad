@@ -35,6 +35,9 @@ public partial class QuickAccessWindow : Window
         PopulateGrid();
         UpdateHotkeyDisplay();
         UpdateTriggerMods();
+
+        var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -948,8 +951,14 @@ public partial class QuickAccessWindow : Window
 
     private void TileDrop_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = _dragSource != null ? DragDropEffects.Move : DragDropEffects.None;
-        if (sender is Button btn) btn.BorderBrush = DragOverBrush;
+        if (_dragSource != null)
+            e.Effects = DragDropEffects.Move;
+        else if (IsExplorerDrop(e))
+            e.Effects = DragDropEffects.Copy;
+        else
+            e.Effects = DragDropEffects.None;
+
+        if (sender is Button btn) btn.BorderBrush = e.Effects != DragDropEffects.None ? DragOverBrush : DefaultBorder;
         e.Handled = true;
     }
 
@@ -960,12 +969,28 @@ public partial class QuickAccessWindow : Window
 
     private void TileDrop_Drop(object sender, DragEventArgs e)
     {
-        if (_dragSource == null || sender is not Button targetBtn) return;
-
         if (sender is Button b) b.BorderBrush = DefaultBorder;
+        if (sender is not Button targetBtn) return;
 
         int targetRow = Grid.GetRow(targetBtn);
         int targetCol = Grid.GetColumn(targetBtn);
+
+        // Drop depuis l'Explorateur Windows
+        if (_dragSource == null && e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            var files = e.Data.GetData(DataFormats.FileDrop) as string[];
+            if (files?.Length > 0)
+            {
+                if (Directory.Exists(files[0]))
+                    CreateFolderShortcutFromDrop(files[0], targetRow, targetCol);
+                else if (Path.GetExtension(files[0]).Equals(".url", StringComparison.OrdinalIgnoreCase))
+                    CreateUrlShortcutFromDrop(files[0], targetRow, targetCol);
+            }
+            return;
+        }
+
+        // Drag & drop interne entre tuiles
+        if (_dragSource == null) return;
         if (_dragSource.Row == targetRow && _dragSource.Col == targetCol) return;
 
         var all    = ShortcutService.Load();
@@ -982,6 +1007,124 @@ public partial class QuickAccessWindow : Window
 
         ShortcutService.Save(all);
         PopulateGrid();
+    }
+
+    private static bool IsExplorerDrop(DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return false;
+        var files = e.Data.GetData(DataFormats.FileDrop) as string[];
+        if (files?.Length > 0)
+            return Directory.Exists(files[0]) ||
+                   Path.GetExtension(files[0]).Equals(".url", StringComparison.OrdinalIgnoreCase);
+        return false;
+    }
+
+    private void CreateFolderShortcutFromDrop(string folderPath, int row, int col)
+    {
+        string name = Path.GetFileName(folderPath);
+        if (string.IsNullOrEmpty(name)) name = folderPath.TrimEnd('\\', '/');
+
+        var entry = new ShortcutEntry
+        {
+            Page            = _currentPage,
+            Row             = row,
+            Col             = col,
+            Name            = name,
+            Type            = ShortcutType.OpenFolder,
+            Command         = folderPath,
+            IconProfilePath = EnsureDefaultFolderIcon(),
+        };
+
+        SaveDroppedEntry(entry, row, col);
+    }
+
+    private void CreateUrlShortcutFromDrop(string urlFilePath, int row, int col)
+    {
+        string? url = null;
+        string? title = null;
+        try
+        {
+            foreach (var line in File.ReadLines(urlFilePath))
+            {
+                if (line.StartsWith("URL=", StringComparison.OrdinalIgnoreCase))
+                    url = line[4..];
+                else if (line.StartsWith("Title=", StringComparison.OrdinalIgnoreCase))
+                    title = line[6..];
+            }
+        }
+        catch { }
+
+        if (string.IsNullOrEmpty(url)) return;
+        title ??= Path.GetFileNameWithoutExtension(urlFilePath);
+
+        var entry = new ShortcutEntry
+        {
+            Page            = _currentPage,
+            Row             = row,
+            Col             = col,
+            Name            = title,
+            Type            = ShortcutType.OpenUrl,
+            Command         = url,
+            IconProfilePath = EnsureDefaultBrowserIcon(),
+        };
+
+        SaveDroppedEntry(entry, row, col);
+    }
+
+    private void SaveDroppedEntry(ShortcutEntry entry, int row, int col)
+    {
+        var all      = ShortcutService.Load();
+        var existing = all.FirstOrDefault(s => s.Page == _currentPage && s.Row == row && s.Col == col);
+
+        if (existing != null)
+        {
+            // Case occupée : ouvrir le dialog pré-rempli
+            entry.Page = _currentPage;
+            var dlg = new ShortcutDialog(entry) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+            all.Remove(existing);
+            all.Add(dlg.Entry);
+        }
+        else
+        {
+            all.Add(entry);
+        }
+
+        ShortcutService.Save(all);
+        PopulateGrid();
+    }
+
+    private static string? EnsureDefaultFolderIcon()
+    {
+        try
+        {
+            var info = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/folder.png"));
+            if (info == null) return null;
+            using var ms = new System.IO.MemoryStream();
+            info.Stream.CopyTo(ms);
+            return IconCacheService.CacheBytes(ms.ToArray(), ".png");
+        }
+        catch { return null; }
+    }
+
+    private static string? EnsureDefaultBrowserIcon()
+    {
+        try
+        {
+            using var userChoice = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice");
+            var progId = userChoice?.GetValue("ProgId") as string;
+            if (string.IsNullOrEmpty(progId)) return null;
+
+            using var cmdKey = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(
+                $@"{progId}\shell\open\command");
+            var cmd = cmdKey?.GetValue(null) as string;
+            if (string.IsNullOrEmpty(cmd)) return null;
+
+            var (exe, _) = ParseCommand(cmd);
+            return File.Exists(exe) ? IconCacheService.CopyToProfile(exe) : null;
+        }
+        catch { return null; }
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
