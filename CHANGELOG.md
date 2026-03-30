@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.5.3] — 2026-03-30
+
+### Nouveautés utilisateur
+
+#### Version affichée dans la fenêtre principale
+- Le numéro de version (ex: `v1.5.3`) est affiché en bas à gauche de la fenêtre des raccourcis rapides
+- Police `Consolas`, même style que le badge du raccourci clavier
+
+---
+
+## [1.5.2] — 2026-03-29
+
+### Nouveautés utilisateur
+
+#### Drag & drop depuis l'Explorateur Windows
+- Glisser-déposer un **dossier** depuis l'Explorateur sur une tuile → crée automatiquement un raccourci "Ouvrir un dossier"
+  - Icône dossier par défaut incluse avec le programme (jaune, style Windows)
+  - Si la case est vide : raccourci créé immédiatement
+  - Si la case est occupée : dialog pré-rempli pour confirmer ou modifier
+- Glisser-déposer un **fichier .url** (raccourci Internet) → crée un raccourci "Ouvrir dans le navigateur"
+  - L'URL et le titre sont extraits automatiquement du fichier
+  - L'icône du navigateur par défaut est détectée et utilisée automatiquement
+
+---
+
+## [1.5.1] — 2026-03-26
+
+### Nouveautés utilisateur
+
+#### Arguments Claude Code configurables
+- Champ texte libre dans **Options** (section "Claude Code") pour passer des arguments supplémentaires à Claude Code
+- Exemple : `--enable-auto-mode`
+- Les arguments sont appliqués au prédéfini "Ouvrir un terminal Claude" (Windows Terminal et PowerShell)
+- Stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`
+
+---
+
 ## [1.5.0] — 2026-03-20
 
 ### Nouveautés utilisateur

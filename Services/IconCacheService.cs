@@ -112,6 +112,22 @@ public static class IconCacheService
         catch { return null; }
     }
 
+    /// <summary>
+    /// Enregistre des bytes d'icône dans le cache (déduplication SHA1).
+    /// Retourne le chemin relatif au profil, ou null si échec.
+    /// </summary>
+    public static string? CacheBytes(byte[] data, string ext)
+    {
+        try
+        {
+            var (abs, rel) = DestPaths(data, ext);
+            if (!File.Exists(abs))
+                File.WriteAllBytes(abs, data);
+            return rel;
+        }
+        catch { return null; }
+    }
+
     /// <summary>Retourne (chemin absolu, chemin relatif au profil) pour un fichier icône.</summary>
     private static (string Abs, string Rel) DestPaths(byte[] data, string ext)
     {

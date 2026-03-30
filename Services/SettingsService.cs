@@ -53,6 +53,18 @@ public static class SettingsService
         }
     }
 
+    public static string LoadClaudeArgs()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RegPath);
+        return key?.GetValue("ClaudeArgs") as string ?? "";
+    }
+
+    public static void SaveClaudeArgs(string args)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(RegPath);
+        key.SetValue("ClaudeArgs", args.Trim(), RegistryValueKind.String);
+    }
+
     // Default: Ctrl+Shift+M
     private static (uint, uint) DefaultHotkey() =>
         (HotkeyService.MOD_CONTROL | HotkeyService.MOD_SHIFT, 0x4D);

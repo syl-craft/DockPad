@@ -33,17 +33,20 @@ public static class PresetService
         string? wt = FindExe("wt.exe",
             Path.Combine(localAppData, @"Microsoft\WindowsApps\wt.exe"));
 
+        string claudeArgs = SettingsService.LoadClaudeArgs();
+        string claudeCmd  = string.IsNullOrEmpty(claudeArgs) ? "claude" : $"claude {claudeArgs}";
+
         string command;
         if (wt != null)
         {
-            command = $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- claude";
+            command = $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- {claudeCmd}";
         }
         else
         {
             string? ps = FindExe("powershell.exe",
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),
                     @"WindowsPowerShell\v1.0\powershell.exe"));
-            command = $"\"{ps ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; claude\"";
+            command = $"\"{ps ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; {claudeCmd}\"";
         }
 
         return new PresetEntry
