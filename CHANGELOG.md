@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.4] — 2026-04-04
+
+### Nouveautés utilisateur
+
+#### Basculer vers un processus — recherche par titre de fenêtre
+- Nouveau mode de recherche dans le type de tuile **"Basculer vers un processus"** : **Par titre de fenêtre**
+- Permet de cibler des applications dont le nom de processus est difficile à connaître (ex : Calculatrice Windows, apps UWP)
+- Exemple : saisir `Calculatrice` pour retrouver et mettre au premier plan la Calculatrice Windows
+- La recherche est insensible à la casse et cherche le texte saisi dans le titre de la fenêtre (correspondance partielle)
+- Si aucune fenêtre correspondante n'est trouvée, l'exécutable est lancé normalement
+- Le champ **Paramètres** reste disponible dans les deux modes (utilisé au lancement si la fenêtre/processus est absent)
+
+---
+
 ## [1.5.3] — 2026-03-30
 
 ### Nouveautés utilisateur

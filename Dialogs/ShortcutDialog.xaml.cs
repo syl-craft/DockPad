@@ -108,11 +108,19 @@ public partial class ShortcutDialog : Window
             else if (CmbTerminal.SelectedItem == null && _terminals.Count > 0)
                 CmbTerminal.SelectedIndex = 0;
         }
-        else if (isProcessSwitch && Entry.ProcessSwitch != null)
+        else if (isProcessSwitch)
         {
-            TxtPsExecutable.Text   = Entry.ProcessSwitch.Executable;
-            TxtPsProcessName.Text  = Entry.ProcessSwitch.ProcessName;
-            TxtPsParameters.Text   = Entry.ProcessSwitch.Parameters;
+            if (Entry.ProcessSwitch != null)
+            {
+                TxtPsExecutable.Text  = Entry.ProcessSwitch.Executable;
+                TxtPsProcessName.Text = Entry.ProcessSwitch.ProcessName;
+                TxtPsParameters.Text  = Entry.ProcessSwitch.Parameters;
+                SetPsSearchMode(Entry.ProcessSwitch.SearchMode);
+            }
+            else if (CmbPsSearchMode.SelectedItem == null)
+            {
+                CmbPsSearchMode.SelectedIndex = 0;
+            }
         }
     }
 
@@ -199,6 +207,33 @@ public partial class ShortcutDialog : Window
     }
 
     // ── SwitchToProcess ──────────────────────────────────────────────────────
+
+    private void SetPsSearchMode(ProcessSearchMode mode)
+    {
+        foreach (ComboBoxItem item in CmbPsSearchMode.Items)
+        {
+            if (item.Tag?.ToString() == mode.ToString())
+            {
+                CmbPsSearchMode.SelectedItem = item;
+                return;
+            }
+        }
+        CmbPsSearchMode.SelectedIndex = 0;
+    }
+
+    private void CmbPsSearchMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (LblPsSearchTerm == null) return;
+        var mode = (CmbPsSearchMode.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+        bool isByTitle = mode == "ByWindowTitle";
+        LblPsSearchTerm.Content          = isByTitle ? "Titre de la fenêtre *" : "Nom du processus *";
+        TxtPsProcessName.ToolTip         = isByTitle
+            ? "Texte recherché dans le titre des fenêtres ouvertes (ex: Calculatrice)"
+            : "Nom du processus tel qu'il apparaît dans le gestionnaire des tâches (ex: devenv.exe)";
+        TxtPsParameters.ToolTip = isByTitle
+            ? "Arguments passés à l'exécutable au lancement si la fenêtre n'est pas trouvée"
+            : "Arguments passés au lancement et recherchés dans la ligne de commande du processus existant";
+    }
 
     private void BrowsePsExecutable_Click(object sender, RoutedEventArgs e)
     {
@@ -385,9 +420,12 @@ public partial class ShortcutDialog : Window
         {
             string exe = TxtPsExecutable.Text.Trim();
             string procName = TxtPsProcessName.Text.Trim();
+            var psMode = Enum.TryParse((CmbPsSearchMode.SelectedItem as ComboBoxItem)?.Tag?.ToString(),
+                out ProcessSearchMode parsedMode) ? parsedMode : ProcessSearchMode.ByProcessName;
             if (string.IsNullOrWhiteSpace(exe) || string.IsNullOrWhiteSpace(procName))
             {
-                AppDialog.Warning("L'exécutable et le nom du processus sont obligatoires.", owner: this);
+                string fieldLabel = psMode == ProcessSearchMode.ByWindowTitle ? "titre de fenêtre" : "nom du processus";
+                AppDialog.Warning($"L'exécutable et le {fieldLabel} sont obligatoires.", owner: this);
                 (string.IsNullOrWhiteSpace(exe) ? TxtPsExecutable : TxtPsProcessName).Focus();
                 return;
             }
@@ -396,6 +434,7 @@ public partial class ShortcutDialog : Window
             Entry.Terminal      = null;
             Entry.ProcessSwitch = new ProcessSwitchConfig
             {
+                SearchMode  = psMode,
                 Executable  = exe,
                 ProcessName = procName,
                 Parameters  = TxtPsParameters.Text.Trim(),
