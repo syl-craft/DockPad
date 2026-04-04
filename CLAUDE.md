@@ -142,11 +142,23 @@ tools/
 | `SwitchToProcess` | Bascule vers un processus existant (même cmdline) ou le lance | `processName args` (tooltip) | rouge |
 
 ### SwitchToProcess
+Deux modes de recherche configurables via `ProcessSwitchConfig.SearchMode` (`ProcessSearchMode`) :
+
+**`ByProcessName`** (défaut) :
 - Cherche un processus par nom via `Process.GetProcessesByName`
 - Lit la ligne de commande via WMI (`Win32_Process.CommandLine`) pour matcher les paramètres
 - Si trouvé : `SetForegroundWindow` + `ShowWindow(SW_RESTORE)` si minimisé
 - Si non trouvé : lance `Executable` avec `Parameters`
-- Config stockée dans `ShortcutEntry.ProcessSwitch` (`ProcessSwitchConfig`)
+
+**`ByWindowTitle`** :
+- Énumère toutes les fenêtres visibles via `EnumWindows` + `GetWindowText` (P/Invoke)
+- Cherche le fragment de texte dans le titre (insensible à la casse, correspondance partielle)
+- Utile pour les apps UWP dont le nom de processus est opaque (ex : Calculatrice → titre `Calculatrice`)
+- Si aucune fenêtre trouvée : lance `Executable` avec `Parameters`
+- Champ titre vide → `IntPtr.Zero` directement, pas d'énumération
+
+Config stockée dans `ShortcutEntry.ProcessSwitch` (`ProcessSwitchConfig`)  
+Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 
 ### Raccourci clavier global
 - Hotkey configurable via `SettingsDialog` (Ctrl/Alt/Shift/Win + touche A-Z ou F1-F12)
@@ -225,7 +237,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.5.2</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.5.4</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 
