@@ -182,6 +182,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 | Ouvrir dans PowerShell | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V"` (pwsh/powershell fallback) |
 | Ouvrir dans Visual Studio Code | FolderBackground | `code "%V"` |
 | Ouvrir dans SQL Server Management Studio | FolderBackground | `ssms.exe "%V"` |
+| Ouvrir dans GitHub Desktop | FolderBackground | `GitHubDesktop.exe --cli-open="%V"` (flag interne utilisé par le shim `github` — ajoute ET ouvre le dépôt, sans fenêtre console) |
 
 ## Format JSON raccourcis rapides
 
