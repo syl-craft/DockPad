@@ -14,6 +14,7 @@ public static class PresetService
             BuildPowerShell(),
             BuildVSCode(),
             BuildSSMS(),
+            BuildGitHubDesktop(),
         ];
     }
 
@@ -142,6 +143,35 @@ public static class PresetService
             IconPath = icon,
             Target = ContextMenuTarget.FolderBackground,
             Description = "Ouvre ce dossier dans SQL Server Management Studio"
+        };
+    }
+
+    private static PresetEntry BuildGitHubDesktop()
+    {
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        // Appel direct du flag interne `--cli-open=` : c'est exactement ce que le shim
+        // `github` (bin\github.bat → cli.js) finit par exécuter — il relance
+        // `GitHubDesktop.exe --cli-open=<chemin>` en mode GUI. En l'appelant directement,
+        // on ajoute ET ouvre le dépôt sans passer par cmd/.bat, donc aucune fenêtre
+        // console ne reste ouverte (notamment au premier lancement, cold boot Electron).
+        // Voir spec "github-desktop-ajout-depot.md".
+        string? exe = FindExe("GitHubDesktop.exe",
+            Path.Combine(localAppData, @"GitHubDesktop\GitHubDesktop.exe"));
+
+        string command = exe != null
+            ? $"\"{exe}\" --cli-open=\"%V\""
+            : "GitHubDesktop.exe --cli-open=\"%V\"";
+        string icon = exe ?? "";
+
+        return new PresetEntry
+        {
+            DisplayName = "Ouvrir dans GitHub Desktop",
+            RegistryKey = "OpenWithGitHubDesktop",
+            Command = command,
+            IconPath = icon,
+            Target = ContextMenuTarget.FolderBackground,
+            Description = "Ouvre ce dossier dans GitHub Desktop"
         };
     }
 

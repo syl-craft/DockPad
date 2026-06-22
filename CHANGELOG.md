@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.5] — 2026-06-22
+
+### Corrections
+
+#### Prédéfini « Ouvrir dans GitHub Desktop »
+- La commande utilise désormais le flag interne `GitHubDesktop.exe --cli-open="%V"` (au lieu de `--open-repo`, qui ne chargeait pas le dépôt)
+- Le dépôt est maintenant correctement **ajouté et ouvert** dans GitHub Desktop
+- Plus de **fenêtre console** qui reste ouverte au premier lancement (on n'utilise plus la chaîne `cmd`/`.bat` du shim qui bloquait pendant le démarrage à froid)
+
+---
+
 ## [1.5.4] — 2026-04-04
 
 ### Nouveautés utilisateur
