@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.5.7] — 2026-07-20
+
+### Nouveautés utilisateur
+
+#### Overlay clavier — ligne du bas complète
+- Les 2 cases restantes de la ligne du bas sont désormais accessibles : **Ctrl + ↑ / ↓** (côté gauche) et **Shift + ↑ / ↓** (côté droit), en plus du **0** existant
+- L'overlay affiche les badges `0`, `↑`, `↓` sur la ligne du bas — les 12 tuiles de chaque moitié sont maintenant toutes exécutables au clavier
+
+#### Navigation de page au clavier
+- **→** seule : page suivante ; **←** seule : page précédente (sans bouclage aux extrémités)
+
+#### Pavé numérique
+- Les raccourcis chiffres fonctionnent désormais aussi avec le **pavé numérique**, y compris avec Shift (qui annule temporairement NumLock sous Windows) ou NumLock éteint
+- Les vraies touches fléchées restent distinctes des flèches du pavé numérique
+
+---
+
 ## [1.5.6] — 2026-07-20
 
 ### Corrections
@@ -147,6 +164,10 @@
 ---
 
 # Changelog technique (Architecture)
+
+## [1.5.7]
+
+- `Views/QuickAccessWindow.xaml.cs` — `GetHintDigit` → `GetHintKey` (0-9, ↑=10, ↓=11) avec remap des touches de navigation non-étendues du pavé numérique ; flag étendu (bit 24 du lParam) lu sur le message en cours via `ComponentDispatcher.CurrentKeyboardMessage` ; `HintKeyToCell` étendu (row 3 : 0/↑/↓) ; `ShowHintOverlay` badge la ligne du bas complète ; `GoToAdjacentPage` (←/→ seules) ; touche effective via `SystemKey` (trigger Alt / fenêtre sans focus clavier)
 
 ## [1.5.6]
 

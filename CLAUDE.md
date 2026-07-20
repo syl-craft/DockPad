@@ -119,11 +119,14 @@ tools/
 - Résultats dans un popup avec icône, nom et type coloré
 - Navigation clavier : **↓** pour entrer dans la liste, **Entrée** pour exécuter, **Échap** pour fermer, **Retour arrière** depuis la liste → focus sur le champ
 
-### Raccourcis clavier par chiffre (overlay)
-- Appuyer sur **Ctrl** seul → overlay numéroté sur les 3×3 tuiles gauches ; **Shift** seul → tuiles droites
-- **Ctrl + 1-9** ou **Shift + 1-9** exécute directement la tuile correspondante
-- L'overlay se masque à la désactivation de la fenêtre ou à la frappe Échap
-- Les modificateurs trigger s'adaptent automatiquement au raccourci global configuré
+### Raccourcis clavier par touche (overlay)
+- Appuyer sur **Ctrl** seul → overlay sur la moitié gauche (4×3) ; **Shift** seul → moitié droite
+- **1-9** : les 3×3 tuiles du haut (lecture gauche→droite, haut→bas) ; ligne du bas : **0**, **↑**, **↓**
+- **Ctrl/Shift + touche** exécute directement la tuile correspondante
+- **Pavé numérique** supporté : les touches de navigation non-étendues (Shift qui annule NumLock, ou NumLock éteint) sont remappées en chiffres via le bit 24 du lParam, lu sur le message en cours avec `ComponentDispatcher.CurrentKeyboardMessage` (un hook WndProc/ThreadPreprocessMessage ne marche PAS : les touches gérées par WPF n'atteignent pas le WndProc, et HwndSource traite le clavier avant les handlers ThreadPreprocessMessage abonnés après lui) ; les vraies flèches (étendues) gardent leur rôle ↑/↓
+- **← / → seules** (sans modificateur) : page précédente / suivante (pas de bouclage aux extrémités)
+- L'overlay se masque à la désactivation de la fenêtre ou au relâchement du modificateur
+- Les modificateurs trigger s'adaptent automatiquement au raccourci global configuré (trigger Alt : touches lues via `SystemKey`)
 
 ### Cache d'icônes (IconCacheService)
 - Les icônes sont copiées dans `%APPDATA%\DockPad\icons\` à la sauvegarde (déduplication SHA1)
@@ -238,7 +241,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.5.6</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.5.7</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 
