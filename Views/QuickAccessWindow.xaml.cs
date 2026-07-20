@@ -101,9 +101,12 @@ public partial class QuickAccessWindow : Window
             return;
         }
 
-        // Premier trigger + 1-9 → exécuter gauche
+        // Avec le trigger Alt, les touches arrivent en Key.System (SystemKey = vraie touche)
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+
+        // Premier trigger + touche (0-9, ↑, ↓) → exécuter gauche
         if (IsModHeld(_triggerFirst) && !IsModHeld(_triggerSecond) &&
-            GetHintDigit(e.Key) is int n1)
+            GetHintKey(key) is int n1)
         {
             e.Handled = true;
             _hintIsCtrl = null;
@@ -112,15 +115,37 @@ public partial class QuickAccessWindow : Window
             return;
         }
 
-        // Second trigger + 1-9 → exécuter droite
+        // Second trigger + touche (0-9, ↑, ↓) → exécuter droite
         if (IsModHeld(_triggerSecond) && !IsModHeld(_triggerFirst) &&
-            GetHintDigit(e.Key) is int n2)
+            GetHintKey(key) is int n2)
         {
             e.Handled = true;
             _hintIsCtrl = null;
             HideHintOverlay();
             ExecuteByHintKey(n2, isCtrl: false);
+            return;
         }
+
+        // Flèches ← / → seules → page précédente / suivante
+        if (Keyboard.Modifiers == ModifierKeys.None && key is Key.Left or Key.Right)
+        {
+            e.Handled = true;
+            GoToAdjacentPage(key == Key.Right ? 1 : -1);
+        }
+    }
+
+    private void GoToAdjacentPage(int delta)
+    {
+        // Même règle d'affichage que UpdatePagination : pages avec contenu ou config
+        var all       = ShortcutService.Load();
+        var configs   = PageConfigService.Load();
+        int maxUsed   = all.Count     > 0 ? all.Max(s => s.Page)      : -1;
+        int maxConfig = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
+        int lastShown = Math.Max(Math.Max(maxUsed, maxConfig), _currentPage);
+
+        int target = _currentPage + delta;
+        if (target < 0 || target > lastShown) return; // pas de bouclage aux extrémités
+        GoToPage(target);
     }
 
     protected override void OnPreviewKeyUp(KeyEventArgs e)
@@ -174,6 +199,9 @@ public partial class QuickAccessWindow : Window
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        // WM_KEYDOWN / WM_SYSKEYDOWN : mémorise le flag "touche étendue" (bit 24 du lParam).
+        // Les vraies flèches sont étendues ; les mêmes VK émis par le pavé numérique
+        // (Shift+chiffre ou NumLock off) ne le sont pas — WPF ne l'expose pas dans KeyEventArgs.
         if (msg == HotkeyService.WM_HOTKEY && wParam.ToInt32() == HotkeyService.HotkeyId)
         {
             WindowState = WindowState.Normal;
@@ -1257,13 +1285,17 @@ public partial class QuickAccessWindow : Window
 
     // ── Overlay raccourcis clavier ────────────────────────────────────────────
 
-    // Mapping : 1-9 en lecture (gauche→droite, haut→bas) dans une zone 3×3
-    // Ctrl → cols 0-2 (gauche), Shift → cols 3-5 (droite), rows 0-2 seulement
+    // Mapping : 1-9 en lecture (gauche→droite, haut→bas) dans une zone 3×3 (rows 0-2) ;
+    // ligne du bas (row 3) : 0, ↑ (keyNum 10), ↓ (keyNum 11)
+    // Ctrl → cols 0-2 (gauche), Shift → cols 3-5 (droite)
     private static (int Row, int Col) HintKeyToCell(int keyNum, bool isCtrl)
     {
-        if (keyNum == 0) return (3, isCtrl ? 0 : 3); // 0 → sous le 1 (row 3)
+        int baseCol = isCtrl ? 0 : 3;
+        if (keyNum == 0)  return (3, baseCol);     // 0 → sous le 1
+        if (keyNum == 10) return (3, baseCol + 1); // ↑
+        if (keyNum == 11) return (3, baseCol + 2); // ↓
         int row = (keyNum - 1) / 3;
-        int col = (keyNum - 1) % 3 + (isCtrl ? 0 : 3);
+        int col = (keyNum - 1) % 3 + baseCol;
         return (row, col);
     }
 
@@ -1275,42 +1307,41 @@ public partial class QuickAccessWindow : Window
         {
             for (int col = 0; col < GridCols; col++)
             {
-                bool active = row < 3 && (isCtrl ? col < 3 : col >= 3);
-                bool isZero = row == 3 && col == (isCtrl ? 0 : 3);
+                if (isCtrl ? col >= 3 : col < 3) continue; // côté inactif
 
-                if (active || isZero)
+                // Rows 0-2 : chiffres 1-9 ; row 3 : 0, ↑, ↓
+                string label = row < 3
+                    ? (row * 3 + col % 3 + 1).ToString()
+                    : (col % 3) switch { 0 => "0", 1 => "↑", _ => "↓" };
+
+                AddHintOverlayElement(row, col, new Border
                 {
-                    int keyNum = isZero ? 0 : row * 3 + (isCtrl ? col : col - 3) + 1;
+                    Margin = new Thickness(5),
+                    Background = new SolidColorBrush(Color.FromArgb(0x55, 0x60, 0x60, 0x60)),
+                    IsHitTestVisible = false,
+                    CornerRadius = new CornerRadius(6),
+                    SnapsToDevicePixels = true, UseLayoutRounding = true,
+                });
 
-                    AddHintOverlayElement(row, col, new Border
+                AddHintOverlayElement(row, col, new Border
+                {
+                    Width = 20, Height = 20,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(12, 12, 0, 0),
+                    Background = new SolidColorBrush(Color.FromArgb(0xBB, 0x55, 0x55, 0x55)),
+                    CornerRadius = new CornerRadius(4),
+                    IsHitTestVisible = false,
+                    SnapsToDevicePixels = true, UseLayoutRounding = true,
+                    Child = new TextBlock
                     {
-                        Margin = new Thickness(5),
-                        Background = new SolidColorBrush(Color.FromArgb(0x55, 0x60, 0x60, 0x60)),
-                        IsHitTestVisible = false,
-                        CornerRadius = new CornerRadius(6),
-                        SnapsToDevicePixels = true, UseLayoutRounding = true,
-                    });
-
-                    AddHintOverlayElement(row, col, new Border
-                    {
-                        Width = 20, Height = 20,
-                        HorizontalAlignment = HorizontalAlignment.Left,
-                        VerticalAlignment = VerticalAlignment.Top,
-                        Margin = new Thickness(12, 12, 0, 0),
-                        Background = new SolidColorBrush(Color.FromArgb(0xBB, 0x55, 0x55, 0x55)),
-                        CornerRadius = new CornerRadius(4),
-                        IsHitTestVisible = false,
-                        SnapsToDevicePixels = true, UseLayoutRounding = true,
-                        Child = new TextBlock
-                        {
-                            Text = keyNum.ToString(),
-                            FontSize = 11, FontWeight = FontWeights.SemiBold,
-                            Foreground = Brushes.White,
-                            HorizontalAlignment = HorizontalAlignment.Center,
-                            VerticalAlignment = VerticalAlignment.Center,
-                        }
-                    });
-                }
+                        Text = label,
+                        FontSize = 11, FontWeight = FontWeights.SemiBold,
+                        Foreground = Brushes.White,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    }
+                });
             }
         }
     }
@@ -1339,9 +1370,33 @@ public partial class QuickAccessWindow : Window
             ExecuteEntry(entry);
     }
 
-    // VK_0=0x30...VK_9=0x39, VK_NUMPAD0=0x60...VK_NUMPAD9=0x69
-    private static int? GetHintDigit(Key key)
+    // Retourne 0-9 pour les chiffres, 10 pour ↑, 11 pour ↓, null sinon.
+    private static int? GetHintKey(Key key)
     {
+        // Pavé numérique : Shift « annule » temporairement NumLock (comportement Windows)
+        // et les chiffres arrivent en touches de navigation NON-étendues (End, Up, PgDn…).
+        // On les remappe en chiffres — idem quand NumLock est éteint. Les vraies touches
+        // de navigation, elles, sont étendues (bit 24 du lParam) et gardent leur rôle.
+        // Le flag est lu sur le message clavier EN COURS via CurrentKeyboardMessage —
+        // WPF ne l'expose pas dans KeyEventArgs, et un hook WndProc/ThreadPreprocessMessage
+        // arrive trop tard ou dans le mauvais ordre par rapport au traitement clavier WPF.
+        bool extended = (ComponentDispatcher.CurrentKeyboardMessage.lParam.ToInt64() & 0x0100_0000) != 0;
+        if (!extended)
+        {
+            int? numpad = key switch
+            {
+                Key.Insert => 0, Key.End  => 1, Key.Down  => 2, Key.Next  => 3,
+                Key.Left   => 4, Key.Clear => 5, Key.Right => 6, Key.Home => 7,
+                Key.Up     => 8, Key.Prior => 9,
+                _ => null
+            };
+            if (numpad != null) return numpad;
+        }
+
+        if (key == Key.Up)   return 10; // ↑ → row 3, 2e case de la zone
+        if (key == Key.Down) return 11; // ↓ → row 3, 3e case de la zone
+
+        // VK_0=0x30...VK_9=0x39, VK_NUMPAD0=0x60...VK_NUMPAD9=0x69
         int vk = KeyInterop.VirtualKeyFromKey(key);
         if (vk is >= 0x30 and <= 0x39) return vk - 0x30;
         if (vk is >= 0x60 and <= 0x69) return vk - 0x60;
