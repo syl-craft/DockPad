@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using DockPad.Models;
@@ -8,7 +9,7 @@ public static class PresetService
 {
     public static List<PresetEntry> GetPresets()
     {
-        return
+        PresetEntry?[] presets =
         [
             BuildClaudeTerminal(),
             BuildPowerShell(),
@@ -16,6 +17,10 @@ public static class PresetService
             BuildSSMS(),
             BuildGitHubDesktop(),
         ];
+
+        // Certains prédéfinis (GitHub Desktop) ne sont proposés que si l'application
+        // cible est réellement installée — null = non disponible sur cette machine.
+        return presets.OfType<PresetEntry>().ToList();
     }
 
     private static PresetEntry BuildClaudeTerminal()
@@ -105,18 +110,10 @@ public static class PresetService
                 @"Programs\Microsoft VS Code\Code.exe"),
             @"C:\Program Files\Microsoft VS Code\Code.exe");
 
-        string command = exe != null ? $"\"{exe}\" \"%V\"" : "code \"%V\"";
-        string icon = exe ?? "";
-
-        return new PresetEntry
-        {
-            DisplayName = "Ouvrir dans Visual Studio Code",
-            RegistryKey = "OpenWithVSCode",
-            Command = command,
-            IconPath = icon,
-            Target = ContextMenuTarget.FolderBackground,
-            Description = "Ouvre ce dossier dans Visual Studio Code"
-        };
+        return BuildFolderPreset(
+            "Ouvrir dans Visual Studio Code", "OpenWithVSCode",
+            "Ouvre ce dossier dans Visual Studio Code",
+            exe, fallbackExe: "code");
     }
 
     private static PresetEntry BuildSSMS()
@@ -132,46 +129,69 @@ public static class PresetService
 
         string? exe = FindExe("Ssms.exe", ssmsCandidates);
 
-        string command = exe != null ? $"\"{exe}\" \"%V\"" : "ssms.exe \"%V\"";
-        string icon = exe ?? "";
-
-        return new PresetEntry
-        {
-            DisplayName = "Ouvrir dans SQL Server Management Studio",
-            RegistryKey = "OpenWithSSMS",
-            Command = command,
-            IconPath = icon,
-            Target = ContextMenuTarget.FolderBackground,
-            Description = "Ouvre ce dossier dans SQL Server Management Studio"
-        };
+        return BuildFolderPreset(
+            "Ouvrir dans SQL Server Management Studio", "OpenWithSSMS",
+            "Ouvre ce dossier dans SQL Server Management Studio",
+            exe, fallbackExe: "ssms.exe");
     }
 
-    private static PresetEntry BuildGitHubDesktop()
+    private static PresetEntry? BuildGitHubDesktop()
     {
-        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        // GitHub Desktop est une install Squirrel strictement per-user
+        // (%LocalAppData%\GitHubDesktop) : jamais sur le PATH ni dans Program Files.
+        string exePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            @"GitHubDesktop\GitHubDesktop.exe");
+
+        // Pas de repli sur un nom nu : `GitHubDesktop.exe` n'est résolvable nulle part
+        // et le flag --cli-open n'est compris que par cet exe. Sans install → pas de prédéfini.
+        if (!File.Exists(exePath)) return null;
+
+        // --cli-open= n'existe que depuis la refonte CLI de GitHub Desktop 3.4.14 ;
+        // les versions antérieures ignorent silencieusement le switch (l'app s'ouvre
+        // sans charger le dossier).
+        var version = FileVersionInfo.GetVersionInfo(exePath);
+        if (new Version(version.FileMajorPart, version.FileMinorPart, version.FileBuildPart)
+            < new Version(3, 4, 14))
+            return null;
 
         // Appel direct du flag interne `--cli-open=` : c'est exactement ce que le shim
         // `github` (bin\github.bat → cli.js) finit par exécuter — il relance
         // `GitHubDesktop.exe --cli-open=<chemin>` en mode GUI. En l'appelant directement,
         // on ajoute ET ouvre le dépôt sans passer par cmd/.bat, donc aucune fenêtre
         // console ne reste ouverte (notamment au premier lancement, cold boot Electron).
-        // Voir spec "github-desktop-ajout-depot.md".
-        string? exe = FindExe("GitHubDesktop.exe",
-            Path.Combine(localAppData, @"GitHubDesktop\GitHubDesktop.exe"));
-
-        string command = exe != null
-            ? $"\"{exe}\" --cli-open=\"%V\""
-            : "GitHubDesktop.exe --cli-open=\"%V\"";
-        string icon = exe ?? "";
-
+        //
+        // Le chemin est laissé en %LocalAppData% (écrit en REG_EXPAND_SZ par
+        // RegistryService) : la clé HKCR est machine-wide alors que l'install est
+        // per-user — chaque compte (y compris l'admin élevé qui installe le prédéfini)
+        // doit résoudre son propre profil au moment du clic.
+        //
+        // Le suffixe `\.` neutralise le backslash final des racines de lecteur :
+        // %V → `D:\` produirait `--cli-open="D:\"` où `\"` devient une quote échappée.
+        // GitHub Desktop canonise ensuite le chemin (git rev-parse --show-toplevel).
         return new PresetEntry
         {
             DisplayName = "Ouvrir dans GitHub Desktop",
             RegistryKey = "OpenWithGitHubDesktop",
-            Command = command,
-            IconPath = icon,
+            Command = @"""%LocalAppData%\GitHubDesktop\GitHubDesktop.exe"" --cli-open=""%V\.""",
+            IconPath = @"%LocalAppData%\GitHubDesktop\GitHubDesktop.exe",
             Target = ContextMenuTarget.FolderBackground,
             Description = "Ouvre ce dossier dans GitHub Desktop"
+        };
+    }
+
+    /// <summary>Prédéfini standard « "exe" "%V" » : exe résolu, sinon repli sur le nom nu.</summary>
+    private static PresetEntry BuildFolderPreset(string displayName, string registryKey,
+        string description, string? exe, string fallbackExe)
+    {
+        return new PresetEntry
+        {
+            DisplayName = displayName,
+            RegistryKey = registryKey,
+            Command = exe != null ? $"\"{exe}\" \"%V\"" : $"{fallbackExe} \"%V\"",
+            IconPath = exe ?? "",
+            Target = ContextMenuTarget.FolderBackground,
+            Description = description
         };
     }
 

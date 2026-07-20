@@ -38,7 +38,7 @@ Services/
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
     IconCacheService.cs                  Cache d'icônes dans %APPDATA%\DockPad\icons\ (SHA1 dédup, extraction .exe/.dll → .png)
     PageConfigService.cs                 Load/Save pages.json (%APPDATA%\DockPad\pages.json)
-    PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS)
+    PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS, GitHub Desktop)
     ProcessSwitchService.cs              SwitchOrLaunch : cherche via WMI, SetForegroundWindow ou lance l'exe
     RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
     ResourceStringResolver.cs            Résolution des @dll,-id via SHLoadIndirectString
@@ -182,7 +182,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 | Ouvrir dans PowerShell | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V"` (pwsh/powershell fallback) |
 | Ouvrir dans Visual Studio Code | FolderBackground | `code "%V"` |
 | Ouvrir dans SQL Server Management Studio | FolderBackground | `ssms.exe "%V"` |
-| Ouvrir dans GitHub Desktop | FolderBackground | `GitHubDesktop.exe --cli-open="%V"` (flag interne utilisé par le shim `github` — ajoute ET ouvre le dépôt, sans fenêtre console) |
+| Ouvrir dans GitHub Desktop | FolderBackground | `"%LocalAppData%\GitHubDesktop\GitHubDesktop.exe" --cli-open="%V\."` (flag interne utilisé par le shim `github` — ajoute ET ouvre le dépôt, sans fenêtre console ; écrit en `REG_EXPAND_SZ` car install per-user vs clé HKCR machine-wide ; `\.` neutralise le backslash final des racines de lecteur ; proposé uniquement si GitHub Desktop ≥ 3.4.14 est installé) |
 
 ## Format JSON raccourcis rapides
 
@@ -238,7 +238,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.5.4</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.5.6</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 

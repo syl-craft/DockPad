@@ -11,7 +11,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Overlay numérique** (Ctrl/Shift + 1–9) pour exécution rapide au clavier
 - **Cache d'icônes** portable dans `%APPDATA%\DockPad\icons\`
 - **Gestionnaire de menu contextuel** Windows (HKCU / HKLM / HKCR)
-- **Raccourcis prédéfinis** : Claude Code, PowerShell, VS Code, SSMS
+- **Raccourcis prédéfinis** : Claude Code, PowerShell, VS Code, SSMS, GitHub Desktop
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
 
