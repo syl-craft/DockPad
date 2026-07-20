@@ -66,15 +66,24 @@ public static class RegistryService
         key.SetValue(null, entry.DisplayName);
 
         if (!string.IsNullOrWhiteSpace(entry.IconPath))
-            key.SetValue("Icon", entry.IconPath);
+            key.SetValue("Icon", entry.IconPath, GetValueKind(entry.IconPath));
         else
             key.DeleteValue("Icon", throwOnMissingValue: false);
 
         using var cmdKey = key.CreateSubKey("command", writable: true)
             ?? throw new InvalidOperationException("Impossible de créer la sous-clé command");
 
-        cmdKey.SetValue(null, entry.Command);
+        cmdKey.SetValue(null, entry.Command, GetValueKind(entry.Command));
     }
+
+    // REG_EXPAND_SZ si la valeur contient une variable d'environnement (%Var%), pour
+    // qu'Explorer l'expanse au moment du clic — indispensable pour référencer un chemin
+    // per-user (ex: %LocalAppData%) depuis une clé HKCR machine-wide. Le %V d'Explorer,
+    // sans % fermant, n'est jamais pris pour une variable.
+    private static RegistryValueKind GetValueKind(string value) =>
+        System.Text.RegularExpressions.Regex.IsMatch(value, @"%[^%\s\\/""]+%")
+            ? RegistryValueKind.ExpandString
+            : RegistryValueKind.String;
 
     public static void Delete(ContextMenuEntry entry)
     {
@@ -109,15 +118,18 @@ public static class RegistryService
     }
 
     /// <summary>Returns the stored command and icon for a key, or null if not found/disabled.</summary>
+    // Lecture SANS expansion des variables d'environnement : PresetsDialog compare ces
+    // valeurs brutes aux commandes générées par PresetService (qui contiennent
+    // %LocalAppData% littéral) — une lecture expansée ne matcherait jamais.
     public static (string Command, string Icon)? GetValues(ContextMenuTarget target, string registryKey)
     {
         string basePath = ContextMenuEntry.GetRegistryPath(target);
         using var key = Registry.ClassesRoot.OpenSubKey($@"{basePath}\{registryKey}", writable: false);
         if (key == null || key.GetValue("LegacyDisable") != null) return null;
 
-        string icon = key.GetValue("Icon")?.ToString() ?? "";
+        string icon = key.GetValue("Icon", null, RegistryValueOptions.DoNotExpandEnvironmentNames)?.ToString() ?? "";
         using var cmdKey = key.OpenSubKey("command", writable: false);
-        string command = cmdKey?.GetValue(null)?.ToString() ?? "";
+        string command = cmdKey?.GetValue(null, null, RegistryValueOptions.DoNotExpandEnvironmentNames)?.ToString() ?? "";
         return (command, icon);
     }
 }

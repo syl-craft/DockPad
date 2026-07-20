@@ -1,13 +1,25 @@
 # Changelog
 
-## [1.5.5] — 2026-06-22
+## [1.5.6] — 2026-07-20
 
 ### Corrections
 
 #### Prédéfini « Ouvrir dans GitHub Desktop »
-- La commande utilise désormais le flag interne `GitHubDesktop.exe --cli-open="%V"` (au lieu de `--open-repo`, qui ne chargeait pas le dépôt)
-- Le dépôt est maintenant correctement **ajouté et ouvert** dans GitHub Desktop
-- Plus de **fenêtre console** qui reste ouverte au premier lancement (on n'utilise plus la chaîne `cmd`/`.bat` du shim qui bloquait pendant le démarrage à froid)
+- La commande référence désormais `%LocalAppData%\GitHubDesktop\GitHubDesktop.exe` (écrit en `REG_EXPAND_SZ`, résolu au clic) au lieu d'un chemin absolu figé : l'entrée fonctionne pour chaque compte Windows, y compris quand l'installation est faite depuis un compte admin élevé différent
+- Le prédéfini n'est **proposé que si GitHub Desktop est installé** (version ≥ 3.4.14, requise pour `--cli-open`) — plus de commande morte `GitHubDesktop.exe` écrite dans le registre quand l'application est absente
+- Le suffixe `\.` dans `--cli-open="%V\."` corrige l'ouverture depuis la **racine d'un lecteur** (ex : `D:\`), dont le backslash final cassait l'argument transmis
+- Le statut du prédéfini converge désormais (plus de « Mise à jour disponible » permanent) : la comparaison lit le registre sans expansion des variables d'environnement
+
+---
+
+## [1.5.5] — 2026-06-22
+
+### Nouveautés utilisateur
+
+#### Nouveau prédéfini « Ouvrir dans GitHub Desktop »
+- Nouvelle entrée de menu contextuel sur le fond de dossier : ajoute **et** ouvre le dépôt dans GitHub Desktop
+- Utilise le flag interne `GitHubDesktop.exe --cli-open="%V"` — la même commande que le shim `github` (`bin\github.bat` → `cli.js`) finit par exécuter, mais appelée directement
+- Aucune **fenêtre console** ne reste ouverte au premier lancement (pas de passage par la chaîne `cmd`/`.bat` du shim, qui bloquait pendant le démarrage à froid)
 
 ---
 
@@ -135,6 +147,11 @@
 ---
 
 # Changelog technique (Architecture)
+
+## [1.5.6]
+
+- `Services/PresetService.cs` — `GetPresets()` filtre les prédéfinis `null` (non disponibles) ; `BuildGitHubDesktop()` retourne `null` si l'exe est absent ou < 3.4.14 (`FileVersionInfo`), commande/icône en `%LocalAppData%` littéral ; nouveau helper `BuildFolderPreset` factorise `BuildVSCode`/`BuildSSMS`
+- `Services/RegistryService.cs` — `Save` écrit commande/icône en `REG_EXPAND_SZ` quand la valeur contient `%Var%` (`GetValueKind`) ; `GetValues` lit avec `RegistryValueOptions.DoNotExpandEnvironmentNames` pour que la comparaison des prédéfinis porte sur les valeurs brutes (`LoadForTarget` reste expansé : affichage + exécution)
 
 ## [1.5.0]
 
