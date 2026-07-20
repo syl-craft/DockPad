@@ -53,6 +53,24 @@ public static class SettingsService
         }
     }
 
+    /// <summary>
+    /// Modificateurs des raccourcis de tuiles (overlay) : côté gauche / côté droit.
+    /// "" = auto (déduits du raccourci global), sinon "Ctrl" | "Alt" | "Shift".
+    /// </summary>
+    public static (string First, string Second) LoadTriggerMods()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RegPath);
+        return (key?.GetValue("TriggerFirst")  as string ?? "",
+                key?.GetValue("TriggerSecond") as string ?? "");
+    }
+
+    public static void SaveTriggerMods(string first, string second)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(RegPath);
+        key.SetValue("TriggerFirst",  first,  RegistryValueKind.String);
+        key.SetValue("TriggerSecond", second, RegistryValueKind.String);
+    }
+
     public static string LoadClaudeArgs()
     {
         using var key = Registry.CurrentUser.OpenSubKey(RegPath);
