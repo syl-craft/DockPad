@@ -1248,6 +1248,18 @@ public partial class QuickAccessWindow : Window
 
     private void UpdateTriggerMods()
     {
+        // Configuration explicite (Options) prioritaire
+        var (first, second) = SettingsService.LoadTriggerMods();
+        var modFirst  = ParseTriggerMod(first);
+        var modSecond = ParseTriggerMod(second);
+        if (modFirst != null && modSecond != null && modFirst != modSecond)
+        {
+            _triggerFirst  = modFirst.Value;
+            _triggerSecond = modSecond.Value;
+            return;
+        }
+
+        // Auto : éviter le modificateur du raccourci global
         var (mods, _) = SettingsService.LoadHotkey();
         if ((mods & HotkeyService.MOD_CONTROL) != 0)
         {
@@ -1262,6 +1274,14 @@ public partial class QuickAccessWindow : Window
             _triggerSecond = ModifierKeys.Shift;
         }
     }
+
+    private static ModifierKeys? ParseTriggerMod(string name) => name switch
+    {
+        "Ctrl"  => ModifierKeys.Control,
+        "Alt"   => ModifierKeys.Alt,
+        "Shift" => ModifierKeys.Shift,
+        _       => null
+    };
 
     // Vérifie si le modificateur est pressé seul (sans autre modificateur)
     private static bool IsAloneModifier(KeyEventArgs e, ModifierKeys mod) => mod switch

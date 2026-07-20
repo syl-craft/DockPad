@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.8] — 2026-07-20
+
+### Nouveautés utilisateur
+
+#### Modificateurs des raccourcis de tuiles configurables
+- Nouvelle section **« Raccourcis des tuiles »** dans Options : choix du modificateur de chaque moitié de la grille (ex : **Alt + touche** à gauche, **Shift + touche** à droite)
+- Choix possibles : Auto (selon le raccourci global, comportement historique), Ctrl, Alt, Shift
+- Les deux moitiés doivent utiliser des modificateurs différents ; si une seule est configurée, le mode Auto s'applique
+
+---
+
 ## [1.5.7] — 2026-07-20
 
 ### Nouveautés utilisateur
@@ -164,6 +175,12 @@
 ---
 
 # Changelog technique (Architecture)
+
+## [1.5.8]
+
+- `Services/SettingsService.cs` — `LoadTriggerMods`/`SaveTriggerMods` (`TriggerFirst`/`TriggerSecond`, `""` = auto)
+- `Views/QuickAccessWindow.xaml.cs` — `UpdateTriggerMods` : config explicite prioritaire (`ParseTriggerMod`), sinon auto selon le hotkey global
+- `Dialogs/SettingsDialog.xaml/.cs` — section « Raccourcis des tuiles » : deux ComboBox (Auto/Ctrl/Alt/Shift), validation `ValidateTriggers` (différents, paire complète sinon auto)
 
 ## [1.5.7]
 

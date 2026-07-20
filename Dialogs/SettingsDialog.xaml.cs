@@ -10,11 +10,23 @@ public partial class SettingsDialog : Window
 
     private static readonly (string Name, uint VK)[] Keys = HotkeyService.Keys;
 
+    // Index 0 = auto ; les autres valeurs sont stockées telles quelles dans le registre
+    private static readonly string[] TriggerChoices =
+        ["Auto (selon le raccourci global)", "Ctrl", "Alt", "Shift"];
+
     public SettingsDialog()
     {
         InitializeComponent();
 
         CmbKey.ItemsSource = Keys.Select(k => k.Name).ToList();
+
+        CmbTriggerFirst.ItemsSource  = TriggerChoices;
+        CmbTriggerSecond.ItemsSource = TriggerChoices;
+        var (trigFirst, trigSecond) = SettingsService.LoadTriggerMods();
+        CmbTriggerFirst.SelectedIndex  = Math.Max(0, Array.IndexOf(TriggerChoices, trigFirst));
+        CmbTriggerSecond.SelectedIndex = Math.Max(0, Array.IndexOf(TriggerChoices, trigSecond));
+        CmbTriggerFirst.SelectionChanged  += (_, _) => ValidateTriggers();
+        CmbTriggerSecond.SelectionChanged += (_, _) => ValidateTriggers();
 
         ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
         TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
@@ -60,9 +72,28 @@ public partial class SettingsDialog : Window
             : "";
     }
 
+    // Les deux triggers doivent différer (sauf si l'un des deux est en Auto,
+    // auquel cas la paire complète retombe en mode auto).
+    private bool ValidateTriggers()
+    {
+        bool bothExplicit = CmbTriggerFirst.SelectedIndex > 0 && CmbTriggerSecond.SelectedIndex > 0;
+        bool conflict = bothExplicit && CmbTriggerFirst.SelectedIndex == CmbTriggerSecond.SelectedIndex;
+
+        TxtTriggerWarn.Text = conflict
+            ? "Les deux moitiés doivent utiliser des modificateurs différents."
+            : (CmbTriggerFirst.SelectedIndex > 0) != (CmbTriggerSecond.SelectedIndex > 0)
+                ? "Les deux moitiés doivent être configurées ensemble — sinon le mode Auto s'applique."
+                : "";
+        TxtTriggerWarn.Visibility = TxtTriggerWarn.Text.Length > 0
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        return !conflict;
+    }
+
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         if (CmbKey.SelectedIndex < 0) return;
+        if (!ValidateTriggers()) return;
 
         uint mods = 0;
         if (ChkCtrl.IsChecked  == true) mods |= HotkeyService.MOD_CONTROL;
@@ -74,6 +105,9 @@ public partial class SettingsDialog : Window
         SelectedKey = Keys[CmbKey.SelectedIndex].VK;
 
         SettingsService.SaveHotkey(SelectedModifiers, SelectedKey);
+        SettingsService.SaveTriggerMods(
+            CmbTriggerFirst.SelectedIndex  > 0 ? TriggerChoices[CmbTriggerFirst.SelectedIndex]  : "",
+            CmbTriggerSecond.SelectedIndex > 0 ? TriggerChoices[CmbTriggerSecond.SelectedIndex] : "");
         SettingsService.SaveAutoStart(ChkAutoStart.IsChecked == true);
         SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
         DialogResult = true;

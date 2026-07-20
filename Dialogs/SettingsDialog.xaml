@@ -42,6 +42,31 @@
 
             <Separator Margin="0,20,0,16"/>
 
+            <TextBlock Text="Raccourcis des tuiles" FontWeight="SemiBold"
+                       FontSize="13" Margin="0,0,0,6"/>
+            <TextBlock Text="Modificateur + 1-9 / 0 / ↑ / ↓ exécute une tuile de la moitié gauche ou droite de la grille."
+                       Foreground="#888" FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"/>
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Moitié gauche :" VerticalAlignment="Center"
+                           Foreground="#555" Margin="0,0,12,8"/>
+                <ComboBox  Grid.Row="0" Grid.Column="1" x:Name="CmbTriggerFirst"  Width="200" Margin="0,0,0,8"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Moitié droite :" VerticalAlignment="Center"
+                           Foreground="#555" Margin="0,0,12,0"/>
+                <ComboBox  Grid.Row="1" Grid.Column="1" x:Name="CmbTriggerSecond" Width="200"/>
+            </Grid>
+            <TextBlock x:Name="TxtTriggerWarn" Foreground="#C42B1C" FontSize="11"
+                       TextWrapping="Wrap" Visibility="Collapsed"/>
+
+            <Separator Margin="0,20,0,16"/>
+
             <TextBlock Text="Démarrage" FontWeight="SemiBold"
                        FontSize="13" Margin="0,0,0,14"/>
             <CheckBox x:Name="ChkAutoStart" Content="Démarrer avec Windows"

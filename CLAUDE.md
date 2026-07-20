@@ -126,7 +126,8 @@ tools/
 - **Pavé numérique** supporté : les touches de navigation non-étendues (Shift qui annule NumLock, ou NumLock éteint) sont remappées en chiffres via le bit 24 du lParam, lu sur le message en cours avec `ComponentDispatcher.CurrentKeyboardMessage` (un hook WndProc/ThreadPreprocessMessage ne marche PAS : les touches gérées par WPF n'atteignent pas le WndProc, et HwndSource traite le clavier avant les handlers ThreadPreprocessMessage abonnés après lui) ; les vraies flèches (étendues) gardent leur rôle ↑/↓
 - **← / → seules** (sans modificateur) : page précédente / suivante (pas de bouclage aux extrémités)
 - L'overlay se masque à la désactivation de la fenêtre ou au relâchement du modificateur
-- Les modificateurs trigger s'adaptent automatiquement au raccourci global configuré (trigger Alt : touches lues via `SystemKey`)
+- **Modificateurs configurables** dans Options (section « Raccourcis des tuiles ») : Ctrl / Alt / Shift par moitié, stockés dans `HKCU\Software\DockPad\Settings\TriggerFirst|TriggerSecond` (`""` = Auto) ; les deux doivent différer, sinon mode Auto
+- Mode Auto (défaut) : les triggers s'adaptent au raccourci global configuré (hotkey avec Ctrl → Shift/Alt, sinon Ctrl/Shift) ; trigger Alt : touches lues via `SystemKey`
 
 ### Cache d'icônes (IconCacheService)
 - Les icônes sont copiées dans `%APPDATA%\DockPad\icons\` à la sauvegarde (déduplication SHA1)
@@ -172,6 +173,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 
 ### Paramètres (SettingsDialog)
 - Configuration du raccourci clavier global
+- **Raccourcis des tuiles** : choix des modificateurs gauche/droite de l'overlay (Auto, Ctrl, Alt, Shift) avec validation (modificateurs différents)
 - **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
@@ -241,7 +243,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.5.7</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.5.8</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 
