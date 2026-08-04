@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.6.1] — 2026-08-04
+
+### Nouveautés utilisateur
+
+#### Ouverture automatique dans le sélecteur de navigateur
+- Nouveau réglage **« Ouverture automatique »** (🌐 Navigateurs, 0 = désactivé) : si aucun choix n'est fait au bout de N secondes, l'URL s'ouvre avec le navigateur n°1
+- Décompte affiché sur le badge du navigateur n°1 (bleu, « Ns ») + ligne « Ouverture automatique dans N s »
+- Toute interaction avec la popup (touche, clic, molette) annule le décompte
+
+#### Corrections d'interface
+- Boutons ▲ ▼ 🗑 ➕ et « … » du dialog Navigateurs illisibles (réduits à 2 px par le padding hérité)
+- Badges de touche de la popup alignés sur le style de l'overlay clavier de la grille
+- Icône de Chrome Canary : l'index de la valeur registre `DefaultIcon` (`chrome.exe,4`) est désormais respecté → icône jaune
+
+---
+
 ## [1.6.0] — 2026-08-04
 
 ### Nouveautés utilisateur
