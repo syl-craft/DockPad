@@ -17,7 +17,7 @@ public partial class BrowserConfigDialog : Window
     private DateTime _configWriteTimeUtc;
 
     private sealed record BrowserItem(BrowserEntry Entry, System.Windows.Media.ImageSource? Icon,
-                                      string Name, string Detail, string HiddenLabel);
+                                      string Name, string Detail, string HiddenLabel, bool Visible);
     private sealed record RuleItem(BrowserRule Rule, string Host, string BrowserName);
 
     public BrowserConfigDialog()
@@ -68,7 +68,8 @@ public partial class BrowserConfigDialog : Window
                      ?? (string.IsNullOrEmpty(b.IconPath) ? b.ExePath : b.IconPath)),
             b.Name,
             b.ExePath + (string.IsNullOrWhiteSpace(b.Arguments) ? "" : " " + b.Arguments),
-            b.Hidden ? "masqué" : "")).ToList();
+            b.Hidden ? "masqué" : "",
+            !b.Hidden)).ToList();
 
         if (selectId is not null)
             LstBrowsers.SelectedIndex = ordered.FindIndex(b => b.Id == selectId);
@@ -170,13 +171,16 @@ public partial class BrowserConfigDialog : Window
         RefreshBrowsers(selectId: b.Id);
     }
 
-    private void Hide_Click(object sender, RoutedEventArgs e)
+    private void VisibleCheck_Click(object sender, RoutedEventArgs e)
     {
-        var b = Selected;
-        if (b is null) return;
-        b.Hidden = !b.Hidden;
+        if (sender is not System.Windows.Controls.CheckBox chk || chk.DataContext is not BrowserItem item)
+            return;
+
+        item.Entry.Hidden = chk.IsChecked != true;
         Save();
-        RefreshBrowsers(selectId: b.Id);
+        // Rafraîchit hors du handler : le ListBox recrée ses items, on ne détruit pas
+        // le CheckBox pendant son propre événement.
+        Dispatcher.BeginInvoke(() => RefreshBrowsers(selectId: item.Entry.Id));
     }
 
     private void Delete_Click(object sender, RoutedEventArgs e)
