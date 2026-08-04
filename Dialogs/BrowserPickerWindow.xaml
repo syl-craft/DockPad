@@ -43,9 +43,9 @@
                     </StackPanel>
 
                     <Button x:Name="BtnCopy" Grid.Column="1" Content="⧉ Copier"
+                            Style="{StaticResource SecondaryButton}"
                             VerticalAlignment="Top" Margin="10,0,0,0" Padding="8,4"
-                            Background="#FFFFFF22" Foreground="White" BorderThickness="0"
-                            Cursor="Hand" Click="BtnCopy_Click"/>
+                            FontSize="12" Click="BtnCopy_Click"/>
                 </Grid>
             </Border>
 
