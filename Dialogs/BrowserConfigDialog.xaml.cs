@@ -18,7 +18,10 @@ public partial class BrowserConfigDialog : Window
 
     private sealed record BrowserItem(BrowserEntry Entry, System.Windows.Media.ImageSource? Icon,
                                       string Name, string Detail, string HiddenLabel, bool Visible);
-    private sealed record RuleItem(BrowserRule Rule, string Host, string BrowserName);
+    private sealed record RuleItem(BrowserRule Rule, string Host, List<BrowserEntry> Browsers);
+    private sealed record RuleFilterOption(string? Id, string Name);
+
+    private bool _refreshingRuleFilter;
 
     public BrowserConfigDialog()
     {
@@ -77,9 +80,50 @@ public partial class BrowserConfigDialog : Window
 
     private void RefreshRules()
     {
-        LstRules.ItemsSource = _config.Rules.Select(r => new RuleItem(
-            r, r.Host,
-            _config.Browsers.FirstOrDefault(b => b.Id == r.BrowserId)?.Name ?? "?")).ToList();
+        // (Re)peuple le filtre navigateur en préservant la sélection courante.
+        _refreshingRuleFilter = true;
+        var selectedFilter = CmbRuleFilter.SelectedValue as string;
+        var options = new List<RuleFilterOption> { new(null, "Tous les navigateurs") };
+        options.AddRange(_config.Browsers.OrderBy(b => b.Order).Select(b => new RuleFilterOption(b.Id, b.Name)));
+        CmbRuleFilter.ItemsSource = options;
+        CmbRuleFilter.SelectedValue = selectedFilter is not null && options.Any(o => o.Id == selectedFilter)
+            ? selectedFilter : null;
+        if (CmbRuleFilter.SelectedIndex < 0) CmbRuleFilter.SelectedIndex = 0;
+        _refreshingRuleFilter = false;
+
+        string search = TxtRuleSearch.Text.Trim();
+        string? browserFilter = CmbRuleFilter.SelectedValue as string;
+        var browsers = _config.Browsers.OrderBy(b => b.Order).ToList();
+
+        var filtered = _config.Rules
+            .Where(r => search.Length == 0 || r.Host.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .Where(r => browserFilter is null || r.BrowserId == browserFilter)
+            .OrderBy(r => r.Host)
+            .Select(r => new RuleItem(r, r.Host, browsers))
+            .ToList();
+
+        LstRules.ItemsSource = filtered;
+        TxtRulesEmpty.Visibility = _config.Rules.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        TxtRulesCount.Text = filtered.Count == _config.Rules.Count
+            ? $"{_config.Rules.Count} règle(s)"
+            : $"{filtered.Count} / {_config.Rules.Count} règle(s)";
+    }
+
+    /// <summary>Recherche ou filtre modifié (TextChanged + SelectionChanged, via contravariance).</summary>
+    private void RuleFilter_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_refreshingRuleFilter || !IsLoaded) return;
+        RefreshRules();
+    }
+
+    /// <summary>Changement du navigateur associé à une règle, directement dans la ligne.</summary>
+    private void RuleBrowser_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox cmb || cmb.DataContext is not RuleItem item) return;
+        if (cmb.SelectedValue is not string id || id == item.Rule.BrowserId) return;
+
+        item.Rule.BrowserId = id;
+        Save();
     }
 
     private void RefreshRegistrationStatus()
@@ -236,7 +280,7 @@ public partial class BrowserConfigDialog : Window
 
     private void DeleteRule_Click(object sender, RoutedEventArgs e)
     {
-        if (LstRules.SelectedItem is not RuleItem item) return;
+        if ((sender as FrameworkElement)?.DataContext is not RuleItem item) return;
         _config.Rules.Remove(item.Rule);
         Save();
         RefreshRules();
