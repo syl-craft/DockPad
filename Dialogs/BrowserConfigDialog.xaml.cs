@@ -14,6 +14,7 @@ namespace DockPad;
 public partial class BrowserConfigDialog : Window
 {
     private BrowsersConfig _config = null!;
+    private DateTime _configWriteTimeUtc;
 
     private sealed record BrowserItem(BrowserEntry Entry, System.Windows.Media.ImageSource? Icon,
                                       string Name, string Detail, string HiddenLabel);
@@ -23,10 +24,38 @@ public partial class BrowserConfigDialog : Window
     {
         InitializeComponent();
         _config = BrowserConfigService.EnsureInitialized();
+        _configWriteTimeUtc = GetConfigWriteTimeUtc();
+        RefreshBrowsers();
+        RefreshRules();
+        RefreshRegistrationStatus();
+
+        Activated += Window_Activated;
+    }
+
+    // ── Rafraîchissement croisé avec le picker ─────────────────────────────────
+
+    /// <summary>
+    /// Le picker de navigateur (popup au clic sur une URL) peut sauvegarder une nouvelle
+    /// règle pendant que ce dialog est ouvert. Comme il vole l'activation, le retour au
+    /// dialog déclenche Activated : on recharge le snapshot uniquement si le fichier a
+    /// changé depuis notre dernier Load/Save, pour ne pas perdre l'édition en cours pour rien.
+    /// </summary>
+    private void Window_Activated(object? sender, EventArgs e)
+    {
+        var writeTime = GetConfigWriteTimeUtc();
+        if (writeTime <= _configWriteTimeUtc) return;
+
+        _config = BrowserConfigService.Load();
+        _configWriteTimeUtc = writeTime;
         RefreshBrowsers();
         RefreshRules();
         RefreshRegistrationStatus();
     }
+
+    private static DateTime GetConfigWriteTimeUtc() =>
+        File.Exists(BrowserConfigService.FilePath)
+            ? File.GetLastWriteTimeUtc(BrowserConfigService.FilePath)
+            : DateTime.MinValue;
 
     // ── Rafraîchissement ────────────────────────────────────────────────────────
 
@@ -68,7 +97,11 @@ public partial class BrowserConfigDialog : Window
         };
     }
 
-    private void Save() => BrowserConfigService.Save(_config);
+    private void Save()
+    {
+        BrowserConfigService.Save(_config);
+        _configWriteTimeUtc = GetConfigWriteTimeUtc();
+    }
 
     private BrowserEntry? Selected => (LstBrowsers.SelectedItem as BrowserItem)?.Entry;
 
@@ -76,7 +109,15 @@ public partial class BrowserConfigDialog : Window
 
     private void Register_Click(object sender, RoutedEventArgs e)
     {
-        BrowserRegistrationService.Register();
+        try
+        {
+            BrowserRegistrationService.Register();
+        }
+        catch (Exception ex)
+        {
+            AppDialog.Error($"Impossible d'enregistrer DockPad comme navigateur :\n{ex.Message}", owner: this);
+            return;
+        }
         RefreshRegistrationStatus();
     }
 

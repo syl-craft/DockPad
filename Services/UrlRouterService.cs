@@ -14,11 +14,12 @@ public static class UrlRouterService
     /// <summary>
     /// Traite une URL (à appeler sur le thread UI) : règle de domaine → lancement direct,
     /// sinon popup. Les URLs reçues pendant qu'une popup est ouverte sont mises en file
-    /// et traitées à sa fermeture.
+    /// et traitées à sa fermeture. Retourne la popup affichée pour cette URL, ou null si
+    /// aucune fenêtre n'a été créée (lancement direct, ou mise en file d'attente).
     /// </summary>
-    public static void Handle(string url)
+    public static BrowserPickerWindow? Handle(string url)
     {
-        if (string.IsNullOrWhiteSpace(url)) return;
+        if (string.IsNullOrWhiteSpace(url)) return null;
 
         var config = BrowserConfigService.EnsureInitialized();
 
@@ -30,23 +31,33 @@ public static class UrlRouterService
 
         // Règle valide → lancement direct ; si le lancement échoue, on retombe sur la popup.
         if (ruleBrowser is not null && Launch(ruleBrowser, url))
-            return;
+        {
+            DrainPending();
+            return null;
+        }
 
-        if (_pickerOpen) { _pending.Enqueue(url); return; }
-        ShowPicker(url, config);
+        if (_pickerOpen) { _pending.Enqueue(url); return null; }
+        return ShowPicker(url, config);
     }
 
-    private static void ShowPicker(string url, Models.BrowsersConfig config)
+    private static BrowserPickerWindow ShowPicker(string url, Models.BrowsersConfig config)
     {
         _pickerOpen = true;
         var picker = new BrowserPickerWindow(url, config);
         picker.Closed += (_, _) =>
         {
             _pickerOpen = false;
-            if (_pending.Count > 0) Handle(_pending.Dequeue());
+            DrainPending();
         };
         picker.Show();
         picker.Activate();
+        return picker;
+    }
+
+    /// <summary>Dépile et traite l'URL suivante en attente, s'il y en a et qu'aucune popup n'est ouverte.</summary>
+    private static void DrainPending()
+    {
+        if (!_pickerOpen && _pending.Count > 0) Handle(_pending.Dequeue());
     }
 
     /// <summary>Host d'une URL en minuscules, ou null si non extractible.</summary>

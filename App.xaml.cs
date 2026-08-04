@@ -34,10 +34,15 @@ public partial class App : Application
             // Instance secondaire lancée par Windows avec une URL : relais via pipe.
             if (url is not null && !Services.UrlPipeService.TrySend(url))
             {
-                // Fallback : instance principale injoignable → popup locale, l'app
-                // quitte à sa fermeture (aucune autre fenêtre n'existe).
-                ShutdownMode = ShutdownMode.OnLastWindowClose;
-                Services.UrlRouterService.Handle(url);
+                // Fallback : instance principale injoignable → popup locale. On reste en
+                // shutdown explicite : si aucune popup n'a été créée (lancement direct via
+                // une règle), on quitte immédiatement ; sinon on quitte à sa fermeture.
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                var picker = Services.UrlRouterService.Handle(url);
+                if (picker is not null)
+                    picker.Closed += (_, _) => Shutdown();
+                else
+                    Shutdown();
                 return;
             }
 

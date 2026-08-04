@@ -36,14 +36,16 @@ public static class BrowserConfigService
     }
 
     /// <summary>
-    /// Charge la config ; si browsers.json n'existe pas encore, détecte les navigateurs
-    /// installés, cache leurs icônes et sauvegarde.
+    /// Charge la config ; si browsers.json n'existe pas encore, est vide ou corrompu
+    /// (Load() retombe alors sur une liste de navigateurs vide), détecte les navigateurs
+    /// installés, cache leurs icônes et sauvegarde. Les règles déjà chargées sont conservées.
     /// </summary>
     public static BrowsersConfig EnsureInitialized()
     {
-        if (File.Exists(FilePath)) return Load();
+        var config = File.Exists(FilePath) ? Load() : new BrowsersConfig();
+        if (config.Browsers.Count > 0) return config;
 
-        var config = new BrowsersConfig { Browsers = BrowserDetectionService.Detect() };
+        config.Browsers = BrowserDetectionService.Detect();
         for (int i = 0; i < config.Browsers.Count; i++)
         {
             config.Browsers[i].Order = i;
