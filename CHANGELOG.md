@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0] — 2026-08-04
+
+### Nouveautés utilisateur
+
+#### Sélecteur de navigateur
+- DockPad peut être défini comme navigateur par défaut ; au clic sur une URL, une popup propose le choix du navigateur (Chrome, Canary, Edge…)
+- Popup : URL sélectionnable + bouton copier, touches 1-9 / flèches / Échap, case « Toujours pour ce domaine » (ouverture directe ensuite, sous-domaines inclus)
+- Configuration ☰ → Paramètres → 🌐 Navigateurs : auto-détection, édition (arguments, profils, navigation privée), masquage, réordonnancement, règles de domaine, enregistrement Windows (per-user, sans admin)
+- `browsers.json` inclus dans la sauvegarde de configuration
+
+---
+
 ## [1.5.8] — 2026-07-20
 
 ### Nouveautés utilisateur
