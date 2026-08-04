@@ -142,7 +142,7 @@ public partial class BrowserConfigDialog : Window
             if (_config.Browsers.Any(b => string.Equals(b.ExePath, found.ExePath, StringComparison.OrdinalIgnoreCase)))
                 continue;
             found.Order = _config.Browsers.Count == 0 ? 0 : _config.Browsers.Max(b => b.Order) + 1;
-            found.IconProfilePath = IconCacheService.CopyToProfile(found.ExePath);
+            found.IconProfilePath = IconCacheService.CopyToProfile(found.IconPath);
             _config.Browsers.Add(found);
             added++;
         }
