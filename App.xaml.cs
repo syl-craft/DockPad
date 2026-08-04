@@ -23,10 +23,24 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        string? url = ParseUrlArg(e.Args);
+
         _mutex = new Mutex(initiallyOwned: true, "DockPad_SingleInstance", out bool createdNew);
         if (!createdNew)
         {
             _mutex.Dispose();
+            _mutex = null;
+
+            // Instance secondaire lancée par Windows avec une URL : relais via pipe.
+            if (url is not null && !Services.UrlPipeService.TrySend(url))
+            {
+                // Fallback : instance principale injoignable → popup locale, l'app
+                // quitte à sa fermeture (aucune autre fenêtre n'existe).
+                ShutdownMode = ShutdownMode.OnLastWindowClose;
+                Services.UrlRouterService.Handle(url);
+                return;
+            }
+
             Current.Shutdown();
             return;
         }
@@ -35,9 +49,34 @@ public partial class App : Application
 
         _mainWindow = new QuickAccessWindow();
         MainWindow = _mainWindow;
-        _mainWindow.Show();
+
+        if (url is null)
+        {
+            _mainWindow.Show();
+        }
+        else
+        {
+            // Lancé par un clic sur une URL alors que DockPad ne tournait pas :
+            // démarrage en arrière-plan. EnsureHandle déclenche OnSourceInitialized
+            // (hook WndProc + hotkey global) sans afficher la fenêtre.
+            new System.Windows.Interop.WindowInteropHelper(_mainWindow).EnsureHandle();
+        }
 
         _trayIcon = CreateTrayIcon();
+
+        Services.UrlPipeService.StartServer(u =>
+            Dispatcher.BeginInvoke(() => Services.UrlRouterService.Handle(u)));
+
+        if (url is not null)
+            Dispatcher.BeginInvoke(() => Services.UrlRouterService.Handle(url));
+    }
+
+    private static string? ParseUrlArg(string[] args)
+    {
+        for (int i = 0; i < args.Length - 1; i++)
+            if (args[i] == "--url")
+                return args[i + 1];
+        return null;
     }
 
     protected override void OnExit(ExitEventArgs e)
