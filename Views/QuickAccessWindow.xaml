@@ -147,6 +147,9 @@
                             <MenuItem Header="Options" Click="Settings_Click">
                                 <MenuItem.Icon><TextBlock Text="⚙"/></MenuItem.Icon>
                             </MenuItem>
+                            <MenuItem Header="Navigateurs" Click="Browsers_Click">
+                                <MenuItem.Icon><TextBlock Text="🌐"/></MenuItem.Icon>
+                            </MenuItem>
                             <Separator/>
                             <MenuItem Header="Configuration" IsEnabled="False" FontWeight="SemiBold"/>
                             <MenuItem Header="Actualiser" Click="Refresh_Click">
