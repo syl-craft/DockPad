@@ -5,11 +5,12 @@
 ### Nouveautés utilisateur
 
 #### Ouverture automatique dans le sélecteur de navigateur
-- Nouveau réglage **« Ouverture automatique »** (🌐 Navigateurs, 0 = désactivé) : si aucun choix n'est fait au bout de N secondes, l'URL s'ouvre avec le navigateur n°1
+- Nouveau réglage **« Ouverture automatique »** (🌐 Navigateurs, 0 = désactivé, défaut 2 s) : si aucun choix n'est fait au bout de N secondes, l'URL s'ouvre avec le navigateur n°1
 - Décompte affiché sur le badge du navigateur n°1 (bleu, « Ns ») + ligne « Ouverture automatique dans N s »
 - Toute interaction avec la popup (touche, clic, molette) annule le décompte
 
-#### Corrections d'interface
+#### Corrections
+- **Crash à la fermeture de la popup** (Échap/perte de focus) : le handler `Deactivated` rappelait `Close()` pendant la fermeture → exception non gérée, l'application quittait entièrement (plus de raccourci global). Corrigé + filet de sécurité global (`DispatcherUnhandledException`, log dans `%APPDATA%\DockPad\error.log`)
 - Boutons ▲ ▼ 🗑 ➕ et « … » du dialog Navigateurs illisibles (réduits à 2 px par le padding hérité)
 - Badges de touche de la popup alignés sur le style de l'overlay clavier de la grille
 - Icône de Chrome Canary : l'index de la valeur registre `DefaultIcon` (`chrome.exe,4`) est désormais respecté → icône jaune

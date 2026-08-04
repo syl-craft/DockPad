@@ -23,6 +23,25 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Filet de sécurité : une exception UI non gérée ne doit pas tuer l'app résidente
+        // (systray + hotkey). Loggée dans %APPDATA%\DockPad\error.log + dialog d'erreur.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            args.Handled = true;
+            try
+            {
+                var logPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "DockPad", "error.log");
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(logPath)!);
+                System.IO.File.AppendAllText(logPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {args.Exception}\r\n\r\n");
+            }
+            catch { /* le log ne doit jamais aggraver l'erreur */ }
+            try { AppDialog.Error($"Erreur inattendue :\n{args.Exception.Message}", "DockPad"); }
+            catch { }
+        };
+
         string? url = ParseUrlArg(e.Args);
 
         _mutex = new Mutex(initiallyOwned: true, "DockPad_SingleInstance", out bool createdNew);
