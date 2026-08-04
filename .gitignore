@@ -28,8 +28,9 @@ desktop.ini
 # Logs
 *.log
 
-# Documents de travail (specs superpowers)
+# Documents de travail (superpowers)
 docs/superpowers/specs/
+docs/superpowers/plans/
 
 # Claude Code
 .claude/
