@@ -49,7 +49,7 @@ public static class BrowserConfigService
         for (int i = 0; i < config.Browsers.Count; i++)
         {
             config.Browsers[i].Order = i;
-            config.Browsers[i].IconProfilePath = IconCacheService.CopyToProfile(config.Browsers[i].ExePath);
+            config.Browsers[i].IconProfilePath = IconCacheService.CopyToProfile(config.Browsers[i].IconPath);
         }
         Save(config);
         return config;

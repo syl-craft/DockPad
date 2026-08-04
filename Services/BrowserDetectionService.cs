@@ -36,7 +36,17 @@ public static class BrowserDetectionService
                 if (result.Any(b => string.Equals(b.ExePath, exePath, StringComparison.OrdinalIgnoreCase)))
                     continue;
 
-                result.Add(new BrowserEntry { Name = name, ExePath = exePath, IconPath = exePath });
+                // DefaultIcon peut cibler un index précis (ex: Chrome Canary = "chrome.exe,4"
+                // pour l'icône jaune) — l'index 0 de l'exe ne suffit pas toujours.
+                using var iconKey = sub.OpenSubKey("DefaultIcon");
+                var defaultIcon = iconKey?.GetValue(null) as string;
+
+                result.Add(new BrowserEntry
+                {
+                    Name     = name,
+                    ExePath  = exePath,
+                    IconPath = string.IsNullOrWhiteSpace(defaultIcon) ? exePath : defaultIcon,
+                });
             }
         }
 
