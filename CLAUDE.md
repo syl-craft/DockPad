@@ -195,13 +195,15 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Windows interdit de définir le navigateur par défaut par programme (hash `UserChoice`) : bouton **« S'enregistrer comme navigateur »** puis bouton ouvrant `ms-settings:defaultapps` pour le choix manuel (une seule fois) ; état affiché : *non enregistré* / *enregistré* / *navigateur par défaut* — si l'exe a été déplacé depuis l'enregistrement, l'état repasse à *non enregistré*
 - **Flux au clic sur une URL** : Windows lance `DockPad.exe --url "…"` → instance déjà en fond (mutex non acquis) : l'URL est relayée via le named pipe `DockPad_UrlPipe` (`UrlPipeService`) puis l'instance relais se termine ; DockPad non lancé (mutex acquis) : démarrage en arrière-plan (systray créé, `QuickAccessWindow` non affichée) puis traitement local ; si le pipe est indisponible/timeout (~2 s), fallback : la nouvelle instance affiche elle-même la popup puis quitte
 - **Routage** (`UrlRouterService`) : extraction du host ; si une règle de domaine correspond (host exact **ou sous-domaine** — la règle `github.com` matche `gist.github.com`) → lancement direct sans popup ; sinon affichage de `BrowserPickerWindow` ; les URLs reçues pendant qu'une popup est déjà ouverte sont mises en file et traitées à sa fermeture
-- **Popup (`BrowserPickerWindow`)** : fenêtre centrée écran, style DockPad (`WindowStyle=None`, `Topmost`, `ShowInTaskbar=False`) ; URL affichée dans une `TextBox` lecture seule sélectionnable (wrap + scroll) + bouton **⧉ Copier le lien** (feedback « Copié ✓ » 1,5 s) ; liste verticale (icône 24px + nom + badge `[1]`–`[9]`) ; clavier : **1-9** ouverture directe, **↑/↓ + Entrée** navigation, **Échap** annule ; case **« Toujours pour ce domaine »** → crée la règle `host → navigateur` avant l'ouverture ; **perte de focus** (`Deactivated`) ferme sans ouvrir, sauf pendant l'affichage d'un `AppDialog` d'erreur (flag `_suppressClose`, ex : exe navigateur introuvable)
+- **Popup (`BrowserPickerWindow`)** : fenêtre centrée écran, style DockPad (`WindowStyle=None`, `Topmost`, `ShowInTaskbar=False`) ; URL affichée dans une `TextBox` lecture seule sélectionnable (wrap + scroll) + bouton **⧉ Copier le lien** (style `SecondaryButton`, feedback « Copié ✓ » 1,5 s) ; liste verticale (icône 24px + nom + badge touche au même style que l'overlay clavier de la grille : carré 20px `#BB555555`, chiffre blanc) ; clavier : **1-9** ouverture directe, **↑/↓ + Entrée** navigation, **Échap** annule ; case **« Toujours pour ce domaine »** → crée la règle `host → navigateur` avant l'ouverture ; **perte de focus** (`Deactivated`) ferme sans ouvrir, sauf pendant l'affichage d'un `AppDialog` d'erreur (flag `_suppressClose`, ex : exe navigateur introuvable)
+- **Ouverture automatique** : si `autoOpenSeconds > 0` (0 = désactivé, défaut), un `DispatcherTimer` 1 s décompte à l'ouverture de la popup — badge du navigateur n°1 en bleu accent avec « Ns » + ligne pied « Ouverture automatique dans N s » ; à l'échéance, ouverture avec le navigateur n°1 ; **première interaction** (`PreviewKeyDown`/`PreviewMouseDown`/`PreviewMouseWheel`) → décompte annulé, badge redevient « 1 » ; les items de liste sont des `PickerItem` `INotifyPropertyChanged` (Badge, IsCountdown) pour la mise à jour dynamique
 - **Lancement** (`UrlRouterService.Launch`) : `Process.Start` avec l'URL entre guillemets en fin d'arguments ; si `Arguments` contient `%1`, il est substitué par l'URL à la place
-- **Configuration (`BrowserConfigDialog`)** : ☰ → Paramètres → 🌐 Navigateurs
-  - **Liste des navigateurs** : auto-détection (`BrowserDetectionService`, parcours `Software\Clients\StartMenuInternet` HKLM puis HKCU, DockPad exclu, doublons ignorés) au premier chargement (`browsers.json` absent) et via **↻ Redétecter** (ajoute les nouveaux sans toucher aux entrées existantes) ; édition (nom, chemin exe, arguments — ex. `--profile-directory="Profile 1"`, `--incognito`, `-inprivate` — icône extraite de l'exe via `IconCacheService`) ; masquer/afficher (masqué = absent de la popup mais conservé), monter/descendre, supprimer, **+ Ajouter**
-  - **Règles de domaine** : tableau host → navigateur, suppression par ligne (création uniquement depuis la popup, pas d'ajout manuel) ; supprimer un navigateur supprime ses règles associées
-  - **Enregistrement** : section décrite ci-dessus (état + les 2 boutons)
-- Icônes chargées via `LoadIcon` (même pattern dans `BrowserPickerWindow` et `BrowserConfigDialog`) : extraction `.exe`/`.dll` via `System.Drawing.Icon.ExtractAssociatedIcon` puis `DeleteObject` sur le handle GDI (anti-fuite mémoire)
+- **Configuration (`BrowserConfigDialog`)** : ☰ → Paramètres → 🌐 Navigateurs — fenêtre 680×760 redimensionnable, **2 onglets** (`TabControl` plat, soulignement bleu sur l'onglet actif)
+  - **Onglet Navigateurs** : section enregistrement (état + 2 boutons + champ **« Ouverture automatique : N secondes »**, clamp 0-300, sauvegarde immédiate) ; auto-détection (`BrowserDetectionService`, parcours `Software\Clients\StartMenuInternet` HKLM puis HKCU, DockPad exclu, doublons ignorés, **icône lue depuis la valeur `DefaultIcon` avec son index** — ex. Chrome Canary = `chrome.exe,4` pour l'icône jaune) au premier chargement ou si la liste est vide (fichier corrompu) et via **↻ Redétecter** ; **case à cocher de visibilité par ligne** (décochée = absent de la popup, badge « masqué », conservé) ; édition (nom, chemin exe, arguments — ex. `--profile-directory="Profile 1"`, `--incognito`, `-inprivate`), monter/descendre, supprimer, **+ Ajouter**
+  - **Onglet Règles de domaine** : recherche live sur le host + filtre par navigateur (combinables), ComboBox par ligne pour réassocier le navigateur (sauvegarde immédiate), suppression par ligne, compteur « N / M règle(s) », état vide explicite ; création uniquement depuis la popup ; supprimer un navigateur supprime ses règles associées
+  - Rechargement croisé : si le picker sauvegarde une règle pendant que le dialog est ouvert, `Activated` + comparaison `File.GetLastWriteTimeUtc` rechargent le snapshot
+  - **Attention** : les boutons carrés (34px) doivent avoir `Padding="0"` — le `Padding 16,8` hérité du style `PrimaryButton` ne laisse que 2px au glyphe (boutons invisibles)
+- Icônes chargées via `LoadIcon` (même pattern dans `BrowserPickerWindow` et `BrowserConfigDialog`) : extraction `.exe`/`.dll` via `System.Drawing.Icon.ExtractAssociatedIcon` puis `DeleteObject` sur le handle GDI (anti-fuite mémoire) ; `IconCacheService.ParseIconRef` découpe `chemin[,index]` et `Icon.ExtractIcon` respecte l'index (négatif = ID de ressource)
 - Config stockée dans `%APPDATA%\DockPad\browsers.json`, incluse dans **💾 Sauvegarder la configuration**
 
 ## Prédéfinis
@@ -246,11 +248,14 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
   ],
   "rules": [
     { "host": "github.com", "browserId": "a1b2c3" }
-  ]
+  ],
+  "autoOpenSeconds": 5
 }
 ```
 
 - `id` : identifiant stable (8 hex aléatoires) référencé par les règles
+- `autoOpenSeconds` : délai avant ouverture automatique avec le navigateur n°1 (0 = désactivé, défaut ; absent = rétrocompatible)
+- `iconPath` peut porter un index d'icône au format registre (ex : `"C:\\...\\chrome.exe,4"`)
 - `arguments` : si elles contiennent `%1`, il est substitué par l'URL, sinon l'URL est ajoutée en fin
 - `iconProfilePath` chemin relatif au profil (`%APPDATA%\DockPad\`), prioritaire sur `iconPath`
 - `hidden` : masqué = absent de la popup mais conservé dans la config
@@ -290,7 +295,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.6.0</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.6.1</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 
