@@ -2,9 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Navigateurs"
-        Width="680" Height="860"
+        Width="680" Height="760"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize" MinWidth="640" MinHeight="640"
+        ResizeMode="CanResize" MinWidth="640" MinHeight="600"
         Background="#F3F3F3"
         FontFamily="Segoe UI">
     <Grid>
@@ -19,151 +19,229 @@
             <TextBlock Text="Navigateurs" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
-        <!-- Content -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24,20">
+        <!-- Onglets -->
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0"
+                    Margin="16,10,16,0">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="FontSize" Value="13"/>
+                    <Setter Property="Foreground" Value="#555"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border x:Name="Bd" Background="Transparent" Padding="14,8"
+                                        BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                                    <ContentPresenter ContentSource="Header"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#EAEAEA"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#0078D4"/>
+                                        <Setter Property="Foreground" Value="#0078D4"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
 
-                <!-- Section enregistrement -->
-                <TextBlock Text="Interception des URLs" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
-                <TextBlock x:Name="TxtRegStatus" Foreground="#555" FontSize="12"
-                           TextWrapping="Wrap" Margin="0,0,0,10"/>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                    <Button x:Name="BtnRegister" Content="S'enregistrer comme navigateur"
-                            Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
-                            Click="Register_Click"/>
-                    <Button Content="Paramètres Windows…" Style="{StaticResource SecondaryButton}"
-                            Click="OpenSettings_Click"
-                            ToolTip="Choisir DockPad comme navigateur par défaut (Applications par défaut)"/>
-                </StackPanel>
+            <!-- ══ Onglet Navigateurs ══ -->
+            <TabItem Header="Navigateurs">
+                <Grid Margin="8,14,8,12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <Separator Margin="0,20,0,16"/>
+                    <!-- Section enregistrement -->
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="Interception des URLs" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="TxtRegStatus" Foreground="#555" FontSize="12"
+                                   TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Button x:Name="BtnRegister" Content="S'enregistrer comme navigateur"
+                                    Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                                    Click="Register_Click"/>
+                            <Button Content="Paramètres Windows…" Style="{StaticResource SecondaryButton}"
+                                    Click="OpenSettings_Click"
+                                    ToolTip="Choisir DockPad comme navigateur par défaut (Applications par défaut)"/>
+                        </StackPanel>
+                    </StackPanel>
 
-                <!-- Section navigateurs -->
-                <Grid Margin="0,0,0,8">
-                    <TextBlock Text="Navigateurs de la popup" FontWeight="SemiBold" FontSize="13"
-                               VerticalAlignment="Center"/>
-                    <Button Content="↻ Redétecter" Style="{StaticResource SecondaryButton}"
-                            HorizontalAlignment="Right" Padding="8,4" Click="Redetect_Click"
-                            ToolTip="Ajoute les navigateurs nouvellement installés (n'écrase rien)"/>
+                    <Separator Grid.Row="1" Margin="0,16,0,14"/>
+
+                    <!-- Titre + redétection -->
+                    <Grid Grid.Row="2" Margin="0,0,0,8">
+                        <TextBlock Text="Navigateurs de la popup" FontWeight="SemiBold" FontSize="13"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="↻ Redétecter" Style="{StaticResource SecondaryButton}"
+                                HorizontalAlignment="Right" Padding="8,4" Click="Redetect_Click"
+                                ToolTip="Ajoute les navigateurs nouvellement installés (n'écrase rien)"/>
+                    </Grid>
+
+                    <!-- Liste + actions -->
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ListBox x:Name="LstBrowsers" Grid.Column="0"
+                                 SelectionChanged="LstBrowsers_SelectionChanged"
+                                 HorizontalContentAlignment="Stretch"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="2,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding Visible, Mode=OneTime}"
+                                                  VerticalAlignment="Center" Margin="0,0,8,0"
+                                                  Click="VisibleCheck_Click"
+                                                  ToolTip="Décocher pour ne plus proposer ce navigateur dans la popup"/>
+                                        <Image Grid.Column="1" Source="{Binding Icon}" Width="20" Height="20"/>
+                                        <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                                            <TextBlock Text="{Binding Name}" FontSize="12"/>
+                                            <TextBlock Text="{Binding Detail}" FontSize="10" Foreground="#999"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="3" Text="{Binding HiddenLabel}" FontSize="10"
+                                                   Foreground="#C42B1C" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <Button x:Name="BtnUp"     Content="▲"  Width="34" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Up_Click"     ToolTip="Monter"/>
+                            <Button x:Name="BtnDown"   Content="▼"  Width="34" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Down_Click"   ToolTip="Descendre"/>
+                            <Button x:Name="BtnDelete" Content="🗑" Width="34" Margin="0,0,0,12" Style="{StaticResource SecondaryButton}" Click="Delete_Click" ToolTip="Supprimer"/>
+                            <Button Content="➕" Width="34" Style="{StaticResource SecondaryButton}" Click="Add_Click" ToolTip="Ajouter un navigateur"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Édition de l'entrée sélectionnée -->
+                    <Border Grid.Row="4" Background="White" CornerRadius="6" Padding="12" Margin="0,10,0,0"
+                            BorderBrush="#E0E0E0" BorderThickness="1"
+                            SnapsToDevicePixels="True" UseLayoutRounding="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Nom :" Foreground="#555"
+                                       VerticalAlignment="Center" Margin="0,0,10,8"/>
+                            <TextBox  x:Name="TxtName" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                                      Padding="6,4" Margin="0,0,0,8"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Exécutable :" Foreground="#555"
+                                       VerticalAlignment="Center" Margin="0,0,10,8"/>
+                            <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
+                                      Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
+                            <Button   Grid.Row="1" Grid.Column="2" Content="…" Width="30" Margin="0,0,0,8"
+                                      Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Arguments :" Foreground="#555"
+                                       VerticalAlignment="Center" Margin="0,0,10,8"/>
+                            <TextBox  x:Name="TxtArgs" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                      Padding="6,4" Margin="0,0,0,8" FontFamily="Consolas" FontSize="11"
+                                      ToolTip="Ex : --profile-directory=&quot;Profile 1&quot;, --incognito, -inprivate. %1 = URL."/>
+
+                            <Button   x:Name="BtnApply" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                      Content="✔ Appliquer" HorizontalAlignment="Right"
+                                      Style="{StaticResource PrimaryButton}" Click="Apply_Click"/>
+                        </Grid>
+                    </Border>
                 </Grid>
+            </TabItem>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+            <!-- ══ Onglet Règles de domaine ══ -->
+            <TabItem Header="Règles de domaine">
+                <Grid Margin="8,14,8,12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <ListBox x:Name="LstBrowsers" Grid.Column="0" Height="190"
-                             SelectionChanged="LstBrowsers_SelectionChanged"
+                    <TextBlock Grid.Row="0"
+                               Text="Ces domaines s'ouvrent directement dans le navigateur associé, sans popup. Les règles se créent via « Toujours pour ce domaine » dans la popup."
+                               Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                    <!-- Recherche + filtre -->
+                    <Grid Grid.Row="1" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="TxtRuleSearch" Grid.Column="0" Padding="6,5" Margin="0,0,8,0"
+                                 FontSize="12" TextChanged="RuleFilter_Changed"
+                                 ToolTip="Rechercher dans les noms de domaine"/>
+                        <ComboBox x:Name="CmbRuleFilter" Grid.Column="1" Width="190"
+                                  DisplayMemberPath="Name" SelectedValuePath="Id"
+                                  SelectionChanged="RuleFilter_Changed"/>
+                    </Grid>
+
+                    <!-- Liste des règles -->
+                    <ListBox x:Name="LstRules" Grid.Row="2"
                              HorizontalContentAlignment="Stretch"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="2,4">
+                                <Grid Margin="2,3">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="28"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="190"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <CheckBox Grid.Column="0" IsChecked="{Binding Visible, Mode=OneTime}"
-                                              VerticalAlignment="Center" Margin="0,0,8,0"
-                                              Click="VisibleCheck_Click"
-                                              ToolTip="Décocher pour ne plus proposer ce navigateur dans la popup"/>
-                                    <Image Grid.Column="1" Source="{Binding Icon}" Width="20" Height="20"/>
-                                    <StackPanel Grid.Column="2" Margin="8,0,0,0">
-                                        <TextBlock Text="{Binding Name}" FontSize="12"/>
-                                        <TextBlock Text="{Binding Detail}" FontSize="10" Foreground="#999"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="3" Text="{Binding HiddenLabel}" FontSize="10"
-                                               Foreground="#C42B1C" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="0" Text="{Binding Host}" FontFamily="Consolas"
+                                               FontSize="12" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <ComboBox Grid.Column="1" Margin="8,0"
+                                              ItemsSource="{Binding Browsers}"
+                                              DisplayMemberPath="Name" SelectedValuePath="Id"
+                                              SelectedValue="{Binding Rule.BrowserId, Mode=OneTime}"
+                                              SelectionChanged="RuleBrowser_Changed"
+                                              ToolTip="Navigateur qui ouvrira ce domaine"/>
+                                    <Button Grid.Column="2" Content="🗑" Width="30"
+                                            Style="{StaticResource SecondaryButton}" Padding="4"
+                                            Click="DeleteRule_Click" ToolTip="Supprimer la règle"/>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                    <TextBlock x:Name="TxtRulesEmpty" Grid.Row="2" Foreground="#999" FontSize="12"
+                               TextWrapping="Wrap" TextAlignment="Center" MaxWidth="380"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="Collapsed"
+                               Text="Aucune règle — cochez « Toujours pour ce domaine » dans la popup pour en créer une."/>
 
-                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                        <Button x:Name="BtnUp"     Content="▲"  Width="34" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Up_Click"     ToolTip="Monter"/>
-                        <Button x:Name="BtnDown"   Content="▼"  Width="34" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Down_Click"   ToolTip="Descendre"/>
-                        <Button x:Name="BtnDelete" Content="🗑" Width="34" Margin="0,0,0,12" Style="{StaticResource SecondaryButton}" Click="Delete_Click" ToolTip="Supprimer"/>
-                        <Button Content="➕" Width="34" Style="{StaticResource SecondaryButton}" Click="Add_Click" ToolTip="Ajouter un navigateur"/>
-                    </StackPanel>
+                    <TextBlock x:Name="TxtRulesCount" Grid.Row="3" Foreground="#888" FontSize="11"
+                               Margin="2,8,0,0"/>
                 </Grid>
-
-                <!-- Édition de l'entrée sélectionnée -->
-                <Border Background="White" CornerRadius="6" Padding="12" Margin="0,10,0,0"
-                        BorderBrush="#E0E0E0" BorderThickness="1"
-                        SnapsToDevicePixels="True" UseLayoutRounding="True">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Nom :" Foreground="#555"
-                                   VerticalAlignment="Center" Margin="0,0,10,8"/>
-                        <TextBox  x:Name="TxtName" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
-                                  Padding="6,4" Margin="0,0,0,8"/>
-
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Exécutable :" Foreground="#555"
-                                   VerticalAlignment="Center" Margin="0,0,10,8"/>
-                        <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
-                                  Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
-                        <Button   Grid.Row="1" Grid.Column="2" Content="…" Width="30" Margin="0,0,0,8"
-                                  Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
-
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Arguments :" Foreground="#555"
-                                   VerticalAlignment="Center" Margin="0,0,10,8"/>
-                        <TextBox  x:Name="TxtArgs" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                                  Padding="6,4" Margin="0,0,0,8" FontFamily="Consolas" FontSize="11"
-                                  ToolTip="Ex : --profile-directory=&quot;Profile 1&quot;, --incognito, -inprivate. %1 = URL."/>
-
-                        <Button   x:Name="BtnApply" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
-                                  Content="✔ Appliquer" HorizontalAlignment="Right"
-                                  Style="{StaticResource PrimaryButton}" Click="Apply_Click"/>
-                    </Grid>
-                </Border>
-
-                <Separator Margin="0,20,0,16"/>
-
-                <!-- Section règles -->
-                <TextBlock Text="Règles de domaine" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
-                <TextBlock Text="Créées via « Toujours pour ce domaine » dans la popup. Ces domaines s'ouvrent directement, sans popup."
-                           Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ListBox x:Name="LstRules" Grid.Column="0" Height="110"
-                             HorizontalContentAlignment="Stretch">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="2,2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="{Binding Host}" FontFamily="Consolas" FontSize="12"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding BrowserName}" Foreground="#0078D4" FontSize="12"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                    <Button Grid.Column="1" Content="🗑" Width="34" Margin="8,0,0,0"
-                            VerticalAlignment="Top" Style="{StaticResource SecondaryButton}"
-                            Click="DeleteRule_Click" ToolTip="Supprimer la règle sélectionnée"/>
-                </Grid>
-            </StackPanel>
-        </ScrollViewer>
+            </TabItem>
+        </TabControl>
 
         <!-- Footer -->
         <Border Grid.Row="2" Background="White" Padding="24,12"
