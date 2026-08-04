@@ -28,11 +28,23 @@ public partial class BrowserConfigDialog : Window
         InitializeComponent();
         _config = BrowserConfigService.EnsureInitialized();
         _configWriteTimeUtc = GetConfigWriteTimeUtc();
+        TxtAutoOpen.Text = _config.AutoOpenSeconds.ToString();
         RefreshBrowsers();
         RefreshRules();
         RefreshRegistrationStatus();
 
         Activated += Window_Activated;
+    }
+
+    /// <summary>Délai d'ouverture automatique du picker (0-300 s, 0 = désactivé), sauvegarde immédiate.</summary>
+    private void AutoOpen_TextChanged(object sender, RoutedEventArgs e)
+    {
+        if (!int.TryParse(TxtAutoOpen.Text.Trim(), out int seconds) || seconds < 0) return;
+        seconds = Math.Min(seconds, 300);
+        if (seconds == _config.AutoOpenSeconds) return;
+
+        _config.AutoOpenSeconds = seconds;
+        Save();
     }
 
     // ── Rafraîchissement croisé avec le picker ─────────────────────────────────
@@ -50,6 +62,7 @@ public partial class BrowserConfigDialog : Window
 
         _config = BrowserConfigService.Load();
         _configWriteTimeUtc = writeTime;
+        TxtAutoOpen.Text = _config.AutoOpenSeconds.ToString();
         RefreshBrowsers();
         RefreshRules();
         RefreshRegistrationStatus();

@@ -90,15 +90,20 @@
                                    VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13"
                                        VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <!-- Badge touche : même style que l'overlay clavier de la grille (Ctrl enfoncé) -->
-                            <Border Grid.Column="2" Width="20" Height="20" Background="#BB555555"
+                            <!-- Badge touche : même style que l'overlay clavier de la grille (Ctrl enfoncé) ;
+                                 pendant le décompte d'ouverture auto, badge n°1 en bleu accent avec "Ns" -->
+                            <Border Grid.Column="2" MinWidth="20" Height="20" Padding="4,0"
                                     CornerRadius="4" VerticalAlignment="Center"
                                     SnapsToDevicePixels="True" UseLayoutRounding="True">
                                 <Border.Style>
                                     <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#BB555555"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Badge}" Value="">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsCountdown}" Value="True">
+                                                <Setter Property="Background" Value="#0078D4"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -112,10 +117,14 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <!-- Pied : règle de domaine -->
+            <!-- Pied : règle de domaine + décompte d'ouverture automatique -->
             <Border Grid.Row="2" Padding="18,10,18,14">
-                <CheckBox x:Name="ChkAlways" Content="Toujours pour ce domaine"
-                          FontSize="12" Foreground="#555" VerticalContentAlignment="Center"/>
+                <StackPanel>
+                    <CheckBox x:Name="ChkAlways" Content="Toujours pour ce domaine"
+                              FontSize="12" Foreground="#555" VerticalContentAlignment="Center"/>
+                    <TextBlock x:Name="TxtCountdown" Visibility="Collapsed"
+                               FontSize="11" Foreground="#0078D4" Margin="0,8,0,0"/>
+                </StackPanel>
             </Border>
         </Grid>
     </Border>

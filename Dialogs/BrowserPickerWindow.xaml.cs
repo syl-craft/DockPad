@@ -18,11 +18,29 @@ public partial class BrowserPickerWindow : Window
     private readonly string _url;
     private readonly BrowsersConfig _config;
     private readonly List<BrowserEntry> _browsers;
+    private readonly List<PickerItem> _items;
     private readonly string? _host;
     private bool _suppressClose = false;
 
-    private sealed record PickerItem(BrowserEntry Entry, System.Windows.Media.ImageSource? Icon,
-                                     string Name, string Badge);
+    private DispatcherTimer? _autoOpenTimer;
+    private int _autoOpenRemaining;
+
+    /// <summary>Ligne de la liste. INotifyPropertyChanged pour le décompte sur le badge n°1.</summary>
+    private sealed class PickerItem : System.ComponentModel.INotifyPropertyChanged
+    {
+        public required BrowserEntry Entry { get; init; }
+        public System.Windows.Media.ImageSource? Icon { get; init; }
+        public string Name { get; init; } = "";
+
+        private string _badge = "";
+        public string Badge { get => _badge; set { _badge = value; Notify(nameof(Badge)); } }
+
+        private bool _isCountdown;
+        public bool IsCountdown { get => _isCountdown; set { _isCountdown = value; Notify(nameof(IsCountdown)); } }
+
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        private void Notify(string name) => PropertyChanged?.Invoke(this, new(name));
+    }
 
     public BrowserPickerWindow(string url, BrowsersConfig config)
     {
@@ -38,16 +56,80 @@ public partial class BrowserPickerWindow : Window
         ChkAlways.IsEnabled = _host is not null;
         if (_host is not null) ChkAlways.Content = $"Toujours pour {_host}";
 
-        LstBrowsers.ItemsSource = _browsers.Select((b, i) => new PickerItem(
-            b,
-            LoadIcon(IconCacheService.ResolveProfilePath(b.IconProfilePath)
-                     ?? (string.IsNullOrEmpty(b.IconPath) ? b.ExePath : b.IconPath)),
-            b.Name,
-            i < 9 ? $"{i + 1}" : "")).ToList();
+        _items = _browsers.Select((b, i) => new PickerItem
+        {
+            Entry = b,
+            Icon  = LoadIcon(IconCacheService.ResolveProfilePath(b.IconProfilePath)
+                             ?? (string.IsNullOrEmpty(b.IconPath) ? b.ExePath : b.IconPath)),
+            Name  = b.Name,
+            Badge = i < 9 ? $"{i + 1}" : "",
+        }).ToList();
+        LstBrowsers.ItemsSource = _items;
         LstBrowsers.SelectedIndex = _browsers.Count > 0 ? 0 : -1;
 
         Deactivated += (_, _) => { if (!_suppressClose) Close(); };
         Loaded      += (_, _) => { Activate(); LstBrowsers.Focus(); };
+        Closed      += (_, _) => _autoOpenTimer?.Stop();
+
+        if (config.AutoOpenSeconds > 0 && _browsers.Count > 0)
+            StartAutoOpen(config.AutoOpenSeconds);
+    }
+
+    // ── Ouverture automatique ───────────────────────────────────────────────────
+
+    private void StartAutoOpen(int seconds)
+    {
+        _autoOpenRemaining = seconds;
+        UpdateAutoOpenDisplay();
+
+        _autoOpenTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _autoOpenTimer.Tick += (_, _) =>
+        {
+            _autoOpenRemaining--;
+            if (_autoOpenRemaining <= 0)
+            {
+                CancelAutoOpen();
+                OpenBrowser(_browsers[0]);
+            }
+            else
+            {
+                UpdateAutoOpenDisplay();
+            }
+        };
+        _autoOpenTimer.Start();
+
+        // Première interaction (clavier, clic, molette) → annulation du décompte.
+        PreviewKeyDown   += CancelAutoOpenOnInteraction;
+        PreviewMouseDown += CancelAutoOpenOnInteraction;
+        PreviewMouseWheel += CancelAutoOpenOnInteraction;
+    }
+
+    private void CancelAutoOpenOnInteraction(object? sender, InputEventArgs e) => CancelAutoOpen();
+
+    private void CancelAutoOpen()
+    {
+        if (_autoOpenTimer is null) return;
+
+        _autoOpenTimer.Stop();
+        _autoOpenTimer = null;
+        PreviewKeyDown   -= CancelAutoOpenOnInteraction;
+        PreviewMouseDown -= CancelAutoOpenOnInteraction;
+        PreviewMouseWheel -= CancelAutoOpenOnInteraction;
+
+        if (_items.Count > 0)
+        {
+            _items[0].IsCountdown = false;
+            _items[0].Badge = "1";
+        }
+        TxtCountdown.Visibility = Visibility.Collapsed;
+    }
+
+    private void UpdateAutoOpenDisplay()
+    {
+        _items[0].IsCountdown = true;
+        _items[0].Badge = $"{_autoOpenRemaining}s";
+        TxtCountdown.Text = $"Ouverture automatique dans {_autoOpenRemaining} s";
+        TxtCountdown.Visibility = Visibility.Visible;
     }
 
     // ── Interactions ────────────────────────────────────────────────────────────
