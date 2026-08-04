@@ -19,6 +19,7 @@ public partial class BrowserPickerWindow : Window
     private readonly BrowsersConfig _config;
     private readonly List<BrowserEntry> _browsers;
     private readonly string? _host;
+    private bool _suppressClose = false;
 
     private sealed record PickerItem(BrowserEntry Entry, System.Windows.Media.ImageSource? Icon,
                                      string Name, string Badge);
@@ -45,7 +46,7 @@ public partial class BrowserPickerWindow : Window
             i < 9 ? $"{i + 1}" : "")).ToList();
         LstBrowsers.SelectedIndex = _browsers.Count > 0 ? 0 : -1;
 
-        Deactivated += (_, _) => Close();
+        Deactivated += (_, _) => { if (!_suppressClose) Close(); };
         Loaded      += (_, _) => { Activate(); LstBrowsers.Focus(); };
     }
 
@@ -100,8 +101,18 @@ public partial class BrowserPickerWindow : Window
         }
 
         // En cas d'échec de lancement, la popup reste ouverte (AppDialog déjà affiché).
-        if (UrlRouterService.Launch(browser, _url))
-            Close();
+        _suppressClose = true;
+        try
+        {
+            if (UrlRouterService.Launch(browser, _url))
+                Close();
+            else
+            {
+                Activate();
+                LstBrowsers.Focus();
+            }
+        }
+        finally { _suppressClose = false; }
     }
 
     // ── Icônes (même pattern que QuickAccessWindow.LoadIcon) ───────────────────
@@ -121,10 +132,18 @@ public partial class BrowserPickerWindow : Window
             using var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
             if (icon is null) return null;
             using var bmp = icon.ToBitmap();
-            return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                bmp.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty,
-                BitmapSizeOptions.FromEmptyOptions());
+            var handle = bmp.GetHbitmap();
+            try
+            {
+                return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                    handle, IntPtr.Zero, Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+            }
+            finally { DeleteObject(handle); }
         }
         catch { return null; }
     }
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
 }
