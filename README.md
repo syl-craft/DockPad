@@ -12,8 +12,28 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Cache d'icônes** portable dans `%APPDATA%\DockPad\icons\`
 - **Gestionnaire de menu contextuel** Windows (HKCU / HKLM / HKCR)
 - **Raccourcis prédéfinis** : Claude Code, PowerShell, VS Code, SSMS, GitHub Desktop
+- **Sélecteur de navigateur** : popup de choix au clic sur une URL + règles par domaine
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
+
+## Sélecteur de navigateur
+
+DockPad peut devenir le navigateur par défaut de Windows : au clic sur une URL, une popup propose le choix du navigateur (profils et navigation privée possibles via les arguments). Les règles « Toujours pour ce domaine » ouvrent les sites connus directement, sans popup (sous-domaines inclus).
+
+| Popup au clic sur une URL | Configuration |
+|:---:|:---:|
+| ![Popup de choix](docs/screenshots/browser-picker.png) | ![Configuration des navigateurs](docs/screenshots/browser-config.png) |
+
+Clavier : `1-9` choix direct · `↑/↓` + `Entrée` · `Échap` annule · perte de focus = annule.
+
+### Activer sur un ordinateur
+
+- [ ] Lancer DockPad
+- [ ] **☰ → Paramètres → 🌐 Navigateurs** → vérifier la liste détectée (Chrome, Edge…)
+- [ ] Cliquer **S'enregistrer comme navigateur**
+- [ ] Cliquer **Paramètres Windows…** → définir **DockPad** comme navigateur par défaut
+- [ ] Cliquer une URL n'importe où → la popup s'affiche ; cocher **Toujours pour ce domaine** pour créer une règle
+- [ ] Gérer les règles dans l'onglet **Règles de domaine** (recherche, filtre, réassociation, suppression)
 
 ## Prérequis
 
@@ -48,6 +68,7 @@ Les fichiers de configuration sont dans `%APPDATA%\DockPad\` :
 |---------|---------|
 | `shortcuts.json` | Tuiles de la grille de raccourcis |
 | `pages.json` | Configuration des boutons de pagination |
+| `browsers.json` | Navigateurs du sélecteur + règles de domaine |
 | `icons\` | Cache d'icônes (PNG, déduplication SHA1) |
 | `.backup\` | Sauvegardes horodatées |
 
