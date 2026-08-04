@@ -27,14 +27,14 @@ public static class IconCacheService
     public static string? CopyToProfile(string sourcePath)
     {
         if (string.IsNullOrWhiteSpace(sourcePath)) return null;
-        string path = sourcePath.Split(',')[0].Trim('"').Trim();
+        var (path, iconIndex) = ParseIconRef(sourcePath);
         if (!File.Exists(path)) return null;
 
         try
         {
             string ext = Path.GetExtension(path).ToLowerInvariant();
             if (ext is ".exe" or ".dll")
-                return ExtractAndCache(path);
+                return ExtractAndCache(path, iconIndex);
 
             byte[] data = File.ReadAllBytes(path);
             var (abs, rel) = DestPaths(data, ext);
@@ -94,11 +94,24 @@ public static class IconCacheService
         return changed;
     }
 
-    private static string? ExtractAndCache(string exePath)
+    /// <summary>
+    /// Découpe une référence d'icône au format registre "chemin[,index]" (ex: valeur DefaultIcon).
+    /// Index positif = position dans le fichier, négatif = ID de ressource, absent = 0.
+    /// </summary>
+    public static (string Path, int Index) ParseIconRef(string iconRef)
+    {
+        iconRef = iconRef.Trim();
+        int comma = iconRef.LastIndexOf(',');
+        if (comma > 0 && int.TryParse(iconRef[(comma + 1)..].Trim(), out int index))
+            return (iconRef[..comma].Trim().Trim('"'), index);
+        return (iconRef.Trim('"'), 0);
+    }
+
+    private static string? ExtractAndCache(string exePath, int iconIndex = 0)
     {
         try
         {
-            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
+            using var icon = ExtractIcon(exePath, iconIndex);
             if (icon == null) return null;
             using var bmp = icon.ToBitmap();
             using var ms = new System.IO.MemoryStream();
@@ -110,6 +123,25 @@ public static class IconCacheService
             return rel;
         }
         catch { return null; }
+    }
+
+    /// <summary>
+    /// Extrait l'icône d'un exe/dll. Index non nul → Icon.ExtractIcon qui respecte
+    /// l'index DefaultIcon du registre (ex: Chrome Canary = chrome.exe,4 pour l'icône jaune) ;
+    /// sinon icône associée classique.
+    /// </summary>
+    private static System.Drawing.Icon? ExtractIcon(string exePath, int iconIndex)
+    {
+        if (iconIndex != 0)
+        {
+            try
+            {
+                var icon = System.Drawing.Icon.ExtractIcon(exePath, iconIndex, 64);
+                if (icon != null) return icon;
+            }
+            catch { /* index invalide : retombe sur l'icône associée */ }
+        }
+        return System.Drawing.Icon.ExtractAssociatedIcon(exePath);
     }
 
     /// <summary>

@@ -246,6 +246,12 @@ public partial class QuickAccessWindow : Window
         UpdateTriggerMods();
     }
 
+    private void Browsers_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new BrowserConfigDialog { Owner = this };
+        dialog.ShowDialog();
+    }
+
     private void UpdateHotkeyDisplay()
     {
         var (mods, vk) = SettingsService.LoadHotkey();
@@ -275,7 +281,8 @@ public partial class QuickAccessWindow : Window
 
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-        foreach (var src in new[] { ShortcutService.FilePath, PageConfigService.FilePath })
+        foreach (var src in new[] { ShortcutService.FilePath, PageConfigService.FilePath,
+                                    BrowserConfigService.FilePath })
         {
             if (!File.Exists(src)) continue;
             var dest = Path.Combine(backupDir,
