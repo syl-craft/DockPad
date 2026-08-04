@@ -216,10 +216,18 @@ public partial class BrowserConfigDialog : Window
             using var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
             if (icon is null) return null;
             using var bmp = icon.ToBitmap();
-            return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                bmp.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty,
-                BitmapSizeOptions.FromEmptyOptions());
+            var handle = bmp.GetHbitmap();
+            try
+            {
+                return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                    handle, IntPtr.Zero, Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+            }
+            finally { DeleteObject(handle); }
         }
         catch { return null; }
     }
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
 }
