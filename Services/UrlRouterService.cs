@@ -8,6 +8,47 @@ namespace DockPad.Services;
 /// </summary>
 public static class UrlRouterService
 {
+    private static readonly Queue<string> _pending = new();
+    private static bool _pickerOpen;
+
+    /// <summary>
+    /// Traite une URL (à appeler sur le thread UI) : règle de domaine → lancement direct,
+    /// sinon popup. Les URLs reçues pendant qu'une popup est ouverte sont mises en file
+    /// et traitées à sa fermeture.
+    /// </summary>
+    public static void Handle(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+
+        var config = BrowserConfigService.EnsureInitialized();
+
+        var host = ExtractHost(url);
+        var rule = host is null ? null
+            : config.Rules.FirstOrDefault(r => HostMatches(host, r.Host));
+        var ruleBrowser = rule is null ? null
+            : config.Browsers.FirstOrDefault(b => b.Id == rule.BrowserId && !b.Hidden);
+
+        // Règle valide → lancement direct ; si le lancement échoue, on retombe sur la popup.
+        if (ruleBrowser is not null && Launch(ruleBrowser, url))
+            return;
+
+        if (_pickerOpen) { _pending.Enqueue(url); return; }
+        ShowPicker(url, config);
+    }
+
+    private static void ShowPicker(string url, Models.BrowsersConfig config)
+    {
+        _pickerOpen = true;
+        var picker = new BrowserPickerWindow(url, config);
+        picker.Closed += (_, _) =>
+        {
+            _pickerOpen = false;
+            if (_pending.Count > 0) Handle(_pending.Dequeue());
+        };
+        picker.Show();
+        picker.Activate();
+    }
+
     /// <summary>Host d'une URL en minuscules, ou null si non extractible.</summary>
     public static string? ExtractHost(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var uri) && !string.IsNullOrEmpty(uri.Host)
