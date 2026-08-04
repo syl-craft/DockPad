@@ -21,6 +21,7 @@ public partial class BrowserPickerWindow : Window
     private readonly List<PickerItem> _items;
     private readonly string? _host;
     private bool _suppressClose = false;
+    private bool _closing = false;
 
     private DispatcherTimer? _autoOpenTimer;
     private int _autoOpenRemaining;
@@ -67,7 +68,10 @@ public partial class BrowserPickerWindow : Window
         LstBrowsers.ItemsSource = _items;
         LstBrowsers.SelectedIndex = _browsers.Count > 0 ? 0 : -1;
 
-        Deactivated += (_, _) => { if (!_suppressClose) Close(); };
+        // Garde _closing : la fermeture (Échap…) désactive la fenêtre → WM_ACTIVATE →
+        // Deactivated pendant InternalClose ; rappeler Close() à ce moment lève
+        // InvalidOperationException et tue le process (crash constaté en 1.6.1).
+        Deactivated += (_, _) => { if (!_suppressClose && !_closing) Close(); };
         Loaded      += (_, _) => { Activate(); LstBrowsers.Focus(); };
         Closed      += (_, _) => _autoOpenTimer?.Stop();
 
@@ -130,6 +134,12 @@ public partial class BrowserPickerWindow : Window
         _items[0].Badge = $"{_autoOpenRemaining}s";
         TxtCountdown.Text = $"Ouverture automatique dans {_autoOpenRemaining} s";
         TxtCountdown.Visibility = Visibility.Visible;
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        _closing = true;
+        base.OnClosing(e);
     }
 
     // ── Interactions ────────────────────────────────────────────────────────────
