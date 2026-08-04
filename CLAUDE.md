@@ -25,6 +25,9 @@ Converters/
     InverseBoolConverter.cs              Converter WPF bool inversé
 
 Models/
+    BrowserEntry.cs                       Modèle navigateur (id, name, exePath, arguments, icône, hidden, order)
+    BrowserRule.cs                        Règle domaine → navigateur (host exact + sous-domaines)
+    BrowsersConfig.cs                     Contenu de browsers.json (liste navigateurs + règles)
     ContextMenuEntry.cs                  Modèle de données + enum ContextMenuTarget
     ContextMenuEntryViewModel.cs         VM avec chargement d'icône (BitmapSource)
     PageConfig.cs                        Config par page (icône du bouton de pagination + IconProfilePath)
@@ -35,6 +38,9 @@ Models/
     TerminalInfo.cs                      Informations d'un terminal détecté
 
 Services/
+    BrowserConfigService.cs              Load/Save browsers.json (%APPDATA%\DockPad\browsers.json)
+    BrowserDetectionService.cs           Détection des navigateurs installés (Software\Clients\StartMenuInternet, HKLM+HKCU)
+    BrowserRegistrationService.cs        Enregistrement per-user (HKCU) comme navigateur + lecture de l'état (non enregistré/enregistré/par défaut)
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
     IconCacheService.cs                  Cache d'icônes dans %APPDATA%\DockPad\icons\ (SHA1 dédup, extraction .exe/.dll → .png)
     PageConfigService.cs                 Load/Save pages.json (%APPDATA%\DockPad\pages.json)
@@ -45,6 +51,8 @@ Services/
     SettingsService.cs                   Lecture/écriture paramètres HKCU + autostart
     ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
+    UrlPipeService.cs                    Named pipe DockPad_UrlPipe — serveur (instance principale) / client (instance relais)
+    UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
 
 Views/
     ContextMenuManagerWindow.xaml/.cs    Gestion des entrées de menu contextuel Windows
@@ -52,6 +60,8 @@ Views/
 
 Dialogs/
     AppDialog.xaml/.cs                   Dialog custom styled (remplace MessageBox) — Confirm/Error/Warning/Info
+    BrowserConfigDialog.xaml/.cs         Configuration navigateurs (détection/édition/règles/enregistrement)
+    BrowserPickerWindow.xaml/.cs         Popup de choix du navigateur au clic sur une URL
     EntryDialog.xaml/.cs                 Ajout/modification d'une entrée de menu contextuel (registre)
     PresetsDialog.xaml/.cs               Raccourcis prédéfinis
     SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto + version
@@ -99,11 +109,11 @@ tools/
 - Toolbar : **☰ Menu** (déroulant) | **─** (réduire) | **⬇** (masquer dans la barre système)
 - **Menu ☰** organisé en sections :
   - *Menu contextuel* : ☰ Gestion, 📋 Raccourcis prédéfinis
-  - *Paramètres* : ⚙ Options
+  - *Paramètres* : ⚙ Options, 🌐 Navigateurs
   - *Configuration* : ↺ Actualiser, ✎ Modifier, 💾 Sauvegarder, 📁 Voir le dossier
   - ✕ Quitter l'application
 - **Raccourci clavier actif** affiché en bas à droite (badge `Consolas`, mis à jour après changement dans Options)
-- **Sauvegarder la configuration** : copie `shortcuts.json` et `pages.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
+- **Sauvegarder la configuration** : copie `shortcuts.json`, `pages.json` et `browsers.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
 - Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
 - Config pages stockée dans `%APPDATA%\DockPad\pages.json`
 - **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | 🗑 Supprimer
@@ -179,6 +189,21 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 - **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
+### Sélecteur de navigateur
+- DockPad peut être enregistré comme navigateur Windows (per-user, `HKCU`, sans admin) : au clic sur une URL n'importe où dans Windows, une popup propose le choix du navigateur (Chrome, Canary, Edge…) au lieu d'ouvrir directement le navigateur par défaut
+- **Enregistrement** (`BrowserRegistrationService`) : `HKCU\Software\DockPad\Capabilities` (`ApplicationName`, `URLAssociations` http/https → ProgID `DockPadURL`) + `HKCU\Software\RegisteredApplications` + `HKCU\Software\Classes\DockPadURL` (`DefaultIcon`, `shell\open\command` = `"<DockPad.exe>" --url "%1"`)
+- Windows interdit de définir le navigateur par défaut par programme (hash `UserChoice`) : bouton **« S'enregistrer comme navigateur »** puis bouton ouvrant `ms-settings:defaultapps` pour le choix manuel (une seule fois) ; état affiché : *non enregistré* / *enregistré* / *navigateur par défaut* — si l'exe a été déplacé depuis l'enregistrement, l'état repasse à *non enregistré*
+- **Flux au clic sur une URL** : Windows lance `DockPad.exe --url "…"` → instance déjà en fond (mutex non acquis) : l'URL est relayée via le named pipe `DockPad_UrlPipe` (`UrlPipeService`) puis l'instance relais se termine ; DockPad non lancé (mutex acquis) : démarrage en arrière-plan (systray créé, `QuickAccessWindow` non affichée) puis traitement local ; si le pipe est indisponible/timeout (~2 s), fallback : la nouvelle instance affiche elle-même la popup puis quitte
+- **Routage** (`UrlRouterService`) : extraction du host ; si une règle de domaine correspond (host exact **ou sous-domaine** — la règle `github.com` matche `gist.github.com`) → lancement direct sans popup ; sinon affichage de `BrowserPickerWindow` ; les URLs reçues pendant qu'une popup est déjà ouverte sont mises en file et traitées à sa fermeture
+- **Popup (`BrowserPickerWindow`)** : fenêtre centrée écran, style DockPad (`WindowStyle=None`, `Topmost`, `ShowInTaskbar=False`) ; URL affichée dans une `TextBox` lecture seule sélectionnable (wrap + scroll) + bouton **⧉ Copier le lien** (feedback « Copié ✓ » 1,5 s) ; liste verticale (icône 24px + nom + badge `[1]`–`[9]`) ; clavier : **1-9** ouverture directe, **↑/↓ + Entrée** navigation, **Échap** annule ; case **« Toujours pour ce domaine »** → crée la règle `host → navigateur` avant l'ouverture ; **perte de focus** (`Deactivated`) ferme sans ouvrir, sauf pendant l'affichage d'un `AppDialog` d'erreur (flag `_suppressClose`, ex : exe navigateur introuvable)
+- **Lancement** (`UrlRouterService.Launch`) : `Process.Start` avec l'URL entre guillemets en fin d'arguments ; si `Arguments` contient `%1`, il est substitué par l'URL à la place
+- **Configuration (`BrowserConfigDialog`)** : ☰ → Paramètres → 🌐 Navigateurs
+  - **Liste des navigateurs** : auto-détection (`BrowserDetectionService`, parcours `Software\Clients\StartMenuInternet` HKLM puis HKCU, DockPad exclu, doublons ignorés) au premier chargement (`browsers.json` absent) et via **↻ Redétecter** (ajoute les nouveaux sans toucher aux entrées existantes) ; édition (nom, chemin exe, arguments — ex. `--profile-directory="Profile 1"`, `--incognito`, `-inprivate` — icône extraite de l'exe via `IconCacheService`) ; masquer/afficher (masqué = absent de la popup mais conservé), monter/descendre, supprimer, **+ Ajouter**
+  - **Règles de domaine** : tableau host → navigateur, suppression par ligne (création uniquement depuis la popup, pas d'ajout manuel) ; supprimer un navigateur supprime ses règles associées
+  - **Enregistrement** : section décrite ci-dessus (état + les 2 boutons)
+- Icônes chargées via `LoadIcon` (même pattern dans `BrowserPickerWindow` et `BrowserConfigDialog`) : extraction `.exe`/`.dll` via `System.Drawing.Icon.ExtractAssociatedIcon` puis `DeleteObject` sur le handle GDI (anti-fuite mémoire)
+- Config stockée dans `%APPDATA%\DockPad\browsers.json`, incluse dans **💾 Sauvegarder la configuration**
+
 ## Prédéfinis
 
 | Nom | Cible | Commande |
@@ -208,6 +233,28 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - `processSwitch` présent uniquement pour `SwitchToProcess`
 - `iconProfilePath` chemin relatif au profil (`%APPDATA%\DockPad\`), prioritaire sur `iconPath`
 - Colonnes : 0–5 | Lignes : 0–3 | `page` commence à 0
+
+## Format JSON navigateurs
+
+```json
+{
+  "browsers": [
+    { "id": "a1b2c3", "name": "Chrome", "exePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "arguments": "", "iconProfilePath": "icons\\abc.png", "hidden": false, "order": 0 },
+    { "id": "d4e5f6", "name": "Chrome Canary", "exePath": "…\\chrome.exe", "arguments": "", "order": 1 },
+    { "id": "g7h8i9", "name": "Edge", "exePath": "…\\msedge.exe", "arguments": "", "order": 2 }
+  ],
+  "rules": [
+    { "host": "github.com", "browserId": "a1b2c3" }
+  ]
+}
+```
+
+- `id` : identifiant stable (8 hex aléatoires) référencé par les règles
+- `arguments` : si elles contiennent `%1`, il est substitué par l'URL, sinon l'URL est ajoutée en fin
+- `iconProfilePath` chemin relatif au profil (`%APPDATA%\DockPad\`), prioritaire sur `iconPath`
+- `hidden` : masqué = absent de la popup mais conservé dans la config
+- Stocké dans `%APPDATA%\DockPad\browsers.json`, inclus dans la sauvegarde de configuration
 
 ## Styles des menus contextuels (App.xaml)
 
@@ -243,7 +290,7 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 
 ## Versioning
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.5.8</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>1.6.0</Version>`
 
 Pour bumper la version, modifier ce champ puis commit + publish.
 
