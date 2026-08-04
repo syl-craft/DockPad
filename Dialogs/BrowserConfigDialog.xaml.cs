@@ -190,6 +190,7 @@ public partial class BrowserConfigDialog : Window
         TxtName.Text = b?.Name ?? "";
         TxtExe.Text  = b?.ExePath ?? "";
         TxtArgs.Text = b?.Arguments ?? "";
+        PnlEdit.IsEnabled = b is not null;
     }
 
     private void Redetect_Click(object sender, RoutedEventArgs e)
