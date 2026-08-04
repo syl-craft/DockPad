@@ -34,4 +34,22 @@ public static class BrowserConfigService
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
         File.WriteAllText(FilePath, JsonSerializer.Serialize(config, JsonOptions));
     }
+
+    /// <summary>
+    /// Charge la config ; si browsers.json n'existe pas encore, détecte les navigateurs
+    /// installés, cache leurs icônes et sauvegarde.
+    /// </summary>
+    public static BrowsersConfig EnsureInitialized()
+    {
+        if (File.Exists(FilePath)) return Load();
+
+        var config = new BrowsersConfig { Browsers = BrowserDetectionService.Detect() };
+        for (int i = 0; i < config.Browsers.Count; i++)
+        {
+            config.Browsers[i].Order = i;
+            config.Browsers[i].IconProfilePath = IconCacheService.CopyToProfile(config.Browsers[i].ExePath);
+        }
+        Save(config);
+        return config;
+    }
 }
