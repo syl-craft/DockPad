@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.6.2] — 2026-08-05
+
+### Nouveautés utilisateur
+
+#### Règles de domaine sensibles au port
+- Nouvelle capacité : les règles de domaine peuvent maintenant inclure un port (ex : `localhost:44351` et `localhost:44307` sont traités comme distincts) ; la case « Toujours pour ce domaine » inclut le port s'il est non-défaut
+- Changement de comportement : une règle sans port ne matche plus une URL à port explicite non-défaut (ex : la règle `github.com` ne matche plus `github.com:8080`)
+
+---
+
 ## [1.6.1] — 2026-08-04
 
 ### Nouveautés utilisateur
