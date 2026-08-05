@@ -69,7 +69,7 @@ public static class UrlRouterService
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || string.IsNullOrEmpty(uri.Host))
             return null;
 
-        var host = uri.Host.ToLowerInvariant();
+        var host = uri.DnsSafeHost.ToLowerInvariant();
         if (uri.IsDefaultPort) return host;
 
         // IPv6 : crochets pour lever l'ambiguïté avec le séparateur de port.
