@@ -60,16 +60,61 @@ public static class UrlRouterService
         if (!_pickerOpen && _pending.Count > 0) Handle(_pending.Dequeue());
     }
 
-    /// <summary>Host d'une URL en minuscules, ou null si non extractible.</summary>
-    public static string? ExtractHost(string url) =>
-        Uri.TryCreate(url, UriKind.Absolute, out var uri) && !string.IsNullOrEmpty(uri.Host)
-            ? uri.Host.ToLowerInvariant()
-            : null;
+    /// <summary>
+    /// Clé de matching d'une URL en minuscules : "host" si le port est le port par défaut
+    /// du scheme, sinon "host:port" ("[::1]:8080" pour un host IPv6). Null si non extractible.
+    /// </summary>
+    public static string? ExtractHost(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || string.IsNullOrEmpty(uri.Host))
+            return null;
 
-    /// <summary>Match exact ou sous-domaine : la règle "github.com" matche "gist.github.com".</summary>
-    public static bool HostMatches(string host, string ruleHost) =>
-        host.Equals(ruleHost, StringComparison.OrdinalIgnoreCase)
-        || host.EndsWith("." + ruleHost, StringComparison.OrdinalIgnoreCase);
+        var host = uri.Host.ToLowerInvariant();
+        if (uri.IsDefaultPort) return host;
+
+        // IPv6 : crochets pour lever l'ambiguïté avec le séparateur de port.
+        if (uri.HostNameType == UriHostNameType.IPv6) host = $"[{host}]";
+        return $"{host}:{uri.Port}";
+    }
+
+    /// <summary>
+    /// Match exact ou sous-domaine, à port identique : la règle "github.com" matche
+    /// "gist.github.com" mais pas "github.com:8080" (sans port = port par défaut uniquement).
+    /// </summary>
+    public static bool HostMatches(string host, string ruleHost)
+    {
+        var (hostPart, hostPort) = SplitHostPort(host);
+        var (rulePart, rulePort) = SplitHostPort(ruleHost);
+
+        return hostPort.Equals(rulePort, StringComparison.Ordinal)
+            && (hostPart.Equals(rulePart, StringComparison.OrdinalIgnoreCase)
+                || hostPart.EndsWith("." + rulePart, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Découpe "host[:port]" : forme IPv6 bracketée "[...]:port" → découpe après le "]" ;
+    /// exactement un ":" → découpe dessus (DNS/IPv4 + port) ; sinon pas de port
+    /// (host DNS nu ou IPv6 nu comme "::1"). Port vide = port par défaut.
+    /// </summary>
+    private static (string Host, string Port) SplitHostPort(string value)
+    {
+        if (value.StartsWith('['))
+        {
+            int close = value.IndexOf(']');
+            if (close >= 0)
+            {
+                var port = close + 1 < value.Length && value[close + 1] == ':'
+                    ? value[(close + 2)..] : "";
+                return (value[1..close], port);
+            }
+        }
+
+        int first = value.IndexOf(':');
+        if (first >= 0 && first == value.LastIndexOf(':'))
+            return (value[..first], value[(first + 1)..]);
+
+        return (value, "");
+    }
 
     /// <summary>
     /// Lance le navigateur avec l'URL. Si Arguments contient "%1" il est substitué,
