@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.7.0] — 2026-08-06
+
+### Nouveautés utilisateur
+
+#### Journal des erreurs
+- Toutes les erreurs sont désormais tracées dans `%APPDATA%\DockPad\logs\dockpad-AAAAMMJJ.log` (un fichier par jour, 14 jours conservés) : exceptions inattendues, erreurs affichées à l'écran (stack trace complète dans le log), et erreurs silencieuses jusqu'ici invisibles (config JSON corrompue, icône illisible, pipe interrompu…)
+- Remplace l'ancien `%APPDATA%\DockPad\error.log` (qui n'est plus alimenté)
+
+---
+
 ## [1.6.2] — 2026-08-05
 
 ### Nouveautés utilisateur
