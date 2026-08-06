@@ -15,19 +15,23 @@ public static class LogService
 
     public static void Init()
     {
-        var logDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "DockPad", "logs");
+        try
+        {
+            var logDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "DockPad", "logs");
 
-        _logger = new LoggerConfiguration()
-            .MinimumLevel.Warning()
-            .WriteTo.File(
-                Path.Combine(logDir, "dockpad-.log"),
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 14,
-                shared: true,
-                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
+            _logger = new LoggerConfiguration()
+                .MinimumLevel.Warning()
+                .WriteTo.File(
+                    Path.Combine(logDir, "dockpad-.log"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 14,
+                    shared: true,
+                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+        }
+        catch { /* le logger reste null → no-op */ }
     }
 
     /// <summary>Erreur montrée à l'utilisateur ou exception non gérée.</summary>
