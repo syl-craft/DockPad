@@ -173,6 +173,7 @@ public partial class BrowserConfigDialog : Window
         }
         catch (Exception ex)
         {
+            Services.LogService.Error(ex, "Enregistrement de DockPad comme navigateur (HKCU)");
             AppDialog.Error($"Impossible d'enregistrer DockPad comme navigateur :\n{ex.Message}", owner: this);
             return;
         }

@@ -803,6 +803,7 @@ public partial class QuickAccessWindow : Window
                 }
                 catch (Exception ex)
                 {
+                    Services.LogService.Error(ex, $"Exécution d'une entrée du menu contextuel dossier : {cmd}");
                     AppDialog.Error($"Impossible d'exécuter :\n{ex.Message}", owner: this);
                 }
             };
@@ -855,6 +856,7 @@ public partial class QuickAccessWindow : Window
         }
         catch (Exception ex)
         {
+            Services.LogService.Error(ex, $"Exécution du raccourci « {entry.Name} » ({entry.Type})");
             AppDialog.Error($"Impossible d'exécuter :\n{ex.Message}", owner: this);
         }
     }
