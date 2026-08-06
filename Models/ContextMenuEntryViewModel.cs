@@ -52,7 +52,7 @@ public class ContextMenuEntryViewModel
                 return ConvertBitmap(bitmap);
             }
         }
-        catch { }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Extraction de l'icône d'une entrée de menu contextuel"); }
 
         return null;
     }

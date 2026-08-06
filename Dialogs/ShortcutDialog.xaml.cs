@@ -376,7 +376,7 @@ public partial class ShortcutDialog : Window
                 return;
             }
         }
-        catch { }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Aperçu de l'icône (ShortcutDialog)"); }
         ImgIconPreview.Source = null;
     }
 

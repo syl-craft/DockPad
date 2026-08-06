@@ -208,7 +208,7 @@ public static class PresetService
                 string full = Path.Combine(dir.Trim(), exeName);
                 if (File.Exists(full)) return full;
             }
-            catch { }
+            catch (Exception ex) { LogService.Warn(ex, $"Entrée de PATH invalide ignorée : {dir}"); }
         }
 
         return null;

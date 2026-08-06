@@ -42,7 +42,7 @@ public static class IconCacheService
                 File.WriteAllBytes(abs, data);
             return rel;
         }
-        catch { return null; }
+        catch (Exception ex) { LogService.Warn(ex, $"Copie d'une icône dans le cache : {path}"); return null; }
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public static class IconCacheService
                 File.WriteAllBytes(abs, data);
             return rel;
         }
-        catch { return null; }
+        catch (Exception ex) { LogService.Warn(ex, $"Extraction de l'icône d'un exécutable : {exePath}"); return null; }
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ public static class IconCacheService
                 var icon = System.Drawing.Icon.ExtractIcon(exePath, iconIndex, 64);
                 if (icon != null) return icon;
             }
-            catch { /* index invalide : retombe sur l'icône associée */ }
+            catch (Exception ex) { LogService.Warn(ex, $"Index d'icône invalide ({iconIndex}) pour {exePath}, icône associée utilisée"); }
         }
         return System.Drawing.Icon.ExtractAssociatedIcon(exePath);
     }
@@ -157,7 +157,7 @@ public static class IconCacheService
                 File.WriteAllBytes(abs, data);
             return rel;
         }
-        catch { return null; }
+        catch (Exception ex) { LogService.Warn(ex, "Écriture d'une icône dans le cache"); return null; }
     }
 
     /// <summary>Retourne (chemin absolu, chemin relatif au profil) pour un fichier icône.</summary>

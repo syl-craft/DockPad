@@ -25,7 +25,7 @@ public static class BrowserConfigService
             var json = File.ReadAllText(FilePath);
             return JsonSerializer.Deserialize<BrowsersConfig>(json, JsonOptions) ?? new BrowsersConfig();
         }
-        catch { return new BrowsersConfig(); }
+        catch (Exception ex) { LogService.Warn(ex, "Chargement de browsers.json (config par défaut utilisée)"); return new BrowsersConfig(); }
     }
 
     public static void Save(BrowsersConfig config)

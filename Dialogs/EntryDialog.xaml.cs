@@ -112,7 +112,7 @@ public partial class EntryDialog : Window
                 return;
             }
         }
-        catch { }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Aperçu de l'icône (EntryDialog)"); }
         ImgIconPreview.Source = null;
     }
 

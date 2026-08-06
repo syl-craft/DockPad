@@ -25,7 +25,7 @@ public static class PageConfigService
             var json = File.ReadAllText(FilePath);
             return JsonSerializer.Deserialize<List<PageConfig>>(json, JsonOptions) ?? [];
         }
-        catch { return []; }
+        catch (Exception ex) { LogService.Warn(ex, "Chargement de pages.json (liste vide utilisée)"); return []; }
     }
 
     public static void Save(List<PageConfig> pages)
