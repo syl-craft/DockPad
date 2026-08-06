@@ -94,6 +94,7 @@ public partial class PresetsDialog : Window
             }
             catch (Exception ex)
             {
+                Services.LogService.Error(ex, $"Installation du prédéfini « {preset.DisplayName} »");
                 errors.Add($"{preset.DisplayName} : {ex.Message}");
             }
         }

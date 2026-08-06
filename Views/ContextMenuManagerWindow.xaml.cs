@@ -70,6 +70,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
+            Services.LogService.Error(ex, "Lecture des entrées de menu contextuel dans le registre");
             TxtStatus.Text = $"Erreur de chargement : {ex.Message}";
             AppDialog.Error($"Impossible de lire le registre :\n{ex.Message}", owner: this);
         }
@@ -126,6 +127,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
+            Services.LogService.Error(ex, $"Ajout de l'entrée de menu contextuel « {entry.DisplayName} »");
             AppDialog.Error($"Impossible d'écrire dans le registre :\n{ex.Message}", owner: this);
         }
     }
@@ -156,6 +158,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
+            Services.LogService.Error(ex, $"Modification de l'entrée de menu contextuel « {updated.DisplayName} »");
             AppDialog.Error($"Erreur lors de la modification :\n{ex.Message}", owner: this);
         }
     }
@@ -194,6 +197,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
+            Services.LogService.Error(ex, $"Duplication de l'entrée de menu contextuel « {entry.DisplayName} »");
             AppDialog.Error($"Impossible d'écrire dans le registre :\n{ex.Message}", owner: this);
         }
     }
@@ -214,6 +218,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch (Exception ex)
         {
+            Services.LogService.Error(ex, $"Suppression de l'entrée de menu contextuel « {vm.DisplayName} »");
             AppDialog.Error($"Erreur lors de la suppression :\n{ex.Message}", owner: this);
         }
     }

@@ -136,6 +136,7 @@ public static class UrlRouterService
         }
         catch (Exception ex)
         {
+            LogService.Error(ex, $"Lancement du navigateur {browser.Name} ({browser.ExePath})");
             AppDialog.Error($"Impossible de lancer {browser.Name} :\n{browser.ExePath}\n\n{ex.Message}",
                             "Navigateur introuvable");
             return false;
