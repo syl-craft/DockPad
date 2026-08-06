@@ -20,6 +20,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- DockPad.Tests est un projet frère situé dans un sous-dossier du répertoire de DockPad.csproj :
+         sans cette exclusion, le glob par défaut du SDK (**/*.cs) y compile aussi SmokeTests.cs. -->
+    <Compile Remove="DockPad.Tests\**" />
+    <EmbeddedResource Remove="DockPad.Tests\**" />
+    <None Remove="DockPad.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="CHANGELOG.md" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
