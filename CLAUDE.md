@@ -304,11 +304,15 @@ Icônes des tuiles (PNG 64×64) stockées dans `C:\dev\Dock-icons\`, sources :
 - **Simple Icons** — gmail, azure-devops
 - **GitHub Octicons** — pull-requests
 
-## Versioning
+## Versioning & release
 
-Version semver définie dans `DockPad.csproj` : `<Version>1.6.1</Version>`
+Version semver définie dans `DockPad.csproj` : `<Version>x.y.z</Version>`
 
-Pour bumper la version, modifier ce champ puis commit + publish.
+Processus de release :
+- **Jamais de bump de version dans une branche feature** — plusieurs features en cours = conflits sur `.csproj`/`CHANGELOG.md` et numéros faux (l'ordre de merge décide du bon numéro). Le bump se fait uniquement sur `master` (ou plus tard sur une éventuelle branche `preview` en amont de `master`)
+- Les features sont développées en branche, validées, puis mergées dans `master`
+- Une fois la ou les features mergées : bump du `<Version>` + entrée `CHANGELOG.md` en un commit `chore: bump version x.y.z` sur `master`, puis déploiement (voir Build : publish zip + extraction dans `C:\DockPad\`)
+- Le garant du numéro de version est celui qui fait la release (merge + publish), jamais l'auteur de la feature — le bump reflète l'ensemble de ce qui part dans la release (`feat` → minor, `fix` seul → patch)
 
 ## Build
 
