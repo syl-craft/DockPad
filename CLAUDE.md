@@ -10,6 +10,7 @@ L'app démarre sans droits admin — l'élévation est demandée à la demande v
 - **Icônes**  `System.Drawing.Common` (NuGet) pour extraire les icônes `.exe`/`.dll`
 - **JSON**  `System.Text.Json` (built-in) pour la config des raccourcis rapides
 - **WMI**  `System.Management` (NuGet) pour lire la ligne de commande des processus (`SwitchToProcess`)
+- **Logs**  Serilog + Serilog.Sinks.File — logger central `LogService`
 
 ## Structure
 
@@ -43,6 +44,7 @@ Services/
     BrowserRegistrationService.cs        Enregistrement per-user (HKCU) comme navigateur + lecture de l'état (non enregistré/enregistré/par défaut)
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
     IconCacheService.cs                  Cache d'icônes dans %APPDATA%\DockPad\icons\ (SHA1 dédup, extraction .exe/.dll → .png)
+    LogService.cs                        Logger central Serilog — %APPDATA%\DockPad\logs\, rolling quotidien, 14 fichiers, shared multi-process
     PageConfigService.cs                 Load/Save pages.json (%APPDATA%\DockPad\pages.json)
     PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS, GitHub Desktop)
     ProcessSwitchService.cs              SwitchOrLaunch : cherche via WMI, SetForegroundWindow ou lance l'exe
@@ -80,6 +82,14 @@ tools/
 - **Clic gauche** sur l'icône → réaffiche la fenêtre
 - **Clic droit** sur l'icône → menu contextuel avec "Fermer" pour quitter vraiment
 - **Instance unique** : un `Mutex` nommé empêche le lancement de plusieurs instances simultanées
+
+### Logging (LogService)
+- Serilog → `%APPDATA%\DockPad\logs\dockpad-YYYYMMDD.log`, rolling quotidien, 14 fichiers gardés, `shared: true` (l'instance relais URL écrit dans le même fichier)
+- Format : `[2026-08-06 14:23:45.123 ERR] contexte` + stack trace complète
+- **Error** : exceptions non gérées (Dispatcher, AppDomain, TaskScheduler) et catch affichant un `AppDialog.Error`
+- **Warning** : catch silencieux (configs JSON corrompues, icônes, pipe…) — comportement utilisateur inchangé
+- Pas de log : UAC refusé, boucle WMI de `ProcessSwitchService` (refus d'accès routiniers)
+- API : `LogService.Error(ex, "contexte")` / `LogService.Warn(ex, "contexte")` — jamais `Serilog` en direct
 
 ### Gestionnaire de menu contextuel (ContextMenuManagerWindow)
 - Liste les entrées de menu contextuel (Fichiers, Dossiers, Fond de dossier uniquement)
