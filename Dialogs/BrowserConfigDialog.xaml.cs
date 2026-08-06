@@ -329,7 +329,7 @@ public partial class BrowserConfigDialog : Window
             }
             finally { DeleteObject(handle); }
         }
-        catch { return null; }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Chargement d'une icône de navigateur (config)"); return null; }
     }
 
     [System.Runtime.InteropServices.DllImport("gdi32.dll")]
