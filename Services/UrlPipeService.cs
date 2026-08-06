@@ -12,6 +12,8 @@ public static class UrlPipeService
 {
     public const string PipeName = "DockPad_UrlPipe";
 
+    private static bool _serverFaulted;
+
     /// <summary>Démarre le serveur (instance principale). onUrl est appelé sur un thread de pool.</summary>
     public static void StartServer(Action<string> onUrl)
     {
@@ -24,11 +26,18 @@ public static class UrlPipeService
                     using var server = new NamedPipeServerStream(
                         PipeName, PipeDirection.In, maxNumberOfServerInstances: 1);
                     server.WaitForConnection();
+                    _serverFaulted = false;
                     using var reader = new StreamReader(server);
                     var url = reader.ReadLine();
                     if (!string.IsNullOrWhiteSpace(url)) onUrl(url);
                 }
-                catch (Exception ex) { LogService.Warn(ex, "Pipe DockPad_UrlPipe interrompu, réécoute"); }
+                catch (Exception ex)
+                {
+                    // Pipe cassé ou fermeture : on retente. Un seul WRN par série d'échecs,
+                    // et backoff pour ne pas spinner si l'échec est persistant.
+                    if (!_serverFaulted) { LogService.Warn(ex, "Pipe DockPad_UrlPipe interrompu, réécoute"); _serverFaulted = true; }
+                    Thread.Sleep(1000);
+                }
             }
         })
         { IsBackground = true, Name = "DockPad_UrlPipeServer" };
