@@ -15,29 +15,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="app.ico"/>
-    <Resource Include="Assets\folder.png"/>
+    <Resource Include="app.ico" />
+    <Resource Include="Assets\folder.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="CHANGELOG.md" CopyToPublishDirectory="Always"/>
+    <None Include="CHANGELOG.md" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
   <Target Name="ZipAfterPublish" AfterTargets="Publish">
-    <MakeDir Directories="$(MSBuildProjectDirectory)\release"/>
-    <ZipDirectory SourceDirectory="$(PublishDir)"
-                  DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip"
-                  Overwrite="true"/>
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md"
-          DestinationFiles="$(MSBuildProjectDirectory)\release\DockPad-$(Version)-Changelog.md"
-          OverwriteReadOnlyFiles="true"/>
-    <RemoveDir Directories="$(PublishDir)"/>
-    <Message Text="Archive créée : release\DockPad-$(Version).zip" Importance="high"/>
+    <MakeDir Directories="$(MSBuildProjectDirectory)\release" />
+    <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip" Overwrite="true" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md" DestinationFiles="$(MSBuildProjectDirectory)\release\DockPad-$(Version)-Changelog.md" OverwriteReadOnlyFiles="true" />
+    <RemoveDir Directories="$(PublishDir)" />
+    <Message Text="Archive créée : release\DockPad-$(Version).zip" Importance="high" />
   </Target>
 
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="8.0.0"/>
-    <PackageReference Include="System.Management"     Version="8.0.0"/>
+    <PackageReference Include="Serilog" Version="4.4.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

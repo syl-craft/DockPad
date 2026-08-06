@@ -23,23 +23,26 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // Filet de sécurité : une exception UI non gérée ne doit pas tuer l'app résidente
-        // (systray + hotkey). Loggée dans %APPDATA%\DockPad\error.log + dialog d'erreur.
+        Services.LogService.Init();
+
+        // Filets de sécurité : une exception non gérée ne doit pas tuer l'app résidente
+        // (systray + hotkey). Tracée dans %APPDATA%\DockPad\logs\ + dialog d'erreur.
         DispatcherUnhandledException += (_, args) =>
         {
             args.Handled = true;
-            try
-            {
-                var logPath = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "DockPad", "error.log");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(logPath)!);
-                System.IO.File.AppendAllText(logPath,
-                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {args.Exception}\r\n\r\n");
-            }
-            catch { /* le log ne doit jamais aggraver l'erreur */ }
+            Services.LogService.Error(args.Exception, "Exception UI non gérée");
             try { AppDialog.Error($"Erreur inattendue :\n{args.Exception.Message}", "DockPad"); }
             catch { }
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
+                Services.LogService.Error(ex, "Exception non gérée (AppDomain)");
+        };
+        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Services.LogService.Error(args.Exception, "Exception de tâche non observée");
+            args.SetObserved();
         };
 
         string? url = ParseUrlArg(e.Args);
@@ -108,6 +111,7 @@ public partial class App : Application
         _trayIcon?.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
+        Services.LogService.Shutdown();
         base.OnExit(e);
     }
 
