@@ -24,7 +24,7 @@ public static class ResourceStringResolver
             if (hr == 0 && sb.Length > 0)
                 return sb.ToString().Replace("&", "");
         }
-        catch { }
+        catch (Exception ex) { LogService.Warn(ex, $"Résolution de la ressource indirecte : {value}"); }
 
         return value;
     }

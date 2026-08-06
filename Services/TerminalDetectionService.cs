@@ -122,6 +122,6 @@ public static class TerminalDetectionService
             var line = proc?.StandardOutput.ReadLine()?.Trim();
             return string.IsNullOrEmpty(line) ? null : line;
         }
-        catch { return null; }
+        catch (Exception ex) { LogService.Warn(ex, "Recherche d'un exécutable via where.exe"); return null; }
     }
 }

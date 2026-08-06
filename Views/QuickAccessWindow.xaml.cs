@@ -886,7 +886,7 @@ public partial class QuickAccessWindow : Window
                 Process.Start(new ProcessStartInfo(term, args) { UseShellExecute = true });
                 return;
             }
-            catch { }
+            catch (Exception ex) { Services.LogService.Warn(ex, $"Terminal candidat indisponible : {term}"); }
         }
         throw new InvalidOperationException("Aucun terminal trouvé (wt, pwsh, powershell, cmd).");
     }
@@ -1089,7 +1089,7 @@ public partial class QuickAccessWindow : Window
                     title = line[6..];
             }
         }
-        catch { }
+        catch (Exception ex) { Services.LogService.Warn(ex, $"Lecture du fichier .url déposé : {urlFilePath}"); }
 
         if (string.IsNullOrEmpty(url)) return;
         title ??= Path.GetFileNameWithoutExtension(urlFilePath);
@@ -1141,7 +1141,7 @@ public partial class QuickAccessWindow : Window
             info.Stream.CopyTo(ms);
             return IconCacheService.CacheBytes(ms.ToArray(), ".png");
         }
-        catch { return null; }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Mise en cache de l'icône dossier par défaut"); return null; }
     }
 
     private static string? EnsureDefaultBrowserIcon()
@@ -1161,7 +1161,7 @@ public partial class QuickAccessWindow : Window
             var (exe, _) = ParseCommand(cmd);
             return File.Exists(exe) ? IconCacheService.CopyToProfile(exe) : null;
         }
-        catch { return null; }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Détection de l'icône du navigateur par défaut"); return null; }
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1246,7 +1246,7 @@ public partial class QuickAccessWindow : Window
                 finally { DeleteObject(handle); }
             }
         }
-        catch { }
+        catch (Exception ex) { Services.LogService.Warn(ex, $"Chargement de l'icône : {iconPath}"); }
         return null;
     }
 

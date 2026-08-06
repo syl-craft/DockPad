@@ -175,7 +175,7 @@ public partial class BrowserPickerWindow : Window
 
     private void BtnCopy_Click(object sender, RoutedEventArgs e)
     {
-        try { Clipboard.SetText(_url); } catch { return; }
+        try { Clipboard.SetText(_url); } catch (Exception ex) { Services.LogService.Warn(ex, "Copie de l'URL dans le presse-papiers"); return; }
 
         BtnCopy.Content = "Copié ✓";
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
@@ -233,7 +233,7 @@ public partial class BrowserPickerWindow : Window
             }
             finally { DeleteObject(handle); }
         }
-        catch { return null; }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Chargement d'une icône de navigateur (picker)"); return null; }
     }
 
     [System.Runtime.InteropServices.DllImport("gdi32.dll")]

@@ -26,7 +26,7 @@ public static class ShortcutService
             var json = File.ReadAllText(FilePath);
             return JsonSerializer.Deserialize<List<ShortcutEntry>>(json, JsonOptions) ?? [];
         }
-        catch { return []; }
+        catch (Exception ex) { LogService.Warn(ex, "Chargement de shortcuts.json (liste vide utilisée)"); return []; }
     }
 
     public static void Save(List<ShortcutEntry> entries)

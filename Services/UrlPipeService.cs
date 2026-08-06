@@ -28,7 +28,7 @@ public static class UrlPipeService
                     var url = reader.ReadLine();
                     if (!string.IsNullOrWhiteSpace(url)) onUrl(url);
                 }
-                catch { /* pipe cassé ou fermeture : on retente */ }
+                catch (Exception ex) { LogService.Warn(ex, "Pipe DockPad_UrlPipe interrompu, réécoute"); }
             }
         })
         { IsBackground = true, Name = "DockPad_UrlPipeServer" };
@@ -46,6 +46,6 @@ public static class UrlPipeService
             writer.WriteLine(url);
             return true;
         }
-        catch { return false; }
+        catch (Exception ex) { LogService.Warn(ex, "Relais de l'URL vers l'instance principale (fallback popup locale)"); return false; }
     }
 }
