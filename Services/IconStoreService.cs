@@ -4,7 +4,13 @@ using DockPad.Models;
 
 namespace DockPad.Services;
 
-public static class IconCacheService
+/// <summary>
+/// Store des icônes du profil (%APPDATA%\DockPad\icons\) : copie de référence des icônes
+/// des tuiles/pages/navigateurs, dédupliquée par SHA1. Ce n'est pas un cache — rien n'expire,
+/// le store est la source d'affichage (IconProfilePath), le chemin d'origine (IconPath)
+/// n'étant gardé qu'à titre de provenance.
+/// </summary>
+public static class IconStoreService
 {
     /// <summary>Racine du profil DockPad : %APPDATA%\DockPad\</summary>
     public static readonly string ProfileRoot = Path.Combine(
@@ -34,7 +40,7 @@ public static class IconCacheService
         {
             string ext = Path.GetExtension(path).ToLowerInvariant();
             if (ext is ".exe" or ".dll")
-                return ExtractAndCache(path, iconIndex);
+                return ExtractAndStore(path, iconIndex);
 
             byte[] data = File.ReadAllBytes(path);
             var (abs, rel) = DestPaths(data, ext);
@@ -42,7 +48,7 @@ public static class IconCacheService
                 File.WriteAllBytes(abs, data);
             return rel;
         }
-        catch (Exception ex) { LogService.Warn(ex, $"Copie d'une icône dans le cache : {path}"); return null; }
+        catch (Exception ex) { LogService.Warn(ex, $"Copie d'une icône dans le store : {path}"); return null; }
     }
 
     /// <summary>
@@ -107,7 +113,7 @@ public static class IconCacheService
         return (iconRef.Trim('"'), 0);
     }
 
-    private static string? ExtractAndCache(string exePath, int iconIndex = 0)
+    private static string? ExtractAndStore(string exePath, int iconIndex = 0)
     {
         try
         {
@@ -145,10 +151,10 @@ public static class IconCacheService
     }
 
     /// <summary>
-    /// Enregistre des bytes d'icône dans le cache (déduplication SHA1).
+    /// Enregistre des bytes d'icône dans le store (déduplication SHA1).
     /// Retourne le chemin relatif au profil, ou null si échec.
     /// </summary>
-    public static string? CacheBytes(byte[] data, string ext)
+    public static string? StoreBytes(byte[] data, string ext)
     {
         try
         {
@@ -157,7 +163,7 @@ public static class IconCacheService
                 File.WriteAllBytes(abs, data);
             return rel;
         }
-        catch (Exception ex) { LogService.Warn(ex, "Écriture d'une icône dans le cache"); return null; }
+        catch (Exception ex) { LogService.Warn(ex, "Écriture d'une icône dans le store"); return null; }
     }
 
     /// <summary>Retourne (chemin absolu, chemin relatif au profil) pour un fichier icône.</summary>

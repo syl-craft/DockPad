@@ -38,7 +38,7 @@ public static class BrowserConfigService
     /// <summary>
     /// Charge la config ; si browsers.json n'existe pas encore, est vide ou corrompu
     /// (Load() retombe alors sur une liste de navigateurs vide), détecte les navigateurs
-    /// installés, cache leurs icônes et sauvegarde. Les règles déjà chargées sont conservées.
+    /// installés, copie leurs icônes dans le store et sauvegarde. Les règles déjà chargées sont conservées.
     /// </summary>
     public static BrowsersConfig EnsureInitialized()
     {
@@ -49,7 +49,7 @@ public static class BrowserConfigService
         for (int i = 0; i < config.Browsers.Count; i++)
         {
             config.Browsers[i].Order = i;
-            config.Browsers[i].IconProfilePath = IconCacheService.CopyToProfile(config.Browsers[i].IconPath);
+            config.Browsers[i].IconProfilePath = IconStoreService.CopyToProfile(config.Browsers[i].IconPath);
         }
         Save(config);
         return config;

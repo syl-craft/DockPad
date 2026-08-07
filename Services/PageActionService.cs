@@ -11,7 +11,7 @@ public static class PageActionService
         {
             var all = ShortcutService.Load();
             var configs = PageConfigService.Load();
-            string? profile = string.IsNullOrEmpty(iconPath) ? null : IconCacheService.CopyToProfile(iconPath);
+            string? profile = string.IsNullOrEmpty(iconPath) ? null : IconStoreService.CopyToProfile(iconPath);
             var result = AddCore(all, configs, iconPath ?? "", profile);
             if (result.Ok) PageConfigService.Save(configs);
             return result;
@@ -25,7 +25,7 @@ public static class PageActionService
             var all = ShortcutService.Load();
             var configs = PageConfigService.Load();
             string? profile = iconProvided && !string.IsNullOrEmpty(iconPath)
-                ? IconCacheService.CopyToProfile(iconPath) : null;
+                ? IconStoreService.CopyToProfile(iconPath) : null;
             var result = UpdateCore(all, configs, index, iconProvided, iconPath, profile, newIndex);
             if (result.Ok) { ShortcutService.Save(all); PageConfigService.Save(configs); }
             return result;

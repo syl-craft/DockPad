@@ -337,7 +337,7 @@ public static class ShortcutActionService
     {
         if (!string.IsNullOrEmpty(s.IconPath))
         {
-            s.IconProfilePath ??= IconCacheService.CopyToProfile(s.IconPath);
+            s.IconProfilePath ??= IconStoreService.CopyToProfile(s.IconPath);
             return;
         }
         string? exe = s.Type switch
@@ -350,7 +350,7 @@ public static class ShortcutActionService
         if (exe is not null && File.Exists(exe))
         {
             s.IconPath = exe;
-            s.IconProfilePath = IconCacheService.CopyToProfile(exe);
+            s.IconProfilePath = IconStoreService.CopyToProfile(exe);
         }
     }
 
