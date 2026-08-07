@@ -25,7 +25,8 @@ public static class ShortcutActionService
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load();
-            var result = AddCore(all, items);
+            var configs = PageConfigService.Load();
+            var result = AddCore(all, configs, items);
             if (!result.Ok) return result;
 
             // Icônes : fournie → copie profil ; absente → icône de l'exe associé (comme les dialogs)
@@ -59,7 +60,8 @@ public static class ShortcutActionService
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load();
-            var result = MoveCore(all, page, row, col, toPage, toRow, toCol);
+            var configs = PageConfigService.Load();
+            var result = MoveCore(all, configs, page, row, col, toPage, toRow, toCol);
             if (result.Ok) ShortcutService.Save(all);
             return result;
         }
@@ -121,10 +123,14 @@ public static class ShortcutActionService
         return ActionResult.Success(new { gridRows = GridRows, gridCols = GridCols, pages, shortcuts });
     }
 
-    public static ActionResult AddCore(List<ShortcutEntry> all, List<ShortcutAddItem> items)
+    public static ActionResult AddCore(List<ShortcutEntry> all, List<PageConfig> configs, List<ShortcutAddItem> items)
     {
         if (items is not { Count: > 0 })
             return ActionResult.Fail("Aucun raccourci à ajouter.");
+
+        // Bornée sur l'état initial : un lot ciblant une page qui n'existe pas encore
+        // échoue en entier, même si un item antérieur du même lot créerait cette page.
+        int lastShown = LastShown(all, configs);
 
         var errors = new List<string>();
         var staged = new List<ShortcutEntry>();
@@ -142,6 +148,7 @@ public static class ShortcutActionService
 
             int page = it.Page ?? 0;
             if (page < 0) { errors.Add($"{id} : page invalide."); continue; }
+            if (page > lastShown) { errors.Add($"{id} : page {page} inexistante (pages 0 à {lastShown}). Crée-la d'abord avec dockpad_page_add."); continue; }
 
             (int row, int col)? dest = null;
             if (it.Row is { } r0 && it.Col is { } c0)
@@ -208,12 +215,15 @@ public static class ShortcutActionService
         return ActionResult.Success(new { s.Name, page = s.Page, row = s.Row, col = s.Col });
     }
 
-    public static ActionResult MoveCore(List<ShortcutEntry> all, int page, int row, int col,
+    public static ActionResult MoveCore(List<ShortcutEntry> all, List<PageConfig> configs, int page, int row, int col,
                                         int toPage, int? toRow, int? toCol)
     {
         var s = all.FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
         if (s is null) return ActionResult.Fail($"Aucune tuile en page {page}, ligne {row}, colonne {col}.");
         if (toPage < 0) return ActionResult.Fail("Page cible invalide.");
+        int lastShown = LastShown(all, configs);
+        if (toPage > lastShown)
+            return ActionResult.Fail($"Page cible {toPage} inexistante (pages 0 à {lastShown}). Crée-la d'abord avec dockpad_page_add.");
         if (toRow.HasValue != toCol.HasValue) return ActionResult.Fail("toRow et toCol vont ensemble.");
 
         var occupied = all.Where(x => x.Page == toPage && x != s)
@@ -295,6 +305,13 @@ public static class ShortcutActionService
     }
 
     // ───────────── Aides ─────────────
+
+    private static int LastShown(List<ShortcutEntry> all, List<PageConfig> configs)
+    {
+        int maxUsed   = all.Count     > 0 ? all.Max(s => s.Page)      : -1;
+        int maxConfig = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
+        return Math.Max(Math.Max(maxUsed, maxConfig), 0);
+    }
 
     private static (int row, int col)? FirstFree(HashSet<(int, int, int)> occupied, int page)
     {
