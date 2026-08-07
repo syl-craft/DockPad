@@ -157,6 +157,29 @@ public class ShortcutActionServiceTests
         Assert.Equal(1, Math.Max(Math.Abs(copy.Row - 1), Math.Abs(copy.Col - 1))); // distance Chebyshev 1
     }
 
+    [Fact]
+    public void DuplicateCore_CopieToutesLesConfigsProcessSwitch()
+    {
+        var source = E(0, 1, 1, "A");
+        source.Type = ShortcutType.SwitchToProcess;
+        source.ProcessSwitch = new ProcessSwitchConfig
+        {
+            SearchMode = ProcessSearchMode.ByWindowTitle,
+            ProcessName = "Calculatrice",
+            Executable = @"C:\calc.exe",
+            Parameters = "--foo",
+        };
+        var all = new List<ShortcutEntry> { source };
+        var r = ShortcutActionService.DuplicateCore(all, 0, 1, 1);
+        Assert.True(r.Ok);
+        var copy = all[1].ProcessSwitch;
+        Assert.NotNull(copy);
+        Assert.Equal(ProcessSearchMode.ByWindowTitle, copy!.SearchMode);
+        Assert.Equal("Calculatrice", copy.ProcessName);
+        Assert.Equal(@"C:\calc.exe", copy.Executable);
+        Assert.Equal("--foo", copy.Parameters);
+    }
+
     // ----- GetGridCore -----
 
     [Fact]
