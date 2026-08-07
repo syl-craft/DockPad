@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.8.0] — 2026-08-07
+
+### Nouveautés utilisateur
+
+#### Serveur MCP — Claude peut gérer DockPad
+- DockPad expose un serveur MCP : Claude Code et Claude Desktop peuvent lire la grille, ajouter des raccourcis (unitairement ou en lot), créer/réorganiser des pages et gérer les navigateurs et règles de domaine — la grille se rafraîchit en direct
+- **13 outils** `dockpad_<domaine>_<action>` (grid_get, shortcut_add/update/move/delete, page_add/update/delete, browser_list/update, rule_list/add/delete), positions 0-based, erreurs explicites (case occupée → occupant + cases libres)
+- Nouvelle fenêtre **☰ → Paramètres → 🔌 Serveur MCP** : activation, autorisation de suppression (désactivée par défaut — Claude peut construire, pas détruire), commandes d'enregistrement prêtes à copier (portée projet ou `-s user`, commande de mise à jour du chemin), et **onglet Journal** listant chaque action MCP (✅ exécutée / 🚫 refusée / ❌ erreur)
+- Configuration dans `%APPDATA%\DockPad\mcp.json`, incluse dans 💾 Sauvegarder la configuration ; chaque action est aussi tracée dans les logs
+- Enregistrement : `claude mcp add dockpad -- "C:\DockPad\DockPad.exe" --mcp` (DockPad doit être lancé pour que les outils répondent)
+
+#### Corrections
+- La duplication d'une tuile `SwitchToProcess` perdait le mode de recherche (`SearchMode`) : une tuile « fenêtre par titre » dupliquée redevenait silencieusement « par nom de processus »
+
+### Interne
+- La logique des actions (tuiles, pages, navigateurs, règles) est extraite dans des services partagés UI ↔ MCP, sérialisés par un verrou global (plus d'écrasement possible entre l'app et Claude)
+- Nouveau projet de tests `DockPad.Tests` (xUnit, 48 tests) ; `IconCacheService` renommé `IconStoreService` (le dossier `icons\` est un store de référence, pas un cache)
+
+---
+
 ## [1.7.0] — 2026-08-06
 
 ### Nouveautés utilisateur
