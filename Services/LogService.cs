@@ -22,7 +22,7 @@ public static class LogService
                 "DockPad", "logs");
 
             _logger = new LoggerConfiguration()
-                .MinimumLevel.Warning()
+                .MinimumLevel.Information()
                 .WriteTo.File(
                     Path.Combine(logDir, "dockpad-.log"),
                     rollingInterval: RollingInterval.Day,
@@ -39,6 +39,9 @@ public static class LogService
 
     /// <summary>Erreur avalée silencieusement (comportement utilisateur inchangé).</summary>
     public static void Warn(Exception ex, string context) => _logger?.Warning(ex, "{Context}", context);
+
+    /// <summary>Événement informatif (actions MCP). Seul le MCP utilise ce niveau.</summary>
+    public static void Info(string message) => _logger?.Information("{Message}", message);
 
     public static void Shutdown() => _logger?.Dispose();
 }
