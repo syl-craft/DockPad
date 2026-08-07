@@ -20,10 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- DockPad.Tests est un projet frère situé dans un sous-dossier du répertoire de DockPad.csproj :
-         sans cette exclusion, le glob par défaut du SDK (**/*.cs) y compile aussi SmokeTests.cs. -->
-    <Compile Remove="DockPad.Tests\**" />
-    <EmbeddedResource Remove="DockPad.Tests\**" />
+    <!-- DockPad.Tests et tools\McpShot sont des projets frères situés dans des sous-dossiers du
+         répertoire de DockPad.csproj : sans ces exclusions, le glob par défaut du SDK (**/*.cs)
+         compile aussi leurs sources dans l'app. -->
+    <Compile Remove="DockPad.Tests\**;tools\**" />
+    <EmbeddedResource Remove="DockPad.Tests\**;tools\**" />
     <None Remove="DockPad.Tests\**" />
   </ItemGroup>
 
