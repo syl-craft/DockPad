@@ -117,7 +117,9 @@ public static class ShortcutActionService
             .Where(s => page is null || s.Page == page)
             .OrderBy(s => s.Page).ThenBy(s => s.Row).ThenBy(s => s.Col)
             .Select(s => new { page = s.Page, row = s.Row, col = s.Col, name = s.Name,
-                               type = s.Type.ToString(), command = s.Command })
+                               type = s.Type.ToString(), command = s.Command,
+                               iconPath = s.IconPath,
+                               iconProfilePath = s.IconProfilePath })
             .ToList();
 
         return ActionResult.Success(new { gridRows = GridRows, gridCols = GridCols, pages, shortcuts });
