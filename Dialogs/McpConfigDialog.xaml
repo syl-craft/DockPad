@@ -75,6 +75,11 @@
                     <Separator Margin="0,0,0,14"/>
 
                     <TextBlock Text="Enregistrement dans Claude Code" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
+                    <CheckBox x:Name="ChkUserScope" Content="Pour tous les projets (portée utilisateur, -s user)"
+                              FontSize="12" IsChecked="True" Margin="0,0,0,6"
+                              Checked="Scope_Changed" Unchecked="Scope_Changed"/>
+                    <TextBlock Text="Décoché : enregistrement limité au projet courant (portée locale, défaut de claude mcp add)."
+                               Foreground="#888" FontSize="11" Margin="22,-2,0,8" TextWrapping="Wrap"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -84,6 +89,20 @@
                                  FontSize="11" Padding="6,4" TextWrapping="Wrap"/>
                         <Button x:Name="BtnCopyCmd" Grid.Column="1" Content="⧉ Copier" Margin="8,0,0,0"
                                 Style="{StaticResource SecondaryButton}" Click="CopyCmd_Click"/>
+                    </Grid>
+
+                    <TextBlock Text="Mise à jour du chemin (après déploiement)" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,2"/>
+                    <TextBlock Text="Si le serveur était enregistré sur un autre chemin : supprimer l'ancien enregistrement, puis ré-ajouter avec la commande ci-dessus."
+                               Foreground="#888" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="TxtClaudeCodeRemove" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
+                                 FontSize="11" Padding="6,4" Text="claude mcp remove dockpad"/>
+                        <Button x:Name="BtnCopyRemove" Grid.Column="1" Content="⧉ Copier" Margin="8,0,0,0"
+                                Style="{StaticResource SecondaryButton}" Click="CopyRemove_Click"/>
                     </Grid>
 
                     <TextBlock Text="Claude Desktop (claude_desktop_config.json)" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,6"/>

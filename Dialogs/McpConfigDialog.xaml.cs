@@ -20,7 +20,7 @@ public partial class McpConfigDialog : Window
         ChkAllowDelete.IsChecked = _config.AllowDelete;
 
         string exe = Environment.ProcessPath ?? "DockPad.exe";
-        TxtClaudeCodeCmd.Text = $"claude mcp add dockpad -- \"{exe}\" --mcp";
+        UpdateClaudeCodeCmd();
         TxtClaudeDesktopCfg.Text =
             "\"dockpad\": {\n" +
             $"  \"command\": \"{exe.Replace("\\", "\\\\")}\",\n" +
@@ -33,6 +33,20 @@ public partial class McpConfigDialog : Window
         Closed += (_, _) => McpLogService.Entries.CollectionChanged -= _logChangedHandler;
         UpdateLogCount();
         _loading = false;
+    }
+
+    /// <summary>Commande d'ajout, portée utilisateur (-s user) ou locale selon la case.</summary>
+    private void UpdateClaudeCodeCmd()
+    {
+        string exe = Environment.ProcessPath ?? "DockPad.exe";
+        string scope = ChkUserScope.IsChecked == true ? "-s user " : "";
+        TxtClaudeCodeCmd.Text = $"claude mcp add dockpad {scope}-- \"{exe}\" --mcp";
+    }
+
+    private void Scope_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        UpdateClaudeCodeCmd();
     }
 
     private void Option_Changed(object sender, RoutedEventArgs e)
@@ -53,6 +67,9 @@ public partial class McpConfigDialog : Window
 
     private void CopyCfg_Click(object sender, RoutedEventArgs e) =>
         CopyWithFeedback(TxtClaudeDesktopCfg.Text, BtnCopyCfg);
+
+    private void CopyRemove_Click(object sender, RoutedEventArgs e) =>
+        CopyWithFeedback(TxtClaudeCodeRemove.Text, BtnCopyRemove);
 
     private static void CopyWithFeedback(string text, System.Windows.Controls.Button btn)
     {
