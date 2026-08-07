@@ -26,35 +26,52 @@ Converters/
     InverseBoolConverter.cs              Converter WPF bool inversé
 
 Models/
+    ActionResult.cs                       Résultat d'une action des services (UI/MCP) : Ok + Data, ou échec + Error
     BrowserEntry.cs                       Modèle navigateur (id, name, exePath, arguments, icône, hidden, order)
     BrowserRule.cs                        Règle domaine → navigateur (host exact + sous-domaines)
     BrowsersConfig.cs                     Contenu de browsers.json (liste navigateurs + règles)
+    BrowserUpdate.cs                      Champs modifiables par dockpad_browser_update (null = inchangé)
     ContextMenuEntry.cs                  Modèle de données + enum ContextMenuTarget
     ContextMenuEntryViewModel.cs         VM avec chargement d'icône (BitmapSource)
+    McpConfig.cs                          Contenu de mcp.json (Enabled, AllowDelete)
     PageConfig.cs                        Config par page (icône du bouton de pagination + IconProfilePath)
     PresetEntry.cs                       Modèle preset avec enum PresetStatus
     ProcessSwitchConfig.cs               Config SwitchToProcess (processName, executable, parameters)
+    ShortcutAddItem.cs                    Item du lot dockpad_shortcut_add (position optionnelle)
     ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath, iconProfilePath)
+    ShortcutUpdate.cs                     Champs modifiables par dockpad_shortcut_update (null = inchangé)
     TerminalConfig.cs                    Config d'un terminal (exePath, startingDirectory, runCommand…)
     TerminalInfo.cs                      Informations d'un terminal détecté
 
 Services/
+    BrowserActionService.cs               Actions navigateurs & règles de domaine, partagées UI ↔ MCP
     BrowserConfigService.cs              Load/Save browsers.json (%APPDATA%\DockPad\browsers.json)
     BrowserDetectionService.cs           Détection des navigateurs installés (Software\Clients\StartMenuInternet, HKLM+HKCU)
     BrowserRegistrationService.cs        Enregistrement per-user (HKCU) comme navigateur + lecture de l'état (non enregistré/enregistré/par défaut)
+    ConfigLock.cs                         Verrou global des load-modify-save de configs (UI et MCP sérialisés)
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
     IconCacheService.cs                  Cache d'icônes dans %APPDATA%\DockPad\icons\ (SHA1 dédup, extraction .exe/.dll → .png)
     LogService.cs                        Logger central Serilog — %APPDATA%\DockPad\logs\, rolling quotidien, 14 fichiers, shared multi-process
+    McpConfigService.cs                   Load/Save mcp.json (%APPDATA%\DockPad\mcp.json)
+    McpDispatcher.cs                       Traite une requête MCP : options → service d'action → journal → réponse JSON
+    McpLogService.cs                       Journal en mémoire des actions MCP de la session (onglet Journal)
+    McpPipeService.cs                      Named pipe DockPad_McpPipe — serveur multi-instances (instance principale) / client (relais --mcp)
+    PageActionService.cs                  Actions sur les pages, partagées UI ↔ MCP (mêmes règles que la pagination)
     PageConfigService.cs                 Load/Save pages.json (%APPDATA%\DockPad\pages.json)
     PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS, GitHub Desktop)
     ProcessSwitchService.cs              SwitchOrLaunch : cherche via WMI, SetForegroundWindow ou lance l'exe
     RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
     ResourceStringResolver.cs            Résolution des @dll,-id via SHLoadIndirectString
     SettingsService.cs                   Lecture/écriture paramètres HKCU + autostart
+    ShortcutActionService.cs              Actions sur la grille de raccourcis, partagées UI ↔ MCP (cœurs purs + enveloppes verrou/IO)
     ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     UrlPipeService.cs                    Named pipe DockPad_UrlPipe — serveur (instance principale) / client (instance relais)
     UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
+
+Mcp/
+    DockPadTools.cs                        Les 13 outils dockpad_* exposés au SDK MCP (relais vers le pipe)
+    McpRelay.cs                            Hôte MCP stdio du mode --mcp (SDK ModelContextProtocol, aucune UI/mutex)
 
 Views/
     ContextMenuManagerWindow.xaml/.cs    Gestion des entrées de menu contextuel Windows
@@ -65,9 +82,12 @@ Dialogs/
     BrowserConfigDialog.xaml/.cs         Configuration navigateurs (détection/édition/règles/enregistrement)
     BrowserPickerWindow.xaml/.cs         Popup de choix du navigateur au clic sur une URL
     EntryDialog.xaml/.cs                 Ajout/modification d'une entrée de menu contextuel (registre)
+    McpConfigDialog.xaml/.cs               Fenêtre « Serveur MCP » : options (activé/suppression) + journal de session
     PresetsDialog.xaml/.cs               Raccourcis prédéfinis
     SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto + version
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
+
+DockPad.Tests/                           Projet xUnit (43 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher
 
 tools/
     get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
@@ -85,11 +105,13 @@ tools/
 
 ### Logging (LogService)
 - Serilog → `%APPDATA%\DockPad\logs\dockpad-YYYYMMDD.log`, rolling quotidien, 14 fichiers gardés, `shared: true` (l'instance relais URL écrit dans le même fichier)
+- `MinimumLevel` : Information (permet le niveau Info ci-dessous)
 - Format : `[2026-08-06 14:23:45.123 ERR] contexte` + stack trace complète
 - **Error** : exceptions non gérées (Dispatcher, AppDomain, TaskScheduler) et catch affichant un `AppDialog.Error`
 - **Warning** : catch silencieux (configs JSON corrompues, icônes, pipe…) — comportement utilisateur inchangé
+- **Info** : actions MCP (`McpLogService.Add` trace chaque appel d'outil — succès/refus/erreur — dans les logs en plus du journal en mémoire)
 - Pas de log : UAC refusé, boucle WMI de `ProcessSwitchService` (refus d'accès routiniers)
-- API : `LogService.Error(ex, "contexte")` / `LogService.Warn(ex, "contexte")` — jamais `Serilog` en direct
+- API : `LogService.Error(ex, "contexte")` / `LogService.Warn(ex, "contexte")` / `LogService.Info("message")` — jamais `Serilog` en direct
 
 ### Gestionnaire de menu contextuel (ContextMenuManagerWindow)
 - Liste les entrées de menu contextuel (Fichiers, Dossiers, Fond de dossier uniquement)
@@ -216,6 +238,21 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Icônes chargées via `LoadIcon` (même pattern dans `BrowserPickerWindow` et `BrowserConfigDialog`) : extraction `.exe`/`.dll` via `System.Drawing.Icon.ExtractAssociatedIcon` puis `DeleteObject` sur le handle GDI (anti-fuite mémoire) ; `IconCacheService.ParseIconRef` découpe `chemin[,index]` et `Icon.ExtractIcon` respecte l'index (négatif = ID de ressource)
 - Config stockée dans `%APPDATA%\DockPad\browsers.json`, incluse dans **💾 Sauvegarder la configuration**
 
+### Serveur MCP
+- DockPad expose un serveur MCP permettant à Claude Code / Claude Desktop de piloter la grille, les pages et les navigateurs
+- **Architecture** : Claude lance `DockPad.exe --mcp` — mode relais stdio (SDK officiel `ModelContextProtocol`), **aucune UI ni mutex**, détecté dans `App.xaml.cs` avant l'acquisition du mutex → chaque appel d'outil sérialise `{tool, args}` en JSON et l'envoie sur le named pipe `DockPad_McpPipe` (`McpPipeService`, multi-instances : Claude Code + Claude Desktop simultanés) → l'instance principale (déjà lancée par l'utilisateur) reçoit la requête : vérifie les options (`mcp.json`), exécute via les services d'actions **partagés avec l'UI** (`ShortcutActionService`, `PageActionService`, `BrowserActionService`), journalise (`McpLogService`), déclenche `RefreshGrid()` sur la grille si mutation, puis répond `{ok, data, error}` en une ligne
+- **DockPad doit être lancé** — sinon le pipe est injoignable et l'outil renvoie une erreur explicite (« DockPad n'est pas lancé — démarre l'application pour utiliser ce serveur MCP »)
+- **13 outils** `dockpad_<domaine>_<action>` (`Mcp/DockPadTools.cs`), positions **0-based** (page 0 = première page, lignes 0-3, colonnes 0-5) :
+  - Grille : `grid_get`, `shortcut_add` (lot tout-ou-rien, position omise = première case libre), `shortcut_update`, `shortcut_move`, `shortcut_delete` 🔒
+  - Pages : `page_add`, `page_update` (`iconPath` omis = inchangé, `""` = retirer l'icône ; `newIndex` = déplacement par insertion), `page_delete` 🔒
+  - Navigateurs & règles : `browser_list`, `browser_update`, `rule_list`, `rule_add`, `rule_delete` 🔒
+  - 🔒 = refusé si `AllowDelete` est désactivé dans `mcp.json`
+- **Config `%APPDATA%\DockPad\mcp.json`** (`McpConfigService`) : `{ "enabled": true, "allowDelete": false }` par défaut (suppression refusée par défaut) ; relu à **chaque requête** (changement pris en compte immédiatement, pas besoin de redémarrer) ; incluse dans **💾 Sauvegarder la configuration**
+- **Fenêtre `McpConfigDialog`** (☰ → Paramètres → **🔌 Serveur MCP**) : 2 onglets
+  - **Options** : case « Serveur activé », case « Autoriser la suppression », commandes d'enregistrement avec bouton ⧉ Copier — Claude Code : `claude mcp add dockpad -- "<chemin réel du .exe>" --mcp` ; Claude Desktop : bloc JSON pour `claude_desktop_config.json`
+  - **Journal** : actions de la session en mémoire (`McpLogService.Entries`), icône ✅/🚫/❌ + heure + outil + résumé des paramètres + message, compteur, bouton effacer ; trace persistante en parallèle via `LogService.Info` dans les logs Serilog
+- Erreurs renvoyées à Claude en français et actionnables (ex : case occupée → liste des cases libres)
+
 ## Prédéfinis
 
 | Nom | Cible | Commande |
@@ -319,9 +356,14 @@ Processus de release :
 ```bash
 dotnet build
 
+# Tests (DockPad.Tests, xUnit)
+dotnet test DockPad.Tests
+
 # Publish via le profil (méthode préférée)
 dotnet publish -p:PublishProfile=FolderProfile
 ```
+
+Build Debug : `bin\Debug\net8.0-windows\`
 
 Le publish via `FolderProfile` :
 1. Compile en Release framework-dependent (requiert .NET 8 sur la machine cible)
