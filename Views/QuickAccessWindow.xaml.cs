@@ -15,9 +15,6 @@ namespace DockPad;
 
 public partial class QuickAccessWindow : Window
 {
-    private const int GridRows = 4;
-    private const int GridCols = 6;
-
     private int _currentPage = 0;
 
     private IntPtr _hwnd;
@@ -302,9 +299,9 @@ public partial class QuickAccessWindow : Window
 
         var pageEntries = all.Where(s => s.Page == _currentPage).ToList();
 
-        for (int row = 0; row < GridRows; row++)
+        for (int row = 0; row < ShortcutActionService.GridRows; row++)
         {
-            for (int col = 0; col < GridCols; col++)
+            for (int col = 0; col < ShortcutActionService.GridCols; col++)
             {
                 var entry = pageEntries.FirstOrDefault(s => s.Row == row && s.Col == col);
                 var btn = entry is { Name.Length: > 0 }
@@ -429,46 +426,22 @@ public partial class QuickAccessWindow : Window
 
         if (dlg.ShowDialog() != true) return;
 
-        var configs2 = PageConfigService.Load();
-        var config   = configs2.FirstOrDefault(p => p.Index == pageIndex);
-        if (config == null) { config = new PageConfig { Index = pageIndex }; configs2.Add(config); }
-        config.IconPath        = dlg.FileName;
-        config.IconProfilePath = IconCacheService.CopyToProfile(dlg.FileName);
-        PageConfigService.Save(configs2);
+        var r = PageActionService.Update(pageIndex, iconProvided: true, dlg.FileName, null);
+        if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
     private void ClearPageIcon(int pageIndex)
     {
-        var configs = PageConfigService.Load();
-        var config  = configs.FirstOrDefault(p => p.Index == pageIndex);
-        if (config == null) return;
-        config.IconPath        = "";
-        config.IconProfilePath = null;
-        PageConfigService.Save(configs);
+        var r = PageActionService.Update(pageIndex, iconProvided: true, null, null);
+        if (!r.Ok) return;
         PopulateGrid();
     }
 
     private void MovePage(int fromIndex, int toIndex)
     {
-        var shortcuts = ShortcutService.Load();
-        var configs   = PageConfigService.Load();
-
-        // Swap les entrées
-        foreach (var s in shortcuts)
-        {
-            if      (s.Page == fromIndex) s.Page = toIndex;
-            else if (s.Page == toIndex)   s.Page = fromIndex;
-        }
-
-        // Swap les configs
-        var fromCfg = configs.FirstOrDefault(p => p.Index == fromIndex);
-        var toCfg   = configs.FirstOrDefault(p => p.Index == toIndex);
-        if (fromCfg != null) fromCfg.Index = toIndex;
-        if (toCfg   != null) toCfg.Index   = fromIndex;
-
-        ShortcutService.Save(shortcuts);
-        PageConfigService.Save(configs);
+        var r = PageActionService.Update(fromIndex, iconProvided: false, null, newIndex: toIndex);
+        if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
 
         if      (_currentPage == fromIndex) _currentPage = toIndex;
         else if (_currentPage == toIndex)   _currentPage = fromIndex;
@@ -487,20 +460,11 @@ public partial class QuickAccessWindow : Window
         if (!AppDialog.Confirm(msg, "Supprimer la page", this))
             return;
 
-        // Supprimer les entrées de cette page et décaler les suivantes
-        shortcuts.RemoveAll(s => s.Page == pageIndex);
-        foreach (var s in shortcuts.Where(s => s.Page > pageIndex))
-            s.Page--;
+        var r = PageActionService.Delete(pageIndex);
+        if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
 
-        var configs = PageConfigService.Load();
-        configs.RemoveAll(p => p.Index == pageIndex);
-        foreach (var c in configs.Where(c => c.Index > pageIndex))
-            c.Index--;
-
-        ShortcutService.Save(shortcuts);
-        PageConfigService.Save(configs);
-
-        int newMax = shortcuts.Count > 0 ? shortcuts.Max(s => s.Page) : 0;
+        var all = ShortcutService.Load();
+        int newMax = all.Count > 0 ? all.Max(s => s.Page) : 0;
         _currentPage = Math.Min(_currentPage > pageIndex ? _currentPage - 1 : _currentPage, newMax);
 
         PopulateGrid();
@@ -607,10 +571,15 @@ public partial class QuickAccessWindow : Window
         var dlg = new ShortcutDialog(row: row, col: col) { Owner = this };
         if (dlg.ShowDialog() != true) return;
 
-        dlg.Entry.Page = _currentPage;
-        var all = ShortcutService.Load();
-        all.Add(dlg.Entry);
-        ShortcutService.Save(all);
+        var item = new ShortcutAddItem
+        {
+            Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
+            Page = _currentPage, Row = dlg.Entry.Row, Col = dlg.Entry.Col,
+            IconPath = string.IsNullOrEmpty(dlg.Entry.IconPath) ? null : dlg.Entry.IconPath,
+            Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
+        };
+        var r = ShortcutActionService.Add([item]);
+        if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
@@ -619,71 +588,19 @@ public partial class QuickAccessWindow : Window
         var dlg = new ShortcutDialog(entry) { Owner = this };
         if (dlg.ShowDialog() != true) return;
 
-        var all = ShortcutService.Load();
-        var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
-        if (existing != null)
+        var r = ShortcutActionService.Update(entry.Page, entry.Row, entry.Col, new ShortcutUpdate
         {
-            existing.Name            = dlg.Entry.Name;
-            existing.Type            = dlg.Entry.Type;
-            existing.Command         = dlg.Entry.Command;
-            existing.IconPath        = dlg.Entry.IconPath;
-            existing.IconProfilePath = dlg.Entry.IconProfilePath;
-            existing.Terminal        = dlg.Entry.Terminal;
-            existing.ProcessSwitch   = dlg.Entry.ProcessSwitch;
-        }
-        ShortcutService.Save(all);
+            Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
+            IconPath = dlg.Entry.IconPath, Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
+        });
+        if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
     private void DuplicateTile(ShortcutEntry entry)
     {
-        var all = ShortcutService.Load();
-        var occupied = all
-            .Where(s => s.Page == _currentPage)
-            .Select(s => (s.Row, s.Col))
-            .ToHashSet();
-
-        // Case vide la plus proche sur la page courante (distance de Chebyshev)
-        (int row, int col)? nearest = null;
-        int bestDist = int.MaxValue;
-        for (int r = 0; r < GridRows; r++)
-        {
-            for (int c = 0; c < GridCols; c++)
-            {
-                if (occupied.Contains((r, c))) continue;
-                int dist = Math.Max(Math.Abs(r - entry.Row), Math.Abs(c - entry.Col));
-                if (dist < bestDist) { bestDist = dist; nearest = (r, c); }
-            }
-        }
-
-        if (nearest is null)
-        {
-            AppDialog.Info("Page pleine. Naviguez vers une autre page pour dupliquer.", "Dupliquer", this);
-            return;
-        }
-
-        all.Add(new ShortcutEntry
-        {
-            Page     = _currentPage,
-            Row      = nearest.Value.row, Col = nearest.Value.col,
-            Name     = entry.Name,    Type     = entry.Type,
-            Command  = entry.Command, IconPath = entry.IconPath,
-            Terminal = entry.Terminal == null ? null : new TerminalConfig
-            {
-                ExePath           = entry.Terminal.ExePath,
-                StartingDirectory = entry.Terminal.StartingDirectory,
-                RunCommand        = entry.Terminal.RunCommand,
-                NewTab            = entry.Terminal.NewTab,
-                ExtraArgs         = entry.Terminal.ExtraArgs,
-            },
-            ProcessSwitch = entry.ProcessSwitch == null ? null : new ProcessSwitchConfig
-            {
-                ProcessName = entry.ProcessSwitch.ProcessName,
-                Executable  = entry.ProcessSwitch.Executable,
-                Parameters  = entry.ProcessSwitch.Parameters,
-            },
-        });
-        ShortcutService.Save(all);
+        var r = ShortcutActionService.Duplicate(entry.Page, entry.Row, entry.Col);
+        if (!r.Ok) { AppDialog.Info(r.Error!, "Dupliquer", this); return; }
         PopulateGrid();
     }
 
@@ -729,7 +646,7 @@ public partial class QuickAccessWindow : Window
 
             // Page pleine = toutes les cases occupées
             var occupiedOnPage = all.Where(s => s.Page == targetPage).Select(s => (s.Row, s.Col)).ToHashSet();
-            bool pageFull = Enumerable.Range(0, GridRows).SelectMany(r => Enumerable.Range(0, GridCols).Select(c => (r, c)))
+            bool pageFull = Enumerable.Range(0, ShortcutActionService.GridRows).SelectMany(r => Enumerable.Range(0, ShortcutActionService.GridCols).Select(c => (r, c)))
                                       .All(cell => occupiedOnPage.Contains(cell));
             if (pageFull)
             {
@@ -752,25 +669,8 @@ public partial class QuickAccessWindow : Window
 
     private void MoveTileToPage(ShortcutEntry entry, int targetPage)
     {
-        var all      = ShortcutService.Load();
-        var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
-        if (existing == null) return;
-
-        // Chercher la case cible : même position si libre, sinon première case disponible
-        var occupied = all.Where(s => s.Page == targetPage).Select(s => (s.Row, s.Col)).ToHashSet();
-        (int row, int col) dest = (entry.Row, entry.Col);
-        if (occupied.Contains(dest))
-        {
-            bool found = false;
-            for (int r = 0; r < GridRows && !found; r++)
-                for (int c = 0; c < GridCols && !found; c++)
-                    if (!occupied.Contains((r, c))) { dest = (r, c); found = true; }
-        }
-
-        existing.Page = targetPage;
-        existing.Row  = dest.row;
-        existing.Col  = dest.col;
-        ShortcutService.Save(all);
+        var r = ShortcutActionService.Move(entry.Page, entry.Row, entry.Col, targetPage);
+        if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
@@ -815,9 +715,7 @@ public partial class QuickAccessWindow : Window
     {
         if (!AppDialog.Confirm($"Supprimer « {entry.Name} » ?", owner: this)) return;
 
-        var all = ShortcutService.Load();
-        all.RemoveAll(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
-        ShortcutService.Save(all);
+        ShortcutActionService.Delete(entry.Page, entry.Row, entry.Col);
         PopulateGrid();
     }
 
@@ -1332,9 +1230,9 @@ public partial class QuickAccessWindow : Window
     {
         HideHintOverlay();
 
-        for (int row = 0; row < GridRows; row++)
+        for (int row = 0; row < ShortcutActionService.GridRows; row++)
         {
-            for (int col = 0; col < GridCols; col++)
+            for (int col = 0; col < ShortcutActionService.GridCols; col++)
             {
                 if (isCtrl ? col >= 3 : col < 3) continue; // côté inactif
 
