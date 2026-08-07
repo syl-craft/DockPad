@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Threading;
 using DockPad.Models;
@@ -9,6 +10,7 @@ public partial class McpConfigDialog : Window
 {
     private McpConfig _config = new();
     private bool _loading = true;
+    private readonly NotifyCollectionChangedEventHandler _logChangedHandler;
 
     public McpConfigDialog()
     {
@@ -26,7 +28,9 @@ public partial class McpConfigDialog : Window
             "}";
 
         LstLog.ItemsSource = McpLogService.Entries;
-        McpLogService.Entries.CollectionChanged += (_, _) => UpdateLogCount();
+        _logChangedHandler = (_, _) => UpdateLogCount();
+        McpLogService.Entries.CollectionChanged += _logChangedHandler;
+        Closed += (_, _) => McpLogService.Entries.CollectionChanged -= _logChangedHandler;
         UpdateLogCount();
         _loading = false;
     }
