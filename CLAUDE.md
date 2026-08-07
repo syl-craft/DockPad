@@ -44,6 +44,7 @@ Models/
     TerminalInfo.cs                      Informations d'un terminal détecté
 
 Services/
+    AppInfo.cs                            Infos application (VersionText affiché dans les footers)
     BrowserActionService.cs               Actions navigateurs & règles de domaine, partagées UI ↔ MCP
     BrowserConfigService.cs              Load/Save browsers.json (%APPDATA%\DockPad\browsers.json)
     BrowserDetectionService.cs           Détection des navigateurs installés (Software\Clients\StartMenuInternet, HKLM+HKCU)
@@ -308,6 +309,15 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - `iconProfilePath` chemin relatif au profil (`%APPDATA%\DockPad\`), prioritaire sur `iconPath`
 - `hidden` : masqué = absent de la popup mais conservé dans la config
 - Stocké dans `%APPDATA%\DockPad\browsers.json`, inclus dans la sauvegarde de configuration
+
+## Fenêtres de config — pattern commun
+
+Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) suit le même patron — **jamais de hauteur fixe sans clamp** (une hauteur codée en dur finit clippée quand le contenu grandit, ou déborde d'un écran 768p) :
+
+- **Contenu statique** : `Width` fixe + `SizeToContent="Height"` + `MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"` — la fenêtre a la taille de son contenu, clampée à la zone de travail
+- **Listes / onglets** (Navigateurs, Serveur MCP) : `ResizeMode="CanResize"`, taille initiale + `MinWidth`/`MinHeight`, même clamp `MaxHeight`, et les onglets à contenu statique enveloppés dans un `ScrollViewer`
+- **Footer commun** (styles `DialogFooter` + `FooterVersion` dans App.xaml) : version à gauche (`TxtVersion.Text = AppInfo.VersionText`), boutons à droite — `Fermer` (SecondaryButton) pour les fenêtres à sauvegarde immédiate, Sauvegarder/Annuler pour les transactionnelles ; les actions spécifiques (Prédéfinis) restent à gauche après la version
+- Header commun : `Border` bleu `#0078D4`, `Padding="20,14"`, titre blanc 16 SemiBold
 
 ## Styles des menus contextuels (App.xaml)
 
