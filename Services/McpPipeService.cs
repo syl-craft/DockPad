@@ -54,13 +54,18 @@ public static class McpPipeService
         }
     }
 
-    /// <summary>Côté relais : envoie la requête, lit la réponse. Lève sur timeout/échec.</summary>
-    public static string Send(string requestJson, int timeoutMs = 2000)
+    /// <summary>Côté relais : envoie la requête, lit la réponse. Lève sur timeout/échec.
+    /// pipeName surchargeable pour les tests (défaut : PipeName).</summary>
+    public static string Send(string requestJson, int timeoutMs = 2000, string? pipeName = null)
     {
-        using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut);
+        using var client = new NamedPipeClientStream(".", pipeName ?? PipeName, PipeDirection.InOut);
         client.Connect(timeoutMs);
-        using var writer = new StreamWriter(client) { AutoFlush = true };
-        using var reader = new StreamReader(client);
+        // Pas de using sur writer/reader : le Dispose du StreamReader fermerait le pipe,
+        // puis celui du StreamWriter tenterait un flush sur pipe fermé → ObjectDisposedException
+        // sur le chemin de retour d'un échange pourtant réussi. Le using du client suffit
+        // (AutoFlush garantit que la requête est déjà partie).
+        var writer = new StreamWriter(client) { AutoFlush = true };
+        var reader = new StreamReader(client);
         writer.WriteLine(requestJson);
         return reader.ReadLine() ?? throw new IOException("Réponse vide du pipe MCP.");
     }
