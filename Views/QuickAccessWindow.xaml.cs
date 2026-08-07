@@ -1068,7 +1068,8 @@ public partial class QuickAccessWindow : Window
             DragMove();
     }
 
-    private void Refresh_Click(object sender, RoutedEventArgs e)
+    /// <summary>Resynchronise icônes + grille. Appelé par ↻ Actualiser et après chaque mutation MCP.</summary>
+    public void RefreshGrid()
     {
         var all = ShortcutService.Load();
         if (IconCacheService.SyncAll(all))
@@ -1080,6 +1081,8 @@ public partial class QuickAccessWindow : Window
 
         PopulateGrid();
     }
+
+    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshGrid();
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
