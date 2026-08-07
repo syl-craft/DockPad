@@ -94,6 +94,9 @@ public partial class App : Application
         Services.UrlPipeService.StartServer(u =>
             Dispatcher.BeginInvoke(() => Services.UrlRouterService.Handle(u)));
 
+        Services.McpDispatcher.OnMutation = () => Dispatcher.BeginInvoke(() => _mainWindow.RefreshGrid());
+        Services.McpPipeService.StartServer(req => Services.McpDispatcher.Handle(req));
+
         if (url is not null)
             Dispatcher.BeginInvoke(() => Services.UrlRouterService.Handle(url));
     }
