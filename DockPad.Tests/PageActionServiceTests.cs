@@ -61,4 +61,51 @@ public class PageActionServiceTests
         var r = PageActionService.UpdateCore([], [], 5, false, null, null, 0);
         Assert.False(r.Ok);
     }
+
+    [Fact]
+    public void UpdateCore_RienAModifier_Echoue()
+    {
+        var all = new List<ShortcutEntry> { E(0) };
+        var configs = new List<PageConfig>();
+        var r = PageActionService.UpdateCore(all, configs, 0, iconProvided: false, null, null, newIndex: null);
+        Assert.False(r.Ok);
+        Assert.Contains("Rien à modifier", r.Error);
+    }
+
+    [Fact]
+    public void UpdateCore_IconFournie_CreeLaConfigSiAbsente()
+    {
+        var all = new List<ShortcutEntry> { E(0) };
+        var configs = new List<PageConfig>(); // aucune config existante pour la page 0
+        var r = PageActionService.UpdateCore(all, configs, 0, iconProvided: true,
+            "icon.png", "icons\\icon.png", newIndex: null);
+        Assert.True(r.Ok);
+        var cfg = Assert.Single(configs);
+        Assert.Equal(0, cfg.Index);
+        Assert.Equal("icon.png", cfg.IconPath);
+        Assert.Equal("icons\\icon.png", cfg.IconProfilePath);
+    }
+
+    [Fact]
+    public void UpdateCore_NewIndexHorsBornes_Echoue()
+    {
+        var all = new List<ShortcutEntry> { E(0), E(1) };
+        var configs = new List<PageConfig>();
+        var r = PageActionService.UpdateCore(all, configs, 0, iconProvided: false, null, null, newIndex: 5);
+        Assert.False(r.Ok);
+        Assert.Contains("newIndex 5 invalide (pages 0 à 1)", r.Error);
+    }
+
+    [Fact]
+    public void UpdateCore_NewIndex_RemapSensInverse()
+    {
+        // pages 0,1,2 — déplacer 2 vers 0 : 2→0, 0→1, 1→2
+        var all = new List<ShortcutEntry> { E(0), E(1), E(2) };
+        var configs = new List<PageConfig>();
+        var r = PageActionService.UpdateCore(all, configs, 2, false, null, null, newIndex: 0);
+        Assert.True(r.Ok);
+        Assert.Equal(1, all[0].Page);
+        Assert.Equal(2, all[1].Page);
+        Assert.Equal(0, all[2].Page);
+    }
 }
