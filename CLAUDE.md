@@ -93,6 +93,7 @@ DockPad.Tests/                           Projet xUnit (43 tests) : ActionResult/
 tools/
     get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
     inject-startmenu-shortcuts.ps1       Script PowerShell : injecte des raccourcis SwitchToProcess dans shortcuts.json
+    McpShot/                             Outil console : capture les onglets de McpConfigDialog en PNG (doc)
 ```
 
 ## Fonctionnalités
@@ -318,6 +319,28 @@ Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) su
 - **Listes / onglets** (Navigateurs, Serveur MCP) : `ResizeMode="CanResize"`, taille initiale + `MinWidth`/`MinHeight`, même clamp `MaxHeight`, et les onglets à contenu statique enveloppés dans un `ScrollViewer`
 - **Footer commun** (styles `DialogFooter` + `FooterVersion` dans App.xaml) : version à gauche (`TxtVersion.Text = AppInfo.VersionText`), boutons à droite — `Fermer` (SecondaryButton) pour les fenêtres à sauvegarde immédiate, Sauvegarder/Annuler pour les transactionnelles ; les actions spécifiques (Prédéfinis) restent à gauche après la version
 - Header commun : `Border` bleu `#0078D4`, `Padding="20,14"`, titre blanc 16 SemiBold
+
+## Captures d'écran de la doc (tools/McpShot)
+
+Les captures du README vivent dans `docs/screenshots/`. Celles de la fenêtre Serveur MCP sont générées par `tools/McpShot` — un petit exe console qui instancie la **vraie** fenêtre (`McpConfigDialog`) hors process DockPad, avec les ressources App.xaml, des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées, puis rend en `RenderTargetBitmap` :
+
+```bash
+dotnet build tools/McpShot
+tools/McpShot/bin/Debug/net8.0-windows/McpShot.exe 0 docs/screenshots/mcp-options.png   # onglet Options
+tools/McpShot/bin/Debug/net8.0-windows/McpShot.exe 1 docs/screenshots/mcp-journal.png   # onglet Journal
+```
+
+À régénérer après tout changement visuel de la fenêtre MCP. **Les captures sont validées (et floutées si besoin) avant push.**
+
+Pièges WPF contournés dans cet outil — à connaître avant de l'étendre à d'autres fenêtres :
+- `[STAThread]` obligatoire (les top-level statements ne l'appliquent pas)
+- Ressources App.xaml : `new App()` + `app.InitializeComponent()` **sans** `Run()` (sinon `OnStartup` exécute mutex/systray/fenêtres) ; `ShutdownMode = OnExplicitShutdown`
+- `ShowDialog()` retourne immédiatement dans ce contexte (Application jamais `Run`) → `Show()` + `Dispatcher.Run()`, arrêt par `Dispatcher.InvokeShutdown()`
+- Pas d'`await` dans les handlers : sans `SynchronizationContext`, la continuation part sur le thread pool → `DispatcherTimer`
+- `PresentationSource.FromVisual` est nul ici → échelle DPI via `VisualTreeHelper.GetDpi`
+- Sélectionner l'onglet du `TabControl` **avant** `Show()` (une bascule post-rendu ne se répercute pas)
+- Un seul objet `Application` par processus : un process de capture par fenêtre/onglet
+- `DockPad.csproj` exclut `tools\**` de son glob de compilation (projet frère dans un sous-dossier, comme `DockPad.Tests`)
 
 ## Styles des menus contextuels (App.xaml)
 
