@@ -286,6 +286,7 @@ public static class ShortcutActionService
             },
             ProcessSwitch = s.ProcessSwitch is null ? null : new ProcessSwitchConfig
             {
+                SearchMode = s.ProcessSwitch.SearchMode,
                 ProcessName = s.ProcessSwitch.ProcessName, Executable = s.ProcessSwitch.Executable,
                 Parameters = s.ProcessSwitch.Parameters,
             },
