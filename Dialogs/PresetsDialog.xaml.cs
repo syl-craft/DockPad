@@ -14,6 +14,7 @@ public partial class PresetsDialog : Window
     public PresetsDialog()
     {
         InitializeComponent();
+        TxtVersion.Text = Services.AppInfo.VersionText;
 
         using var identity = WindowsIdentity.GetCurrent();
         bool isAdmin = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);

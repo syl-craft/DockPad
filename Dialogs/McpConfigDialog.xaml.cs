@@ -27,6 +27,7 @@ public partial class McpConfigDialog : Window
             "  \"args\": [\"--mcp\"]\n" +
             "}";
 
+        TxtVersion.Text = AppInfo.VersionText;
         LstLog.ItemsSource = McpLogService.Entries;
         _logChangedHandler = (_, _) => UpdateLogCount();
         McpLogService.Entries.CollectionChanged += _logChangedHandler;
@@ -61,6 +62,8 @@ public partial class McpConfigDialog : Window
         TxtLogCount.Text = $"{McpLogService.Entries.Count} action(s) MCP cette session";
 
     private void ClearLog_Click(object sender, RoutedEventArgs e) => McpLogService.Clear();
+
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
     private void CopyCmd_Click(object sender, RoutedEventArgs e) =>
         CopyWithFeedback(TxtClaudeCodeCmd.Text, BtnCopyCmd);

@@ -26,6 +26,7 @@ public partial class BrowserConfigDialog : Window
     public BrowserConfigDialog()
     {
         InitializeComponent();
+        TxtVersion.Text = AppInfo.VersionText;
         _config = BrowserConfigService.EnsureInitialized();
         _configWriteTimeUtc = GetConfigWriteTimeUtc();
         TxtAutoOpen.Text = _config.AutoOpenSeconds.ToString();

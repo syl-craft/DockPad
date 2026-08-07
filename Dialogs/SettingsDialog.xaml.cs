@@ -33,8 +33,7 @@ public partial class SettingsDialog : Window
         TxtAutoStartPath.Text = Environment.ProcessPath
             ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
 
-        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        TxtVersion.Text = version != null ? $"v{version.Major}.{version.Minor}.{version.Build}" : "";
+        TxtVersion.Text = Services.AppInfo.VersionText;
 
         var (mods, vk) = SettingsService.LoadHotkey();
         ChkCtrl.IsChecked  = (mods & HotkeyService.MOD_CONTROL) != 0;
