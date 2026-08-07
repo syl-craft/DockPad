@@ -45,6 +45,16 @@ public partial class App : Application
             args.SetObserved();
         };
 
+        // Mode relais MCP : serveur stdio lancé par Claude Code / Claude Desktop.
+        // Aucune UI, pas de mutex (coexiste avec l'instance principale et d'autres relais).
+        if (e.Args.Contains("--mcp"))
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            _ = Mcp.McpRelay.RunAsync()
+                .ContinueWith(_ => Dispatcher.BeginInvoke(() => Shutdown()));
+            return;
+        }
+
         string? url = ParseUrlArg(e.Args);
 
         _mutex = new Mutex(initiallyOwned: true, "DockPad_SingleInstance", out bool createdNew);
