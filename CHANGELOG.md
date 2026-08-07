@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.1] — 2026-08-07
+
+### Corrections
+
+#### Fenêtres de config uniformisées
+- **Serveur MCP** : le bas de l'onglet Options était coupé (hauteur fixe trop petite) — hauteur revue, contenu scrollable, et footer ajouté (version + Fermer)
+- **Navigateurs** : la fenêtre (760 px) pouvait déborder d'un écran 768p — hauteur désormais plafonnée à la zone de travail
+- **Options** : la fenêtre s'ouvrait à une taille arbitraire (aucune taille définie) — elle s'ajuste maintenant à son contenu
+- Les quatre fenêtres de config (Options, Navigateurs, Serveur MCP, Prédéfinis) partagent le même pied de page : version de l'application à gauche, boutons à droite
+
+---
+
 ## [1.8.0] — 2026-08-07
 
 ### Nouveautés utilisateur
