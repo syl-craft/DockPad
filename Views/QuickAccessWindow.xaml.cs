@@ -249,6 +249,12 @@ public partial class QuickAccessWindow : Window
         dialog.ShowDialog();
     }
 
+    private void McpConfig_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new McpConfigDialog { Owner = this };
+        dialog.ShowDialog();
+    }
+
     private void UpdateHotkeyDisplay()
     {
         var (mods, vk) = SettingsService.LoadHotkey();
@@ -279,7 +285,7 @@ public partial class QuickAccessWindow : Window
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
         foreach (var src in new[] { ShortcutService.FilePath, PageConfigService.FilePath,
-                                    BrowserConfigService.FilePath })
+                                    BrowserConfigService.FilePath, McpConfigService.FilePath })
         {
             if (!File.Exists(src)) continue;
             var dest = Path.Combine(backupDir,
