@@ -20,7 +20,9 @@ public static class DockPadTools
     // ───── Grille ─────
 
     [McpServerTool(Name = "dockpad_grid_get")]
-    [Description("État de la grille DockPad : pages, tuiles et cases libres. " + PosDoc)]
+    [Description("État de la grille DockPad : pages, tuiles (nom, type, commande, icônes) et cases " +
+                 "libres. iconProfilePath est relatif à %APPDATA%\\DockPad\\ ; iconPath est le chemin " +
+                 "source d'origine. " + PosDoc)]
     public static string GridGet(
         [Description("Limiter à une page (0-based). Omis = toutes les pages.")] int? page = null)
         => Call("dockpad_grid_get", new { page });
