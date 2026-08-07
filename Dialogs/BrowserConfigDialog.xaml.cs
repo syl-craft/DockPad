@@ -80,7 +80,7 @@ public partial class BrowserConfigDialog : Window
         var ordered = _config.Browsers.OrderBy(b => b.Order).ToList();
         LstBrowsers.ItemsSource = ordered.Select(b => new BrowserItem(
             b,
-            LoadIcon(IconCacheService.ResolveProfilePath(b.IconProfilePath)
+            LoadIcon(IconStoreService.ResolveProfilePath(b.IconProfilePath)
                      ?? (string.IsNullOrEmpty(b.IconPath) ? b.ExePath : b.IconPath)),
             b.Name,
             b.ExePath + (string.IsNullOrWhiteSpace(b.Arguments) ? "" : " " + b.Arguments),
@@ -202,7 +202,7 @@ public partial class BrowserConfigDialog : Window
             if (_config.Browsers.Any(b => string.Equals(b.ExePath, found.ExePath, StringComparison.OrdinalIgnoreCase)))
                 continue;
             found.Order = _config.Browsers.Count == 0 ? 0 : _config.Browsers.Max(b => b.Order) + 1;
-            found.IconProfilePath = IconCacheService.CopyToProfile(found.IconPath);
+            found.IconProfilePath = IconStoreService.CopyToProfile(found.IconPath);
             _config.Browsers.Add(found);
             added++;
         }
@@ -284,7 +284,7 @@ public partial class BrowserConfigDialog : Window
         b.Arguments = TxtArgs.Text.Trim();
 
         // Icône : (ré)extraite de l'exe si aucune icône profil ou si l'exe a changé.
-        var cached = IconCacheService.CopyToProfile(b.ExePath);
+        var cached = IconStoreService.CopyToProfile(b.ExePath);
         if (cached is not null) b.IconProfilePath = cached;
 
         Save();

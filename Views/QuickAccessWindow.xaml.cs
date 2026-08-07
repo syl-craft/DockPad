@@ -164,7 +164,7 @@ public partial class QuickAccessWindow : Window
             var dir = Path.GetDirectoryName(iconPath);
             if (Directory.Exists(dir)) return dir;
         }
-        var profileAbs = IconCacheService.ResolveProfilePath(iconProfilePath);
+        var profileAbs = IconStoreService.ResolveProfilePath(iconProfilePath);
         if (!string.IsNullOrEmpty(profileAbs))
         {
             var dir = Path.GetDirectoryName(profileAbs);
@@ -362,7 +362,7 @@ public partial class QuickAccessWindow : Window
         {
             string iconDisp = !string.IsNullOrEmpty(config.IconPath) && File.Exists(config.IconPath)
                 ? config.IconPath
-                : IconCacheService.ResolveProfilePath(config.IconProfilePath) ?? "";
+                : IconStoreService.ResolveProfilePath(config.IconProfilePath) ?? "";
             var src = LoadIcon(iconDisp);
             content = src != null
                 ? (object)new Image { Source = src, Width = 18, Height = 18, Stretch = Stretch.Uniform }
@@ -484,7 +484,7 @@ public partial class QuickAccessWindow : Window
             Height = 36,
             Stretch = Stretch.Uniform,
             Margin = new Thickness(0, 0, 0, 6),
-            Source = LoadIcon(IconCacheService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath)
+            Source = LoadIcon(IconStoreService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath)
         };
 
         var label = new TextBlock
@@ -634,7 +634,7 @@ public partial class QuickAccessWindow : Window
             {
                 string iconDisp2 = !string.IsNullOrEmpty(config.IconPath) && File.Exists(config.IconPath)
                     ? config.IconPath
-                    : IconCacheService.ResolveProfilePath(config.IconProfilePath) ?? "";
+                    : IconStoreService.ResolveProfilePath(config.IconProfilePath) ?? "";
                 var src = LoadIcon(iconDisp2);
                 if (src != null)
                 {
@@ -849,7 +849,7 @@ public partial class QuickAccessWindow : Window
 
         if (dlg.ShowDialog() != true) return;
 
-        string profilePath = IconCacheService.CopyToProfile(dlg.FileName) ?? "";
+        string profilePath = IconStoreService.CopyToProfile(dlg.FileName) ?? "";
 
         entry.IconPath        = dlg.FileName;
         entry.IconProfilePath = profilePath;
@@ -864,7 +864,7 @@ public partial class QuickAccessWindow : Window
         ShortcutService.Save(all);
 
         if (btn.Content is StackPanel sp && sp.Children[0] is Image img)
-            img.Source = LoadIcon(IconCacheService.ResolveProfilePath(profilePath) ?? dlg.FileName);
+            img.Source = LoadIcon(IconStoreService.ResolveProfilePath(profilePath) ?? dlg.FileName);
     }
 
     private void TileDrag_MouseDown(object sender, MouseButtonEventArgs e)
@@ -1043,9 +1043,9 @@ public partial class QuickAccessWindow : Window
             if (info == null) return null;
             using var ms = new System.IO.MemoryStream();
             info.Stream.CopyTo(ms);
-            return IconCacheService.CacheBytes(ms.ToArray(), ".png");
+            return IconStoreService.StoreBytes(ms.ToArray(), ".png");
         }
-        catch (Exception ex) { Services.LogService.Warn(ex, "Mise en cache de l'icône dossier par défaut"); return null; }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Stockage de l'icône dossier par défaut"); return null; }
     }
 
     private static string? EnsureDefaultBrowserIcon()
@@ -1063,7 +1063,7 @@ public partial class QuickAccessWindow : Window
             if (string.IsNullOrEmpty(cmd)) return null;
 
             var (exe, _) = ParseCommand(cmd);
-            return File.Exists(exe) ? IconCacheService.CopyToProfile(exe) : null;
+            return File.Exists(exe) ? IconStoreService.CopyToProfile(exe) : null;
         }
         catch (Exception ex) { Services.LogService.Warn(ex, "Détection de l'icône du navigateur par défaut"); return null; }
     }
@@ -1078,11 +1078,11 @@ public partial class QuickAccessWindow : Window
     public void RefreshGrid()
     {
         var all = ShortcutService.Load();
-        if (IconCacheService.SyncAll(all))
+        if (IconStoreService.SyncAll(all))
             ShortcutService.Save(all);
 
         var pages = PageConfigService.Load();
-        if (IconCacheService.SyncAllPages(pages))
+        if (IconStoreService.SyncAllPages(pages))
             PageConfigService.Save(pages);
 
         PopulateGrid();
@@ -1353,7 +1353,7 @@ public partial class QuickAccessWindow : Window
         var results = ShortcutService.Load()
             .Where(s => s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
             .OrderBy(s => s.Name)
-            .Select(s => new SearchResultItem(s, LoadIcon(IconCacheService.ResolveProfilePath(s.IconProfilePath) ?? s.IconPath)))
+            .Select(s => new SearchResultItem(s, LoadIcon(IconStoreService.ResolveProfilePath(s.IconProfilePath) ?? s.IconPath)))
             .ToList();
 
         SearchResults.ItemsSource = results;

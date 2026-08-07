@@ -50,7 +50,7 @@ Services/
     BrowserRegistrationService.cs        Enregistrement per-user (HKCU) comme navigateur + lecture de l'état (non enregistré/enregistré/par défaut)
     ConfigLock.cs                         Verrou global des load-modify-save de configs (UI et MCP sérialisés)
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
-    IconCacheService.cs                  Cache d'icônes dans %APPDATA%\DockPad\icons\ (SHA1 dédup, extraction .exe/.dll → .png)
+    IconStoreService.cs                  Store des icônes du profil (%APPDATA%\DockPad\icons\) — SHA1 dédup, extraction .exe/.dll → .png
     LogService.cs                        Logger central Serilog — %APPDATA%\DockPad\logs\, rolling quotidien, 14 fichiers, shared multi-process
     McpConfigService.cs                   Load/Save mcp.json (%APPDATA%\DockPad\mcp.json)
     McpDispatcher.cs                       Traite une requête MCP : options → service d'action → journal → réponse JSON
@@ -171,12 +171,12 @@ tools/
 - **Modificateurs configurables** dans Options (section « Raccourcis des tuiles ») : Ctrl / Alt / Shift par moitié, stockés dans `HKCU\Software\DockPad\Settings\TriggerFirst|TriggerSecond` (`""` = Auto) ; les deux doivent différer, sinon mode Auto
 - Mode Auto (défaut) : les triggers s'adaptent au raccourci global configuré (hotkey avec Ctrl → Shift/Alt, sinon Ctrl/Shift) ; trigger Alt : touches lues via `SystemKey`
 
-### Cache d'icônes (IconCacheService)
-- Les icônes sont copiées dans `%APPDATA%\DockPad\icons\` à la sauvegarde (déduplication SHA1)
-- Les `.exe`/`.dll` sont extraits et sauvegardés en `.png`
-- `IconProfilePath` (chemin relatif au profil) est prioritaire sur `IconPath` (chemin absolu source)
+### Store d'icônes (IconStoreService)
+- `%APPDATA%\DockPad\icons\` est le **store** des icônes : la copie de référence utilisée pour l'affichage — pas un cache, rien n'expire
+- À la sauvegarde, l'icône source est copiée dans le store (déduplication SHA1) ; les `.exe`/`.dll` sont extraits et sauvegardés en `.png`
+- `IconProfilePath` (chemin relatif au profil, pointe dans le store) est la source d'affichage ; `IconPath` (chemin absolu d'origine) n'est gardé qu'à titre de provenance
 - À la création/modification : si aucune icône spécifiée, l'icône de l'exe associé est utilisée automatiquement (RunCommand, SwitchToProcess, OpenTerminal)
-- **↻ Actualiser** : synchronise le cache pour toutes les entrées existantes
+- **↻ Actualiser** : resynchronise le store pour toutes les entrées existantes
 
 ### Types de tuiles (ShortcutType)
 | Type | Description | Champ `command` | Bande |
@@ -235,7 +235,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
   - **Onglet Règles de domaine** : recherche live sur le host + filtre par navigateur (combinables), ComboBox par ligne pour réassocier le navigateur (sauvegarde immédiate), suppression par ligne, compteur « N / M règle(s) », état vide explicite ; création uniquement depuis la popup ; supprimer un navigateur supprime ses règles associées
   - Rechargement croisé : si le picker sauvegarde une règle pendant que le dialog est ouvert, `Activated` + comparaison `File.GetLastWriteTimeUtc` rechargent le snapshot
   - **Attention** : les boutons carrés (34px) doivent avoir `Padding="0"` — le `Padding 16,8` hérité du style `PrimaryButton` ne laisse que 2px au glyphe (boutons invisibles)
-- Icônes chargées via `LoadIcon` (même pattern dans `BrowserPickerWindow` et `BrowserConfigDialog`) : extraction `.exe`/`.dll` via `System.Drawing.Icon.ExtractAssociatedIcon` puis `DeleteObject` sur le handle GDI (anti-fuite mémoire) ; `IconCacheService.ParseIconRef` découpe `chemin[,index]` et `Icon.ExtractIcon` respecte l'index (négatif = ID de ressource)
+- Icônes chargées via `LoadIcon` (même pattern dans `BrowserPickerWindow` et `BrowserConfigDialog`) : extraction `.exe`/`.dll` via `System.Drawing.Icon.ExtractAssociatedIcon` puis `DeleteObject` sur le handle GDI (anti-fuite mémoire) ; `IconStoreService.ParseIconRef` découpe `chemin[,index]` et `Icon.ExtractIcon` respecte l'index (négatif = ID de ressource)
 - Config stockée dans `%APPDATA%\DockPad\browsers.json`, incluse dans **💾 Sauvegarder la configuration**
 
 ### Serveur MCP

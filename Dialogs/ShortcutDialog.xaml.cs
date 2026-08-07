@@ -52,7 +52,7 @@ public partial class ShortcutDialog : Window
         TxtCommand.Text  = Entry.Command;
         TxtIconPath.Text = !string.IsNullOrEmpty(Entry.IconPath)
             ? Entry.IconPath
-            : IconCacheService.ResolveProfilePath(Entry.IconProfilePath) ?? "";
+            : IconStoreService.ResolveProfilePath(Entry.IconProfilePath) ?? "";
 
         _terminals = TerminalDetectionService.Detect();
         CmbTerminal.ItemsSource = _terminals;
@@ -338,7 +338,7 @@ public partial class ShortcutDialog : Window
             var dir = Path.GetDirectoryName(iconPath);
             if (Directory.Exists(dir)) return dir;
         }
-        var profileAbs = IconCacheService.ResolveProfilePath(iconProfilePath);
+        var profileAbs = IconStoreService.ResolveProfilePath(iconProfilePath);
         if (!string.IsNullOrEmpty(profileAbs))
         {
             var dir = Path.GetDirectoryName(profileAbs);
@@ -414,7 +414,7 @@ public partial class ShortcutDialog : Window
             Entry.ProcessSwitch   = null;
             Entry.Command         = TxtCmdPreview.Text; // pour le tooltip
             Entry.IconPath        = TxtIconPath.Text.Trim();
-            Entry.IconProfilePath = IconCacheService.CopyToProfile(Entry.IconPath);
+            Entry.IconProfilePath = IconStoreService.CopyToProfile(Entry.IconPath);
         }
         else if (type == ShortcutType.SwitchToProcess)
         {
@@ -441,7 +441,7 @@ public partial class ShortcutDialog : Window
             };
             Entry.Command         = $"{procName} {Entry.ProcessSwitch.Parameters}".Trim();
             Entry.IconPath        = TxtIconPath.Text.Trim();
-            Entry.IconProfilePath = IconCacheService.CopyToProfile(Entry.IconPath);
+            Entry.IconProfilePath = IconStoreService.CopyToProfile(Entry.IconPath);
         }
         else
         {
@@ -458,7 +458,7 @@ public partial class ShortcutDialog : Window
             Entry.Terminal        = null;
             Entry.ProcessSwitch   = null;
             Entry.IconPath        = TxtIconPath.Text.Trim();
-            Entry.IconProfilePath = IconCacheService.CopyToProfile(Entry.IconPath);
+            Entry.IconProfilePath = IconStoreService.CopyToProfile(Entry.IconPath);
         }
 
         if (string.IsNullOrEmpty(Entry.IconPath) && string.IsNullOrEmpty(Entry.IconProfilePath))
@@ -481,7 +481,7 @@ public partial class ShortcutDialog : Window
         if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath)) return;
 
         Entry.IconPath        = exePath;
-        Entry.IconProfilePath = IconCacheService.CopyToProfile(exePath);
+        Entry.IconProfilePath = IconStoreService.CopyToProfile(exePath);
     }
 
     private static string? ParseExe(string command)

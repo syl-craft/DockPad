@@ -60,7 +60,7 @@ public partial class BrowserPickerWindow : Window
         _items = _browsers.Select((b, i) => new PickerItem
         {
             Entry = b,
-            Icon  = LoadIcon(IconCacheService.ResolveProfilePath(b.IconProfilePath)
+            Icon  = LoadIcon(IconStoreService.ResolveProfilePath(b.IconProfilePath)
                              ?? (string.IsNullOrEmpty(b.IconPath) ? b.ExePath : b.IconPath)),
             Name  = b.Name,
             Badge = i < 9 ? $"{i + 1}" : "",
