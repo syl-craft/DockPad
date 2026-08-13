@@ -19,7 +19,9 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 
 ## Sélecteur de navigateur
 
-DockPad peut devenir le navigateur par défaut de Windows : au clic sur une URL, une popup propose le choix du navigateur (profils et navigation privée possibles via les arguments). Les règles « Toujours pour ce domaine » ouvrent les sites connus directement, sans popup (sous-domaines inclus).
+DockPad peut devenir le navigateur par défaut de Windows : au clic sur une URL, une popup propose le choix du navigateur **et de ses profils**. Les règles « Toujours pour ce domaine » ouvrent les sites connus directement, sans popup (sous-domaines inclus).
+
+Les profils des navigateurs Chromium (Chrome, Edge, Brave, Vivaldi…) sont détectés par **↻ Redétecter** et proposés sous leur navigateur ; un navigateur qui n'a qu'un seul profil reste une ligne unique. Chaque profil se masque, se renomme et peut recevoir ses propres règles de domaine.
 
 | Popup au clic sur une URL | Configuration |
 |:---:|:---:|
@@ -30,7 +32,7 @@ Clavier : `1-9` choix direct · `↑/↓` + `Entrée` · `Échap` annule · pert
 ### Activer sur un ordinateur
 
 - [ ] Lancer DockPad
-- [ ] **☰ → Paramètres → 🌐 Navigateurs** → vérifier la liste détectée (Chrome, Edge…)
+- [ ] **☰ → Paramètres → 🌐 Navigateurs** → **↻ Redétecter** puis vérifier la liste (Chrome, Edge… et leurs profils)
 - [ ] Cliquer **S'enregistrer comme navigateur**
 - [ ] Cliquer **Paramètres Windows…** → définir **DockPad** comme navigateur par défaut
 - [ ] Cliquer une URL n'importe où → la popup s'affiche ; cocher **Toujours pour ce domaine** pour créer une règle

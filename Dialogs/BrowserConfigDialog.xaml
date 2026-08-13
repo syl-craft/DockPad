@@ -95,7 +95,7 @@
                                    VerticalAlignment="Center"/>
                         <Button Content="↻ Redétecter" Style="{StaticResource SecondaryButton}"
                                 HorizontalAlignment="Right" Padding="8,4" Click="Redetect_Click"
-                                ToolTip="Ajoute les navigateurs nouvellement installés (n'écrase rien)"/>
+                                ToolTip="Ajoute les navigateurs nouvellement installés et leurs profils (n'écrase rien)"/>
                     </Grid>
 
                     <!-- Liste + actions -->
@@ -114,21 +114,39 @@
                                     <Grid Margin="2,4">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="28"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <CheckBox Grid.Column="0" IsChecked="{Binding Visible, Mode=OneTime}"
+
+                                        <!-- Filet d'indentation des profils (largeur nulle si masqué) -->
+                                        <Border Grid.Column="0" Width="14" Margin="2,1,8,1"
+                                                BorderBrush="#D8D8D8" BorderThickness="1,0,0,0"
+                                                Visibility="Collapsed"
+                                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsChild}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                        </Border>
+
+                                        <CheckBox Grid.Column="1" IsChecked="{Binding Visible, Mode=OneTime}"
                                                   VerticalAlignment="Center" Margin="0,0,8,0"
                                                   Click="VisibleCheck_Click"
-                                                  ToolTip="Décocher pour ne plus proposer ce navigateur dans la popup"/>
-                                        <Image Grid.Column="1" Source="{Binding Icon}" Width="20" Height="20"/>
-                                        <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                                                  ToolTip="Décocher pour ne plus proposer cette entrée dans la popup"/>
+                                        <Image Grid.Column="2" Source="{Binding Icon}" Width="20" Height="20"/>
+                                        <StackPanel Grid.Column="3" Margin="8,0,0,0">
                                             <TextBlock Text="{Binding Name}" FontSize="12"/>
                                             <TextBlock Text="{Binding Detail}" FontSize="10" Foreground="#999"
                                                        TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
-                                        <TextBlock Grid.Column="3" Text="{Binding HiddenLabel}" FontSize="10"
+                                        <TextBlock Grid.Column="4" Text="{Binding HiddenLabel}" FontSize="10"
                                                    Foreground="#C42B1C" VerticalAlignment="Center"/>
                                     </Grid>
                                 </DataTemplate>
@@ -159,6 +177,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Nom :" Foreground="#555"
@@ -170,7 +189,8 @@
                                        VerticalAlignment="Center" Margin="0,0,10,8"/>
                             <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
                                       Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
-                            <Button   Grid.Row="1" Grid.Column="2" Content="…" Width="30" Padding="0" Margin="0,0,0,8"
+                            <Button   x:Name="BtnBrowseExe" Grid.Row="1" Grid.Column="2" Content="…" Width="30"
+                                      Padding="0" Margin="0,0,0,8"
                                       Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
 
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="Arguments :" Foreground="#555"
@@ -179,7 +199,11 @@
                                       Padding="6,4" Margin="0,0,0,8" FontFamily="Consolas" FontSize="11"
                                       ToolTip="Ex : --profile-directory=&quot;Profile 1&quot;, --incognito, -inprivate. %1 = URL."/>
 
-                            <Button   x:Name="BtnApply" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                            <TextBlock x:Name="TxtProfileInfo" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                       Visibility="Collapsed" Foreground="#888" FontSize="11"
+                                       TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                            <Button   x:Name="BtnApply" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                                       Content="✔ Appliquer" HorizontalAlignment="Right"
                                       Style="{StaticResource PrimaryButton}" Click="Apply_Click"/>
                         </Grid>

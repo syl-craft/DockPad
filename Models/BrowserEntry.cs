@@ -14,6 +14,27 @@ public class BrowserEntry
 
     public string IconPath { get; set; } = "";
 
+    /// <summary>
+    /// Id du navigateur parent quand cette entrée est un profil, null pour un navigateur.
+    /// Sert au regroupement d'affichage et au déplacement en bloc.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ParentId { get; set; }
+
+    /// <summary>
+    /// Dossier du profil dans le « User Data » du navigateur (ex. "Default", "Profile 1").
+    /// Null = navigateur nu, lancé sans --profile-directory (dernier profil utilisé).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProfileDirectory { get; set; }
+
+    /// <summary>
+    /// Nom lu dans le navigateur à la dernière détection. Permet de distinguer un nom
+    /// personnalisé dans DockPad (préservé) d'un nom encore automatique (mis à jour).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DetectedName { get; set; }
+
     /// <summary>Chemin dans le dossier de profil (%APPDATA%\DockPad\icons\). Prioritaire pour l'affichage.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? IconProfilePath { get; set; }

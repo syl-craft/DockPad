@@ -45,6 +45,79 @@ public class BrowserActionServiceTests
         Assert.Equal(1, cfg.Browsers.First(b => b.Id == "aaaa1111").Order);
     }
 
+    /// <summary>Chrome (2 profils) puis Edge.</summary>
+    private static BrowsersConfig CfgAvecProfils()
+    {
+        var cfg = Cfg();
+        cfg.Browsers.Insert(1, new BrowserEntry
+        {
+            Id = "cccc3333", Name = "Boulot", ExePath = @"C:\chrome.exe", Order = 1,
+            ParentId = "aaaa1111", ProfileDirectory = "Default",
+        });
+        cfg.Browsers.Insert(2, new BrowserEntry
+        {
+            Id = "dddd4444", Name = "Perso", ExePath = @"C:\chrome.exe", Order = 2,
+            ParentId = "aaaa1111", ProfileDirectory = "Profile 1",
+        });
+        cfg.Browsers.First(b => b.Id == "bbbb2222").Order = 3;
+        return cfg;
+    }
+
+    private static List<string> DisplayOrder(BrowsersConfig cfg) =>
+        BrowserRowLayout.Grouped(cfg).Select(r => r.Entry.Name).ToList();
+
+    [Fact]
+    public void UpdateBrowserCore_OrderDUnProfil_CompteParmiSesFreresPasDansTouteLaListe()
+    {
+        var cfg = CfgAvecProfils();
+        // Perso est déjà le 2e profil de Chrome : order 1 ne doit rien changer.
+        var r = BrowserActionService.UpdateBrowserCore(cfg, "dddd4444", new BrowserUpdate { Order = 1 });
+        Assert.True(r.Ok);
+        Assert.Equal(["Chrome", "Boulot", "Perso", "Edge"], DisplayOrder(cfg));
+    }
+
+    [Fact]
+    public void UpdateBrowserCore_OrderDUnNavigateur_ComptteParmiLesNavigateurs()
+    {
+        var cfg = CfgAvecProfils();
+        // Chrome en 2e navigateur : ses profils le suivent, derrière Edge.
+        var r = BrowserActionService.UpdateBrowserCore(cfg, "aaaa1111", new BrowserUpdate { Order = 1 });
+        Assert.True(r.Ok);
+        Assert.Equal(["Edge", "Chrome", "Boulot", "Perso"], DisplayOrder(cfg));
+    }
+
+    [Fact]
+    public void ListBrowsersCore_ExposeLeProfilEtSonParent()
+    {
+        var cfg = Cfg();
+        cfg.Browsers.Add(new BrowserEntry
+        {
+            Id = "cccc3333", Name = "Boulot", ExePath = @"C:\chrome.exe", Order = 2,
+            ParentId = "aaaa1111", ProfileDirectory = "Default",
+        });
+
+        var json = System.Text.Json.JsonSerializer.Serialize(BrowserActionService.ListBrowsersCore(cfg).Data);
+
+        Assert.Contains("\"ParentId\":\"aaaa1111\"", json);
+        Assert.Contains("\"ProfileDirectory\":\"Default\"", json);
+    }
+
+    [Fact]
+    public void ListBrowsersCore_ListeLesProfilsJusteApresLeurNavigateur()
+    {
+        var cfg = Cfg();
+        cfg.Browsers.Add(new BrowserEntry
+        {
+            Id = "cccc3333", Name = "Boulot", ExePath = @"C:\chrome.exe", Order = 2,
+            ParentId = "aaaa1111", ProfileDirectory = "Default",
+        });
+
+        var json = System.Text.Json.JsonSerializer.Serialize(BrowserActionService.ListBrowsersCore(cfg).Data);
+
+        Assert.True(json.IndexOf("Boulot") < json.IndexOf("Edge"),
+                    "le profil doit suivre Chrome, pas se retrouver en fin de liste");
+    }
+
     [Fact]
     public void AddRuleCore_HostDejaRegle_Echoue()
     {

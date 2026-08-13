@@ -85,13 +85,16 @@ public static class DockPadTools
 
     [McpServerTool(Name = "dockpad_browser_list")]
     [Description("Navigateurs configurés dans DockPad (id, name, exePath, arguments, hidden, order) " +
-                 "et délai d'ouverture automatique de la popup.")]
+                 "et délai d'ouverture automatique de la popup. Une entrée avec parentId est un profil " +
+                 "du navigateur correspondant (profileDirectory = dossier du profil) ; les profils " +
+                 "suivent leur navigateur dans la liste et peuvent être visés par une règle de domaine.")]
     public static string BrowserList() => Call("dockpad_browser_list", new { });
 
     [McpServerTool(Name = "dockpad_browser_update")]
-    [Description("Modifie un navigateur par id (voir dockpad_browser_list). Seuls les champs fournis " +
-                 "changent : name, exePath, arguments (%1 = URL), hidden (masqué dans la popup), " +
-                 "order (position 0-based dans la popup).")]
+    [Description("Modifie un navigateur ou un profil par id (voir dockpad_browser_list). Seuls les " +
+                 "champs fournis changent : name, exePath, arguments (%1 = URL), hidden (masqué dans " +
+                 "la popup), order (position 0-based). Pour un profil, order est sa position parmi les " +
+                 "profils de son navigateur.")]
     public static string BrowserUpdate(string id, BrowserUpdate changes)
         => Call("dockpad_browser_update", new { id, changes });
 

@@ -17,8 +17,8 @@ public partial class BrowserPickerWindow : Window
 {
     private readonly string _url;
     private readonly BrowsersConfig _config;
-    private readonly List<BrowserEntry> _browsers;
-    private readonly List<PickerItem> _items;
+    private readonly List<PickerItem> _items;    // toutes les lignes, en-têtes de groupe compris
+    private readonly List<PickerItem> _choices;  // lignes réellement choisissables
     private readonly string? _host;
     private bool _suppressClose = false;
     private bool _closing = false;
@@ -32,6 +32,15 @@ public partial class BrowserPickerWindow : Window
         public required BrowserEntry Entry { get; init; }
         public System.Windows.Media.ImageSource? Icon { get; init; }
         public string Name { get; init; } = "";
+
+        /// <summary>Profil : ligne indentée sous son navigateur.</summary>
+        public bool IsChild { get; init; }
+
+        /// <summary>Navigateur masqué gardé comme titre de groupe : ni choisissable ni numéroté.</summary>
+        public bool IsHeader { get; init; }
+
+        /// <summary>Navigateur qui a des profils visibles en dessous.</summary>
+        public bool IsGroupTitle { get; init; }
 
         private string _badge = "";
         public string Badge { get => _badge; set { _badge = value; Notify(nameof(Badge)); } }
@@ -49,7 +58,6 @@ public partial class BrowserPickerWindow : Window
 
         _url      = url;
         _config   = config;
-        _browsers = config.Browsers.Where(b => !b.Hidden).OrderBy(b => b.Order).ToList();
         _host     = UrlRouterService.ExtractHost(url);
 
         TxtUrl.Text = url;
@@ -57,16 +65,29 @@ public partial class BrowserPickerWindow : Window
         ChkAlways.IsEnabled = _host is not null;
         if (_host is not null) ChkAlways.Content = $"Toujours pour {_host}";
 
-        _items = _browsers.Select((b, i) => new PickerItem
+        // Navigateurs et leurs profils : les badges 1-9 ne numérotent que les lignes
+        // choisissables (un titre de groupe n'en reçoit pas).
+        _items = [];
+        foreach (var row in BrowserRowLayout.ForPicker(config))
         {
-            Entry = b,
-            Icon  = LoadIcon(IconStoreService.ResolveProfilePath(b.IconProfilePath)
-                             ?? (string.IsNullOrEmpty(b.IconPath) ? b.ExePath : b.IconPath)),
-            Name  = b.Name,
-            Badge = i < 9 ? $"{i + 1}" : "",
-        }).ToList();
+            int badge = _items.Count(i => !i.IsHeader) + 1;
+            _items.Add(new PickerItem
+            {
+                Entry = row.Entry,
+                Icon  = LoadIcon(IconStoreService.ResolveProfilePath(row.Entry.IconProfilePath)
+                                 ?? (string.IsNullOrEmpty(row.Entry.IconPath) ? row.Entry.ExePath : row.Entry.IconPath)),
+                Name  = row.Entry.Name,
+                IsChild  = row.IsChild,
+                IsHeader = row.IsHeader,
+                IsGroupTitle = !row.IsChild && !row.IsHeader
+                               && BrowserRowLayout.Children(config, row.Entry.Id).Any(c => !c.Hidden),
+                Badge = !row.IsHeader && badge <= 9 ? $"{badge}" : "",
+            });
+        }
+        _choices = _items.Where(i => !i.IsHeader).ToList();
+
         LstBrowsers.ItemsSource = _items;
-        LstBrowsers.SelectedIndex = _browsers.Count > 0 ? 0 : -1;
+        LstBrowsers.SelectedIndex = _choices.Count > 0 ? _items.IndexOf(_choices[0]) : -1;
 
         // Garde _closing : la fermeture (Échap…) désactive la fenêtre → WM_ACTIVATE →
         // Deactivated pendant InternalClose ; rappeler Close() à ce moment lève
@@ -75,7 +96,7 @@ public partial class BrowserPickerWindow : Window
         Loaded      += (_, _) => { Activate(); LstBrowsers.Focus(); };
         Closed      += (_, _) => _autoOpenTimer?.Stop();
 
-        if (config.AutoOpenSeconds > 0 && _browsers.Count > 0)
+        if (config.AutoOpenSeconds > 0 && _choices.Count > 0)
             StartAutoOpen(config.AutoOpenSeconds);
     }
 
@@ -93,7 +114,7 @@ public partial class BrowserPickerWindow : Window
             if (_autoOpenRemaining <= 0)
             {
                 CancelAutoOpen();
-                OpenBrowser(_browsers[0]);
+                OpenBrowser(_choices[0].Entry);
             }
             else
             {
@@ -120,18 +141,18 @@ public partial class BrowserPickerWindow : Window
         PreviewMouseDown -= CancelAutoOpenOnInteraction;
         PreviewMouseWheel -= CancelAutoOpenOnInteraction;
 
-        if (_items.Count > 0)
+        if (_choices.Count > 0)
         {
-            _items[0].IsCountdown = false;
-            _items[0].Badge = "1";
+            _choices[0].IsCountdown = false;
+            _choices[0].Badge = "1";
         }
         TxtCountdown.Visibility = Visibility.Collapsed;
     }
 
     private void UpdateAutoOpenDisplay()
     {
-        _items[0].IsCountdown = true;
-        _items[0].Badge = $"{_autoOpenRemaining}s";
+        _choices[0].IsCountdown = true;
+        _choices[0].Badge = $"{_autoOpenRemaining}s";
         TxtCountdown.Text = $"Ouverture automatique dans {_autoOpenRemaining} s";
         TxtCountdown.Visibility = Visibility.Visible;
     }
@@ -161,9 +182,9 @@ public partial class BrowserPickerWindow : Window
             >= Key.NumPad1 and <= Key.NumPad9 => e.Key - Key.NumPad1,
             _ => -1,
         };
-        if (index >= 0 && index < _browsers.Count)
+        if (index >= 0 && index < _choices.Count)
         {
-            OpenBrowser(_browsers[index]);
+            OpenBrowser(_choices[index].Entry);
             e.Handled = true;
         }
     }

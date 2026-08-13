@@ -49,8 +49,13 @@ public static class BrowserActionService
     public static ActionResult ListBrowsersCore(BrowsersConfig cfg) =>
         ActionResult.Success(new
         {
-            browsers = cfg.Browsers.OrderBy(b => b.Order)
-                .Select(b => new { b.Id, b.Name, b.ExePath, b.Arguments, b.Hidden, b.Order }).ToList(),
+            // Ordre d'affichage : chaque navigateur suivi de ses profils.
+            browsers = BrowserRowLayout.Grouped(cfg).Select(r => r.Entry)
+                .Select(b => new
+                {
+                    b.Id, b.Name, b.ExePath, b.Arguments, b.Hidden, b.Order,
+                    b.ParentId, b.ProfileDirectory,
+                }).ToList(),
             autoOpenSeconds = cfg.AutoOpenSeconds,
         });
 
@@ -74,11 +79,16 @@ public static class BrowserActionService
         if (changes.Hidden is { } h) b.Hidden = h;
         if (changes.Order is { } o)
         {
-            // repositionnement par insertion puis réindexation 0..n-1
-            var ordered = cfg.Browsers.OrderBy(x => x.Order).ToList();
-            ordered.Remove(b);
-            ordered.Insert(Math.Clamp(o, 0, ordered.Count), b);
-            for (int i = 0; i < ordered.Count; i++) ordered[i].Order = i;
+            // Repositionnement par insertion dans la fratrie : parmi les navigateurs pour un
+            // navigateur (ses profils le suivent), parmi les profils du même navigateur sinon.
+            var siblings = b.ParentId is null
+                ? cfg.Browsers.Where(x => x.ParentId is null).OrderBy(x => x.Order).ToList()
+                : BrowserRowLayout.Children(cfg, b.ParentId);
+            siblings.Remove(b);
+            siblings.Insert(Math.Clamp(o, 0, siblings.Count), b);
+            for (int i = 0; i < siblings.Count; i++) siblings[i].Order = i;
+
+            BrowserRowLayout.Reindex(cfg);
         }
 
         return ActionResult.Success(new { b.Id, b.Name, b.Order, b.Hidden });

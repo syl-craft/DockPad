@@ -17,8 +17,9 @@ public partial class BrowserConfigDialog : Window
     private DateTime _configWriteTimeUtc;
 
     private sealed record BrowserItem(BrowserEntry Entry, System.Windows.Media.ImageSource? Icon,
-                                      string Name, string Detail, string HiddenLabel, bool Visible);
-    private sealed record RuleItem(BrowserRule Rule, string Host, List<BrowserEntry> Browsers);
+                                      string Name, string Detail, string HiddenLabel, bool Visible,
+                                      bool IsChild);
+    private sealed record RuleItem(BrowserRule Rule, string Host, List<RuleFilterOption> Browsers);
     private sealed record RuleFilterOption(string? Id, string Name);
 
     private bool _refreshingRuleFilter;
@@ -78,18 +79,29 @@ public partial class BrowserConfigDialog : Window
 
     private void RefreshBrowsers(string? selectId = null)
     {
-        var ordered = _config.Browsers.OrderBy(b => b.Order).ToList();
-        LstBrowsers.ItemsSource = ordered.Select(b => new BrowserItem(
-            b,
-            LoadIcon(IconStoreService.ResolveProfilePath(b.IconProfilePath)
-                     ?? (string.IsNullOrEmpty(b.IconPath) ? b.ExePath : b.IconPath)),
-            b.Name,
-            b.ExePath + (string.IsNullOrWhiteSpace(b.Arguments) ? "" : " " + b.Arguments),
-            b.Hidden ? "masqué" : "",
-            !b.Hidden)).ToList();
+        // Chaque navigateur suivi de ses profils (lignes indentées).
+        var rows = BrowserRowLayout.Grouped(_config);
+        LstBrowsers.ItemsSource = rows.Select(r => new BrowserItem(
+            r.Entry,
+            LoadIcon(IconStoreService.ResolveProfilePath(r.Entry.IconProfilePath)
+                     ?? (string.IsNullOrEmpty(r.Entry.IconPath) ? r.Entry.ExePath : r.Entry.IconPath)),
+            r.Entry.Name,
+            Detail(r.Entry),
+            r.Entry.Hidden ? "masqué" : "",
+            !r.Entry.Hidden,
+            r.IsChild)).ToList();
 
         if (selectId is not null)
-            LstBrowsers.SelectedIndex = ordered.FindIndex(b => b.Id == selectId);
+            LstBrowsers.SelectedIndex = rows.FindIndex(r => r.Entry.Id == selectId);
+    }
+
+    /// <summary>Ligne de détail : arguments réellement passés pour un profil, chemin exe sinon.</summary>
+    private static string Detail(BrowserEntry b)
+    {
+        var args = string.IsNullOrWhiteSpace(b.Arguments) ? "" : " " + b.Arguments;
+        return b.ProfileDirectory is { Length: > 0 } dir
+            ? $"--profile-directory=\"{dir}\"{args}"
+            : b.ExePath + args;
     }
 
     private void RefreshRules()
@@ -98,7 +110,7 @@ public partial class BrowserConfigDialog : Window
         _refreshingRuleFilter = true;
         var selectedFilter = CmbRuleFilter.SelectedValue as string;
         var options = new List<RuleFilterOption> { new(null, "Tous les navigateurs") };
-        options.AddRange(_config.Browsers.OrderBy(b => b.Order).Select(b => new RuleFilterOption(b.Id, b.Name)));
+        options.AddRange(BrowserOptions());
         CmbRuleFilter.ItemsSource = options;
         CmbRuleFilter.SelectedValue = selectedFilter is not null && options.Any(o => o.Id == selectedFilter)
             ? selectedFilter : null;
@@ -107,7 +119,7 @@ public partial class BrowserConfigDialog : Window
 
         string search = TxtRuleSearch.Text.Trim();
         string? browserFilter = CmbRuleFilter.SelectedValue as string;
-        var browsers = _config.Browsers.OrderBy(b => b.Order).ToList();
+        var browsers = BrowserOptions();
 
         var filtered = _config.Rules
             .Where(r => search.Length == 0 || r.Host.Contains(search, StringComparison.OrdinalIgnoreCase))
@@ -122,6 +134,15 @@ public partial class BrowserConfigDialog : Window
             ? $"{_config.Rules.Count} règle(s)"
             : $"{filtered.Count} / {_config.Rules.Count} règle(s)";
     }
+
+    /// <summary>
+    /// Choix proposés pour associer une règle : navigateurs et profils, dans l'ordre
+    /// d'affichage, un profil libellé « Chrome › Boulot » (hors contexte de liste indentée).
+    /// </summary>
+    private List<RuleFilterOption> BrowserOptions() =>
+        BrowserRowLayout.Grouped(_config)
+            .Select(r => new RuleFilterOption(r.Entry.Id, BrowserRowLayout.DisplayName(_config, r.Entry)))
+            .ToList();
 
     /// <summary>Recherche ou filtre modifié (TextChanged + SelectionChanged, via contravariance).</summary>
     private void RuleFilter_Changed(object sender, RoutedEventArgs e)
@@ -193,23 +214,59 @@ public partial class BrowserConfigDialog : Window
         TxtExe.Text  = b?.ExePath ?? "";
         TxtArgs.Text = b?.Arguments ?? "";
         PnlEdit.IsEnabled = b is not null;
+
+        // Un profil partage l'exe de son navigateur : chemin non modifiable ici.
+        bool isProfile = b?.ProfileDirectory is { Length: > 0 };
+        TxtExe.IsEnabled = BtnBrowseExe.IsEnabled = !isProfile;
+        TxtProfileInfo.Visibility = isProfile ? Visibility.Visible : Visibility.Collapsed;
+        if (isProfile)
+            TxtProfileInfo.Text = $"Profil « {b!.ProfileDirectory} » de {ParentName(b)} — lancé avec " +
+                                  $"--profile-directory=\"{b.ProfileDirectory}\". " +
+                                  "Le chemin de l'exécutable suit celui du navigateur.";
     }
+
+    private string ParentName(BrowserEntry child) =>
+        _config.Browsers.FirstOrDefault(b => b.Id == child.ParentId)?.Name ?? "son navigateur";
 
     private void Redetect_Click(object sender, RoutedEventArgs e)
     {
-        int added = 0;
+        int addedBrowsers = 0;
         foreach (var found in BrowserDetectionService.Detect())
         {
-            if (_config.Browsers.Any(b => string.Equals(b.ExePath, found.ExePath, StringComparison.OrdinalIgnoreCase)))
+            // Comparaison sur les navigateurs seuls : un profil partage l'exe de son parent.
+            if (_config.Browsers.Any(b => b.ParentId is null &&
+                    string.Equals(b.ExePath, found.ExePath, StringComparison.OrdinalIgnoreCase)))
                 continue;
             found.Order = _config.Browsers.Count == 0 ? 0 : _config.Browsers.Max(b => b.Order) + 1;
             found.IconProfilePath = IconStoreService.CopyToProfile(found.IconPath);
             _config.Browsers.Add(found);
-            added++;
+            addedBrowsers++;
         }
-        if (added > 0) { Save(); RefreshBrowsers(); }
-        AppDialog.Info(added > 0 ? $"{added} navigateur(s) ajouté(s)." : "Aucun nouveau navigateur détecté.",
-                       owner: this);
+
+        int addedProfiles = 0;
+        foreach (var parent in _config.Browsers.Where(b => b.ParentId is null).ToList())
+        {
+            var profiles = BrowserProfileService.Detect(parent.ExePath);
+            foreach (var child in BrowserProfileService.MergeProfiles(_config, parent, profiles))
+            {
+                child.IconProfilePath = IconStoreService.CopyToProfile(child.IconPath);
+                addedProfiles++;
+            }
+        }
+
+        if (addedBrowsers > 0 || addedProfiles > 0)
+        {
+            Save();
+            RefreshBrowsers();
+            RefreshRules();
+        }
+
+        var parts = new List<string>();
+        if (addedBrowsers > 0) parts.Add($"{addedBrowsers} navigateur(s)");
+        if (addedProfiles > 0) parts.Add($"{addedProfiles} profil(s)");
+        AppDialog.Info(parts.Count > 0
+            ? string.Join(" et ", parts) + " ajouté(s)."
+            : "Aucun nouveau navigateur ni profil détecté.", owner: this);
     }
 
     private void Up_Click(object sender, RoutedEventArgs e)   => MoveSelected(-1);
@@ -220,13 +277,8 @@ public partial class BrowserConfigDialog : Window
         var b = Selected;
         if (b is null) return;
 
-        var ordered = _config.Browsers.OrderBy(x => x.Order).ToList();
-        int i = ordered.IndexOf(b), j = i + delta;
-        if (j < 0 || j >= ordered.Count) return;
-
-        (ordered[i], ordered[j]) = (ordered[j], ordered[i]);
-        for (int k = 0; k < ordered.Count; k++) ordered[k].Order = k;
-
+        // Un navigateur emmène ses profils ; un profil se déplace au sein de son groupe.
+        BrowserRowLayout.Move(_config, b, delta);
         Save();
         RefreshBrowsers(selectId: b.Id);
     }
@@ -247,12 +299,17 @@ public partial class BrowserConfigDialog : Window
     {
         var b = Selected;
         if (b is null) return;
-        if (!AppDialog.Confirm($"Supprimer « {b.Name} » ?\nLes règles de domaine associées seront supprimées aussi.",
+
+        var children = BrowserRowLayout.Children(_config, b.Id);
+        var subject = children.Count > 0 ? $"« {b.Name} » et ses {children.Count} profil(s)" : $"« {b.Name} »";
+        if (!AppDialog.Confirm($"Supprimer {subject} ?\nLes règles de domaine associées seront supprimées aussi.",
                                owner: this))
             return;
 
-        _config.Browsers.Remove(b);
-        _config.Rules.RemoveAll(r => r.BrowserId == b.Id);
+        var ids = children.Select(c => c.Id).Append(b.Id).ToHashSet();
+        _config.Browsers.RemoveAll(x => ids.Contains(x.Id));
+        _config.Rules.RemoveAll(r => ids.Contains(r.BrowserId));
+        BrowserRowLayout.Reindex(_config);
         Save();
         RefreshBrowsers();
         RefreshRules();
@@ -281,15 +338,22 @@ public partial class BrowserConfigDialog : Window
         if (b is null) return;
 
         b.Name      = TxtName.Text.Trim();
-        b.ExePath   = TxtExe.Text.Trim().Trim('"');
         b.Arguments = TxtArgs.Text.Trim();
 
-        // Icône : (ré)extraite de l'exe si aucune icône profil ou si l'exe a changé.
-        var cached = IconStoreService.CopyToProfile(b.ExePath);
-        if (cached is not null) b.IconProfilePath = cached;
+        if (b.ParentId is null)
+        {
+            b.ExePath = TxtExe.Text.Trim().Trim('"');
+            // Les profils suivent l'exe de leur navigateur.
+            foreach (var child in BrowserRowLayout.Children(_config, b.Id)) child.ExePath = b.ExePath;
+
+            // Icône : (ré)extraite de l'exe si aucune icône profil ou si l'exe a changé.
+            var cached = IconStoreService.CopyToProfile(b.ExePath);
+            if (cached is not null) b.IconProfilePath = cached;
+        }
 
         Save();
         RefreshBrowsers(selectId: b.Id);
+        RefreshRules();
     }
 
     // ── Règles ──────────────────────────────────────────────────────────────────
