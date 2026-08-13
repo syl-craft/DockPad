@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.9.0] — 2026-08-13
+
+### Nouveautés utilisateur
+
+#### Profils de navigateurs dans la popup de choix
+- La popup « Ouvrir avec… » propose désormais les **profils** des navigateurs Chromium (Chrome, Edge, Brave, Vivaldi…) : chaque profil est une ligne indentée sous son navigateur, avec son nom et son image de profil
+- Détection par **↻ Redétecter** dans ☰ → Paramètres → 🌐 Navigateurs, en lisant les profils déclarés par le navigateur lui-même. Un navigateur qui n'a **qu'un seul** profil reste une ligne unique : son comportement par défaut suffit
+- Le navigateur reste choisissable — il ouvre le dernier profil utilisé — et sert de titre à son groupe. Le masquer en gardant ses profils le réduit à un simple titre
+- Chaque profil se masque, se renomme et se réordonne ; ↑/↓ déplacent un navigateur avec tous ses profils, ou un profil au sein de son groupe
+- Une **règle de domaine peut viser un profil** : « Toujours pour ce domaine » retient exactement la ligne choisie, et l'onglet Règles libelle les profils `Chrome › Boulot`
+- Un profil renommé dans DockPad garde son nom aux redétections suivantes ; renommé dans le navigateur, le nouveau nom remonte
+- Un profil supprimé côté navigateur n'est jamais retiré automatiquement (ses règles de domaine seraient perdues) — la suppression reste manuelle
+- Firefox n'est pas concerné : seuls les navigateurs Chromium
+
+#### Profil DockPad déplaçable
+- La variable d'environnement `DOCKPAD_PROFILE_DIR` choisit le dossier des données (raccourcis, pages, navigateurs, icônes, logs) à la place de `%APPDATA%\DockPad` — profil portable sur clé USB, ou plusieurs configurations de test côte à côte
+
+### Interne
+- 62 tests ajoutés (105 au total) : détection et fusion des profils, mise en page des groupes, construction de la ligne de commande de lancement, résolution du dossier de profil
+- `dockpad_browser_list` expose `parentId` et `profileDirectory` ; `order` d'un profil se compte parmi les profils de son navigateur
+- Nouvel outil `tools/BrowserShot` : capture la popup et la fenêtre Navigateurs pour la documentation, sur un profil de fixture — les captures ne contiennent aucune donnée personnelle et sont reproductibles
+
+---
+
 ## [1.8.1] — 2026-08-07
 
 ### Corrections
