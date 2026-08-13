@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Ouvrir avec…"
         Width="440" SizeToContent="Height"
+        MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
@@ -76,23 +77,85 @@
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
+                        <Style.Triggers>
+                            <!-- Titre de groupe (navigateur masqué) : ni sélectionnable ni atteignable
+                                 au clavier — un ListBoxItem désactivé est sauté par les flèches. -->
+                            <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                                <Setter Property="IsEnabled" Value="False"/>
+                                <Setter Property="Padding" Value="10,8,10,2"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsChild}" Value="True">
+                                <Setter Property="Padding" Value="10,5"/>
+                            </DataTrigger>
+                        </Style.Triggers>
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid>
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="32"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Image Grid.Column="0" Source="{Binding Icon}" Width="24" Height="24"
-                                   VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13"
-                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                            <!-- Filet d'indentation des profils (largeur nulle si masqué) -->
+                            <Border Grid.Column="0" Width="24" Margin="10,1,10,1"
+                                    BorderBrush="#D8D8D8" BorderThickness="1,0,0,0"
+                                    SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                <!-- Visibilité par le Style et non en attribut : une valeur locale
+                                     bat les Setter des DataTrigger (le filet ne s'afficherait jamais). -->
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChild}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+
+                            <Image Grid.Column="1" Source="{Binding Icon}" Width="24" Height="24"
+                                   VerticalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChild}" Value="True">
+                                                <Setter Property="Width"  Value="20"/>
+                                                <Setter Property="Height" Value="20"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                                                <Setter Property="Opacity" Value="0.45"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+
+                            <TextBlock Grid.Column="2" Text="{Binding Name}"
+                                       VerticalAlignment="Center" Margin="8,0,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize" Value="13"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGroupTitle}" Value="True">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                                                <Setter Property="FontSize"   Value="11"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Foreground" Value="#999"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <!-- Badge touche : même style que l'overlay clavier de la grille (Ctrl enfoncé) ;
                                  pendant le décompte d'ouverture auto, badge n°1 en bleu accent avec "Ns" -->
-                            <Border Grid.Column="2" MinWidth="20" Height="20" Padding="4,0"
+                            <Border Grid.Column="3" MinWidth="20" Height="20" Padding="4,0"
                                     CornerRadius="4" VerticalAlignment="Center"
                                     SnapsToDevicePixels="True" UseLayoutRounding="True">
                                 <Border.Style>

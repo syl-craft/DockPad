@@ -27,7 +27,7 @@ Converters/
 
 Models/
     ActionResult.cs                       Résultat d'une action des services (UI/MCP) : Ok + Data, ou échec + Error
-    BrowserEntry.cs                       Modèle navigateur (id, name, exePath, arguments, icône, hidden, order)
+    BrowserEntry.cs                       Modèle navigateur ou profil (id, name, exePath, arguments, icône, hidden, order, parentId, profileDirectory)
     BrowserRule.cs                        Règle domaine → navigateur (host exact + sous-domaines)
     BrowsersConfig.cs                     Contenu de browsers.json (liste navigateurs + règles)
     BrowserUpdate.cs                      Champs modifiables par dockpad_browser_update (null = inchangé)
@@ -48,6 +48,8 @@ Services/
     BrowserActionService.cs               Actions navigateurs & règles de domaine, partagées UI ↔ MCP
     BrowserConfigService.cs              Load/Save browsers.json (%APPDATA%\DockPad\browsers.json)
     BrowserDetectionService.cs           Détection des navigateurs installés (Software\Clients\StartMenuInternet, HKLM+HKCU)
+    BrowserProfileService.cs             Détection des profils Chromium (User Data\Local State) + fusion dans browsers.json
+    BrowserRowLayout.cs                  Ordre d'affichage navigateurs + profils (groupes, en-têtes, ↑/↓, libellé « Chrome › Boulot »)
     BrowserRegistrationService.cs        Enregistrement per-user (HKCU) comme navigateur + lecture de l'état (non enregistré/enregistré/par défaut)
     ConfigLock.cs                         Verrou global des load-modify-save de configs (UI et MCP sérialisés)
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
@@ -88,12 +90,14 @@ Dialogs/
     SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto + version
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
 
-DockPad.Tests/                           Projet xUnit (43 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher
+DockPad.Tests/                           Projet xUnit (97 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher
+                                         + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
 
 tools/
     get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
     inject-startmenu-shortcuts.ps1       Script PowerShell : injecte des raccourcis SwitchToProcess dans shortcuts.json
     McpShot/                             Outil console : capture les onglets de McpConfigDialog en PNG (doc)
+    BrowserShot/                         Outil console : capture la popup de choix et la fenêtre Navigateurs en PNG (doc)
 ```
 
 ## Fonctionnalités
@@ -231,7 +235,15 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - **Routage** (`UrlRouterService`) : extraction de la clé `host[:port]` (port omis s'il est le port par défaut du scheme) ; si une règle correspond (host exact **ou sous-domaine**, **à port identique** — la règle `github.com` matche `gist.github.com` mais pas `github.com:8080` ; la règle `localhost:44351` ne matche que ce port) → lancement direct sans popup ; sinon affichage de `BrowserPickerWindow` ; les URLs reçues pendant qu'une popup est déjà ouverte sont mises en file et traitées à sa fermeture
 - **Popup (`BrowserPickerWindow`)** : fenêtre centrée écran, style DockPad (`WindowStyle=None`, `Topmost`, `ShowInTaskbar=False`) ; URL affichée dans une `TextBox` lecture seule sélectionnable (wrap + scroll) + bouton **⧉ Copier le lien** (style `SecondaryButton`, feedback « Copié ✓ » 1,5 s) ; liste verticale (icône 24px + nom + badge touche au même style que l'overlay clavier de la grille : carré 20px `#BB555555`, chiffre blanc) ; clavier : **1-9** ouverture directe, **↑/↓ + Entrée** navigation, **Échap** annule ; case **« Toujours pour ce domaine »** → crée la règle `host → navigateur` avant l'ouverture ; **perte de focus** (`Deactivated`) ferme sans ouvrir, sauf pendant l'affichage d'un `AppDialog` d'erreur (flag `_suppressClose`, ex : exe navigateur introuvable)
 - **Ouverture automatique** : si `autoOpenSeconds > 0` (0 = désactivé ; **défaut 2 s**), un `DispatcherTimer` 1 s décompte à l'ouverture de la popup — badge du navigateur n°1 en bleu accent avec « Ns » + ligne pied « Ouverture automatique dans N s » ; à l'échéance, ouverture avec le navigateur n°1 ; **première interaction** (`PreviewKeyDown`/`PreviewMouseDown`/`PreviewMouseWheel`) → décompte annulé, badge redevient « 1 » ; les items de liste sont des `PickerItem` `INotifyPropertyChanged` (Badge, IsCountdown) pour la mise à jour dynamique
-- **Lancement** (`UrlRouterService.Launch`) : `Process.Start` avec l'URL entre guillemets en fin d'arguments ; si `Arguments` contient `%1`, il est substitué par l'URL à la place
+- **Lancement** (`UrlRouterService.Launch`, ligne de commande construite par `BuildArguments`) : `Process.Start` avec l'URL entre guillemets en fin d'arguments ; si `Arguments` contient `%1`, il est substitué par l'URL à la place ; si l'entrée est un profil, `--profile-directory="<dossier>"` est placé **avant** les arguments de l'utilisateur
+- **Profils de navigateur** : une entrée de `browsers.json` peut être un profil, rattaché à son navigateur par `parentId` + `profileDirectory` (`BrowserEntry`)
+  - **Détection** (`BrowserProfileService`) : uniquement sur **↻ Redétecter**, jamais en tâche de fond — dossier *User Data* déduit du chemin de l'exe (l'exe doit être dans un dossier `Application`, le dossier au-dessus donne la variante : `Google\Chrome`, `Google\Chrome SxS`, `Microsoft\Edge Dev`, `BraveSoftware\Brave-Browser`, `Vivaldi`… sous `%LOCALAPPDATA%`), puis lecture de `profile.info_cache` dans `Local State` (ouvert en partage, le navigateur le garde ouvert) ; ordre : `Default` puis numéro croissant ; icône = `<User Data>\<profil>\Google|Edge Profile Picture.png` s'il existe, sinon celle du navigateur, copiée dans le store d'icônes
+  - **Un seul profil détecté → aucune sous-entrée** : le navigateur nu suffit (comportement par défaut = dernier profil utilisé)
+  - **Fusion** additive, clé `(parentId, profileDirectory)` : id, masquage et ordre préservés ; le nom suit le navigateur tant qu'il n'a pas été personnalisé dans DockPad (`detectedName` = dernier nom détecté), un profil disparu du navigateur **n'est pas** supprimé (ça détruirait ses règles de domaine)
+  - **Affichage** (`BrowserRowLayout`, partagé popup ↔ configuration) : chaque navigateur suivi de ses profils indentés sous un filet vertical ; le navigateur reste choisissable (dernier profil utilisé) et sert de titre de groupe (SemiBold) ; masquer un navigateur en gardant ses profils le transforme en **en-tête non choisissable** (`ListBoxItem` `IsEnabled=False` → sauté par les flèches) ; badges clavier 1-9 attribués aux seules lignes choisissables ; ↑/↓ déplace un navigateur avec tout son groupe, un profil au sein de sa fratrie ; supprimer un navigateur supprime ses profils et leurs règles
+  - Une règle de domaine peut viser un profil (même mécanique, `browserId` = id du profil) ; les ComboBox de l'onglet Règles libellent les profils `Chrome › Boulot`
+  - Le chemin de l'exécutable d'un profil n'est pas modifiable : il suit celui de son navigateur
+  - Firefox (`-P "nom"` via `profiles.ini`) n'est **pas** géré — seuls les navigateurs Chromium
 - **Configuration (`BrowserConfigDialog`)** : ☰ → Paramètres → 🌐 Navigateurs — fenêtre 680×760 redimensionnable, **2 onglets** (`TabControl` plat, soulignement bleu sur l'onglet actif)
   - **Onglet Navigateurs** : section enregistrement (état + 2 boutons + champ **« Ouverture automatique : N secondes »**, clamp 0-300, sauvegarde immédiate) ; auto-détection (`BrowserDetectionService`, parcours `Software\Clients\StartMenuInternet` HKLM puis HKCU, DockPad exclu, doublons ignorés, **icône lue depuis la valeur `DefaultIcon` avec son index** — ex. Chrome Canary = `chrome.exe,4` pour l'icône jaune) au premier chargement ou si la liste est vide (fichier corrompu) et via **↻ Redétecter** ; **case à cocher de visibilité par ligne** (décochée = absent de la popup, badge « masqué », conservé) ; édition (nom, chemin exe, arguments — ex. `--profile-directory="Profile 1"`, `--incognito`, `-inprivate`), monter/descendre, supprimer, **+ Ajouter**
   - **Onglet Règles de domaine** : recherche live sur le host + filtre par navigateur (combinables), ComboBox par ligne pour réassocier le navigateur (sauvegarde immédiate), suppression par ligne, compteur « N / M règle(s) », état vide explicite ; création uniquement depuis la popup ; supprimer un navigateur supprime ses règles associées
@@ -247,7 +259,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - **13 outils** `dockpad_<domaine>_<action>` (`Mcp/DockPadTools.cs`), positions **0-based** (page 0 = première page, lignes 0-3, colonnes 0-5) :
   - Grille : `grid_get`, `shortcut_add` (lot tout-ou-rien, position omise = première case libre), `shortcut_update`, `shortcut_move`, `shortcut_delete` 🔒
   - Pages : `page_add`, `page_update` (`iconPath` omis = inchangé, `""` = retirer l'icône ; `newIndex` = déplacement par insertion), `page_delete` 🔒
-  - Navigateurs & règles : `browser_list`, `browser_update`, `rule_list`, `rule_add`, `rule_delete` 🔒
+  - Navigateurs & règles : `browser_list`, `browser_update`, `rule_list`, `rule_add`, `rule_delete` 🔒 — `browser_list` expose `parentId`/`profileDirectory` (une entrée avec `parentId` est un profil, visable par une règle) ; `order` se compte dans la fratrie (parmi les navigateurs, ou parmi les profils d'un même navigateur)
   - 🔒 = refusé si `AllowDelete` est désactivé dans `mcp.json`
 - **Config `%APPDATA%\DockPad\mcp.json`** (`McpConfigService`) : `{ "enabled": true, "allowDelete": false }` par défaut (suppression refusée par défaut) ; relu à **chaque requête** (changement pris en compte immédiatement, pas besoin de redémarrer) ; incluse dans **💾 Sauvegarder la configuration**
 - **Fenêtre `McpConfigDialog`** (☰ → Paramètres → **🔌 Serveur MCP**) : 2 onglets
@@ -292,7 +304,8 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
   "browsers": [
     { "id": "a1b2c3", "name": "Chrome", "exePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
       "arguments": "", "iconProfilePath": "icons\\abc.png", "hidden": false, "order": 0 },
-    { "id": "d4e5f6", "name": "Chrome Canary", "exePath": "…\\chrome.exe", "arguments": "", "order": 1 },
+    { "id": "d4e5f6", "name": "Boulot", "exePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "parentId": "a1b2c3", "profileDirectory": "Default", "detectedName": "Boulot", "order": 1 },
     { "id": "g7h8i9", "name": "Edge", "exePath": "…\\msedge.exe", "arguments": "", "order": 2 }
   ],
   "rules": [
@@ -303,6 +316,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 ```
 
 - `id` : identifiant stable (8 hex aléatoires) référencé par les règles
+- `parentId` + `profileDirectory` : présents uniquement sur un **profil** — l'entrée est lancée avec `--profile-directory="<profileDirectory>"` et s'affiche indentée sous son navigateur ; `detectedName` = nom lu dans le navigateur à la dernière détection (permet de préserver un nom personnalisé)
 - `host` d'une règle : peut inclure un port (`localhost:44351`) — sans port, seul le port par défaut du scheme matche
 - `autoOpenSeconds` : délai avant ouverture automatique avec le navigateur n°1 (0 = désactivé ; défaut et absent = 2 s)
 - `iconPath` peut porter un index d'icône au format registre (ex : `"C:\\...\\chrome.exe,4"`)
@@ -320,9 +334,23 @@ Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) su
 - **Footer commun** (styles `DialogFooter` + `FooterVersion` dans App.xaml) : version à gauche (`TxtVersion.Text = AppInfo.VersionText`), boutons à droite — `Fermer` (SecondaryButton) pour les fenêtres à sauvegarde immédiate, Sauvegarder/Annuler pour les transactionnelles ; les actions spécifiques (Prédéfinis) restent à gauche après la version
 - Header commun : `Border` bleu `#0078D4`, `Padding="20,14"`, titre blanc 16 SemiBold
 
-## Captures d'écran de la doc (tools/McpShot)
+## Captures d'écran de la doc (tools/McpShot, tools/BrowserShot)
 
-Les captures du README vivent dans `docs/screenshots/`. Celles de la fenêtre Serveur MCP sont générées par `tools/McpShot` — un petit exe console qui instancie la **vraie** fenêtre (`McpConfigDialog`) hors process DockPad, avec les ressources App.xaml, des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées, puis rend en `RenderTargetBitmap` :
+Les captures du README vivent dans `docs/screenshots/`. Elles sont générées par de petits exes console qui instancient la **vraie** fenêtre hors process DockPad, avec les ressources App.xaml, puis rendent en `RenderTargetBitmap`. Ces outils servent aussi à **vérifier un rendu sans lancer DockPad**.
+
+`tools/BrowserShot <cible> <cheminPng>` — sélecteur de navigateur :
+
+```bash
+dotnet build tools/BrowserShot
+BrowserShot.exe picker        docs/screenshots/browser-picker.png   # popup, config de démo (profils)
+BrowserShot.exe picker-header out.png                               # 1er navigateur masqué → titre de groupe
+BrowserShot.exe config        out.png                               # fenêtre Navigateurs
+```
+
+- `picker`/`picker-header` : config de démonstration **en mémoire** (noms neutres, `autoOpenSeconds = 0` — sinon la capture ouvrirait vraiment un navigateur) ; ne touche pas `%APPDATA%`
+- `config` : lit la **vraie** config → noms de profils réels à relire avant publication, et l'état d'enregistrement affiché est celui de `BrowserShot.exe`, donc toujours « non enregistré »
+
+`tools/McpShot <tabIndex> <cheminPng>` — fenêtre Serveur MCP, avec des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées :
 
 ```bash
 dotnet build tools/McpShot
@@ -330,9 +358,9 @@ tools/McpShot/bin/Debug/net8.0-windows/McpShot.exe 0 docs/screenshots/mcp-option
 tools/McpShot/bin/Debug/net8.0-windows/McpShot.exe 1 docs/screenshots/mcp-journal.png   # onglet Journal
 ```
 
-À régénérer après tout changement visuel de la fenêtre MCP. **Les captures sont validées (et floutées si besoin) avant push.**
+À régénérer après tout changement visuel des fenêtres concernées. **Les captures sont validées (et floutées si besoin) avant push.**
 
-Pièges WPF contournés dans cet outil — à connaître avant de l'étendre à d'autres fenêtres :
+Pièges WPF contournés dans ces outils — à connaître avant de les étendre à d'autres fenêtres :
 - `[STAThread]` obligatoire (les top-level statements ne l'appliquent pas)
 - Ressources App.xaml : `new App()` + `app.InitializeComponent()` **sans** `Run()` (sinon `OnStartup` exécute mutex/systray/fenêtres) ; `ShutdownMode = OnExplicitShutdown`
 - `ShowDialog()` retourne immédiatement dans ce contexte (Application jamais `Run`) → `Show()` + `Dispatcher.Run()`, arrêt par `Dispatcher.InvokeShutdown()`
@@ -341,6 +369,9 @@ Pièges WPF contournés dans cet outil — à connaître avant de l'étendre à 
 - Sélectionner l'onglet du `TabControl` **avant** `Show()` (une bascule post-rendu ne se répercute pas)
 - Un seul objet `Application` par processus : un process de capture par fenêtre/onglet
 - `DockPad.csproj` exclut `tools\**` de son glob de compilation (projet frère dans un sous-dossier, comme `DockPad.Tests`)
+- Le binaire `DockPad.exe` est verrouillé par une instance en cours : **fermer DockPad avant `dotnet build`**, sinon MSB3021/MSB3027 (l'outil de capture référence `DockPad.csproj`)
+
+> Une **valeur locale** (attribut posé sur l'élément, ex. `Visibility="Collapsed"`) bat les `Setter` des `DataTrigger` d'un `Style` : elle ne sera jamais remplacée. Mettre la valeur par défaut dans un `<Setter>` du `Style` et laisser les triggers la surcharger — sinon le trigger paraît « ne rien faire » (cas vécu sur le filet d'indentation des profils de navigateur).
 
 ## Styles des menus contextuels (App.xaml)
 

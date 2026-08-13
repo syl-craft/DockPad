@@ -117,17 +117,37 @@ public static class UrlRouterService
     }
 
     /// <summary>
+    /// Ligne de commande passée au navigateur : --profile-directory en tête si l'entrée est
+    /// un profil, puis les arguments de l'utilisateur, puis l'URL (ou "%1" substitué).
+    /// </summary>
+    public static string BuildArguments(BrowserEntry browser, string url)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(browser.ProfileDirectory))
+            parts.Add($"--profile-directory=\"{browser.ProfileDirectory}\"");
+
+        if (browser.Arguments.Contains("%1"))
+        {
+            parts.Add(browser.Arguments.Replace("%1", $"\"{url}\""));
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(browser.Arguments)) parts.Add(browser.Arguments);
+            parts.Add($"\"{url}\"");
+        }
+
+        return string.Join(' ', parts);
+    }
+
+    /// <summary>
     /// Lance le navigateur avec l'URL. Si Arguments contient "%1" il est substitué,
     /// sinon l'URL (entre guillemets) est ajoutée en fin. Retourne false en cas d'échec
     /// (exe introuvable…) après affichage d'un AppDialog d'erreur.
     /// </summary>
     public static bool Launch(BrowserEntry browser, string url)
     {
-        string args = browser.Arguments.Contains("%1")
-            ? browser.Arguments.Replace("%1", $"\"{url}\"")
-            : string.IsNullOrWhiteSpace(browser.Arguments)
-                ? $"\"{url}\""
-                : $"{browser.Arguments} \"{url}\"";
+        string args = BuildArguments(browser, url);
 
         try
         {
