@@ -17,9 +17,7 @@ public static class LogService
     {
         try
         {
-            var logDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "DockPad", "logs");
+            var logDir = Path.Combine(AppPaths.ProfileRoot, "logs");
 
             _logger = new LoggerConfiguration()
                 .MinimumLevel.Information()

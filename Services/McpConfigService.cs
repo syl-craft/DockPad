@@ -6,10 +6,7 @@ namespace DockPad.Services;
 
 public static class McpConfigService
 {
-    public static readonly string FilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "DockPad",
-        "mcp.json");
+    public static readonly string FilePath = AppPaths.File("mcp.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

@@ -7,10 +7,7 @@ namespace DockPad.Services;
 
 public static class ShortcutService
 {
-    public static readonly string FilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "DockPad",
-        "shortcuts.json");
+    public static readonly string FilePath = AppPaths.File("shortcuts.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

@@ -23,9 +23,9 @@ DockPad peut devenir le navigateur par défaut de Windows : au clic sur une URL,
 
 Les profils des navigateurs Chromium (Chrome, Edge, Brave, Vivaldi…) sont détectés par **↻ Redétecter** et proposés sous leur navigateur ; un navigateur qui n'a qu'un seul profil reste une ligne unique. Chaque profil se masque, se renomme et peut recevoir ses propres règles de domaine.
 
-| Popup au clic sur une URL | Configuration |
-|:---:|:---:|
-| ![Popup de choix](docs/screenshots/browser-picker.png) | ![Configuration des navigateurs](docs/screenshots/browser-config.png) |
+| Popup au clic sur une URL | Navigateurs et profils | Règles de domaine |
+|:---:|:---:|:---:|
+| ![Popup de choix](docs/screenshots/browser-picker.png) | ![Configuration des navigateurs](docs/screenshots/browser-config.png) | ![Règles de domaine](docs/screenshots/browser-rules.png) |
 
 Clavier : `1-9` choix direct · `↑/↓` + `Entrée` · `Échap` annule · perte de focus = annule.
 

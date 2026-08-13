@@ -12,10 +12,8 @@ namespace DockPad.Services;
 /// </summary>
 public static class IconStoreService
 {
-    /// <summary>Racine du profil DockPad : %APPDATA%\DockPad\</summary>
-    public static readonly string ProfileRoot = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "DockPad");
+    /// <summary>Racine du profil DockPad : %APPDATA%\DockPad\ (voir <see cref="AppPaths"/>)</summary>
+    public static readonly string ProfileRoot = AppPaths.ProfileRoot;
 
     public static readonly string IconsFolder = Path.Combine(ProfileRoot, "icons");
 
