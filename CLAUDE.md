@@ -45,6 +45,7 @@ Models/
 
 Services/
     AppInfo.cs                            Infos application (VersionText affiché dans les footers)
+    AppPaths.cs                           Racine du profil (%APPDATA%\DockPad ou DOCKPAD_PROFILE_DIR) — utilisée par toutes les configs
     BrowserActionService.cs               Actions navigateurs & règles de domaine, partagées UI ↔ MCP
     BrowserConfigService.cs              Load/Save browsers.json (%APPDATA%\DockPad\browsers.json)
     BrowserDetectionService.cs           Détection des navigateurs installés (Software\Clients\StartMenuInternet, HKLM+HKCU)
@@ -90,7 +91,7 @@ Dialogs/
     SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto + version
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
 
-DockPad.Tests/                           Projet xUnit (97 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher
+DockPad.Tests/                           Projet xUnit (105 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
 
 tools/
@@ -334,21 +335,34 @@ Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) su
 - **Footer commun** (styles `DialogFooter` + `FooterVersion` dans App.xaml) : version à gauche (`TxtVersion.Text = AppInfo.VersionText`), boutons à droite — `Fermer` (SecondaryButton) pour les fenêtres à sauvegarde immédiate, Sauvegarder/Annuler pour les transactionnelles ; les actions spécifiques (Prédéfinis) restent à gauche après la version
 - Header commun : `Border` bleu `#0078D4`, `Padding="20,14"`, titre blanc 16 SemiBold
 
+## Profil DockPad (AppPaths)
+
+Toutes les données utilisateur vivent dans un seul dossier, résolu par `AppPaths.ProfileRoot` : `shortcuts.json`, `pages.json`, `browsers.json`, `mcp.json`, `icons\`, `logs\`, `.backup\`.
+
+- Par défaut `%APPDATA%\DockPad`
+- Surchargeable par la variable d'environnement **`DOCKPAD_PROFILE_DIR`** : le dossier indiqué est utilisé **tel quel** (aucun sous-dossier `DockPad` ajouté), chemin relatif accepté (rendu absolu), guillemets et espaces tolérés
+- Résolue **une seule fois** au premier accès (`static readonly`) : modifier la variable en cours d'exécution n'a aucun effet — un outil qui la pose doit le faire avant tout appel aux services
+- Usages : profil portable / configs de test, et les outils de capture qui travaillent sur un profil de fixture au lieu du profil réel
+- Ne jamais reconstruire ces chemins à la main dans un service : `AppPaths.File("xxx.json")` ou `Path.Combine(AppPaths.ProfileRoot, …)`
+
 ## Captures d'écran de la doc (tools/McpShot, tools/BrowserShot)
 
 Les captures du README vivent dans `docs/screenshots/`. Elles sont générées par de petits exes console qui instancient la **vraie** fenêtre hors process DockPad, avec les ressources App.xaml, puis rendent en `RenderTargetBitmap`. Ces outils servent aussi à **vérifier un rendu sans lancer DockPad**.
 
-`tools/BrowserShot <cible> <cheminPng>` — sélecteur de navigateur :
+`tools/BrowserShot <cible> <cheminPng> [tabIndex]` — sélecteur de navigateur :
 
 ```bash
 dotnet build tools/BrowserShot
-BrowserShot.exe picker        docs/screenshots/browser-picker.png   # popup, config de démo (profils)
+BrowserShot.exe picker        docs/screenshots/browser-picker.png   # popup avec profils
 BrowserShot.exe picker-header out.png                               # 1er navigateur masqué → titre de groupe
-BrowserShot.exe config        out.png                               # fenêtre Navigateurs
+BrowserShot.exe config        docs/screenshots/browser-config.png 0 # onglet Navigateurs
+BrowserShot.exe config        docs/screenshots/browser-rules.png  1 # onglet Règles de domaine
 ```
 
-- `picker`/`picker-header` : config de démonstration **en mémoire** (noms neutres, `autoOpenSeconds = 0` — sinon la capture ouvrirait vraiment un navigateur) ; ne touche pas `%APPDATA%`
-- `config` : lit la **vraie** config → noms de profils réels à relire avant publication, et l'état d'enregistrement affiché est celui de `BrowserShot.exe`, donc toujours « non enregistré »
+- **Profil de fixture** : l'outil pose `DOCKPAD_PROFILE_DIR` sur `%TEMP%\dockpad-browsershot` **avant** tout accès aux services, puis y écrit une config de démonstration (noms neutres : Boulot, Perso, Démo, Tests). Le profil réel de l'utilisateur n'est ni lu ni écrit — les captures ne contiennent aucune donnée personnelle et sont reproductibles
+- `autoOpenSeconds = 0` pour la popup : un décompte ouvrirait vraiment un navigateur pendant la capture ; la fenêtre de config utilise 3 s (valeur d'affichage)
+- L'état d'enregistrement affiché est celui de `BrowserShot.exe`, donc toujours « non enregistré » — c'est justement l'état initial décrit par le README
+- La fenêtre de config est capturée en hauteur 840 (elle est redimensionnable) pour que liste et panneau d'édition tiennent ensemble, avec un profil sélectionné
 
 `tools/McpShot <tabIndex> <cheminPng>` — fenêtre Serveur MCP, avec des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées :
 

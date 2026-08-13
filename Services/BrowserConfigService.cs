@@ -6,10 +6,7 @@ namespace DockPad.Services;
 
 public static class BrowserConfigService
 {
-    public static readonly string FilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "DockPad",
-        "browsers.json");
+    public static readonly string FilePath = AppPaths.File("browsers.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

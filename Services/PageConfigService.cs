@@ -6,10 +6,7 @@ namespace DockPad.Services;
 
 public static class PageConfigService
 {
-    public static readonly string FilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "DockPad",
-        "pages.json");
+    public static readonly string FilePath = AppPaths.File("pages.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
