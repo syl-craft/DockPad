@@ -97,6 +97,7 @@ tools/
     get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
     inject-startmenu-shortcuts.ps1       Script PowerShell : injecte des raccourcis SwitchToProcess dans shortcuts.json
     McpShot/                             Outil console : capture les onglets de McpConfigDialog en PNG (doc)
+    BrowserShot/                         Outil console : capture la popup de choix et la fenêtre Navigateurs en PNG (doc)
 ```
 
 ## Fonctionnalités
@@ -333,9 +334,23 @@ Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) su
 - **Footer commun** (styles `DialogFooter` + `FooterVersion` dans App.xaml) : version à gauche (`TxtVersion.Text = AppInfo.VersionText`), boutons à droite — `Fermer` (SecondaryButton) pour les fenêtres à sauvegarde immédiate, Sauvegarder/Annuler pour les transactionnelles ; les actions spécifiques (Prédéfinis) restent à gauche après la version
 - Header commun : `Border` bleu `#0078D4`, `Padding="20,14"`, titre blanc 16 SemiBold
 
-## Captures d'écran de la doc (tools/McpShot)
+## Captures d'écran de la doc (tools/McpShot, tools/BrowserShot)
 
-Les captures du README vivent dans `docs/screenshots/`. Celles de la fenêtre Serveur MCP sont générées par `tools/McpShot` — un petit exe console qui instancie la **vraie** fenêtre (`McpConfigDialog`) hors process DockPad, avec les ressources App.xaml, des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées, puis rend en `RenderTargetBitmap` :
+Les captures du README vivent dans `docs/screenshots/`. Elles sont générées par de petits exes console qui instancient la **vraie** fenêtre hors process DockPad, avec les ressources App.xaml, puis rendent en `RenderTargetBitmap`. Ces outils servent aussi à **vérifier un rendu sans lancer DockPad**.
+
+`tools/BrowserShot <cible> <cheminPng>` — sélecteur de navigateur :
+
+```bash
+dotnet build tools/BrowserShot
+BrowserShot.exe picker        docs/screenshots/browser-picker.png   # popup, config de démo (profils)
+BrowserShot.exe picker-header out.png                               # 1er navigateur masqué → titre de groupe
+BrowserShot.exe config        out.png                               # fenêtre Navigateurs
+```
+
+- `picker`/`picker-header` : config de démonstration **en mémoire** (noms neutres, `autoOpenSeconds = 0` — sinon la capture ouvrirait vraiment un navigateur) ; ne touche pas `%APPDATA%`
+- `config` : lit la **vraie** config → noms de profils réels à relire avant publication, et l'état d'enregistrement affiché est celui de `BrowserShot.exe`, donc toujours « non enregistré »
+
+`tools/McpShot <tabIndex> <cheminPng>` — fenêtre Serveur MCP, avec des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées :
 
 ```bash
 dotnet build tools/McpShot
@@ -343,9 +358,9 @@ tools/McpShot/bin/Debug/net8.0-windows/McpShot.exe 0 docs/screenshots/mcp-option
 tools/McpShot/bin/Debug/net8.0-windows/McpShot.exe 1 docs/screenshots/mcp-journal.png   # onglet Journal
 ```
 
-À régénérer après tout changement visuel de la fenêtre MCP. **Les captures sont validées (et floutées si besoin) avant push.**
+À régénérer après tout changement visuel des fenêtres concernées. **Les captures sont validées (et floutées si besoin) avant push.**
 
-Pièges WPF contournés dans cet outil — à connaître avant de l'étendre à d'autres fenêtres :
+Pièges WPF contournés dans ces outils — à connaître avant de les étendre à d'autres fenêtres :
 - `[STAThread]` obligatoire (les top-level statements ne l'appliquent pas)
 - Ressources App.xaml : `new App()` + `app.InitializeComponent()` **sans** `Run()` (sinon `OnStartup` exécute mutex/systray/fenêtres) ; `ShutdownMode = OnExplicitShutdown`
 - `ShowDialog()` retourne immédiatement dans ce contexte (Application jamais `Run`) → `Show()` + `Dispatcher.Run()`, arrêt par `Dispatcher.InvokeShutdown()`
@@ -354,6 +369,9 @@ Pièges WPF contournés dans cet outil — à connaître avant de l'étendre à 
 - Sélectionner l'onglet du `TabControl` **avant** `Show()` (une bascule post-rendu ne se répercute pas)
 - Un seul objet `Application` par processus : un process de capture par fenêtre/onglet
 - `DockPad.csproj` exclut `tools\**` de son glob de compilation (projet frère dans un sous-dossier, comme `DockPad.Tests`)
+- Le binaire `DockPad.exe` est verrouillé par une instance en cours : **fermer DockPad avant `dotnet build`**, sinon MSB3021/MSB3027 (l'outil de capture référence `DockPad.csproj`)
+
+> Une **valeur locale** (attribut posé sur l'élément, ex. `Visibility="Collapsed"`) bat les `Setter` des `DataTrigger` d'un `Style` : elle ne sera jamais remplacée. Mettre la valeur par défaut dans un `<Setter>` du `Style` et laisser les triggers la surcharger — sinon le trigger paraît « ne rien faire » (cas vécu sur le filet d'indentation des profils de navigateur).
 
 ## Styles des menus contextuels (App.xaml)
 

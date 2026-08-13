@@ -101,12 +101,14 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- Filet d'indentation des profils (largeur nulle si masqué) -->
-                            <Border Grid.Column="0" Width="14" Margin="2,1,8,1"
+                            <Border Grid.Column="0" Width="24" Margin="10,1,10,1"
                                     BorderBrush="#D8D8D8" BorderThickness="1,0,0,0"
-                                    Visibility="Collapsed"
                                     SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                <!-- Visibilité par le Style et non en attribut : une valeur locale
+                                     bat les Setter des DataTrigger (le filet ne s'afficherait jamais). -->
                                 <Border.Style>
                                     <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsChild}" Value="True">
                                                 <Setter Property="Visibility" Value="Visible"/>
