@@ -245,7 +245,9 @@
                                     <TextBlock Text="{Binding Label}" FontSize="10"
                                                Foreground="#A5A5A5" TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{Binding Value}" FontSize="13" FontWeight="Bold"
-                                               Foreground="#222" TextTrimming="CharacterEllipsis"/>
+                                               Foreground="#222" TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding Tooltip}"
+                                               ToolTipService.IsEnabled="{Binding Tooltip.Length}"/>
                                 </StackPanel>
                             </Border>
                         </DataTemplate>

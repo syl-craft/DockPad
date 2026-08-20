@@ -42,6 +42,9 @@ public sealed class UsageMetric
 {
     public required string Label { get; init; }
     public required string Value { get; init; }
+
+    /// <summary>Précision au survol. Vide = pas d'infobulle.</summary>
+    public string Tooltip { get; init; } = "";
 }
 
 /// <summary>Une jauge de quota.</summary>

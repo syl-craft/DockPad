@@ -219,7 +219,15 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
         if (_config.ShowCost)
         {
-            Metrics.Add(new UsageMetric { Label = "Coût est.", Value = Text(selected.Cost) });
+            Metrics.Add(new UsageMetric
+            {
+                Label = "Coût est.",
+                Value = Text(selected.Cost),
+                // Le montant peut être élevé (l'équivalent API d'un mois de travail intensif se
+                // compte en milliers). Sans cette précision, il se lit comme une facture.
+                Tooltip = "Équivalent API du mois en cours, estimé aux tarifs publics. "
+                        + "Un abonnement Max ou Pro ne facture pas au jeton.",
+            });
         }
 
         Metrics.Add(new UsageMetric { Label = "Modèle", Value = Text(selected.Model) });

@@ -66,7 +66,10 @@ public sealed class ClaudeUsageProvider : IUsageProvider
     {
         var now = _clock();
 
-        var totals = ReadTotals(now);
+        // Task.Run : la lecture parcourt des centaines de fichiers (mesuré 2 s sur un profil réel).
+        // Sans elle, tout ce travail s'exécute sur le thread d'interface avant le premier await,
+        // et la fenêtre gèle à chaque affichage puis à chaque rafraîchissement.
+        var totals = await Task.Run(() => ReadTotals(now), ct).ConfigureAwait(false);
         if (totals is null) return null;
 
         var limits = await ReadLimitsAsync(ct).ConfigureAwait(false);
