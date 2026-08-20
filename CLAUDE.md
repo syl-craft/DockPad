@@ -477,9 +477,10 @@ BrowserShot.exe config        docs/screenshots/browser-rules.png  1 # onglet Rè
 
 ```bash
 dotnet build tools/UsageShot
-UsageShot.exe panel  docs/screenshots/usage-panel.png    # le bandeau seul
-UsageShot.exe window docs/screenshots/usage-window.png   # QuickAccessWindow entiere, pour juger l'integration
-UsageShot.exe config docs/screenshots/usage-config.png   # fenetre de reglages
+UsageShot.exe panel      docs/screenshots/usage-panel.png       # cas par defaut : un seul fournisseur
+UsageShot.exe panel-tabs docs/screenshots/usage-panel-tabs.png  # deux fournisseurs, mecanique d'onglets
+UsageShot.exe config     docs/screenshots/usage-config.png      # fenetre de reglages
+UsageShot.exe window     ...                                    # HORS SERVICE, voir ci-dessous
 ```
 
 - **Fixture exclusivement `DemoUsageProvider`** (quatre instances), `ClaudeUsageProvider` délibérément absent : les vrais chiffres de consommation sont des données personnelles, et une capture doit être reproductible. C'est la raison d'être de la liste injectable de `UsageService` — le registre de production reste intact
@@ -488,6 +489,10 @@ UsageShot.exe config docs/screenshots/usage-config.png   # fenetre de reglages
 - **`Start()` avant toute mesure** : sans données le bandeau est `Collapsed` et la capture est vide
 - **`app.ico` doit être liée dans le csproj de l'outil** (`<Resource Include="..\..\app.ico" Link="app.ico" />`) : `QuickAccessWindow` la référence par pack URI, qui se résout dans l'assembly **hôte**. Sans elle, la cible `window` lève une `IOException` au chargement du XAML. Les cibles de `BrowserShot` n'en ont pas besoin, ce sont des dialogs sans icône
 - **Rendre l'élément de contenu, pas le `Window`** : sur une fenêtre sans chrome (`WindowStyle=None`) le rendu du `Window` lui-même sort transparent
+- **Largeur de capture = 708 px**, la largeur du bloc de tuiles (6 × 118) sur laquelle le bandeau est aligné. Capturer plus large donne une image flatteuse et fausse : c'est à cette largeur que les jauges se serrent
+- **La fixture n'expose que deux fournisseurs visibles**, et un seul pour la cible `panel`. Quatre onglets écrasaient les jauges à la largeur réelle ; et le cas par défaut n'a de toute façon qu'un fournisseur
+
+> **Cible `window` hors service.** Le processus tourne à 80 % d'un cœur et le dispatcher n'exécute plus rien — ni `ContentRendered`, ni un `DispatcherTimer` posé après `Show`. C'est la signature d'une boucle d'invalidation qui affame les priorités inférieures. Reproduit **y compris au commit où cette cible produisait encore une image correcte**, donc la cause n'est pas la mise en page du bandeau : chercher du côté de ce que `QuickAccessWindow` déclenche hors d'une vraie application (hotkey global, hook WndProc, `PopulateGrid`). Les cibles `panel`, `panel-tabs` et `config` fonctionnent.
 
 `tools/McpShot <tabIndex> <cheminPng>` — fenêtre Serveur MCP, avec des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées :
 

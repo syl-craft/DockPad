@@ -27,6 +27,15 @@ namespace UsageShot;
 /// Mêmes pièges WPF que McpShot et BrowserShot : STAThread, App sans Run, Show + Dispatcher.Run,
 /// DPI via VisualTreeHelper, un processus par fenêtre.
 /// </para>
+/// <para>
+/// <b>Limite connue : la cible <c>window</c> ne rend plus.</b> Le processus tourne à 80 % d'un cœur
+/// et le dispatcher n'exécute plus rien — ni <c>ContentRendered</c>, ni un <c>DispatcherTimer</c>
+/// posé après <c>Show</c> — ce qui décrit une boucle de mise en page ou d'invalidation qui affame
+/// les priorités inférieures. Reproduit y compris au commit où cette cible produisait encore une
+/// image correcte, donc la cause n'est pas dans la mise en page du bandeau : elle est à chercher
+/// dans ce que <c>QuickAccessWindow</c> déclenche hors d'une vraie application (hotkey global,
+/// hook WndProc, PopulateGrid). Les cibles <c>panel</c> et <c>config</c> fonctionnent.
+/// </para>
 /// </remarks>
 internal static class Program
 {
@@ -35,7 +44,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|window|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|window|config> <cheminPng>");
             return;
         }
 
@@ -48,7 +57,9 @@ internal static class Program
         Directory.CreateDirectory(fixtureDir);
         Environment.SetEnvironmentVariable(AppPaths.OverrideVariable, fixtureDir);
 
-        UsageConfigService.Save(FixtureConfig());
+        // « panel-tabs » rend un second fournisseur visible : le cas par défaut n'a qu'un seul
+        // fournisseur, et c'est celui qu'il faut montrer en premier.
+        UsageConfigService.Save(FixtureConfig(secondVisible: target == "panel-tabs"));
 
         var app = new App();
         app.InitializeComponent();
@@ -57,7 +68,7 @@ internal static class Program
         // Le bandeau seul est rendu hors écran : une fenêtre à SizeToContent mesure avant que les
         // données arrivent et n'en reprend pas la hauteur, ce qui rognait la capture. Measure et
         // Arrange explicites donnent des dimensions déterministes.
-        if (target == "panel")
+        if (target is "panel" or "panel-tabs")
         {
             CapturePanel(outPath);
             return;
@@ -82,20 +93,22 @@ internal static class Program
                 break;
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | window | config)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | window | config)");
         }
 
-        win.ContentRendered += (_, _) => CaptureThenExit(win, outPath, target);
-
         // Show + Dispatcher.Run : ShowDialog retourne immédiatement ici (Application jamais Run).
+        // La capture est posée après Show et non sur ContentRendered — voir la remarque de classe.
         win.Show();
+        CaptureThenExit(win, outPath, target);
         System.Windows.Threading.Dispatcher.Run();
     }
 
     /// <summary>Rend le bandeau seul, sur le fond de la grille, sans passer par une fenêtre.</summary>
     private static void CapturePanel(string outPath)
     {
-        const double width = 948;   // 900 de bandeau + 24 de marge de chaque côté
+        // 708 = largeur du bloc de tuiles (6 × 118), sur laquelle le bandeau est aligné dans la
+        // fenêtre. Capturer plus large donnerait une image flatteuse mais irréaliste.
+        const double width = 708;   // 900 de bandeau + 24 de marge de chaque côté
 
         var panel = new UsagePanel { ViewModel = FixtureViewModel() };
         var frame = new Border
@@ -149,11 +162,13 @@ internal static class Program
     ];
 
     /// <summary>
-    /// Fixture de config : un fournisseur masqué et un non détecté, pour que les badges et les états
-    /// apparaissent sur la capture de la fenêtre de réglages — des états que la machine de
+    /// Fixture de config : deux fournisseurs visibles seulement, plus des masqués et un non détecté.
+    /// Deux visibles suffisent à montrer la mécanique d'onglets et laissent la place aux jauges à la
+    /// largeur réelle du bandeau — quatre onglets les écrasaient. Les états masqué / non détecté /
+    /// démo apparaissent tout de même sur la capture de la fenêtre de réglages, que la machine de
     /// développement ne produit pas d'elle-même.
     /// </summary>
-    private static UsageConfig FixtureConfig() => new()
+    private static UsageConfig FixtureConfig(bool secondVisible) => new()
     {
         Enabled = true,
         AlertThreshold = 15,
@@ -164,11 +179,13 @@ internal static class Program
             new AiProviderEntry { Id = "claude",  Name = "Claude",  DetectedName = "Claude",
                                   DataPath = @"C:\Users\Demo\.claude\projects", Detected = true, Order = 0 },
             new AiProviderEntry { Id = "codex",   Name = "Codex",   DetectedName = "Codex",
-                                  DataPath = @"C:\Users\Demo\.codex\sessions", Detected = true, Order = 1 },
+                                  DataPath = @"C:\Users\Demo\.codex\sessions", Detected = true,
+                                  Hidden = !secondVisible, Order = 1 },
             new AiProviderEntry { Id = "gemini",  Name = "Gemini",  DetectedName = "Gemini",
-                                  DataPath = @"C:\Users\Demo\.gemini\tmp", Detected = true, Order = 2 },
+                                  DataPath = @"C:\Users\Demo\.gemini\tmp", Detected = true,
+                                  Hidden = true, Order = 2 },
             new AiProviderEntry { Id = "copilot", Name = "Copilot", DetectedName = "Copilot",
-                                  Detected = false, Order = 3 },
+                                  Detected = false, Hidden = true, Order = 3 },
             new AiProviderEntry { Id = "demo",    Name = "Démo",    DetectedName = "Démo",
                                   Hidden = true, Detected = true, Order = 4 },
         },

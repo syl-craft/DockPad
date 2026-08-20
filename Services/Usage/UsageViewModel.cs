@@ -187,8 +187,10 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
     private void BuildGauges(AiUsage? selected)
     {
-        SessionGauge = Gauge("session", selected?.Session);
-        WeekGauge = Gauge("semaine", selected?.Week);
+        // « utilisée » explicitement : « 26 % session » ne dit pas si c'est le consommé ou le
+        // restant, et la page officielle écrit « utilisés ».
+        SessionGauge = Gauge("session utilisée", selected?.Session);
+        WeekGauge = Gauge("semaine utilisée", selected?.Week);
     }
 
     private UsageGaugeItem Gauge(string label, UsageWindow? window)

@@ -52,11 +52,15 @@ public sealed class UsageGaugeItem
 {
     public required string Label { get; init; }
 
-    /// <summary>Pourcentage <b>restant</b> — c'est ce que la maquette met en gras.</summary>
-    public int RemainingPct { get; init; }
-
-    /// <summary>Pourcentage consommé, qui donne la largeur de la barre.</summary>
+    /// <summary>
+    /// Pourcentage <b>consommé</b> : le nombre affiché et la largeur de la barre. C'est ce que
+    /// compte la page claude.ai/settings/usage, et il ne faut pas deux références qui se
+    /// contredisent pour la même donnée.
+    /// </summary>
     public int UsedPct { get; init; }
+
+    /// <summary>Pourcentage restant. Conservé pour le calcul du seuil d'alerte, non affiché.</summary>
+    public int RemainingPct { get; init; }
 
     public string Reset { get; init; } = "";
     public string Color { get; init; } = "";

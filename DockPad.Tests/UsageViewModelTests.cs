@@ -275,13 +275,26 @@ public class UsageViewModelTests
     }
 
     [Fact]
-    public async Task Jauge_AfficheLeRestantEtLeConsomme()
+    public async Task Jauge_ExposeLeConsommeEtLeRestant()
     {
         var vm = Build(ConfigFor(("a", false)), Usage("a", sessionUsed: 62));
         await vm.RefreshAsync();
 
-        Assert.Equal(38, vm.SessionGauge!.RemainingPct);
-        Assert.Equal(62, vm.SessionGauge.UsedPct);
+        Assert.Equal(62, vm.SessionGauge!.UsedPct);
+        Assert.Equal(38, vm.SessionGauge.RemainingPct);
+    }
+
+    [Fact]
+    public async Task Jauge_LibelleDitExplicitementQueLePourcentageEstConsomme()
+    {
+        // « 26 % session » ne dit pas si c'est le consommé ou le restant. La page officielle
+        // claude.ai/settings/usage annonce « 26 % utilisés » : deux references pour la meme donnee
+        // ne doivent pas se contredire.
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+
+        Assert.Contains("utilisée", vm.SessionGauge!.Label);
+        Assert.Contains("utilisée", vm.WeekGauge!.Label);
     }
 
     // --- Démo

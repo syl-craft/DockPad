@@ -39,10 +39,26 @@ public partial class QuickAccessWindow : Window
         TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
 
         UsageBanner.ViewModel = new UsageViewModel();
+        Loaded += (_, _) => AlignBannerToGrid();
         // Un seul point de branchement pour le bandeau : l'état d'affichage réel de la fenêtre.
         // Brancher chaque Show()/Hide() du code laisserait passer les prochains appels ajoutés.
         IsVisibleChanged += (_, _) => SyncUsageBanner();
         StateChanged += (_, _) => SyncUsageBanner();
+    }
+
+    /// <summary>
+    /// Aligne la largeur du bandeau sur celle du bloc de tuiles.
+    /// </summary>
+    /// <remarks>
+    /// Posée une seule fois, en code. Un binding sur <c>ShortcutsGrid.ActualWidth</c> fait boucler
+    /// la mise en page : la largeur du bandeau change la hauteur de sa ligne, ce qui fait
+    /// apparaître ou disparaître la barre de défilement de la grille, ce qui change la largeur
+    /// disponible — et on recommence. Une valeur unique suffit de toute façon : les tuiles ont une
+    /// taille fixe, donc le bloc garde la même largeur quand la fenêtre est redimensionnée.
+    /// </remarks>
+    private void AlignBannerToGrid()
+    {
+        if (ShortcutsGrid.ActualWidth > 0) UsageBanner.Width = ShortcutsGrid.ActualWidth;
     }
 
     /// <summary>

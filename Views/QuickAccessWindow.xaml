@@ -270,8 +270,12 @@
             </Grid>
         </ScrollViewer>
 
-        <!-- Bandeau Usage IA. Masqué, il ne prend aucune place (Collapsed, pas Hidden). -->
-        <views:UsagePanel x:Name="UsageBanner" Grid.Row="2" Margin="48,0,48,14"/>
+        <!-- Bandeau Usage IA. Masqué, il ne prend aucune place (Collapsed, pas Hidden).
+             Largeur alignée sur la grille de tuiles, posée une fois par le code (voir
+             AlignBannerToGrid) : ni marges fixes, qui laisseraient le bandeau dépasser dès qu'on
+             élargit la fenêtre, ni binding sur ActualWidth, qui fait boucler la mise en page. -->
+        <views:UsagePanel x:Name="UsageBanner" Grid.Row="2"
+                          HorizontalAlignment="Center" Margin="0,0,0,20"/>
 
         <!-- Barre de pagination -->
         <Border Grid.Row="3" Background="White" Padding="12,10"

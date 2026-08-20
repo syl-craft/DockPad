@@ -45,6 +45,10 @@ Un bandeau sous la grille montre la consommation des assistants IA détectés : 
 
 ![Bandeau Usage IA](docs/screenshots/usage-panel.png)
 
+Avec plusieurs fournisseurs, un onglet apparaît pour chacun :
+
+![Bandeau Usage IA avec onglets](docs/screenshots/usage-panel-tabs.png)
+
 **Claude Code** est le seul fournisseur réel de cette version. Ses jetons sont lus dans les transcripts locaux (`%USERPROFILE%\.claude\projects`), sans réseau ; les pourcentages de quota viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine. Si ce quota n'est pas joignable, les jauges se masquent et les jetons restent affichés.
 
 Un fournisseur **Démo** est fourni, masqué par défaut : il sert aux captures de documentation et permet d'essayer le changement d'onglet. Les chiffres de démonstration portent toujours un badge « démo ».
