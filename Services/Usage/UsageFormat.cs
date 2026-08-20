@@ -34,13 +34,21 @@ public static class UsageFormat
         return Ok;
     }
 
-    /// <summary>987 → « 987 », 12 400 → « 12,4k », 1 200 000 → « 1,2M ».</summary>
+    /// <summary>
+    /// 987 → « 987 », 12 400 → « 12,4k », 1 200 000 → « 1,2M », 2 740 000 000 → « 2,7 Md ».
+    /// </summary>
+    /// <remarks>
+    /// Le palier « Md » n'est pas décoratif : un mois d'usage soutenu de Claude Code dépasse le
+    /// milliard de jetons (mesuré : 2,74 Md sur un mois), et sans lui la colonne afficherait
+    /// « 2741,9M ».
+    /// </remarks>
     public static string Tokens(long n)
     {
         if (n < 0) return "—";
         if (n < 1_000) return n.ToString(Fr);
         if (n < 1_000_000) return Trim(n / 1_000d) + "k";
-        return Trim(n / 1_000_000d) + "M";
+        if (n < 1_000_000_000) return Trim(n / 1_000_000d) + "M";
+        return Trim(n / 1_000_000_000d) + " Md";
     }
 
     /// <summary>

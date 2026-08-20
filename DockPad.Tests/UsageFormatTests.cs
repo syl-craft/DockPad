@@ -63,6 +63,9 @@ public class UsageFormatTests
     [InlineData(999_000L, "999k")]
     [InlineData(1_200_000L, "1,2M")]
     [InlineData(190_612_940L, "190,6M")]
+    [InlineData(999_000_000L, "999M")]
+    [InlineData(1_000_000_000L, "1 Md")]
+    [InlineData(2_741_932_310L, "2,7 Md")]
     public void Tokens_FormateEnCompact(long valeur, string attendu)
     {
         Assert.Equal(attendu, UsageFormat.Tokens(valeur));
