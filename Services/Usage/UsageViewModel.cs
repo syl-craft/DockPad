@@ -187,10 +187,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
     private void BuildGauges(AiUsage? selected)
     {
-        // « utilisée » explicitement : « 26 % session » ne dit pas si c'est le consommé ou le
-        // restant, et la page officielle écrit « utilisés ».
-        SessionGauge = Gauge("session utilisée", selected?.Session);
-        WeekGauge = Gauge("semaine utilisée", selected?.Week);
+        SessionGauge = Gauge("session", selected?.Session);
+        WeekGauge = Gauge("semaine", selected?.Week);
     }
 
     private UsageGaugeItem Gauge(string label, UsageWindow? window)
@@ -208,6 +206,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             RemainingPct = window.RemainingPct,
             Reset = UsageFormat.Reset(window.ResetsAt, _clock()),
             Color = UsageFormat.GaugeColor(window.UsedPct, _config.AlertThreshold),
+            // Le libellé est court par choix, mais « 62 % session » ne dit pas si le chiffre est le
+            // consommé ou le restant. L'infobulle lève le doute sans coûter de place.
+            Tooltip = $"{window.UsedPct} % utilisés, {window.RemainingPct} % restants",
         };
     }
 

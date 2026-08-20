@@ -280,7 +280,8 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 ### Bandeau Usage IA
 Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWindow` : toolbar / grille / **bandeau** / pagination. Masqué, il est en `Collapsed` et ne prend aucune place.
 
-- **Contenu** : un onglet par fournisseur (pastille colorée + nom + badge « démo »), les deux jauges *session* et *semaine* (pourcentage **restant** en gras dans la couleur de la jauge, `↻ heure de reset`, barre de 6 px), puis six colonnes de métriques — Session, Jour, Mois, Requêtes, Coût est., Modèle. Coût décoché → cinq colonnes
+- **Contenu** : un onglet par fournisseur (pastille colorée + nom + badge « démo »), les deux jauges *session* et *semaine* sur une seule ligne chacune (pourcentage **consommé** en gras dans la couleur de la jauge, barre de 6 px, `↻ heure de reset`), puis six colonnes de métriques — Session, Jour, Mois, Requêtes, Coût est., Modèle. Coût décoché → cinq colonnes
+- **Libellés courts (« session », « semaine ») et infobulle explicite** : le libellé seul ne dit pas si le chiffre est le consommé ou le restant, l'infobulle donne les deux. Le mot « utilisée » dans le libellé coûtait la largeur des barres
 - **Un seul fournisseur visible → aucun onglet** : nom et pastille en libellé statique. Un onglet unique et cliquable suggère un choix qui n'existe pas. Le seuil est le nombre de fournisseurs visibles, pas une constante
 - **La barre suit le restant, pas le consommé** : elle doit s'accorder avec le nombre affiché juste au-dessus. Une barre remplie à 62 % sous un « 38 % » se lit comme un défaut (vu à la capture). Jauge de carburant : elle se vide quand on consomme
 - **Les onglets ont leur propre ligne** : au-delà de deux fournisseurs, onglets et jauges ne tiennent pas côte à côte à 850 px, et le texte de reset se tronquait

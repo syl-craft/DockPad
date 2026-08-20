@@ -65,6 +65,9 @@ public sealed class UsageGaugeItem
     public string Reset { get; init; } = "";
     public string Color { get; init; } = "";
 
+    /// <summary>Précision au survol : le libellé affiché est volontairement court.</summary>
+    public string Tooltip { get; init; } = "";
+
     /// <summary>
     /// Le fournisseur expose-t-il un quota ? Faux → la barre est remplacée par « quota inconnu »
     /// plutôt que par une barre vide, qui se lirait comme « rien consommé ».

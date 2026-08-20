@@ -285,16 +285,19 @@ public class UsageViewModelTests
     }
 
     [Fact]
-    public async Task Jauge_LibelleDitExplicitementQueLePourcentageEstConsomme()
+    public async Task Jauge_LibelleCourtMaisInfobulleExplicite()
     {
-        // « 26 % session » ne dit pas si c'est le consommé ou le restant. La page officielle
-        // claude.ai/settings/usage annonce « 26 % utilisés » : deux references pour la meme donnee
-        // ne doivent pas se contredire.
-        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        // Le libellé est court par choix. « 62 % session » ne disant pas si le chiffre est le
+        // consommé ou le restant, l'infobulle doit lever le doute — c'est le consommé que compte
+        // claude.ai/settings/usage, et deux références pour la même donnée ne doivent pas se
+        // contredire.
+        var vm = Build(ConfigFor(("a", false)), Usage("a", sessionUsed: 62));
         await vm.RefreshAsync();
 
-        Assert.Contains("utilisée", vm.SessionGauge!.Label);
-        Assert.Contains("utilisée", vm.WeekGauge!.Label);
+        Assert.Equal("session", vm.SessionGauge!.Label);
+        Assert.Equal("semaine", vm.WeekGauge!.Label);
+        Assert.Contains("62 % utilisés", vm.SessionGauge.Tooltip);
+        Assert.Contains("38 % restants", vm.SessionGauge.Tooltip);
     }
 
     // --- Démo
