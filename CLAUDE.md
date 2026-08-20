@@ -286,6 +286,7 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 
 - **Contenu** : un onglet par fournisseur (pastille colorée + nom + badge « démo »), les deux jauges *session* et *semaine* sur une seule ligne chacune (pourcentage **consommé** en gras dans la couleur de la jauge, barre de 6 px, `↻ heure de reset`), puis six colonnes de métriques — Session, Jour, Mois, Requêtes, Coût est., Modèle. Coût décoché → cinq colonnes
 - **Lien vers la page officielle du fournisseur** à droite de la ligne haute : sa pastille, cliquable. L'affordance repose sur le curseur main, le fond au survol et l'infobulle qui nomme l'URL — la pastille est identique à celle de gauche, rien d'autre ne la distingue. L'URL est portée par `AiUsage.UsageUrl`, décidée dans le code du fournisseur et jamais lue depuis un fichier ; le schéma est tout de même vérifié avant `Process.Start` — avec `UseShellExecute`, une chaîne quelconque ouvrirait aussi bien un fichier ou une commande. Vide → le lien est masqué (cas du provider Démo dans l'application)
+- **Sablier pendant la lecture** : la pastille du fournisseur cède la place à un rond gris tournant, et les valeurs précédentes restent affichées — un rafraîchissement réel prend le temps de parcourir les transcripts (mesuré 1,7 s), et l'attente doit se voir. Le `RotateTransform` vit dans un `ControlTemplate` et non dans un `Setter` de `Style` : une valeur de `Setter` est une instance unique partagée, et l'animer lève une exception si elle est gelée. L'animation ne tourne que pendant l'attente (`EnterActions`/`ExitActions`)
 - **Libellés courts (« session », « semaine ») et infobulle explicite** : le libellé seul ne dit pas si le chiffre est le consommé ou le restant, l'infobulle donne les deux. Le mot « utilisée » dans le libellé coûtait la largeur des barres
 - **Un seul fournisseur visible → aucun onglet** : nom et pastille en libellé statique. Un onglet unique et cliquable suggère un choix qui n'existe pas. Le seuil est le nombre de fournisseurs visibles, pas une constante
 - **La barre suit le restant, pas le consommé** : elle doit s'accorder avec le nombre affiché juste au-dessus. Une barre remplie à 62 % sous un « 38 % » se lit comme un défaut (vu à la capture). Jauge de carburant : elle se vide quand on consomme
@@ -492,6 +493,7 @@ UsageShot.exe panel-tabs docs/screenshots/usage-panel-tabs.png  # deux fournisse
 UsageShot.exe config     docs/screenshots/usage-config.png      # fenetre de reglages
 UsageShot.exe window     docs/screenshots/usage-window.png      # integration dans la fenetre
 UsageShot.exe window-off ...                                    # bandeau desactive : verifie qu'il ne laisse aucune place
+UsageShot.exe panel-loading ...                                 # etat d'attente : sablier a la place de la pastille
 ```
 
 - **Fixture exclusivement `DemoUsageProvider`** (quatre instances), `ClaudeUsageProvider` délibérément absent : les vrais chiffres de consommation sont des données personnelles, et une capture doit être reproductible. C'est la raison d'être de la liste injectable de `UsageService` — le registre de production reste intact

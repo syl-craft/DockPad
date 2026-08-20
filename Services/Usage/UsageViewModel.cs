@@ -29,6 +29,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     private CancellationTokenSource? _inFlight;
 
     private UsageConfig _config = new();
+    private bool _isLoading;
     private List<AiUsage> _snapshots = [];
     private string _selectedId = "";
 
@@ -65,6 +66,24 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// <summary>Le fournisseur affiché produit des données de démonstration.</summary>
     public bool IsDemo { get; private set; }
 
+    /// <summary>
+    /// Une lecture est en cours. Le bandeau garde les valeurs précédentes pendant ce temps — un
+    /// rafraîchissement prend le temps de parcourir les transcripts, et l'attente doit se voir.
+    /// </summary>
+    public bool IsLoading
+    {
+        get => _isLoading;
+        private set
+        {
+            if (_isLoading == value) return;
+            _isLoading = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLoading)));
+            // Les onglets existants sont mis à jour en place : ils ne sont reconstruits qu'à la fin
+            // du rafraîchissement, trop tard pour signaler l'attente.
+            foreach (var tab in Tabs) tab.IsLoading = value && tab.IsSelected;
+        }
+    }
+
     /// <summary>Page web de consommation du fournisseur affiché, vide s'il n'en a pas.</summary>
     public string UsageUrl { get; private set; } = "";
 
@@ -77,6 +96,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// <summary>Démarre le rafraîchissement périodique. À appeler quand la fenêtre s'affiche.</summary>
     public void Start()
     {
+        LogService.Info("[TRACE Usage] Start");   // TRACE TEMPORAIRE
         _running = true;
         _timer ??= CreateTimer();
         _timer.Start();
@@ -89,6 +109,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// </summary>
     public void Stop()
     {
+        LogService.Info("[TRACE Usage] Stop");   // TRACE TEMPORAIRE
         _running = false;
         _timer?.Stop();
         Cancel();
@@ -108,6 +129,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         var cts = new CancellationTokenSource();
         _inFlight = cts;
 
+        IsLoading = true;
         try
         {
             _config = _loadConfig();
@@ -124,13 +146,23 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         }
         catch (OperationCanceledException)
         {
-            return;   // un rafraîchissement plus récent a pris la main
+            LogService.Info("[TRACE Usage] refresh annule");   // TRACE TEMPORAIRE
+            return;   // un rafraîchissement plus récent a pris la main — le finally rend la main
         }
         catch (Exception ex)
         {
             LogService.Warn(ex, "Rafraîchissement du bandeau Usage IA");
             _snapshots = [];
         }
+        finally
+        {
+            IsLoading = false;
+        }
+
+        // TRACE TEMPORAIRE
+        LogService.Info($"[TRACE Usage] refresh fini : enabled={_config.Enabled} " +
+                        $"instantanes={_snapshots.Count} " +
+                        $"[{string.Join(", ", _snapshots.Select(x => $"{x.ProviderId} jour={x.DayTokens} quotaSession={(x.Session is null ? "null" : x.Session.UsedPct.ToString())}"))}]");
 
         Rebuild();
     }
@@ -164,6 +196,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         SoloGlyph = selected?.Glyph ?? "";
         SoloAccent = selected?.AccentColor ?? "#000000";
 
+        LogService.Info($"[TRACE Usage] rebuild : visible={IsVisible} onglets={ShowTabs} " +
+                        $"selection='{selected?.ProviderId ?? "aucune"}' metriques={_snapshots.Count}");   // TRACE TEMPORAIRE
         BuildTabs(selected);
         BuildGauges(selected);
         BuildMetrics(selected);
@@ -200,6 +234,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                 Accent = snapshot.AccentColor,
                 IsDemo = snapshot.IsDemo,
                 IsSelected = snapshot.ProviderId == selected?.ProviderId,
+                IsLoading = IsLoading && snapshot.ProviderId == selected?.ProviderId,
             });
         }
     }

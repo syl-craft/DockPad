@@ -1,4 +1,6 @@
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -44,7 +46,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|panel-tabs|window|window-off|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-loading|window|window-off|config> <cheminPng>");
             return;
         }
 
@@ -71,9 +73,9 @@ internal static class Program
         // Le bandeau seul est rendu hors écran : une fenêtre à SizeToContent mesure avant que les
         // données arrivent et n'en reprend pas la hauteur, ce qui rognait la capture. Measure et
         // Arrange explicites donnent des dimensions déterministes.
-        if (target is "panel" or "panel-tabs")
+        if (target is "panel" or "panel-tabs" or "panel-loading")
         {
-            CapturePanel(outPath);
+            CapturePanel(outPath, loading: target == "panel-loading");
             return;
         }
 
@@ -92,7 +94,7 @@ internal static class Program
 
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | window | window-off | config)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-loading | window | window-off | config)");
         }
 
         // Show + Dispatcher.Run : ShowDialog retourne immédiatement ici (Application jamais Run).
@@ -139,7 +141,7 @@ internal static class Program
     }
 
     /// <summary>Rend le bandeau seul, sur le fond de la grille, sans passer par une fenêtre.</summary>
-    private static void CapturePanel(string outPath)
+    private static void CapturePanel(string outPath, bool loading = false)
     {
         // 698 = largeur réelle du bandeau dans la fenêtre : le bloc de tuiles (6 × 118) moins les
         // marges horizontales d'une tuile, pour affleurer leurs bords visibles. Capturer plus large
@@ -147,7 +149,7 @@ internal static class Program
         // serrent.
         const double width = 698;   // 900 de bandeau + 24 de marge de chaque côté
 
-        var panel = new UsagePanel { ViewModel = FixtureViewModel() };
+        var panel = new UsagePanel { ViewModel = FixtureViewModel(loading) };
         var frame = new Border
         {
             Padding = new Thickness(24),
@@ -157,6 +159,10 @@ internal static class Program
 
         // Les données d'abord : sans elles le bandeau est Collapsed et la mesure donne zéro.
         panel.Start();
+
+        // État d'attente : une seconde lecture est lancée et ne rend pas la main, alors que les
+        // valeurs de la première sont déjà affichées. C'est le seul moment où le sablier se voit.
+        if (loading) _ = panel.ViewModel!.RefreshAsync();
 
         frame.Measure(new Size(width, double.PositiveInfinity));
         frame.Arrange(new Rect(0, 0, width, frame.DesiredSize.Height));
@@ -169,10 +175,31 @@ internal static class Program
     /// ViewModel alimenté par des fournisseurs de démonstration seulement. C'est la raison d'être de
     /// la liste injectable de <see cref="UsageService"/> : le registre de production reste intact.
     /// </summary>
-    private static UsageViewModel FixtureViewModel()
+    private static UsageViewModel FixtureViewModel(bool loading = false)
     {
-        var service = new UsageService(FixtureProviders());
-        return new UsageViewModel(service, UsageConfigService.Load);
+        var providers = FixtureProviders();
+        if (loading) providers = providers.Select(p => (IUsageProvider)new SlowAfterFirstRead(p)).ToList();
+        return new UsageViewModel(new UsageService(providers), UsageConfigService.Load);
+    }
+
+    /// <summary>
+    /// Rapide au premier appel, puis ne rend plus la main : c'est ce qui permet de capturer l'état
+    /// d'attente avec des valeurs déjà affichées, comme lors d'un rafraîchissement réel.
+    /// </summary>
+    private sealed class SlowAfterFirstRead(IUsageProvider inner) : IUsageProvider
+    {
+        private bool _served;
+
+        public string Id => inner.Id;
+        public string Name => inner.Name;
+        public AiProbe Probe() => inner.Probe();
+
+        public async Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            if (_served) await Task.Delay(TimeSpan.FromMinutes(5), ct);
+            _served = true;
+            return await inner.ReadAsync(ct);
+        }
     }
 
     /// <summary>

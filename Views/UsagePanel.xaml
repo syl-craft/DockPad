@@ -45,6 +45,63 @@
             </Setter>
         </Style>
 
+        <!--
+            Sablier d'attente. Posé PAR-DESSUS la pastille du fournisseur, avec un fond opaque de
+            même taille : il la couvre entièrement, ce qui évite un convertisseur booléen inversé
+            pour masquer celle du dessous.
+
+            Le RotateTransform vit dans le ControlTemplate et non dans un Setter de Style : une
+            valeur de Setter est une instance UNIQUE partagée par tous les éléments qui utilisent le
+            style, et l'animer lève une exception si elle est gelée. Un template est instancié par
+            élément.
+
+            L'animation ne tourne que pendant l'attente (EnterActions / ExitActions), pas en
+            permanence sur un élément replié.
+        -->
+        <Style x:Key="LoadingSpinner" TargetType="ContentControl">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Setter Property="ToolTip" Value="Lecture en cours…"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Border Width="16" Height="16" CornerRadius="8" Background="#E4E4E4"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <TextBlock x:Name="Glyph" Text="↻" Foreground="#707070"
+                                       FontFamily="Segoe UI Symbol, Segoe UI"
+                                       FontSize="11" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform>
+                                    <RotateTransform/>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard Name="Spin">
+                                        <Storyboard RepeatBehavior="Forever">
+                                            <DoubleAnimation Storyboard.TargetName="Glyph"
+                                                             Storyboard.TargetProperty="RenderTransform.Angle"
+                                                             From="0" To="360" Duration="0:0:1.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <StopStoryboard BeginStoryboardName="Spin"/>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Un onglet de fournisseur. Bouton plat : cliquable, sans chrome de bouton. -->
         <Style x:Key="ProviderTab" TargetType="Button">
             <Setter Property="Padding" Value="8,4"/>
@@ -153,16 +210,19 @@
                             <Button Style="{StaticResource ProviderTab}" Click="Tab_Click"
                                     ToolTip="{Binding Name}">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="16" Height="16" CornerRadius="8"
-                                            Background="{Binding Accent, Converter={StaticResource StringToBrushConverter}}"
-                                            SnapsToDevicePixels="True" UseLayoutRounding="True">
-                                        <!-- Pile de repli : Segoe UI ne contient ni ✳ ni ⊕, qui
-                                             tombent en tofu sans Segoe UI Symbol. -->
-                                        <TextBlock Text="{Binding Glyph}" Foreground="White"
-                                                   FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
-                                                   FontSize="9" FontWeight="Bold"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
+                                    <Grid>
+                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                Background="{Binding Accent, Converter={StaticResource StringToBrushConverter}}"
+                                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                            <!-- Pile de repli : Segoe UI ne contient ni ✳ ni ⊕, qui
+                                                 tombent en tofu sans Segoe UI Symbol. -->
+                                            <TextBlock Text="{Binding Glyph}" Foreground="White"
+                                                       FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                                                       FontSize="9" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ContentControl Style="{StaticResource LoadingSpinner}"/>
+                                    </Grid>
                                     <TextBlock Text="{Binding Name}" Margin="6,0,0,0" FontSize="12"
                                                Foreground="#333" VerticalAlignment="Center"
                                                FontWeight="{Binding Weight}"/>
@@ -188,14 +248,17 @@
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
-                    <Border Width="16" Height="16" CornerRadius="8"
-                            Background="{Binding SoloAccent, Converter={StaticResource StringToBrushConverter}}"
-                            SnapsToDevicePixels="True" UseLayoutRounding="True">
-                        <TextBlock Text="{Binding SoloGlyph}" Foreground="White"
-                                   FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
-                                   FontSize="9" FontWeight="Bold"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    <Grid>
+                        <Border Width="16" Height="16" CornerRadius="8"
+                                Background="{Binding SoloAccent, Converter={StaticResource StringToBrushConverter}}"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <TextBlock Text="{Binding SoloGlyph}" Foreground="White"
+                                       FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                                       FontSize="9" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ContentControl Style="{StaticResource LoadingSpinner}"/>
+                    </Grid>
                     <TextBlock Text="{Binding SoloName}" Margin="6,0,0,0" FontSize="12"
                                FontWeight="SemiBold" Foreground="#333" VerticalAlignment="Center"/>
                     <Border Style="{StaticResource DemoBadge}"

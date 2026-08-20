@@ -13,6 +13,20 @@ public sealed class UsageTabItem : INotifyPropertyChanged
     public required string Accent { get; init; }
     public bool IsDemo { get; init; }
 
+    private bool _isLoading;
+
+    /// <summary>Une lecture est en cours pour ce fournisseur : la pastille cède la place au sablier.</summary>
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set
+        {
+            if (_isLoading == value) return;
+            _isLoading = value;
+            Notify(nameof(IsLoading));
+        }
+    }
+
     public bool IsSelected
     {
         get => _isSelected;

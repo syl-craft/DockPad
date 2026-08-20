@@ -337,6 +337,81 @@ public class UsageViewModelTests
         Assert.Contains("38 % restants", vm.SessionGauge.Tooltip);
     }
 
+    // --- Attente
+
+    private sealed class SlowProvider(AiUsage usage, TimeSpan delay) : IUsageProvider
+    {
+        public string Id => usage.ProviderId;
+        public string Name => Id;
+        public AiProbe Probe() => new() { Available = true, DisplayName = Id };
+
+        public async Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            await Task.Delay(delay, ct);
+            return usage;
+        }
+    }
+
+    [Fact]
+    public async Task IsLoading_VraiPendantLaLecturePuisFauxALaFin()
+    {
+        // Une lecture réelle parcourt des centaines de fichiers : l'attente doit se voir, et le
+        // bandeau garde ses valeurs précédentes pendant ce temps.
+        var config = ConfigFor(("a", false));
+        var vm = new UsageViewModel(
+            new UsageService([new SlowProvider(Usage("a"), TimeSpan.FromMilliseconds(300))]),
+            () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        var refresh = vm.RefreshAsync();
+        Assert.True(vm.IsLoading);
+
+        await refresh;
+        Assert.False(vm.IsLoading);
+    }
+
+    [Fact]
+    public async Task IsLoading_RetombeAFauxMemeEnCasDEchec()
+    {
+        var config = ConfigFor(("boom", false));
+        var vm = new UsageViewModel(new UsageService([new ThrowingProvider()]),
+                                    () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        await vm.RefreshAsync();
+
+        Assert.False(vm.IsLoading);
+    }
+
+    private sealed class ThrowingProvider : IUsageProvider
+    {
+        public string Id => "boom";
+        public string Name => "Boom";
+        public AiProbe Probe() => new() { Available = true, DisplayName = "Boom" };
+        public Task<AiUsage?> ReadAsync(CancellationToken ct) =>
+            throw new InvalidOperationException("lecture cassée");
+    }
+
+    [Fact]
+    public async Task IsLoading_MarqueLOngletSelectionneSeulement()
+    {
+        // Providers lents : avec des lectures synchrones, RefreshAsync se termine avant l'assertion
+        // et l'état intermédiaire n'est jamais observable.
+        var config = ConfigFor(("a", false), ("b", false));
+        var slow = TimeSpan.FromMilliseconds(200);
+        var vm = new UsageViewModel(
+            new UsageService([new SlowProvider(Usage("a"), slow), new SlowProvider(Usage("b"), slow)]),
+            () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+        await vm.RefreshAsync();
+
+        // Les onglets existent : un nouveau rafraîchissement doit marquer le seul onglet affiché.
+        var refresh = vm.RefreshAsync();
+
+        Assert.True(vm.Tabs.Single(t => t.ProviderId == "a").IsLoading);
+        Assert.False(vm.Tabs.Single(t => t.ProviderId == "b").IsLoading);
+
+        await refresh;
+        Assert.All(vm.Tabs, t => Assert.False(t.IsLoading));
+    }
+
     // --- Page du fournisseur
 
     [Fact]
