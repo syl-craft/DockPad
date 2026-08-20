@@ -255,13 +255,18 @@ public class UsageViewModelTests
     // --- Jauges
 
     [Fact]
-    public async Task Jauge_SansQuota_SignaleLAbsencePlutotQueZero()
+    public async Task Jauge_SansQuota_NAffirmeAucuneMesure()
     {
+        // HasQuota faux masque la jauge entière côté vue. Sans ça le pourcentage vaudrait 0 et
+        // afficherait « 0 % session », une mesure affirmée là où il n'y a pas de donnée — ce qui
+        // arrive au démarrage, avant que la première lecture ait abouti.
         var vm = Build(ConfigFor(("a", false)), Usage("a", sessionUsed: null, weekUsed: null));
         await vm.RefreshAsync();
 
         Assert.False(vm.SessionGauge!.HasQuota);
         Assert.False(vm.WeekGauge!.HasQuota);
+        Assert.Equal("", vm.SessionGauge.Reset);
+        Assert.Equal("", vm.SessionGauge.Tooltip);
     }
 
     [Fact]

@@ -78,7 +78,11 @@
             références pour la même donnée ne doivent pas se contredire.
         -->
         <DataTemplate x:Key="GaugeTemplate">
-            <Grid>
+            <!-- Quota inconnu → la jauge entière disparaît, pas seulement la barre. Le pourcentage
+                 vaudrait 0 par défaut et afficherait « 0 % session », soit une mesure affirmée là
+                 où il n'y a pas de donnée. Un vide ne prétend rien. Cas courant au démarrage, avant
+                 que la première lecture ait abouti. -->
+            <Grid Visibility="{Binding HasQuota, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -97,27 +101,10 @@
                          Text=" "/><Run Text="{Binding Label, Mode=OneWay}"/>
                 </TextBlock>
 
-                <Grid Grid.Column="1" Margin="8,0,0,0">
-                    <ProgressBar Style="{StaticResource GaugeBar}"
-                                 Value="{Binding UsedPct, Mode=OneWay}"
-                                 Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"
-                                 Visibility="{Binding HasQuota, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <!-- Pas de barre vide quand le quota est inconnu : elle se lirait
-                         « rien consommé ». -->
-                    <TextBlock Text="quota inconnu" FontSize="10" Foreground="#BBBBBB"
-                               VerticalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasQuota}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Grid>
+                <ProgressBar Grid.Column="1" Margin="8,0,0,0"
+                             Style="{StaticResource GaugeBar}"
+                             Value="{Binding UsedPct, Mode=OneWay}"
+                             Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"/>
 
                 <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0"
                            FontSize="11" Foreground="#8A8A8A"
