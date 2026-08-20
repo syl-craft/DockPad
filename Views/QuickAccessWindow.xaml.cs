@@ -283,6 +283,14 @@ public partial class QuickAccessWindow : Window
         dialog.ShowDialog();
     }
 
+    private void UsageConfig_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new UsageConfigDialog { Owner = this };
+        dialog.ShowDialog();
+        // Les réglages sont écrits au fil des clics : le bandeau doit relire en sortant.
+        _ = UsageBanner.ViewModel?.RefreshAsync();
+    }
+
     private void UpdateHotkeyDisplay()
     {
         var (mods, vk) = SettingsService.LoadHotkey();
@@ -313,7 +321,8 @@ public partial class QuickAccessWindow : Window
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
         foreach (var src in new[] { ShortcutService.FilePath, PageConfigService.FilePath,
-                                    BrowserConfigService.FilePath, McpConfigService.FilePath })
+                                    BrowserConfigService.FilePath, McpConfigService.FilePath,
+                                    UsageConfigService.FilePath })
         {
             if (!File.Exists(src)) continue;
             var dest = Path.Combine(backupDir,

@@ -35,7 +35,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|window> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|window|config> <cheminPng>");
             return;
         }
 
@@ -66,6 +66,10 @@ internal static class Program
         Window win;
         switch (target)
         {
+            case "config":
+                win = new UsageConfigDialog { WindowStartupLocation = WindowStartupLocation.CenterScreen };
+                break;
+
             case "window":
                 var quick = new QuickAccessWindow { WindowStartupLocation = WindowStartupLocation.CenterScreen };
                 // Le bandeau se construit avec le registre de production, qui lirait le vrai profil
@@ -78,7 +82,7 @@ internal static class Program
                 break;
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | window)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | window | config)");
         }
 
         win.ContentRendered += (_, _) => CaptureThenExit(win, outPath, target);
