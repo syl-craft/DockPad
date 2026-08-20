@@ -1,0 +1,141 @@
+using System.IO;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using DockPad.Models;
+
+namespace DockPad.Services.Usage;
+
+/// <summary>
+/// Consommation de Claude Code : jetons lus dans les transcripts locaux, quota officiel lu sur
+/// l'endpoint <c>oauth/usage</c> quand il répond.
+/// </summary>
+/// <remarks>
+/// Le dossier de départ est injectable et retombe sur <c>%USERPROFILE%</c> : c'est ce qui rend la
+/// détection et le scan testables sur un dossier temporaire, sans toucher au profil réel.
+/// </remarks>
+public sealed class ClaudeUsageProvider : IUsageProvider
+{
+    private readonly string _home;
+    private readonly ClaudeLimitsClient _limits;
+    private readonly Func<DateTime> _clock;
+
+    /// <summary>
+    /// L'indisponibilité du quota est signalée une seule fois par session : l'endpoint n'est pas
+    /// documenté, et un journal à chaque rafraîchissement noierait les vraies anomalies.
+    /// </summary>
+    private static bool _limitsFailureLogged;
+
+    public string Id => "claude";
+    public string Name => "Claude Code";
+
+    public ClaudeUsageProvider(string? home = null, HttpClient? http = null, Func<DateTime>? clock = null)
+    {
+        _home = home ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        _limits = new ClaudeLimitsClient(http);
+        _clock = clock ?? (() => DateTime.Now);
+    }
+
+    public AiProbe Probe()
+    {
+        try
+        {
+            var root = ClaudeUsageReader.ScanRoots(_home).FirstOrDefault(Directory.Exists);
+            if (root is null)
+            {
+                return new AiProbe { Available = false, DisplayName = Name, Detail = "non installé" };
+            }
+
+            var count = Directory.EnumerateFiles(root, "*.jsonl", SearchOption.AllDirectories).Take(1).Count();
+            return new AiProbe
+            {
+                Available = true,
+                DisplayName = Name,
+                DataPath = root,
+                Detail = count == 0 ? "installé, aucune donnée de session" : "",
+            };
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Détection de Claude Code");
+            return new AiProbe { Available = false, DisplayName = Name, Detail = "détection impossible" };
+        }
+    }
+
+    public async Task<AiUsage?> ReadAsync(CancellationToken ct)
+    {
+        var now = _clock();
+
+        var totals = ReadTotals(now);
+        if (totals is null) return null;
+
+        var limits = await ReadLimitsAsync(ct).ConfigureAwait(false);
+
+        return new AiUsage
+        {
+            ProviderId = Id,
+            Name = Name,
+            Glyph = "✳",
+            AccentColor = "#D97757",
+            Model = totals.Model,
+            Cost = ClaudePricing.Format(totals.Cost),
+            SessionTokens = totals.Session,
+            DayTokens = totals.Day,
+            MonthTokens = totals.Month,
+            Requests = totals.Requests,
+            Session = limits?.Session,
+            Week = limits?.Week,
+        };
+    }
+
+    private ClaudeUsageReader.UsageTotals? ReadTotals(DateTime now)
+    {
+        try
+        {
+            // Borne basse du scan : le début du mois, sauf le premier du mois au petit matin où le
+            // bloc de session actif peut avoir démarré le mois précédent.
+            var monthStart = new DateTime(now.Year, now.Month, 1);
+            var blockStart = now - ClaudeUsageReader.BlockWindow;
+            var since = monthStart < blockStart ? monthStart : blockStart;
+
+            var entries = ClaudeUsageReader.Read(_home, since);
+            return entries.Count == 0 ? null : ClaudeUsageReader.Aggregate(entries, now);
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Lecture de la consommation Claude Code");
+            return null;
+        }
+    }
+
+    private async Task<ClaudeLimitsClient.ClaudeLimits?> ReadLimitsAsync(CancellationToken ct)
+    {
+        try
+        {
+            var path = ClaudeLimitsClient.CredentialsPath(_home);
+            if (!File.Exists(path)) return null;
+
+            // Le jeton reste local à cette méthode : ni champ, ni journal, ni config.
+            var token = ClaudeLimitsClient.ReadAccessToken(File.ReadAllText(path), DateTime.UtcNow);
+            if (token is null) return null;
+
+            var limits = await _limits.FetchAsync(token, ct).ConfigureAwait(false);
+            if (limits is null && !_limitsFailureLogged)
+            {
+                _limitsFailureLogged = true;
+                LogService.Info("Quota Claude indisponible — jauges masquées, métriques de jetons conservées");
+            }
+            return limits;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            // Volontairement muet sur le détail : le message pourrait embarquer un chemin de
+            // credentials. L'absence de quota est déjà signalée une fois plus haut.
+            return null;
+        }
+    }
+}
