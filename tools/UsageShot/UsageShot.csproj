@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\DockPad.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- QuickAccessWindow reference app.ico par pack URI, qui se resout dans l'assembly HOTE :
+         sans cette ressource ici, la cible « window » leve une IOException au chargement du XAML.
+         Les cibles de BrowserShot n'en ont pas besoin, ce sont des dialogs sans icone. -->
+    <Resource Include="..\..\app.ico" Link="app.ico" />
+  </ItemGroup>
+</Project>

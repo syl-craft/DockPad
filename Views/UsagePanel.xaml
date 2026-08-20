@@ -1,0 +1,257 @@
+﻿<UserControl x:Class="DockPad.Views.UsagePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             FontFamily="Segoe UI">
+
+    <UserControl.Resources>
+
+        <!-- Badge « démo » : les chiffres inventés ne doivent pas se lire comme réels. -->
+        <Style x:Key="DemoBadge" TargetType="Border">
+            <Setter Property="Background" Value="#F3F0FF"/>
+            <Setter Property="BorderBrush" Value="#DDD6FE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="4,0"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="UseLayoutRounding" Value="True"/>
+        </Style>
+
+        <!-- Barre de jauge : un ProgressBar retemplaté, la proportionnalité est native. -->
+        <Style x:Key="GaugeBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="100"/>
+            <Setter Property="Background" Value="#EEEEEE"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="3"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True"
+                                ClipToBounds="True">
+                            <Grid>
+                                <Border x:Name="PART_Track"/>
+                                <Border x:Name="PART_Indicator" HorizontalAlignment="Left"
+                                        Background="{TemplateBinding Foreground}" CornerRadius="3"
+                                        SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Un onglet de fournisseur. Bouton plat : cliquable, sans chrome de bouton. -->
+        <Style x:Key="ProviderTab" TargetType="Button">
+            <Setter Property="Padding" Value="9,5"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome"
+                                Background="{Binding Background, Converter={StaticResource StringToBrushConverter}}"
+                                BorderBrush="{Binding BorderBrush, Converter={StaticResource StringToBrushConverter}}"
+                                BorderThickness="1" CornerRadius="8"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#BDBDBD"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Une jauge complète : en-tête « N % session — reset H », puis la barre. -->
+        <DataTemplate x:Key="GaugeTemplate">
+            <StackPanel>
+                <!-- Deux colonnes, pas une cellule partagee : a l'etroit, un « reset 17h53 »
+                     aligne a droite et un « session » aligne a gauche se chevauchent. -->
+                <Grid>
+                    <!-- Le pourcentage passe en priorite (colonne Auto), le reset se tronque
+                         (colonne * avec ellipse) : avec plusieurs onglets la place devient etroite,
+                         et « 38… » est pire que « reset 17h… ». -->
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" HorizontalAlignment="Left" FontSize="11"
+                               Foreground="#8A8A8A">
+                        <Run Text="{Binding RemainingPct, Mode=OneWay}"
+                             FontSize="13" FontWeight="Bold"
+                             Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"/><Run
+                             Text="%" FontSize="13" FontWeight="Bold"
+                             Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"/><Run
+                             Text=" "/><Run Text="{Binding Label, Mode=OneWay}"/>
+                    </TextBlock>
+                    <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                               Margin="8,0,0,0" FontSize="11" Foreground="#8A8A8A"
+                               TextTrimming="CharacterEllipsis"
+                               Text="{Binding Reset, StringFormat=↻ {0}}"
+                               ToolTip="{Binding Reset, StringFormat=Remise à zéro à {0}}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Reset}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+
+                <Grid Margin="0,4,0,0">
+                    <!-- La barre suit le RESTANT, pas le consommé : elle doit s'accorder avec le
+                         nombre affiché au-dessus. Une barre remplie à 62 % sous un « 38 % » se lit
+                         comme un défaut. Jauge de carburant : elle se vide quand on consomme. -->
+                    <ProgressBar Style="{StaticResource GaugeBar}"
+                                 Value="{Binding RemainingPct, Mode=OneWay}"
+                                 Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"
+                                 Visibility="{Binding HasQuota, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <!-- Pas de barre vide quand le quota est inconnu : elle se lirait
+                         « rien consommé ». -->
+                    <TextBlock Text="quota inconnu" FontSize="10" Foreground="#BBBBBB">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasQuota}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Border Background="White" BorderBrush="#E4E4E4" BorderThickness="1" CornerRadius="12"
+            Padding="14,10" MaxWidth="900"
+            SnapsToDevicePixels="True" UseLayoutRounding="True"
+            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+        <StackPanel>
+
+            <!-- Onglets sur leur propre ligne : au-delà de deux fournisseurs, onglets et jauges
+                 ne tiennent pas côte à côte à la largeur de la fenêtre, et le reset se tronquait.
+                 Un seul fournisseur → pas d'onglets, la ligne disparaît entièrement. -->
+                    <ItemsControl ItemsSource="{Binding Tabs}"
+                                  Margin="0,0,0,10" HorizontalAlignment="Left"
+                                  Visibility="{Binding ShowTabs, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource ProviderTab}" Click="Tab_Click"
+                                        ToolTip="{Binding Name}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                Background="{Binding Accent, Converter={StaticResource StringToBrushConverter}}"
+                                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                            <!-- Pile de repli : Segoe UI ne contient ni ✳ ni ⊕, qui
+                                                 tombent en tofu sans Segoe UI Symbol. -->
+                                            <TextBlock Text="{Binding Glyph}" Foreground="White"
+                                                       FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                                                       FontSize="9" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding Name}" Margin="6,0,0,0" FontSize="12"
+                                                   Foreground="#333" VerticalAlignment="Center"
+                                                   FontWeight="{Binding Weight}"/>
+                                        <Border Style="{StaticResource DemoBadge}"
+                                                Visibility="{Binding IsDemo, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <TextBlock Text="démo" FontSize="9" Foreground="#7C3AED"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+            <!-- Fournisseur unique à gauche, les deux jauges à droite -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Onglets, seulement s'il y a un choix à faire -->
+
+                <!-- Fournisseur unique : libellé statique, pas un onglet qui ne mène nulle part -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,16,0"
+                            VerticalAlignment="Center">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowTabs}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <Border Width="16" Height="16" CornerRadius="8"
+                            Background="{Binding SoloAccent, Converter={StaticResource StringToBrushConverter}}"
+                            SnapsToDevicePixels="True" UseLayoutRounding="True">
+                        <TextBlock Text="{Binding SoloGlyph}" Foreground="White"
+                                   FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                                   FontSize="9" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="{Binding SoloName}" Margin="6,0,0,0" FontSize="12"
+                               FontWeight="SemiBold" Foreground="#333" VerticalAlignment="Center"/>
+                    <Border Style="{StaticResource DemoBadge}"
+                            Visibility="{Binding IsDemo, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="démo" FontSize="9" Foreground="#7C3AED"/>
+                    </Border>
+                </StackPanel>
+
+                <Grid Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ContentControl Grid.Column="0" Content="{Binding SessionGauge}"
+                                    ContentTemplate="{StaticResource GaugeTemplate}"
+                                    Margin="0,0,8,0"/>
+                    <ContentControl Grid.Column="1" Content="{Binding WeekGauge}"
+                                    ContentTemplate="{StaticResource GaugeTemplate}"
+                                    Margin="8,0,0,0"/>
+                </Grid>
+            </Grid>
+
+            <!-- Métriques : une colonne par mesure, filet de séparation au-dessus -->
+            <Border BorderBrush="#F0F0F0" BorderThickness="0,1,0,0" Margin="0,10,0,0" Padding="0,8,0,0">
+                <ItemsControl ItemsSource="{Binding Metrics}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="#ECECEC" BorderThickness="1,0,0,0" Padding="10,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Label}" FontSize="10"
+                                               Foreground="#A5A5A5" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Value}" FontSize="13" FontWeight="Bold"
+                                               Foreground="#222" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

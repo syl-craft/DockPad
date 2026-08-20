@@ -9,6 +9,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DockPad.Models;
 using DockPad.Services;
+using DockPad.Services.Usage;
+using DockPad.Views;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace DockPad;
@@ -35,6 +37,32 @@ public partial class QuickAccessWindow : Window
 
         var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
+
+        UsageBanner.ViewModel = new UsageViewModel();
+        // Un seul point de branchement pour le bandeau : l'état d'affichage réel de la fenêtre.
+        // Brancher chaque Show()/Hide() du code laisserait passer les prochains appels ajoutés.
+        IsVisibleChanged += (_, _) => SyncUsageBanner();
+        StateChanged += (_, _) => SyncUsageBanner();
+    }
+
+    /// <summary>
+    /// Le bandeau, exposé pour l'outil de capture : celui-ci doit substituer un ViewModel de
+    /// démonstration avant tout affichage, sinon la capture embarquerait la consommation réelle de
+    /// l'utilisateur. Les champs nommés en XAML sont internes, donc invisibles depuis l'outil.
+    /// </summary>
+    public UsagePanel UsageBannerPanel => UsageBanner;
+
+    /// <summary>
+    /// Le bandeau n'interroge les fournisseurs que quand la fenêtre est réellement sous les yeux.
+    /// DockPad passe l'essentiel de son temps masqué dans la barre système : lire du disque et
+    /// appeler le réseau pour une fenêtre invisible ou réduite ne sert à rien.
+    /// </summary>
+    private void SyncUsageBanner()
+    {
+        if (IsVisible && WindowState != WindowState.Minimized)
+            UsageBanner.Start();
+        else
+            UsageBanner.Stop();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
