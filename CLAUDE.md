@@ -278,7 +278,11 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Config stockée dans `%APPDATA%\DockPad\browsers.json`, incluse dans **💾 Sauvegarder la configuration**
 
 ### Bandeau Usage IA
-Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWindow` : toolbar / grille / **bandeau** / pagination. Masqué, il est en `Collapsed` et ne prend aucune place.
+Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWindow` : toolbar / grille / **bandeau** / pagination.
+
+**Le `Collapsed` porte sur le `UserControl`, pas sur son contenu.** La fenêtre hôte pose une largeur et une hauteur explicites sur ce contrôle pour l'aligner sur les tuiles : replier le seul `Border` intérieur laissait ces 90 px et leur marge occuper la place, soit un grand vide sous la grille quand le bandeau est désactivé. La visibilité est donc posée sur le contrôle lui-même, en réaction à `UsageViewModel.IsVisible`. La fenêtre étant en `SizeToContent`, elle se rétracte d'autant.
+
+**Désactivé = au repos.** Aucun fournisseur n'est interrogé (`RefreshAsync` court-circuite `UsageService`), et le `DispatcherTimer` est arrêté : sans ça il continuait de battre chaque minute pour relire la config et constater qu'il n'y a rien à faire.
 
 - **Contenu** : un onglet par fournisseur (pastille colorée + nom + badge « démo »), les deux jauges *session* et *semaine* sur une seule ligne chacune (pourcentage **consommé** en gras dans la couleur de la jauge, barre de 6 px, `↻ heure de reset`), puis six colonnes de métriques — Session, Jour, Mois, Requêtes, Coût est., Modèle. Coût décoché → cinq colonnes
 - **Lien vers la page officielle du fournisseur** à droite de la ligne haute : sa pastille, cliquable. L'affordance repose sur le curseur main, le fond au survol et l'infobulle qui nomme l'URL — la pastille est identique à celle de gauche, rien d'autre ne la distingue. L'URL est portée par `AiUsage.UsageUrl`, décidée dans le code du fournisseur et jamais lue depuis un fichier ; le schéma est tout de même vérifié avant `Process.Start` — avec `UseShellExecute`, une chaîne quelconque ouvrirait aussi bien un fichier ou une commande. Vide → le lien est masqué (cas du provider Démo dans l'application)
@@ -487,6 +491,7 @@ UsageShot.exe panel      docs/screenshots/usage-panel.png       # cas par defaut
 UsageShot.exe panel-tabs docs/screenshots/usage-panel-tabs.png  # deux fournisseurs, mecanique d'onglets
 UsageShot.exe config     docs/screenshots/usage-config.png      # fenetre de reglages
 UsageShot.exe window     docs/screenshots/usage-window.png      # integration dans la fenetre
+UsageShot.exe window-off ...                                    # bandeau desactive : verifie qu'il ne laisse aucune place
 ```
 
 - **Fixture exclusivement `DemoUsageProvider`** (quatre instances), `ClaudeUsageProvider` délibérément absent : les vrais chiffres de consommation sont des données personnelles, et une capture doit être reproductible. C'est la raison d'être de la liste injectable de `UsageService` — le registre de production reste intact

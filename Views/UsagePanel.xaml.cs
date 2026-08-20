@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using DockPad.Models;
@@ -25,10 +26,29 @@ public partial class UsagePanel : UserControl
         get => _viewModel;
         set
         {
+            if (_viewModel is not null) _viewModel.PropertyChanged -= OnViewModelChanged;
             _viewModel = value;
             DataContext = value;
+            if (_viewModel is not null) _viewModel.PropertyChanged += OnViewModelChanged;
+            SyncVisibility();
         }
     }
+
+    private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(UsageViewModel.IsVisible)) SyncVisibility();
+    }
+
+    /// <summary>
+    /// Replie le contrôle entier, et non son seul contenu.
+    /// </summary>
+    /// <remarks>
+    /// La fenêtre hôte pose une largeur et une hauteur explicites sur ce contrôle pour l'aligner sur
+    /// les tuiles. Masquer le <c>Border</c> intérieur laissait donc ces 90 px et leur marge occuper
+    /// la place : un grand vide sous la grille quand le bandeau est désactivé.
+    /// </remarks>
+    private void SyncVisibility() =>
+        Visibility = _viewModel?.IsVisible == true ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>Démarre le rafraîchissement. À appeler quand la fenêtre hôte s'affiche.</summary>
     public void Start() => _viewModel?.Start();

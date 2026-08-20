@@ -127,8 +127,7 @@
 
     <Border Background="White" BorderBrush="#E4E4E4" BorderThickness="1" CornerRadius="12"
             Padding="12,8"
-            SnapsToDevicePixels="True" UseLayoutRounding="True"
-            Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            SnapsToDevicePixels="True" UseLayoutRounding="True">
         <!-- Centré : la hauteur du bandeau est imposée (celle d'une tuile), le contenu est un peu
              plus court — sans centrage, le mou tomberait tout entier en bas. -->
         <StackPanel VerticalAlignment="Center">

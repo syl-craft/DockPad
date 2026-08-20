@@ -44,7 +44,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|panel-tabs|window|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|window|window-off|config> <cheminPng>");
             return;
         }
 
@@ -59,7 +59,10 @@ internal static class Program
 
         // « panel-tabs » rend un second fournisseur visible : le cas par défaut n'a qu'un seul
         // fournisseur, et c'est celui qu'il faut montrer en premier.
-        UsageConfigService.Save(FixtureConfig(secondVisible: target == "panel-tabs"));
+        var fixture = FixtureConfig(secondVisible: target == "panel-tabs");
+        // « window-off » : bandeau désactivé, pour vérifier qu'il ne laisse aucune place derrière lui.
+        if (target == "window-off") fixture.Enabled = false;
+        UsageConfigService.Save(fixture);
 
         var app = new App();
         app.InitializeComponent();
@@ -74,7 +77,7 @@ internal static class Program
             return;
         }
 
-        if (target == "window")
+        if (target is "window" or "window-off")
         {
             CaptureWindow(outPath);
             return;
@@ -89,7 +92,7 @@ internal static class Program
 
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | window | config)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | window | window-off | config)");
         }
 
         // Show + Dispatcher.Run : ShowDialog retourne immédiatement ici (Application jamais Run).

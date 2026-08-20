@@ -23,6 +23,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     private readonly Func<DateTime> _clock;
 
     private DispatcherTimer? _timer;
+
+    /// <summary>La fenêtre hôte est affichée : le bandeau doit se tenir à jour.</summary>
+    private bool _running;
     private CancellationTokenSource? _inFlight;
 
     private UsageConfig _config = new();
@@ -74,6 +77,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// <summary>Démarre le rafraîchissement périodique. À appeler quand la fenêtre s'affiche.</summary>
     public void Start()
     {
+        _running = true;
         _timer ??= CreateTimer();
         _timer.Start();
         _ = RefreshAsync();
@@ -85,6 +89,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// </summary>
     public void Stop()
     {
+        _running = false;
         _timer?.Stop();
         Cancel();
     }
@@ -106,6 +111,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         try
         {
             _config = _loadConfig();
+
+            // Bandeau désactivé : on arrête aussi le timer. Sans ça il continuait de battre toutes
+            // les minutes pour relire la config et constater qu'il n'y a rien à faire — aucun
+            // fournisseur n'était interrogé, mais « désactivé » doit vouloir dire au repos.
+            if (_running && !_config.Enabled) _timer?.Stop();
+            else if (_running) _timer?.Start();
+
             _snapshots = _config.Enabled
                 ? await _service.RefreshAsync(_config, cts.Token).ConfigureAwait(true)
                 : [];

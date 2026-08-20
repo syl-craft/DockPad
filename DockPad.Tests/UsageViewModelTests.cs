@@ -243,6 +243,36 @@ public class UsageViewModelTests
     }
 
     [Fact]
+    public async Task ReglageDesactive_NInterrogeAucunFournisseur()
+    {
+        // « Désactivé » doit couper la surveillance, pas seulement l'affichage : aucun scan disque
+        // ni appel réseau, pour aucun fournisseur.
+        var spies = new[] { new CountingProvider("a"), new CountingProvider("b") };
+        var config = ConfigFor(("a", false), ("b", false));
+        config.Enabled = false;
+        var vm = new UsageViewModel(new UsageService(spies), () => config,
+                                    () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        await vm.RefreshAsync();
+
+        Assert.All(spies, spy => Assert.Equal(0, spy.ReadCount));
+    }
+
+    private sealed class CountingProvider(string id) : IUsageProvider
+    {
+        public int ReadCount { get; private set; }
+        public string Id => id;
+        public string Name => id;
+        public AiProbe Probe() => new() { Available = true, DisplayName = id };
+
+        public Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            ReadCount++;
+            return Task.FromResult<AiUsage?>(null);
+        }
+    }
+
+    [Fact]
     public async Task IsVisible_ProviderSansDonnees_Faux()
     {
         // `null` seul lierait le tableau entier de params, pas un élément.
