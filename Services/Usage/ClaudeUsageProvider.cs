@@ -20,10 +20,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
     private readonly ClaudeLimitsClient _limits;
     private readonly Func<DateTime> _clock;
 
-    /// <summary>
-    /// L'indisponibilité du quota est signalée une seule fois par session : l'endpoint n'est pas
-    /// documenté, et un journal à chaque rafraîchissement noierait les vraies anomalies.
-    /// </summary>
+    /// <summary>Vrai dès que l'indisponibilité du quota a été signalée dans le journal.</summary>
     private static bool _limitsFailureLogged;
 
     public string Id => "claude";
@@ -123,22 +120,33 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             if (token is null) return null;
 
             var limits = await _limits.FetchAsync(token, ct).ConfigureAwait(false);
-            if (limits is null && !_limitsFailureLogged)
-            {
-                _limitsFailureLogged = true;
-                LogService.Info("Quota Claude indisponible — jauges masquées, métriques de jetons conservées");
-            }
+            if (limits is null) NoteQuotaUnavailable("réponse inexploitable");
             return limits;
         }
         catch (OperationCanceledException)
         {
             throw;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Volontairement muet sur le détail : le message pourrait embarquer un chemin de
-            // credentials. L'absence de quota est déjà signalée une fois plus haut.
+            // Le type de l'exception, jamais son message : celui-ci pourrait embarquer le chemin du
+            // fichier de credentials. Sans cette notice, une exception ici était totalement
+            // silencieuse — le journal ne permettait pas de distinguer « quota obtenu » de
+            // « quota en échec », alors que c'est la première question qu'on se pose.
+            NoteQuotaUnavailable(ex.GetType().Name);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Signale l'indisponibilité du quota <b>une seule fois par session</b> : l'endpoint n'est pas
+    /// documenté, et un journal à chaque rafraîchissement noierait les vraies anomalies.
+    /// </summary>
+    private static void NoteQuotaUnavailable(string cause)
+    {
+        if (_limitsFailureLogged) return;
+        _limitsFailureLogged = true;
+        LogService.Info($"Quota Claude indisponible ({cause}) — jauges masquées, "
+                      + "métriques de jetons conservées");
     }
 }
