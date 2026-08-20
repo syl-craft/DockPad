@@ -39,26 +39,30 @@ public partial class QuickAccessWindow : Window
         TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
 
         UsageBanner.ViewModel = new UsageViewModel();
-        Loaded += (_, _) => AlignBannerToGrid();
+        // LayoutUpdated et non Loaded : la mise en page a lieu même quand la fenêtre n'est pas
+        // affichée (l'outil de capture mesure et arrange son contenu hors écran), et Loaded ne
+        // se déclenche jamais dans ce cas.
+        EventHandler? align = null;
+        align = (_, _) =>
+        {
+            if (ShortcutsGrid.ActualWidth <= 0) return;
+            if (ShortcutsGrid.Children.Count == 0) return;
+            if (ShortcutsGrid.Children[0] is not FrameworkElement tile || tile.ActualHeight <= 0) return;
+
+            // Dimensions prises sur la grille et sur une tuile réelle, pas recopiées depuis le
+            // style : une seule source de vérité, qui suit automatiquement un changement de taille
+            // de tuile. La largeur retire les marges horizontales d'une tuile, sinon le bandeau
+            // dépasse de 5 px de chaque côté — la grille mesure les boîtes de mise en page, pas les
+            // bords visibles.
+            UsageBanner.Width = ShortcutsGrid.ActualWidth - (tile.Margin.Left + tile.Margin.Right);
+            UsageBanner.Height = tile.ActualHeight;
+            LayoutUpdated -= align;   // se désabonner évite la boucle : poser la taille relance un passage
+        };
+        LayoutUpdated += align;
         // Un seul point de branchement pour le bandeau : l'état d'affichage réel de la fenêtre.
         // Brancher chaque Show()/Hide() du code laisserait passer les prochains appels ajoutés.
         IsVisibleChanged += (_, _) => SyncUsageBanner();
         StateChanged += (_, _) => SyncUsageBanner();
-    }
-
-    /// <summary>
-    /// Aligne la largeur du bandeau sur celle du bloc de tuiles.
-    /// </summary>
-    /// <remarks>
-    /// Posée une seule fois, en code. Un binding sur <c>ShortcutsGrid.ActualWidth</c> fait boucler
-    /// la mise en page : la largeur du bandeau change la hauteur de sa ligne, ce qui fait
-    /// apparaître ou disparaître la barre de défilement de la grille, ce qui change la largeur
-    /// disponible — et on recommence. Une valeur unique suffit de toute façon : les tuiles ont une
-    /// taille fixe, donc le bloc garde la même largeur quand la fenêtre est redimensionnée.
-    /// </remarks>
-    private void AlignBannerToGrid()
-    {
-        if (ShortcutsGrid.ActualWidth > 0) UsageBanner.Width = ShortcutsGrid.ActualWidth;
     }
 
     /// <summary>

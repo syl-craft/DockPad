@@ -13,7 +13,7 @@ public class DemoUsageProviderTests
 {
     private static DemoUsageProvider Provider(Func<DateTime>? clock = null) =>
         new("demo", "Démo", "D", "#7C3AED",
-            new DemoUsageProvider.DemoValues("claude-sonnet-5", 12_400, 86_000, 1_200_000, 47, "$3.80",
+            new DemoUsageProvider.DemoValues("claude-sonnet-5", 12_400, 86_000, 1_200_000, 47, "$4",
                                              62, TimeSpan.FromHours(2), 44, TimeSpan.FromDays(4)),
             clock);
 

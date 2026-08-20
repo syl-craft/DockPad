@@ -71,22 +71,24 @@ public class ClaudePricingTests
     }
 
     [Fact]
-    public void Format_DonneDesDollarsADeuxDecimales()
+    public void Format_ArrondiALUnite_SansCentimes()
     {
-        Assert.Equal("$3.80", ClaudePricing.Format(3.8m));
-        Assert.Equal("$0.00", ClaudePricing.Format(0m));
-        Assert.Equal("$12.34", ClaudePricing.Format(12.344m));
+        // Une estimation ne doit pas avoir l'allure d'un relevé bancaire.
+        Assert.Equal("$4", ClaudePricing.Format(3.8m));
+        Assert.Equal("$0", ClaudePricing.Format(0m));
+        Assert.Equal("$12", ClaudePricing.Format(12.344m));
+        Assert.Equal("$2021", ClaudePricing.Format(2021.14m));
     }
 
     [Fact]
-    public void Format_SousCultureFrancaise_GardeLePointDecimal()
+    public void Format_SousCultureFrancaise_GardeLeSymboleDollar()
     {
         // La devise est celle de la source (USD) : « 3,80 $ » suggérerait une conversion.
         var precedente = CultureInfo.CurrentCulture;
         try
         {
             CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
-            Assert.Equal("$3.80", ClaudePricing.Format(3.8m));
+            Assert.Equal("$4", ClaudePricing.Format(3.8m));
         }
         finally { CultureInfo.CurrentCulture = precedente; }
     }

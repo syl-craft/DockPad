@@ -90,7 +90,7 @@ public sealed class DemoUsageProvider : IUsageProvider
         id: "demo", name: "Démo", glyph: "D", accent: "#7C3AED",
         values: new DemoValues(
             Model: "claude-sonnet-5",
-            Session: 12_400, Day: 86_000, Month: 1_200_000, Requests: 47, Cost: "$3.80",
+            Session: 12_400, Day: 86_000, Month: 1_200_000, Requests: 47, Cost: "$4",
             SessionUsedPct: 62, SessionResetIn: TimeSpan.FromHours(2) + TimeSpan.FromMinutes(40),
             WeekUsedPct: 44, WeekResetIn: TimeSpan.FromDays(4)));
 }

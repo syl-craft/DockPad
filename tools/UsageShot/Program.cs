@@ -74,6 +74,12 @@ internal static class Program
             return;
         }
 
+        if (target == "window")
+        {
+            CaptureWindow(outPath);
+            return;
+        }
+
         Window win;
         switch (target)
         {
@@ -81,16 +87,6 @@ internal static class Program
                 win = new UsageConfigDialog { WindowStartupLocation = WindowStartupLocation.CenterScreen };
                 break;
 
-            case "window":
-                var quick = new QuickAccessWindow { WindowStartupLocation = WindowStartupLocation.CenterScreen };
-                // Le bandeau se construit avec le registre de production, qui lirait le vrai profil
-                // Claude : on le remplace par la fixture avant tout affichage.
-                quick.UsageBannerPanel.ViewModel = FixtureViewModel();
-                // La fenêtre a déjà démarré son bandeau sur l'ancien ViewModel via
-                // IsVisibleChanged : il faut relancer celui qu'on vient de substituer.
-                quick.Loaded += (_, _) => quick.UsageBannerPanel.Start();
-                win = quick;
-                break;
 
             default:
                 throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | window | config)");
@@ -103,12 +99,41 @@ internal static class Program
         System.Windows.Threading.Dispatcher.Run();
     }
 
+    /// <summary>
+    /// Rend le contenu de <c>QuickAccessWindow</c> sans l'afficher, pour juger l'intégration du
+    /// bandeau — alignement sur les tuiles, écart vertical, hauteur.
+    /// </summary>
+    /// <remarks>
+    /// Sans <c>Show()</c> : afficher cette fenêtre dans un hôte qui n'est pas une vraie application
+    /// déclenche une boucle qui affame le dispatcher, et rien ne se rend jamais. Mesurer et arranger
+    /// son contenu contourne l'instanciation de la fenêtre. Le ViewModel de production est remplacé
+    /// par la fixture avant toute lecture : sinon la capture embarquerait la consommation réelle.
+    /// </remarks>
+    private static void CaptureWindow(string outPath)
+    {
+        var quick = new QuickAccessWindow();
+        // Taille lue sur la fenêtre elle-même : une constante recopiée ici se désynchroniserait du
+        // XAML à la première retouche.
+        double width = quick.Width, height = quick.Height;
+        quick.UsageBannerPanel.ViewModel = FixtureViewModel();
+        quick.UsageBannerPanel.Start();
+
+        var root = (FrameworkElement)quick.Content;
+        root.Measure(new Size(width, height));
+        root.Arrange(new Rect(0, 0, width, height));
+        root.UpdateLayout();
+
+        Save(root, width, height, outPath, "window");
+    }
+
     /// <summary>Rend le bandeau seul, sur le fond de la grille, sans passer par une fenêtre.</summary>
     private static void CapturePanel(string outPath)
     {
-        // 708 = largeur du bloc de tuiles (6 × 118), sur laquelle le bandeau est aligné dans la
-        // fenêtre. Capturer plus large donnerait une image flatteuse mais irréaliste.
-        const double width = 708;   // 900 de bandeau + 24 de marge de chaque côté
+        // 698 = largeur réelle du bandeau dans la fenêtre : le bloc de tuiles (6 × 118) moins les
+        // marges horizontales d'une tuile, pour affleurer leurs bords visibles. Capturer plus large
+        // donnerait une image flatteuse mais irréaliste — c'est à cette largeur que les jauges se
+        // serrent.
+        const double width = 698;   // 900 de bandeau + 24 de marge de chaque côté
 
         var panel = new UsagePanel { ViewModel = FixtureViewModel() };
         var frame = new Border
@@ -145,15 +170,15 @@ internal static class Program
     private static List<IUsageProvider> FixtureProviders() =>
     [
         new DemoUsageProvider("claude", "Claude", "✳", "#D97757",
-            new DemoUsageProvider.DemoValues("claude-opus-5", 12_400, 86_000, 1_200_000, 47, "$3.80",
+            new DemoUsageProvider.DemoValues("claude-opus-5", 12_400, 86_000, 1_200_000, 47, "$4",
                 62, TimeSpan.FromHours(2) + TimeSpan.FromMinutes(40), 44, TimeSpan.FromDays(4))),
 
         new DemoUsageProvider("codex", "Codex", "C", "#10A37F",
-            new DemoUsageProvider.DemoValues("gpt-5-codex", 8_100, 54_000, 760_000, 31, "$2.10",
+            new DemoUsageProvider.DemoValues("gpt-5-codex", 8_100, 54_000, 760_000, 31, "$2",
                 38, TimeSpan.FromHours(4), 27, TimeSpan.FromDays(4))),
 
         new DemoUsageProvider("gemini", "Gemini", "G", "#4285F4",
-            new DemoUsageProvider.DemoValues("gemini-2.5-pro", 3_600, 22_000, 310_000, 14, "$0.90",
+            new DemoUsageProvider.DemoValues("gemini-2.5-pro", 3_600, 22_000, 310_000, 14, "$1",
                 21, TimeSpan.FromHours(9), 12, TimeSpan.FromDays(4))),
 
         new DemoUsageProvider("copilot", "Copilot", "⊕", "#8957E5",

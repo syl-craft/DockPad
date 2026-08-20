@@ -286,6 +286,8 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 - **Les onglets ont leur propre ligne** : au-delà de deux fournisseurs, onglets et jauges ne tiennent pas côte à côte à 850 px, et le texte de reset se tronquait
 - **Aucun calcul dans le XAML** : tout vient de `UsageViewModel`, testé sans WPF. Les couleurs voyagent en chaînes (`#34A853`) converties par `StringToBrushConverter` — la décision de couleur appartient à la logique
 - **Valeur inconnue → `—`, jamais `0`.** Une session à zéro signifie « aucun bloc actif », pas « rien consommé ». Une fenêtre de quota absente affiche « quota inconnu » plutôt qu'une barre vide, qui se lirait « rien consommé »
+- **Géométrie calée sur les tuiles** : largeur = largeur du bloc de tuiles moins les marges horizontales d'une tuile (pour affleurer leurs bords visibles), hauteur = hauteur d'une tuile. Les deux sont lues **sur une tuile réelle** au premier `LayoutUpdated`, jamais recopiées depuis le style — une seule source de vérité, qui suit un changement de taille de tuile. `LayoutUpdated` et non `Loaded` : la mise en page a lieu même sans fenêtre affichée, ce dont l'outil de capture a besoin ; se désabonner après le premier passage évite la boucle
+- **La grille de tuiles est ancrée en bas** (`VerticalAlignment="Bottom"`), et la fenêtre fait 630 px de haut : centrée, la grille flotte dès qu'il reste du mou et l'écart avec le bandeau n'est plus déterminé (mesuré 42 px au lieu des 10 voulus). Ancrée, la marge basse de 5 px plus les 5 px de marge d'une tuile donnent exactement le pas entre deux tuiles
 - **Cycle de vie** branché sur `IsVisibleChanged` + `StateChanged` de la fenêtre, pas sur chaque `Show()`/`Hide()` : un seul point, qui couvre les appels ajoutés plus tard. Rafraîchissement toutes les 60 s **uniquement quand la fenêtre est visible et non réduite** — DockPad passe l'essentiel de son temps dans la barre système
 - **Glyphes** : `FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"` obligatoire sur les pastilles — Segoe UI ne contient ni ✳ (U+2733) ni ⊕, qui tombent en tofu
 
@@ -480,7 +482,7 @@ dotnet build tools/UsageShot
 UsageShot.exe panel      docs/screenshots/usage-panel.png       # cas par defaut : un seul fournisseur
 UsageShot.exe panel-tabs docs/screenshots/usage-panel-tabs.png  # deux fournisseurs, mecanique d'onglets
 UsageShot.exe config     docs/screenshots/usage-config.png      # fenetre de reglages
-UsageShot.exe window     ...                                    # HORS SERVICE, voir ci-dessous
+UsageShot.exe window     docs/screenshots/usage-window.png      # integration dans la fenetre
 ```
 
 - **Fixture exclusivement `DemoUsageProvider`** (quatre instances), `ClaudeUsageProvider` délibérément absent : les vrais chiffres de consommation sont des données personnelles, et une capture doit être reproductible. C'est la raison d'être de la liste injectable de `UsageService` — le registre de production reste intact
@@ -489,10 +491,10 @@ UsageShot.exe window     ...                                    # HORS SERVICE, 
 - **`Start()` avant toute mesure** : sans données le bandeau est `Collapsed` et la capture est vide
 - **`app.ico` doit être liée dans le csproj de l'outil** (`<Resource Include="..\..\app.ico" Link="app.ico" />`) : `QuickAccessWindow` la référence par pack URI, qui se résout dans l'assembly **hôte**. Sans elle, la cible `window` lève une `IOException` au chargement du XAML. Les cibles de `BrowserShot` n'en ont pas besoin, ce sont des dialogs sans icône
 - **Rendre l'élément de contenu, pas le `Window`** : sur une fenêtre sans chrome (`WindowStyle=None`) le rendu du `Window` lui-même sort transparent
-- **Largeur de capture = 708 px**, la largeur du bloc de tuiles (6 × 118) sur laquelle le bandeau est aligné. Capturer plus large donne une image flatteuse et fausse : c'est à cette largeur que les jauges se serrent
+- **Largeur de capture = 698 px**, la largeur réelle du bandeau : le bloc de tuiles (6 × 118) moins les marges horizontales d'une tuile. Capturer plus large donne une image flatteuse et fausse — c'est à cette largeur que les jauges se serrent
 - **La fixture n'expose que deux fournisseurs visibles**, et un seul pour la cible `panel`. Quatre onglets écrasaient les jauges à la largeur réelle ; et le cas par défaut n'a de toute façon qu'un fournisseur
 
-> **Cible `window` hors service.** Le processus tourne à 80 % d'un cœur et le dispatcher n'exécute plus rien — ni `ContentRendered`, ni un `DispatcherTimer` posé après `Show`. C'est la signature d'une boucle d'invalidation qui affame les priorités inférieures. Reproduit **y compris au commit où cette cible produisait encore une image correcte**, donc la cause n'est pas la mise en page du bandeau : chercher du côté de ce que `QuickAccessWindow` déclenche hors d'une vraie application (hotkey global, hook WndProc, `PopulateGrid`). Les cibles `panel`, `panel-tabs` et `config` fonctionnent.
+> **La cible `window` ne doit jamais appeler `Show()`.** Affichée dans un hôte qui n'est pas une vraie application, `QuickAccessWindow` déclenche une boucle qui affame le dispatcher : le processus tourne à 80 % d'un cœur et rien ne s'exécute plus — ni `ContentRendered`, ni un `DispatcherTimer` posé après `Show`. Reproduit y compris à un commit où cette cible produisait encore une image correcte, donc ce n'est pas la mise en page. Le contournement est de **mesurer et arranger son contenu hors écran**, comme la cible `panel` : l'instanciation de la fenêtre est évitée et le rendu est immédiat.
 
 `tools/McpShot <tabIndex> <cheminPng>` — fenêtre Serveur MCP, avec des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées :
 

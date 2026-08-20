@@ -4,8 +4,8 @@
         xmlns:views="clr-namespace:DockPad.Views"
         Title="DockPad"
         Icon="pack://application:,,,/app.ico"
-        Width="850" Height="700"
-        MinWidth="850" MinHeight="600"
+        Width="850" Height="630"
+        MinWidth="850" MinHeight="560"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
@@ -250,9 +250,18 @@
 
         <!-- Grille de raccourcis 4 × 6 -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <!-- La hauteur de fenêtre (630) est celle qu'il faut juste pour la toolbar, les quatre
+                 rangées, le bandeau et la pagination : plus haut laisserait une bande vide sous la
+                 toolbar, la grille étant ancrée en bas.
+
+                 Ancré en bas, et non centré : centrée verticalement, la grille flotte dès qu'il
+                 reste du mou dans la ligne, et l'écart avec le bandeau n'est plus déterminé (mesuré
+                 42 px au lieu des 10 voulus). Ancrée en bas, la marge basse de 5 px plus les 5 px de
+                 marge d'une tuile donnent exactement le pas entre deux tuiles. Le mou passe
+                 au-dessus de la grille. -->
             <Grid x:Name="ShortcutsGrid"
-                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                  Margin="20">
+                  HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                  Margin="20,20,20,5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -271,11 +280,11 @@
         </ScrollViewer>
 
         <!-- Bandeau Usage IA. Masqué, il ne prend aucune place (Collapsed, pas Hidden).
-             Largeur alignée sur la grille de tuiles, posée une fois par le code (voir
-             AlignBannerToGrid) : ni marges fixes, qui laisseraient le bandeau dépasser dès qu'on
-             élargit la fenêtre, ni binding sur ActualWidth, qui fait boucler la mise en page. -->
+             Largeur alignée sur la grille de tuiles, posée une fois par le code au premier
+             LayoutUpdated : ni marges fixes, qui laisseraient le bandeau dépasser dès qu'on élargit
+             la fenêtre, ni binding sur ActualWidth, qui fait boucler la mise en page. -->
         <views:UsagePanel x:Name="UsageBanner" Grid.Row="2"
-                          HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                          HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
         <!-- Barre de pagination -->
         <Border Grid.Row="3" Background="White" Padding="12,10"

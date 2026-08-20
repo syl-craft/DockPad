@@ -17,7 +17,7 @@ public class UsageViewModelTests
 
     private static AiUsage Usage(string id, string name = "", bool demo = false,
                                  long session = 12_400, long day = 86_000, long month = 1_200_000,
-                                 int requests = 47, string cost = "$3.80", string model = "claude-opus-5",
+                                 int requests = 47, string cost = "$4", string model = "claude-opus-5",
                                  int? sessionUsed = 62, int? weekUsed = 44) => new()
     {
         ProviderId = id,
@@ -63,7 +63,7 @@ public class UsageViewModelTests
 
         Assert.Equal(6, vm.Metrics.Count);
         Assert.Equal("Coût est.", vm.Metrics[4].Label);
-        Assert.Equal("$3.80", vm.Metrics[4].Value);
+        Assert.Equal("$4", vm.Metrics[4].Value);
         Assert.Equal("Modèle", vm.Metrics[5].Label);
     }
 

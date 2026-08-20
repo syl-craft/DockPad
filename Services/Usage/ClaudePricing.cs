@@ -64,9 +64,16 @@ public static class ClaudePricing
              +  cacheRead  * rate.Input * CacheReadMultiplier) / 1_000_000m;
     }
 
-    /// <summary>Coût formaté en dollars, culture figée : « $3.80 ».</summary>
+    /// <summary>
+    /// Coût formaté en dollars, arrondi à l'unité et culture figée : « $2021 ».
+    /// </summary>
+    /// <remarks>
+    /// Pas de centimes : la valeur est une estimation à partir de tarifs publics, sur un abonnement
+    /// qui ne facture pas au jeton. Afficher deux décimales donnerait à une approximation l'allure
+    /// d'un relevé bancaire.
+    /// </remarks>
     public static string Format(decimal usd) =>
-        usd.ToString("$0.00", CultureInfo.InvariantCulture);
+        usd.ToString("$0", CultureInfo.InvariantCulture);
 
     private static Rate RateFor(string model)
     {

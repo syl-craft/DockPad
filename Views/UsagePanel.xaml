@@ -140,7 +140,9 @@
             Padding="12,8"
             SnapsToDevicePixels="True" UseLayoutRounding="True"
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-        <StackPanel>
+        <!-- Centré : la hauteur du bandeau est imposée (celle d'une tuile), le contenu est un peu
+             plus court — sans centrage, le mou tomberait tout entier en bas. -->
+        <StackPanel VerticalAlignment="Center">
 
             <!-- Une seule ligne : sélecteur de fournisseur, puis les deux jauges. -->
             <Grid>
