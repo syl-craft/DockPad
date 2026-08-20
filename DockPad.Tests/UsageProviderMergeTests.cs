@@ -205,6 +205,24 @@ public class UsageProviderMergeTests
     }
 
     [Fact]
+    public void Detect_ConfigVide_CreeLesEntreesAvecLeurMasquageParDefaut()
+    {
+        // Chemin du tout premier lancement : sans cette détection à froid, HiddenByDefault n'agit
+        // jamais et un fournisseur absent de la config est traité comme visible — le provider de
+        // démonstration s'afficherait dès la première ouverture.
+        var config = AiDetectionService.Detect(
+            [
+                new FakeProvider("reel", "Réel", new AiProbe { Available = true, DisplayName = "Réel" }),
+                new FakeProvider("demo", "Démo", new AiProbe { Available = true, DisplayName = "Démo",
+                                                               IsDemo = true, HiddenByDefault = true }),
+            ],
+            new UsageConfig());
+
+        Assert.False(config.Providers.Single(p => p.Id == "reel").Hidden);
+        Assert.True(config.Providers.Single(p => p.Id == "demo").Hidden);
+    }
+
+    [Fact]
     public void Detect_ConserveLesAutresReglages()
     {
         var config = new UsageConfig { AlertThreshold = 40, ShowCost = false, DefaultProviderId = "claude" };

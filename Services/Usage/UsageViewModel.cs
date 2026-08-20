@@ -34,7 +34,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                           Func<DateTime>? clock = null)
     {
         _service = service ?? new UsageService();
-        _loadConfig = loadConfig ?? UsageConfigService.Load;
+        // LoadForStartup et non Load : au premier lancement la config n'a aucun fournisseur, et
+        // sans détection à froid le provider de démonstration serait visible d'emblée.
+        _loadConfig = loadConfig ?? AiDetectionService.LoadForStartup;
         _clock = clock ?? (() => DateTime.Now);
     }
 

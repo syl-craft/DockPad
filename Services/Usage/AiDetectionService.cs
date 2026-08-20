@@ -39,6 +39,29 @@ public static class AiDetectionService
     }
 
     /// <summary>
+    /// Config du démarrage : au tout premier lancement, <c>usage.json</c> n'existe pas et n'a donc
+    /// aucun fournisseur. On détecte une fois et on enregistre.
+    /// </summary>
+    /// <remarks>
+    /// Sans ce démarrage à froid, <c>AiProbe.HiddenByDefault</c> n'agirait jamais : aucune fusion
+    /// n'aurait eu lieu, et un fournisseur absent de la config est traité comme visible — le
+    /// provider de démonstration s'afficherait donc dès la première ouverture. Même principe que la
+    /// détection des navigateurs, qui se déclenche aussi quand la liste est vide.
+    /// </remarks>
+    public static UsageConfig LoadForStartup()
+    {
+        lock (ConfigLock.Gate)
+        {
+            var config = UsageConfigService.Load();
+            if (config.Providers.Count > 0) return config;
+
+            config = Detect(UsageProviderRegistry.All, config);
+            UsageConfigService.Save(config);
+            return config;
+        }
+    }
+
+    /// <summary>
     /// Fusion additive, clé <c>Id</c>. Pure : c'est ici que vivent les règles de préservation, et
     /// c'est ce qui les rend testables sans toucher au disque.
     /// </summary>
