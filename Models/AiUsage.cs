@@ -38,6 +38,13 @@ public sealed class AiUsage
     /// <summary>Quota hebdomadaire. <c>null</c> = quota inconnu → la jauge se masque.</summary>
     public UsageWindow? Week { get; init; }
 
+    /// <summary>
+    /// Page web officielle de consommation du fournisseur, ou vide s'il n'en a pas. Portée par
+    /// l'instantané et non par la config : c'est une propriété du fournisseur, décidée dans son
+    /// code, jamais lue depuis un fichier — donc pas une porte d'entrée pour une URL arbitraire.
+    /// </summary>
+    public string UsageUrl { get; init; } = "";
+
     /// <summary>Chiffres de démonstration : l'affichage doit le signaler.</summary>
     public bool IsDemo { get; init; }
 }

@@ -18,7 +18,8 @@ public class UsageViewModelTests
     private static AiUsage Usage(string id, string name = "", bool demo = false,
                                  long session = 12_400, long day = 86_000, long month = 1_200_000,
                                  int requests = 47, string cost = "$4", string model = "claude-opus-5",
-                                 int? sessionUsed = 62, int? weekUsed = 44) => new()
+                                 int? sessionUsed = 62, int? weekUsed = 44,
+                                 string usageUrl = "") => new()
     {
         ProviderId = id,
         Name = name.Length > 0 ? name : id,
@@ -26,6 +27,7 @@ public class UsageViewModelTests
         AccentColor = "#123456",
         Model = model,
         Cost = cost,
+        UsageUrl = usageUrl,
         SessionTokens = session,
         DayTokens = day,
         MonthTokens = month,
@@ -298,6 +300,43 @@ public class UsageViewModelTests
         Assert.Equal("semaine", vm.WeekGauge!.Label);
         Assert.Contains("62 % utilisés", vm.SessionGauge.Tooltip);
         Assert.Contains("38 % restants", vm.SessionGauge.Tooltip);
+    }
+
+    // --- Page du fournisseur
+
+    [Fact]
+    public async Task UsageUrl_SansUrl_LeLienEstMasque()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.HasUsageUrl);
+        Assert.Equal("", vm.UsageUrl);
+    }
+
+    [Fact]
+    public async Task UsageUrl_AvecUrl_LeLienEstVisible()
+    {
+        var vm = Build(ConfigFor(("a", false)),
+                       Usage("a", usageUrl: "https://claude.ai/new#settings/usage"));
+        await vm.RefreshAsync();
+
+        Assert.True(vm.HasUsageUrl);
+        Assert.Equal("https://claude.ai/new#settings/usage", vm.UsageUrl);
+    }
+
+    [Fact]
+    public async Task UsageUrl_SuitLeFournisseurAffiche()
+    {
+        var vm = Build(ConfigFor(("a", false), ("b", false)),
+                       Usage("a", usageUrl: "https://a.example/usage"),
+                       Usage("b"));
+        await vm.RefreshAsync();
+
+        Assert.Equal("https://a.example/usage", vm.UsageUrl);
+
+        vm.Select("b");
+        Assert.False(vm.HasUsageUrl);   // le fournisseur suivant n'a pas de page
     }
 
     // --- Démo

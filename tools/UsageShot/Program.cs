@@ -180,11 +180,13 @@ internal static class Program
     [
         new DemoUsageProvider("claude", "Claude", "✳", "#D97757",
             new DemoUsageProvider.DemoValues("claude-opus-5", 12_400, 86_000, 1_200_000, 47, "$4",
-                62, TimeSpan.FromHours(2) + TimeSpan.FromMinutes(40), 44, TimeSpan.FromDays(4))),
+                62, TimeSpan.FromHours(2) + TimeSpan.FromMinutes(40), 44, TimeSpan.FromDays(4),
+                UsageUrl: "https://claude.ai/new#settings/usage")),
 
         new DemoUsageProvider("codex", "Codex", "C", "#10A37F",
             new DemoUsageProvider.DemoValues("gpt-5-codex", 8_100, 54_000, 760_000, 31, "$2",
-                38, TimeSpan.FromHours(4), 27, TimeSpan.FromDays(4))),
+                38, TimeSpan.FromHours(4), 27, TimeSpan.FromDays(4),
+                UsageUrl: "https://platform.openai.com/usage")),
 
         new DemoUsageProvider("gemini", "Gemini", "G", "#4285F4",
             new DemoUsageProvider.DemoValues("gemini-2.5-pro", 3_600, 22_000, 310_000, 14, "$1",

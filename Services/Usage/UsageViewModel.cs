@@ -62,6 +62,12 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// <summary>Le fournisseur affiché produit des données de démonstration.</summary>
     public bool IsDemo { get; private set; }
 
+    /// <summary>Page web de consommation du fournisseur affiché, vide s'il n'en a pas.</summary>
+    public string UsageUrl { get; private set; } = "";
+
+    /// <summary>Le fournisseur affiché a une page web à ouvrir.</summary>
+    public bool HasUsageUrl => UsageUrl.Length > 0;
+
     public UsageGaugeItem? SessionGauge { get; private set; }
     public UsageGaugeItem? WeekGauge { get; private set; }
 
@@ -140,6 +146,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         IsVisible = _config.Enabled && selected is not null;
         ShowTabs = _snapshots.Count > 1;
         IsDemo = selected?.IsDemo ?? false;
+        UsageUrl = selected?.UsageUrl ?? "";
 
         SoloName = selected?.Name ?? "";
         SoloGlyph = selected?.Glyph ?? "";
@@ -254,6 +261,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                  {
                      nameof(IsVisible), nameof(ShowTabs), nameof(SoloName), nameof(SoloGlyph),
                      nameof(SoloAccent), nameof(IsDemo), nameof(SessionGauge), nameof(WeekGauge),
+                     nameof(UsageUrl), nameof(HasUsageUrl),
                  })
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

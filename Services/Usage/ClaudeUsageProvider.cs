@@ -77,6 +77,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             Name = Name,
             Glyph = "✳",
             AccentColor = "#D97757",
+            UsageUrl = "https://claude.ai/new#settings/usage",
             Model = totals.Model,
             Cost = ClaudePricing.Format(totals.Cost),
             SessionTokens = totals.Session,

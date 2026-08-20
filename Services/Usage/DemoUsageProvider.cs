@@ -29,7 +29,8 @@ public sealed class DemoUsageProvider : IUsageProvider
         string Model,
         long Session, long Day, long Month, int Requests, string Cost,
         int SessionUsedPct, TimeSpan SessionResetIn,
-        int WeekUsedPct, TimeSpan WeekResetIn);
+        int WeekUsedPct, TimeSpan WeekResetIn,
+        string UsageUrl = "");
 
     private readonly string _glyph;
     private readonly string _accent;
@@ -76,6 +77,7 @@ public sealed class DemoUsageProvider : IUsageProvider
             DayTokens = _values.Day,
             MonthTokens = _values.Month,
             Requests = _values.Requests,
+            UsageUrl = _values.UsageUrl,
             Session = new UsageWindow { UsedPct = _values.SessionUsedPct, ResetsAt = now + _values.SessionResetIn },
             Week = new UsageWindow { UsedPct = _values.WeekUsedPct, ResetsAt = now + _values.WeekResetIn },
             IsDemo = true,
