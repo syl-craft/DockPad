@@ -152,6 +152,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Onglets, seulement s'il y a un choix à faire -->
@@ -223,18 +224,47 @@
                 <ContentControl Grid.Column="2" Content="{Binding WeekGauge}"
                                 ContentTemplate="{StaticResource GaugeTemplate}"
                                 Margin="16,0,0,0"/>
+
+                <!-- La pastille du fournisseur, à droite de la ligne haute, ouvre sa page officielle.
+                     Masquée quand le fournisseur n'a pas de page. -->
+                <Button Grid.Column="3" Click="OpenUsagePage_Click"
+                        VerticalAlignment="Center" Margin="12,0,0,0" Cursor="Hand"
+                        Visibility="{Binding HasUsageUrl, Converter={StaticResource BoolToVisibilityConverter}}"
+                        ToolTip="{Binding UsageUrl, StringFormat=Ouvrir {0}}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chrome" Background="Transparent" CornerRadius="6"
+                                    Padding="4" SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#F0F0F0"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <!-- Pastille du fournisseur + ↗ : sans le chevron, cette pastille duplique
+                         celle de gauche et rien ne dit qu'elle ouvre quelque chose. -->
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="20" Height="20" CornerRadius="10"
+                                Background="{Binding SoloAccent, Converter={StaticResource StringToBrushConverter}}"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <TextBlock Text="{Binding SoloGlyph}" Foreground="White"
+                                       FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                                       FontSize="11" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="↗" FontSize="10" Foreground="#9A9A9A"
+                                   FontFamily="Segoe UI Symbol, Segoe UI"
+                                   Margin="2,0,0,0" VerticalAlignment="Top"/>
+                    </StackPanel>
+                </Button>
             </Grid>
 
-            <!-- Métriques : une colonne par mesure, filet de séparation au-dessus, et le lien vers
-                 la page officielle du fournisseur à droite. Le lien est hors de l'UniformGrid, sinon
-                 il consommerait une colonne de mesure. -->
+            <!-- Métriques : une colonne par mesure, filet de séparation au-dessus -->
             <Border BorderBrush="#F0F0F0" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,6,0,0">
-              <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <ItemsControl Grid.Column="0" ItemsSource="{Binding Metrics}">
+                <ItemsControl ItemsSource="{Binding Metrics}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
@@ -253,30 +283,6 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-
-                <Button Grid.Column="1" Click="OpenUsagePage_Click"
-                        VerticalAlignment="Center" Margin="8,0,0,0"
-                        Cursor="Hand" Background="Transparent" BorderThickness="0"
-                        Visibility="{Binding HasUsageUrl, Converter={StaticResource BoolToVisibilityConverter}}"
-                        ToolTip="Ouvrir la page de consommation du fournisseur">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="Chrome" Background="Transparent" CornerRadius="6"
-                                    Padding="6,4"
-                                    SnapsToDevicePixels="True" UseLayoutRounding="True">
-                                <ContentPresenter/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Chrome" Property="Background" Value="#F3F3F3"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                    <TextBlock Text="↗" FontSize="13" Foreground="#8A8A8A"
-                               FontFamily="Segoe UI Symbol, Segoe UI"/>
-                </Button>
-              </Grid>
             </Border>
         </StackPanel>
     </Border>
