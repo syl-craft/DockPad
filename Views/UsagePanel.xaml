@@ -244,21 +244,16 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <!-- Pastille du fournisseur + ↗ : sans le chevron, cette pastille duplique
-                         celle de gauche et rien ne dit qu'elle ouvre quelque chose. -->
-                    <StackPanel Orientation="Horizontal">
-                        <Border Width="20" Height="20" CornerRadius="10"
-                                Background="{Binding SoloAccent, Converter={StaticResource StringToBrushConverter}}"
-                                SnapsToDevicePixels="True" UseLayoutRounding="True">
-                            <TextBlock Text="{Binding SoloGlyph}" Foreground="White"
-                                       FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
-                                       FontSize="11" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="↗" FontSize="10" Foreground="#9A9A9A"
-                                   FontFamily="Segoe UI Symbol, Segoe UI"
-                                   Margin="2,0,0,0" VerticalAlignment="Top"/>
-                    </StackPanel>
+                    <!-- La pastille seule. L'affordance repose sur le curseur main, le fond au
+                         survol et l'infobulle qui nomme l'URL. -->
+                    <Border Width="20" Height="20" CornerRadius="10"
+                            Background="{Binding SoloAccent, Converter={StaticResource StringToBrushConverter}}"
+                            SnapsToDevicePixels="True" UseLayoutRounding="True">
+                        <TextBlock Text="{Binding SoloGlyph}" Foreground="White"
+                                   FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                                   FontSize="11" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
                 </Button>
             </Grid>
 
