@@ -4,8 +4,9 @@
         xmlns:views="clr-namespace:DockPad.Views"
         Title="DockPad"
         Icon="pack://application:,,,/app.ico"
-        Width="850" Height="630"
-        MinWidth="850" MinHeight="560"
+        Width="850" SizeToContent="Height"
+        MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
+        MinWidth="850"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
@@ -115,9 +116,18 @@
     </Window.Resources>
 
     <Grid>
+        <!--
+            La ligne de la grille est Auto et la fenêtre prend la hauteur de son contenu
+            (SizeToContent), clampée à la zone de travail : c'est le patron documenté pour un contenu
+            statique, et la grille l'est (4 × 6, tuiles de taille fixe).
+
+            Une hauteur fixe ne marche pas ici. À 630 px, la ligne de la grille recevait 432 px pour
+            425 nécessaires — sept pixels de marge. Une pagination un peu plus haute (boutons de page
+            avec icône) suffisait à passer dessous et à faire apparaître une barre de défilement.
+        -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -250,17 +260,11 @@
 
         <!-- Grille de raccourcis 4 × 6 -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <!-- La hauteur de fenêtre (630) est celle qu'il faut juste pour la toolbar, les quatre
-                 rangées, le bandeau et la pagination : plus haut laisserait une bande vide sous la
-                 toolbar, la grille étant ancrée en bas.
-
-                 Ancré en bas, et non centré : centrée verticalement, la grille flotte dès qu'il
-                 reste du mou dans la ligne, et l'écart avec le bandeau n'est plus déterminé (mesuré
-                 42 px au lieu des 10 voulus). Ancrée en bas, la marge basse de 5 px plus les 5 px de
-                 marge d'une tuile donnent exactement le pas entre deux tuiles. Le mou passe
-                 au-dessus de la grille. -->
+            <!-- Marge basse à 5 : ajoutée aux 5 px de marge d'une tuile, l'écart entre la dernière
+                 rangée et le bandeau vaut 10 px, soit le pas entre deux tuiles. Avec une ligne Auto
+                 il n'y a plus de mou, donc l'écart est déterminé sans avoir à ancrer la grille. -->
             <Grid x:Name="ShortcutsGrid"
-                  HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                  HorizontalAlignment="Center" VerticalAlignment="Center"
                   Margin="20,20,20,5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>

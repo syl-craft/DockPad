@@ -112,16 +112,25 @@ internal static class Program
     private static void CaptureWindow(string outPath)
     {
         var quick = new QuickAccessWindow();
-        // Taille lue sur la fenêtre elle-même : une constante recopiée ici se désynchroniserait du
-        // XAML à la première retouche.
-        double width = quick.Width, height = quick.Height;
+        // Largeur lue sur la fenêtre ; la hauteur vient de la mesure, la fenêtre étant en
+        // SizeToContent (sa propriété Height vaut NaN).
+        double width = quick.Width;
         quick.UsageBannerPanel.ViewModel = FixtureViewModel();
         quick.UsageBannerPanel.Start();
 
         var root = (FrameworkElement)quick.Content;
-        root.Measure(new Size(width, height));
-        root.Arrange(new Rect(0, 0, width, height));
-        root.UpdateLayout();
+        // Deux passages : la géométrie du bandeau est posée au premier LayoutUpdated, donc APRÈS la
+        // première mesure. Sans le second passage, la hauteur retenue est celle d'avant et la barre
+        // de pagination sort de l'image. La vraie fenêtre, elle, en SizeToContent, se réajuste
+        // d'elle-même.
+        double height = 0;
+        for (int pass = 0; pass < 2; pass++)
+        {
+            root.Measure(new Size(width, double.PositiveInfinity));
+            height = root.DesiredSize.Height;
+            root.Arrange(new Rect(0, 0, width, height));
+            root.UpdateLayout();
+        }
 
         Save(root, width, height, outPath, "window");
     }
