@@ -32,6 +32,17 @@
     <None Include="CHANGELOG.md" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
+  <!-- Microsoft.Data.Sqlite embarque les binaires natifs de toutes les plateformes : mesure faite,
+       26 Mo de runtimes/ dont 19 Mo pour Linux, macOS et wasm, dans une application net8.0-windows
+       x64. On ne garde que les cibles Windows. -->
+  <Target Name="TrimForeignRuntimes" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <RuntimeTargetsCopyLocalItems
+          Remove="@(RuntimeTargetsCopyLocalItems)"
+          Condition="!$([System.String]::new('%(RuntimeIdentifier)').StartsWith('win'))" />
+    </ItemGroup>
+  </Target>
+
   <Target Name="ZipAfterPublish" AfterTargets="Publish">
     <MakeDir Directories="$(MSBuildProjectDirectory)\release" />
     <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip" Overwrite="true" />
@@ -41,6 +52,9 @@
   </Target>
 
   <ItemGroup>
+    <!-- Aligne sur le framework cible (net8.0) et non sur la derniere version : le SDK installe
+         est un .NET 10, mais l'application est publiee framework-dependent pour .NET 8. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
     <PackageReference Include="ModelContextProtocol" Version="2.1.0" />
     <PackageReference Include="Serilog" Version="4.4.0" />

@@ -14,6 +14,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Raccourcis prédéfinis** : Claude Code, PowerShell, VS Code, SSMS, GitHub Desktop
 - **Sélecteur de navigateur** : popup de choix au clic sur une URL + règles par domaine
 - **Serveur MCP** : Claude (Claude Code / Claude Desktop) peut gérer la grille, les pages et les navigateurs
+- **Bandeau Usage IA** : consommation de jetons de Claude Code, Codex, Gemini et Copilot, sous la grille
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
 
@@ -37,6 +38,35 @@ Clavier : `1-9` choix direct · `↑/↓` + `Entrée` · `Échap` annule · pert
 - [ ] Cliquer **Paramètres Windows…** → définir **DockPad** comme navigateur par défaut
 - [ ] Cliquer une URL n'importe où → la popup s'affiche ; cocher **Toujours pour ce domaine** pour créer une règle
 - [ ] Gérer les règles dans l'onglet **Règles de domaine** (recherche, filtre, réassociation, suppression)
+
+## Bandeau Usage IA
+
+Un bandeau sous la grille montre la consommation des assistants IA détectés : les deux jauges de quota (session de 5 h et semaine) avec leur heure de remise à zéro, puis les jetons de la session, du jour et du mois, le nombre de requêtes, le coût estimé et le modèle en cours. Un onglet par fournisseur quand il y en a plusieurs.
+
+![Bandeau Usage IA](docs/screenshots/usage-panel.png)
+
+Avec plusieurs fournisseurs, un onglet apparaît pour chacun :
+
+![Bandeau Usage IA avec onglets](docs/screenshots/usage-panel-tabs.png)
+
+Quatre assistants sont lus, chacun dans ses fichiers locaux, sans réseau :
+
+| Assistant | Source | Quota | Coût |
+|---|---|---|---|
+| **Claude Code** | `%USERPROFILE%\.claude\projects` | oui | estimé |
+| **Codex** | `%USERPROFILE%\.codex\sessions` et `archived_sessions` | non | non |
+| **Gemini CLI** | `%USERPROFILE%\.gemini\tmp\<hash>\chats` | non | non |
+| **Copilot CLI** | `%USERPROFILE%\.copilot\session-store.db` | non | non |
+
+Seul Claude expose des pourcentages de quota : ils viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine. Pour les trois autres, il n'existe pas de limite lisible localement — leurs deux jauges restent donc masquées, et seules les métriques de jetons s'affichent. Si le quota Claude n'est pas joignable, ses jauges se masquent aussi et les jetons restent affichés.
+
+Le **coût** n'est calculé que pour Claude, à partir des tarifs publics, et affiché dans la devise de la source — DockPad ne convertit jamais. Un abonnement Max ou Pro ne facture pas au jeton : le montant indique un ordre de grandeur, pas une facture. Pour les trois autres, la colonne affiche un tiret plutôt qu'un montant inventé.
+
+Un fournisseur **Démo** est fourni, masqué par défaut : il sert aux captures de documentation et permet d'essayer le changement d'onglet. Les chiffres de démonstration portent toujours un badge « démo ».
+
+Réglages via **☰ Menu → Paramètres → 📊 Usage IA** : afficher ou masquer le bandeau, seuil d'alerte des jauges, affichage du coût, fournisseur affiché à l'ouverture, et détection des assistants installés (**↻ Redétecter**, jamais en tâche de fond).
+
+![Configuration de l'Usage IA](docs/screenshots/usage-config.png)
 
 ## Serveur MCP — piloter DockPad avec Claude
 
@@ -103,6 +133,7 @@ Les fichiers de configuration sont dans `%APPDATA%\DockPad\` :
 | `shortcuts.json` | Tuiles de la grille de raccourcis |
 | `pages.json` | Configuration des boutons de pagination |
 | `browsers.json` | Navigateurs du sélecteur + règles de domaine |
+| `usage.json` | Bandeau Usage IA : réglages + fournisseurs détectés |
 | `icons\` | Cache d'icônes (PNG, déduplication SHA1) |
 | `.backup\` | Sauvegardes horodatées |
 

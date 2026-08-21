@@ -9,6 +9,7 @@ L'app démarre sans droits admin — l'élévation est demandée à la demande v
 - **Registre**  lecture/écriture via `Microsoft.Win32.Registry`
 - **Icônes**  `System.Drawing.Common` (NuGet) pour extraire les icônes `.exe`/`.dll`
 - **JSON**  `System.Text.Json` (built-in) pour la config des raccourcis rapides
+- **SQLite**  `Microsoft.Data.Sqlite` (NuGet, version alignée sur net8.0) — lecture seule de la base de Copilot CLI, seule source de consommation qui ne soit pas un fichier texte
 - **WMI**  `System.Management` (NuGet) pour lire la ligne de commande des processus (`SwitchToProcess`)
 - **Logs**  Serilog + Serilog.Sinks.File — logger central `LogService`
 
@@ -24,6 +25,7 @@ Assets/
 
 Converters/
     InverseBoolConverter.cs              Converter WPF bool inversé
+    StringToBrushConverter.cs            Couleur en chaîne (« #34A853 ») → Brush
 
 Models/
     ActionResult.cs                       Résultat d'une action des services (UI/MCP) : Ok + Data, ou échec + Error
@@ -40,6 +42,11 @@ Models/
     ShortcutAddItem.cs                    Item du lot dockpad_shortcut_add (position optionnelle)
     ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath, iconProfilePath)
     ShortcutUpdate.cs                     Champs modifiables par dockpad_shortcut_update (null = inchangé)
+    AiUsage.cs                            Instantané de consommation d'un fournisseur IA (jetons, quotas, coût)
+    UsageWindow.cs                        Une fenêtre de quota : consommé + heure de remise à zéro
+    AiProviderEntry.cs                    Un fournisseur dans usage.json (nom, masquage, ordre, détection)
+    UsageConfig.cs                        Contenu de usage.json (bandeau + liste des fournisseurs)
+    UsageDisplayItems.cs                  Onglet, métrique et jauge du bandeau (modèles d'affichage)
     TerminalConfig.cs                    Config d'un terminal (exePath, startingDirectory, runCommand…)
     TerminalInfo.cs                      Informations d'un terminal détecté
 
@@ -72,6 +79,29 @@ Services/
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     UrlPipeService.cs                    Named pipe DockPad_UrlPipe — serveur (instance principale) / client (instance relais)
     UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
+    UsageConfigService.cs                 Load/Save usage.json (%APPDATA%\DockPad\usage.json)
+
+Services/Usage/
+    IUsageProvider.cs                     Contrat d'un fournisseur : Probe() (détection) + ReadAsync() (lecture)
+    AiProbe.cs                            Résultat d'une détection (disponible, chemin, démo, masqué par défaut)
+    UsageProviderRegistry.cs              Seul point d'enregistrement des fournisseurs
+    ClaudeUsageProvider.cs                Fournisseur Claude Code (dossier de départ injectable)
+    ClaudeUsageReader.cs                  Scan des JSONL, déduplication, agrégation session/jour/mois
+    ClaudeLimitsClient.cs                 Quota officiel via oauth/usage + lecture du jeton
+    ClaudePricing.cs                      Tarifs par modèle → coût estimé en USD
+    CodexUsageProvider.cs                 Fournisseur Codex (rollouts locaux, sans quota ni coût)
+    CodexUsageReader.cs                   Scan des rollout-*.jsonl, événements token_count
+    GeminiUsageProvider.cs                Fournisseur Gemini CLI (sessions locales, sans quota ni coût)
+    GeminiUsageReader.cs                  Scan des sessions sous chats/, compteurs input/cached/thoughts/tool
+    CopilotUsageProvider.cs               Fournisseur Copilot CLI (base SQLite, sans quota ni coût)
+    CopilotUsageReader.cs                 Lecture de assistant_usage_events (Microsoft.Data.Sqlite)
+    UsageAggregator.cs                    Agrégation session/jour/mois commune à tous les fournisseurs
+    UsageWindows.cs                       Borne basse de scan (début du mois, ou bloc de session)
+    DemoUsageProvider.cs                  Jeu de valeurs fixes paramétrable (captures, second onglet)
+    AiDetectionService.cs                 Sonde les fournisseurs + fusion dans usage.json
+    UsageService.cs                       Interroge les fournisseurs visibles en parallèle
+    UsageFormat.cs                        Couleur de jauge, jetons compacts, heure de reset (fonctions pures)
+    UsageViewModel.cs                     État affichable du bandeau (onglets, jauges, métriques)
 
 Mcp/
     DockPadTools.cs                        Les 13 outils dockpad_* exposés au SDK MCP (relais vers le pipe)
@@ -80,6 +110,7 @@ Mcp/
 Views/
     ContextMenuManagerWindow.xaml/.cs    Gestion des entrées de menu contextuel Windows
     QuickAccessWindow.xaml/.cs           Grille de tuiles multi-pages (hotkey global)
+    UsagePanel.xaml/.cs                  Bandeau Usage IA (aucun calcul, tout vient du ViewModel)
 
 Dialogs/
     AppDialog.xaml/.cs                   Dialog custom styled (remplace MessageBox) — Confirm/Error/Warning/Info
@@ -90,15 +121,19 @@ Dialogs/
     PresetsDialog.xaml/.cs               Raccourcis prédéfinis
     SettingsDialog.xaml/.cs              Configuration du raccourci clavier global + démarrage auto + version
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
+    UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (105 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (312 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
+                                         + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
+                                         + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
 
 tools/
     get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
     inject-startmenu-shortcuts.ps1       Script PowerShell : injecte des raccourcis SwitchToProcess dans shortcuts.json
     McpShot/                             Outil console : capture les onglets de McpConfigDialog en PNG (doc)
-    BrowserShot/                         Outil console : capture la popup de choix et la fenêtre Navigateurs en PNG (doc)
+    BrowserShot/                         Outil console : capture la popup de choix et la fenêtre Navigateurs en PNG
+    UsageShot/                           Outil console : capture le bandeau Usage IA et sa fenêtre de réglages en PNG (doc)
 ```
 
 ## Fonctionnalités
@@ -148,11 +183,11 @@ tools/
 - Toolbar : **☰ Menu** (déroulant) | **─** (réduire) | **⬇** (masquer dans la barre système)
 - **Menu ☰** organisé en sections :
   - *Menu contextuel* : ☰ Gestion, 📋 Raccourcis prédéfinis
-  - *Paramètres* : ⚙ Options, 🌐 Navigateurs
+  - *Paramètres* : ⚙ Options, 🌐 Navigateurs, 🔌 Serveur MCP, 📊 Usage IA
   - *Configuration* : ↺ Actualiser, ✎ Modifier, 💾 Sauvegarder, 📁 Voir le dossier
   - ✕ Quitter l'application
 - **Raccourci clavier actif** affiché en bas à droite (badge `Consolas`, mis à jour après changement dans Options)
-- **Sauvegarder la configuration** : copie `shortcuts.json`, `pages.json` et `browsers.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
+- **Sauvegarder la configuration** : copie `shortcuts.json`, `pages.json`, `browsers.json`, `mcp.json` et `usage.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
 - Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
 - Config pages stockée dans `%APPDATA%\DockPad\pages.json`
 - **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | 🗑 Supprimer
@@ -253,6 +288,125 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Icônes chargées via `LoadIcon` (même pattern dans `BrowserPickerWindow` et `BrowserConfigDialog`) : extraction `.exe`/`.dll` via `System.Drawing.Icon.ExtractAssociatedIcon` puis `DeleteObject` sur le handle GDI (anti-fuite mémoire) ; `IconStoreService.ParseIconRef` découpe `chemin[,index]` et `Icon.ExtractIcon` respecte l'index (négatif = ID de ressource)
 - Config stockée dans `%APPDATA%\DockPad\browsers.json`, incluse dans **💾 Sauvegarder la configuration**
 
+### Bandeau Usage IA
+Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWindow` : toolbar / grille / **bandeau** / pagination.
+
+**Le `Collapsed` porte sur le `UserControl`, pas sur son contenu.** La fenêtre hôte pose une largeur et une hauteur explicites sur ce contrôle pour l'aligner sur les tuiles : replier le seul `Border` intérieur laissait ces 90 px et leur marge occuper la place, soit un grand vide sous la grille quand le bandeau est désactivé. La visibilité est donc posée sur le contrôle lui-même, en réaction à `UsageViewModel.IsVisible`. La fenêtre étant en `SizeToContent`, elle se rétracte d'autant.
+
+**Désactivé = au repos.** Aucun fournisseur n'est interrogé (`RefreshAsync` court-circuite `UsageService`), et le `DispatcherTimer` est arrêté : sans ça il continuait de battre chaque minute pour relire la config et constater qu'il n'y a rien à faire.
+
+- **Contenu** : un onglet par fournisseur (pastille colorée + nom + badge « démo »), les deux jauges *session* et *semaine* sur une seule ligne chacune (pourcentage **consommé** en gras dans la couleur de la jauge, barre de 6 px, `↻ heure de reset`), puis six colonnes de métriques — Session, Jour, Mois, Requêtes, Coût est., Modèle. Coût décoché → cinq colonnes
+- **Lien vers la page officielle du fournisseur** à droite de la ligne haute : sa pastille, cliquable. L'affordance repose sur le curseur main, le fond au survol et l'infobulle qui nomme l'URL — la pastille est identique à celle de gauche, rien d'autre ne la distingue. L'URL est portée par `AiUsage.UsageUrl`, décidée dans le code du fournisseur et jamais lue depuis un fichier ; le schéma est tout de même vérifié avant `Process.Start` — avec `UseShellExecute`, une chaîne quelconque ouvrirait aussi bien un fichier ou une commande. Vide → le lien est masqué (cas du provider Démo dans l'application)
+- **Sablier pendant la lecture** : la pastille du fournisseur cède la place à un rond gris tournant, et les valeurs précédentes restent affichées — un rafraîchissement réel prend le temps de parcourir les transcripts (mesuré 1,7 s), et l'attente doit se voir. Le `RotateTransform` vit dans un `ControlTemplate` et non dans un `Setter` de `Style` : une valeur de `Setter` est une instance unique partagée, et l'animer lève une exception si elle est gelée. L'animation ne tourne que pendant l'attente (`EnterActions`/`ExitActions`)
+- **Libellés courts (« session », « semaine ») et infobulle explicite** : le libellé seul ne dit pas si le chiffre est le consommé ou le restant, l'infobulle donne les deux. Le mot « utilisée » dans le libellé coûtait la largeur des barres
+- **Un seul fournisseur visible → aucun onglet** : nom et pastille en libellé statique. Un onglet unique et cliquable suggère un choix qui n'existe pas. Le seuil est le nombre de fournisseurs visibles, pas une constante
+- **La barre suit le restant, pas le consommé** : elle doit s'accorder avec le nombre affiché juste au-dessus. Une barre remplie à 62 % sous un « 38 % » se lit comme un défaut (vu à la capture). Jauge de carburant : elle se vide quand on consomme
+- **Les onglets ont leur propre ligne** : au-delà de deux fournisseurs, onglets et jauges ne tiennent pas côte à côte à 850 px, et le texte de reset se tronquait
+- **Aucun calcul dans le XAML** : tout vient de `UsageViewModel`, testé sans WPF. Les couleurs voyagent en chaînes (`#34A853`) converties par `StringToBrushConverter` — la décision de couleur appartient à la logique
+- **Valeur inconnue → `—`, jamais `0`.** Une session à zéro signifie « aucun bloc actif », pas « rien consommé »
+- **Quota inconnu → la jauge entière disparaît**, pas seulement sa barre. `UsedPct` vaudrait 0 et afficherait « 0 % session », soit une mesure affirmée là où il n'y a pas de donnée. Un vide ne prétend rien. C'est l'état courant au démarrage, avant que la première lecture ait abouti
+- **Géométrie calée sur les tuiles** : largeur = largeur du bloc de tuiles moins les marges horizontales d'une tuile (pour affleurer leurs bords visibles), hauteur = hauteur d'une tuile. Les deux sont lues **sur une tuile réelle** au premier `LayoutUpdated`, jamais recopiées depuis le style — une seule source de vérité, qui suit un changement de taille de tuile. `LayoutUpdated` et non `Loaded` : la mise en page a lieu même sans fenêtre affichée, ce dont l'outil de capture a besoin ; se désabonner après le premier passage évite la boucle
+- **La fenêtre prend la hauteur de son contenu** (`SizeToContent="Height"`, toutes les lignes en `Auto`, `MaxHeight` clampé sur la zone de travail) : c'est le patron documenté pour un contenu statique, et la grille 4 × 6 à tuiles fixes en est un. Une hauteur fixe ne tient pas — à 630 px la ligne de la grille recevait 432 px pour 425 nécessaires, et une pagination un peu plus haute (boutons de page avec icône) suffisait à faire apparaître une barre de défilement. Sans mou dans les lignes, l'écart grille → bandeau est déterminé par les seules marges, sans avoir à ancrer la grille
+- **Conséquence** : la fenêtre ne se redimensionne plus en hauteur (rien à y gagner, la grille a un nombre de rangées fixe). La largeur reste ajustable
+- **Cycle de vie** branché sur `IsVisibleChanged` + `StateChanged` de la fenêtre, pas sur chaque `Show()`/`Hide()` : un seul point, qui couvre les appels ajoutés plus tard. Rafraîchissement toutes les 60 s **uniquement quand la fenêtre est visible et non réduite** — DockPad passe l'essentiel de son temps dans la barre système
+- **Le raccourci global déclenche aussi la synchronisation**, explicitement : quand la fenêtre est déjà visible, ni `WindowState` ni `Show()` ne changent quoi que ce soit, donc aucun événement ne se déclenche — le bandeau restait tel quel, sans lecture ni sablier, alors que passer au premier plan est le moment où l'on veut des chiffres à jour
+- **Une invocation dépassée de `RefreshAsync` ne publie rien** : ni la fin de l'attente, ni ses instantanés. Sans cette garde, la séquence masquer-réafficher éteignait le sablier pendant la lecture suivante, et le chemin d'exception de l'ancienne vidait le bandeau *après* que la récente l'avait rempli. La source annulée n'est pas libérée non plus : son jeton peut être détenu par une requête en vol, et la libérer levait une `ObjectDisposedException` attrapée plus haut comme une panne de lecture
+- **Glyphes** : `FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"` obligatoire sur les pastilles — Segoe UI ne contient ni ✳ (U+2733) ni ⊕, qui tombent en tofu
+
+#### Fournisseurs (`Services/Usage/`)
+`IUsageProvider` porte la détection (`Probe()`) **et** la lecture (`ReadAsync()`) : un assistant = un fichier. `UsageProviderRegistry.All` est le seul point d'enregistrement — l'arrivée de Codex, Gemini et Copilot n'a touché ni le bandeau ni la fenêtre de réglages, ce qui valide la frontière. `UsageService` reçoit sa liste en paramètre de construction (registre par défaut), ce qui permet aux tests et à `tools/UsageShot` de substituer la leur.
+
+| Fournisseur | Source | Quota | Coût |
+|---|---|---|---|
+| `ClaudeUsageProvider` | `~/.claude/projects/**/*.jsonl` | oui, via `oauth/usage` | oui, `ClaudePricing` |
+| `CodexUsageProvider` | `~/.codex/{sessions,archived_sessions}/**/rollout-*.jsonl` | non | non |
+| `GeminiUsageProvider` | `~/.gemini/tmp/<hash>/chats/session-*.json{,l}` | non | non |
+| `CopilotUsageProvider` | `~/.copilot/session-store.db` (SQLite) | non | non |
+| `DemoUsageProvider` | valeurs fixes paramétrables | oui | oui |
+
+- **Seul Claude a un quota et un coût.** Les trois autres n'exposent pas de pourcentage de limite lisible localement, et aucun tarif public fiable ne leur est appliqué : leurs deux jauges restent masquées et la colonne de coût affiche un tiret. **Inventer un tarif serait pire qu'afficher un tiret** — un montant faux se lit comme un montant
+- **L'identité visuelle est déclarée une seule fois par fournisseur** (une constante privée, lue par `Probe()` et par l'instantané) et voyage jusqu'à la fenêtre de réglages via `AiProbe`. Une seconde table de littéraux dans le dialogue aurait montré un rond gris au prochain assistant ajouté, alors que le bandeau lui affichait sa vraie couleur
+- **La précision affichée au survol du coût vient du fournisseur** (`AiUsage.CostNote`), pour la même raison que la devise : lui seul sait comment sa source facture. « Un abonnement Max ou Pro ne facture pas au jeton » n'a aucun sens sur un onglet Codex ou Gemini
+- **Le dossier de départ est injectable** sur les quatre providers réels (repli sur `%USERPROFILE%`) : c'est ce qui rend détection et scan testables sur un dossier temporaire, sans toucher au profil réel
+- **`CODEX_HOME` et `COPILOT_HOME` sont respectées**, comme le font leurs CLI. Sans ça, un utilisateur qui a déplacé son dossier verrait un zéro silencieux
+- **`ReadAsync` renvoie `null`** pour « rien à afficher » — c'est le cas normal, pas une erreur. Une exception est attrapée par `UsageService`, journalisée en `Warn`, et traitée comme `null` : les autres fournisseurs s'affichent
+- **Détecté mais inactif = un onglet à zéro, pas une disparition.** `ReadAsync` ne renvoie `null` que si la sonde dit le fournisseur absent ; s'il est installé mais qu'aucune consommation ne tombe dans la fenêtre, il rend `UsageAggregator.Empty`. Sinon un assistant installé qu'on n'a pas utilisé ce mois-ci s'affiche « détecté » dans les réglages et reste introuvable dans le bandeau, sans rien qui explique l'écart — le cas vécu avec Gemini, dont la seule session du mois ne portait aucun jeton. **Disparaître du bandeau veut dire « pas installé », et rien d'autre**
+- **Un fournisseur masqué n'est pas interrogé du tout** : lire pour ne pas afficher, c'est du disque et du réseau pour rien
+- **La lecture passe par `Task.Run`** chez les quatre providers réels : elle parcourt des fichiers (mesuré 2,5 s sur le profil Claude réel) et gèlerait le thread d'interface avant le premier `await`
+
+#### Agrégation commune (`UsageAggregator`)
+Extraite de `ClaudeUsageReader` à l'arrivée des trois autres : chacun lit sa source à sa façon, tous comptent le temps de la même manière. `Aggregate` prend la tarification en paramètre (`null` = pas de coût), et `UsageWindows.ScanStart` donne la borne basse du scan — début du mois, sauf le premier du mois au petit matin où le bloc de session peut avoir démarré le mois précédent.
+
+#### Lecture des journaux Claude (`ClaudeUsageReader`)
+- **Déduplication sur `(message.id, requestId)` — indispensable** : reprise de session et sidechains réécrivent le même message ailleurs. Mesuré sur 407 fichiers réels : **49 % des lignes `assistant` sont des doublons**. Sans dédup, tous les totaux sont à peu près doublés
+- **Fenêtre par `mtime`** : un fichier modifié avant le début de la période n'est pas ouvert
+- **`ScanRoots(home)` est la seule fonction qui sait où chercher** — le scan, la détection et les tests l'appellent. Deux listes de littéraux séparées, et c'est l'une des deux qui pourrit sans qu'un test le voie
+- **Timestamps UTC → `LocalDateTime`**, jamais `ToLocalTime().DateTime` : le second rend un `Kind` *Unspecified*, qui laisse passer un mélange UTC/local inaperçu (les bornes jour et mois sont locales)
+- **Une entrée sans aucun jeton est écartée** : ce n'est pas un appel facturé. Claude Code en écrit pour ses messages générés localement, sous le modèle `<synthetic>` — mesuré 25 entrées à zéro jeton sur un mois. Les garder ne changeait pas les totaux, mais le modèle affiché est celui de l'entrée la plus récente : une synthétique en dernier faisait afficher `<synthetic>` à la place du vrai modèle
+- **Bloc de session ancré** : il démarre à la première activité qu'aucun bloc ne couvre et dure 5 h. Un bloc fermé avant maintenant donne zéro, pas un total périmé
+- Lecture en `FileShare.ReadWrite` et JSON tronqué toléré : Claude Code écrit pendant qu'on lit
+
+#### Lecture de Codex (`CodexUsageReader`)
+Lignes `type:"event_msg"` avec `payload.type:"token_count"` ; le delta du tour est dans `payload.info.last_token_usage`.
+
+- **Les deux racines doivent être lues.** Codex déplace un rollout de `sessions` vers `archived_sessions` : ce n'est pas une autre consommation mais le même fichier qui bouge. N'en lire qu'une ferait « disparaître » du passé
+- **Correspondance des compteurs** : `input_tokens` est le prompt entier, `cached_input_tokens` en est un sous-ensemble — soustrait pour ne pas compter deux fois. `output_tokens` inclut déjà le raisonnement, `reasoning_output_tokens` n'est donc pas ajouté
+- **Filtre textuel avant l'analyse JSON** : l'essentiel d'un gros rollout est de la conversation, qui ne contient pas le marqueur `token_count`
+- **Limite connue : une session dérivée peut être comptée deux fois.** Un fork rejoue l'historique du parent dans un nouveau rollout, qui réémet ses événements `token_count`. Contrairement à Claude, ces événements ne portent pas d'identifiant de message : il n'y a rien à dédupliquer entre fichiers. L'implémentation de référence résout le cas en comparant les rollouts entre eux, avec plusieurs centaines de lignes de machinerie — hors de proportion tant que personne n'a constaté l'écart
+- **Le quota existe mais n'est pas lu** : il faudrait lancer `codex app-server --stdio` et dialoguer en JSON-RPC, soit un processus enfant chaque minute pour deux nombres
+
+#### Lecture de Gemini (`GeminiUsageReader`)
+Un document par session sous `chats/`, avec un tableau `messages` dont les réponses portent un objet `tokens` (`input`, `cached`, `output`, `thoughts`, `tool`, `total`). La variante `.jsonl` existe aussi, un objet par ligne.
+
+- **Seul `chats/` est scanné.** Le voisin `logs/` contient des `.jsonl` de trace console et réseau, sans aucune consommation — mesuré 6 Mo sur une machine réelle. Les ouvrir coûterait le prix d'un gros fichier pour zéro entrée. L'implémentation de référence scanne tout `~/.gemini/tmp`
+- **Correspondance des compteurs, qui préserve `total`** : `input` contient déjà `cached`, soustrait pour ne pas compter deux fois ; `thoughts` est du raisonnement compté à part par Gemini mais bien de la sortie, donc ajouté à `output` ; pas d'écriture de cache. Vérifié sur les fichiers réels : 12 128 + 74 + 991 = 13 193, le `total` de la source
+- **Le même `id` peut être réécrit** (réponse mise à jour en cours de route) : la dernière valeur gagne, d'où un dictionnaire par fichier plutôt qu'une liste
+- Horodatage du message, à défaut `startTime` de la session
+
+#### Lecture de Copilot (`CopilotUsageReader`)
+Table `assistant_usage_events` de `~/.copilot/session-store.db` — une ligne par appel facturé.
+
+- **Seule source du projet qui soit une base de données**, d'où la dépendance `Microsoft.Data.Sqlite` et les binaires natifs SQLite qu'elle embarque dans la publication. Version **alignée sur le framework cible** (8.0.x) et non la dernière : le SDK installé est un .NET 10, l'application est publiée pour .NET 8
+- Ouverture en **lecture seule** : Copilot garde sa base ouverte
+- **`input_tokens` est le prompt entier** : lectures et écritures de cache en sont un sous-ensemble. Sans les soustraire, le même prompt serait compté trois fois
+- **Le filtre SQL sur `created_at` est un pré-filtre grossier** : la colonne est du texte, donc la comparaison est lexicographique. On recule d'un jour entier pour qu'aucune ligne de la fenêtre ne passe à la trappe à cause d'un décalage horaire écrit dans la valeur, puis on filtre pour de vrai après analyse
+- **La clé porte le chemin de la base** : l'identifiant de ligne n'est unique que dans une base, et `COPILOT_HOME` peut en désigner plusieurs
+- Table absente, base verrouillée ou fichier qui n'est pas une base → rien d'affiché pour ce fournisseur, ce qui vaut mieux qu'un total faux
+
+#### Quota officiel (`ClaudeLimitsClient`)
+`GET https://api.anthropic.com/api/oauth/usage`, en-têtes `Authorization: Bearer <jeton>` + `anthropic-beta: oauth-2025-04-20`. Réponse acceptée sous deux formes : champs hérités `five_hour`/`seven_day`, ou liste `limits[]` (`kind` = `session` / `weekly_all`) — les hérités priment.
+
+- **Jamais un chemin critique** : l'endpoint n'est pas documenté et cassera. Jeton absent, expiré, 401, 429, réseau coupé, forme inconnue → `null`, donc jauges masquées et jetons conservés. Un `LogService.Info` une seule fois par session
+- **L'échec est nommé, pas seulement constaté** : `FetchAsync` renvoie le quota **et** une raison — code de statut HTTP, « forme de réponse inconnue », ou type d'exception. Jamais le jeton, jamais le corps de la réponse, jamais le message d'exception (qui peut embarquer l'URL). Un journal qui dit seulement « indisponible » ne permet pas de distinguer un 401 d'un 429, qui est la première question qu'on se pose
+- **Cadence limitée à cinq minutes, dernière valeur conservée quinze.** L'« intermittence » observée était un **HTTP 429** provoqué par DockPad lui-même : le bandeau se rafraîchit chaque minute et appelait le quota à chaque fois, pour des fenêtres qui durent 5 h et 7 jours. Entre deux appels les jauges gardent la valeur précédente — un pourcentage de quelques minutes vaut mieux qu'un vide sur une fenêtre de plusieurs heures — et au-delà de quinze minutes elles se masquent, parce qu'un chiffre périmé affirme quelque chose de faux. C'est aussi ce qui évite de marteler l'endpoint après un refus
+- **Traitement du secret** : le jeton vient de `%USERPROFILE%\.claude\.credentials.json` (`claudeAiOauth.accessToken`) — Windows n'a pas de keychain, ce fichier est la seule source. Il reste local à la méthode qui l'utilise : **jamais journalisé, jamais recopié dans une config, jamais envoyé ailleurs que sur `api.anthropic.com`**
+- **Deux pièges couverts par des tests** : `claudeAiOauth` explicitement `null` se décode en élément *présent* — tester la seule présence de la clé lirait un état déconnecté comme valide ; et `utilization` est un **pourcentage**, pas une fraction — l'heuristique « ≤ 1 donc fraction » transformerait une utilisation réelle de 1 % en 100 %, soit une fausse alerte rouge
+
+#### Coût (`ClaudePricing`)
+Tarifs publics par million de jetons, correspondance **par préfixe** de nom de modèle (les transcripts portent des identifiants datés). Multiplicateurs de cache issus de la documentation Anthropic : écriture ×1,25 (TTL 5 min), lecture ×0,1.
+
+- **Modèle inconnu → repli sur le tarif Sonnet, pas zéro** : un coût nul se lit comme « gratuit ». Les modèles retirés sont donc sous-estimés, assumé — la colonne annonce « Coût est. »
+- **Devise : celle de la source, aucune conversion.** Convertir demanderait un taux figé qui dérive, ou un appel réseau, pour une valeur déjà approximative. Les tarifs Claude étant en USD, la colonne affiche `$3.80` là où la maquette montrait « 3,80 € ». `AiUsage.Cost` est une **chaîne déjà formatée** par le provider, symbole inclus : lui seul sait en quelle monnaie sa source facture
+
+#### Détection et fusion (`AiDetectionService`)
+Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais en tâche de fond — même règle que les profils de navigateur.
+
+- Masquage et ordre préservés ; nom personnalisé préservé (un nom égal à `DetectedName` suit l'outil)
+- Un fournisseur absent des sondes est **conservé** avec `Detected = false` — le supprimer détruirait son masquage et son ordre pour une absence peut-être temporaire
+- Une entrée inconnue du registre est conservée telle quelle : un retour arrière de version ne doit rien perdre
+- `AiProbe.HiddenByDefault` n'agit **qu'à la découverte** : une redétection ne remasque jamais un fournisseur affiché
+- **`LoadForStartup` détecte aussi quand le registre contient un fournisseur inconnu de la config** : c'est le cas d'une mise à jour qui apporte de nouveaux assistants. Sans ça ils n'apparaîtraient qu'après un ↻ Redétecter manuel, que personne ne pense à faire — la fonctionnalité serait livrée et invisible. Ce n'est pas une détection en tâche de fond : elle a lieu une fois, jusqu'à ce que la config rattrape le registre
+- **Pas de « + Ajouter »** : un fournisseur exige une implémentation `IUsageProvider`, un ajout manuel donnerait une ligne vide
+
+#### Fenêtre « Usage IA » (`UsageConfigDialog`)
+☰ → Paramètres → **📊 Usage IA**. 620×660 redimensionnable, `MaxHeight` clampé sur la zone de travail, footer commun, sauvegarde immédiate (bouton **Fermer** seulement).
+
+- Section **Bandeau** : afficher le bandeau, seuil d'alerte (`ComboBox` 5→50 % — `SettingsDialog` n'a aucun slider et dix valeurs discrètes se choisissent mieux dans une liste), afficher le coût, **fournisseur affiché** par défaut
+- Section **Fournisseurs** : ↻ Redétecter, case de visibilité par ligne, pastille, chemin détecté, badges « masqué » / « non détecté » / « démo ». **Pas de ↑/↓** dans cette version : réordonner une liste d'une ligne est de l'UI morte — `Order` reste dans le modèle et dans la fusion, les boutons attendent qu'il y ait quelque chose à ordonner
+- **La liste « Fournisseur affiché » propose *tous* les fournisseurs**, les masqués suffixés « (masqué) ». N'en lister que les visibles perdait le réglage en silence : masquer le fournisseur par défaut faisait retomber la liste sur « Premier disponible » à l'écran alors que le fichier gardait l'identifiant, et la modification suivante d'un autre réglage écrivait cette chaîne vide
+- Toutes les écritures sont des load-modify-save sous `ConfigLock.Gate` : détection, cases de visibilité et réglages écrivent dans le même fichier
+- **Un clic d'onglet dans le bandeau n'écrit rien** : le fournisseur du démarrage est le réglage `DefaultProviderId`, changer d'onglet est une sélection de session. La variante « dernier onglet cliqué » écrivait à chaque clic, donc en concurrence avec cette fenêtre ouverte
+
 ### Serveur MCP
 - DockPad expose un serveur MCP permettant à Claude Code / Claude Desktop de piloter la grille, les pages et les navigateurs
 - **Architecture** : Claude lance `DockPad.exe --mcp` — mode relais stdio (SDK officiel `ModelContextProtocol`), **aucune UI ni mutex**, détecté dans `App.xaml.cs` avant l'acquisition du mutex → chaque appel d'outil sérialise `{tool, args}` en JSON et l'envoie sur le named pipe `DockPad_McpPipe` (`McpPipeService`, multi-instances : Claude Code + Claude Desktop simultanés) → l'instance principale (déjà lancée par l'utilisateur) reçoit la requête : vérifie les options (`mcp.json`), exécute via les services d'actions **partagés avec l'UI** (`ShortcutActionService`, `PageActionService`, `BrowserActionService`), journalise (`McpLogService`), déclenche `RefreshGrid()` sur la grille si mutation, puis répond `{ok, data, error}` en une ligne
@@ -326,6 +480,32 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - `hidden` : masqué = absent de la popup mais conservé dans la config
 - Stocké dans `%APPDATA%\DockPad\browsers.json`, inclus dans la sauvegarde de configuration
 
+## Format JSON Usage IA
+
+```json
+{
+  "enabled": true,
+  "alertThreshold": 15,
+  "showCost": true,
+  "defaultProviderId": "claude",
+  "providers": [
+    { "id": "claude", "name": "Claude Code", "detectedName": "Claude Code",
+      "hidden": false, "order": 0,
+      "dataPath": "C:\\Users\\moi\\.claude\\projects", "detected": true },
+    { "id": "demo", "name": "Démo", "detectedName": "Démo",
+      "hidden": true, "order": 1, "detected": true }
+  ]
+}
+```
+
+- `alertThreshold` : pourcentage **restant** sous lequel une jauge passe au rouge (5 à 50, défaut 15)
+- `defaultProviderId` : fournisseur affiché à l'ouverture. `""` = le premier visible. Un clic d'onglet **ne modifie pas** ce réglage
+- `id` d'un fournisseur : clé de fusion, égale à `IUsageProvider.Id`. Volontairement **non `required`** dans le modèle — le type est désérialisé, et un `required` ferait échouer la lecture du fichier entier à cause d'une seule entrée abîmée. `UsageConfigService` écarte les entrées sans id et garde le reste
+- `name` suit l'outil tant qu'il est égal à `detectedName` ; dès qu'il en diffère, il est considéré personnalisé et ne bouge plus
+- `hidden` : absent du bandeau, conservé dans la config. `detected` à faux = conservé mais signalé « non détecté »
+- Une entrée dont l'`id` est inconnu du registre est **conservée telle quelle** : un retour arrière de version ne perd ni masquage ni ordre
+- Stocké dans `%APPDATA%\DockPad\usage.json`, inclus dans la sauvegarde de configuration
+
 ## Fenêtres de config — pattern commun
 
 Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) suit le même patron — **jamais de hauteur fixe sans clamp** (une hauteur codée en dur finit clippée quand le contenu grandit, ou déborde d'un écran 768p) :
@@ -337,7 +517,7 @@ Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) su
 
 ## Profil DockPad (AppPaths)
 
-Toutes les données utilisateur vivent dans un seul dossier, résolu par `AppPaths.ProfileRoot` : `shortcuts.json`, `pages.json`, `browsers.json`, `mcp.json`, `icons\`, `logs\`, `.backup\`.
+Toutes les données utilisateur vivent dans un seul dossier, résolu par `AppPaths.ProfileRoot` : `shortcuts.json`, `pages.json`, `browsers.json`, `mcp.json`, `usage.json`, `icons\`, `logs\`, `.backup\`.
 
 - Par défaut `%APPDATA%\DockPad`
 - Surchargeable par la variable d'environnement **`DOCKPAD_PROFILE_DIR`** : le dossier indiqué est utilisé **tel quel** (aucun sous-dossier `DockPad` ajouté), chemin relatif accepté (rendu absolu), guillemets et espaces tolérés
@@ -363,6 +543,31 @@ BrowserShot.exe config        docs/screenshots/browser-rules.png  1 # onglet Rè
 - `autoOpenSeconds = 0` pour la popup : un décompte ouvrirait vraiment un navigateur pendant la capture ; la fenêtre de config utilise 3 s (valeur d'affichage)
 - L'état d'enregistrement affiché est celui de `BrowserShot.exe`, donc toujours « non enregistré » — c'est justement l'état initial décrit par le README
 - La fenêtre de config est capturée en hauteur 840 (elle est redimensionnable) pour que liste et panneau d'édition tiennent ensemble, avec un profil sélectionné
+
+`tools/UsageShot <cible> <cheminPng>` — bandeau Usage IA :
+
+```bash
+dotnet build tools/UsageShot
+UsageShot.exe panel      docs/screenshots/usage-panel.png       # cas par defaut : un seul fournisseur
+UsageShot.exe panel-tabs docs/screenshots/usage-panel-tabs.png  # deux fournisseurs, mecanique d'onglets
+UsageShot.exe config     docs/screenshots/usage-config.png      # fenetre de reglages
+UsageShot.exe window     docs/screenshots/usage-window.png      # integration dans la fenetre
+UsageShot.exe window-off ...                                    # bandeau desactive : verifie qu'il ne laisse aucune place
+UsageShot.exe panel-loading ...                                 # etat d'attente : sablier a la place de la pastille
+UsageShot.exe panel-idle ...                                    # fournisseur detecte mais inactif : onglet a zero
+```
+
+- **Fixture exclusivement `DemoUsageProvider`** (quatre instances), `ClaudeUsageProvider` délibérément absent : les vrais chiffres de consommation sont des données personnelles, et une capture doit être reproductible. C'est la raison d'être de la liste injectable de `UsageService` — le registre de production reste intact
+- La fixture déclare un fournisseur masqué et un non détecté, pour que les badges apparaissent sur la capture de la fenêtre de réglages : la machine de développement ne produit pas ces états d'elle-même
+- **Les cibles `panel` et `window` sont rendues hors écran** (`Measure`/`Arrange` explicites, sans afficher de fenêtre) : une fenêtre à `SizeToContent` mesure avant que les données arrivent et ne reprend pas la hauteur ensuite, et `Show()` sur `QuickAccessWindow` déclenche la boucle décrite plus bas
+- **Deux passages de mise en page pour `window`** : la géométrie du bandeau est posée au premier `LayoutUpdated`, donc après la première mesure. Avec un seul passage, la hauteur retenue est celle d'avant et la barre de pagination sort de l'image
+- **`Start()` avant toute mesure** : sans données le bandeau est `Collapsed` et la capture est vide
+- **`app.ico` doit être liée dans le csproj de l'outil** (`<Resource Include="..\..\app.ico" Link="app.ico" />`) : `QuickAccessWindow` la référence par pack URI, qui se résout dans l'assembly **hôte**. Sans elle, la cible `window` lève une `IOException` au chargement du XAML. Les cibles de `BrowserShot` n'en ont pas besoin, ce sont des dialogs sans icône
+- **Rendre l'élément de contenu, pas le `Window`** : sur une fenêtre sans chrome (`WindowStyle=None`) le rendu du `Window` lui-même sort transparent
+- **Largeur de capture = 698 px**, la largeur réelle du bandeau : le bloc de tuiles (6 × 118) moins les marges horizontales d'une tuile. Capturer plus large donne une image flatteuse et fausse — c'est à cette largeur que les jauges se serrent
+- **La fixture n'expose que deux fournisseurs visibles**, et un seul pour la cible `panel`. Quatre onglets écrasaient les jauges à la largeur réelle ; et le cas par défaut n'a de toute façon qu'un fournisseur
+
+> **La cible `window` ne doit jamais appeler `Show()`.** Affichée dans un hôte qui n'est pas une vraie application, `QuickAccessWindow` déclenche une boucle qui affame le dispatcher : le processus tourne à 80 % d'un cœur et rien ne s'exécute plus — ni `ContentRendered`, ni un `DispatcherTimer` posé après `Show`. Reproduit y compris à un commit où cette cible produisait encore une image correcte, donc ce n'est pas la mise en page. Le contournement est de **mesurer et arranger son contenu hors écran**, comme la cible `panel` : l'instanciation de la fenêtre est évitée et le rendu est immédiat.
 
 `tools/McpShot <tabIndex> <cheminPng>` — fenêtre Serveur MCP, avec des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées :
 

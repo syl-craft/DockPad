@@ -9,6 +9,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DockPad.Models;
 using DockPad.Services;
+using DockPad.Services.Usage;
+using DockPad.Views;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace DockPad;
@@ -35,6 +37,61 @@ public partial class QuickAccessWindow : Window
 
         var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
+
+        UsageBanner.ViewModel = new UsageViewModel();
+        // LayoutUpdated et non Loaded : la mise en page a lieu même quand la fenêtre n'est pas
+        // affichée (l'outil de capture mesure et arrange son contenu hors écran), et Loaded ne
+        // se déclenche jamais dans ce cas.
+        EventHandler? align = null;
+        align = (_, _) =>
+        {
+            if (ShortcutsGrid.ActualWidth <= 0) return;
+            if (ShortcutsGrid.Children.Count == 0) return;
+            if (ShortcutsGrid.Children[0] is not FrameworkElement tile || tile.ActualHeight <= 0) return;
+
+            // Dimensions prises sur la grille et sur une tuile réelle, pas recopiées depuis le
+            // style : une seule source de vérité, qui suit automatiquement un changement de taille
+            // de tuile. La largeur retire les marges horizontales d'une tuile, sinon le bandeau
+            // dépasse de 5 px de chaque côté — la grille mesure les boîtes de mise en page, pas les
+            // bords visibles.
+            UsageBanner.Width = ShortcutsGrid.ActualWidth - (tile.Margin.Left + tile.Margin.Right);
+            UsageBanner.Height = tile.ActualHeight;
+            LayoutUpdated -= align;   // se désabonner évite la boucle : poser la taille relance un passage
+        };
+        LayoutUpdated += align;
+
+        // Un glissement de la poignée est diagonal : WPF repasse SizeToContent en Manual et la
+        // hauteur reste figée à ce que l'utilisateur a lâché — éventuellement sous la taille du
+        // contenu, sans barre de défilement pour le rattraper puisque toutes les lignes sont en
+        // Auto. On rend la hauteur au contenu ; la largeur, elle, reste libre.
+        SizeChanged += (_, _) =>
+        {
+            if (SizeToContent != SizeToContent.Height) SizeToContent = SizeToContent.Height;
+        };
+        // Un seul point de branchement pour le bandeau : l'état d'affichage réel de la fenêtre.
+        // Brancher chaque Show()/Hide() du code laisserait passer les prochains appels ajoutés.
+        IsVisibleChanged += (_, _) => SyncUsageBanner();
+        StateChanged += (_, _) => SyncUsageBanner();
+    }
+
+    /// <summary>
+    /// Le bandeau, exposé pour l'outil de capture : celui-ci doit substituer un ViewModel de
+    /// démonstration avant tout affichage, sinon la capture embarquerait la consommation réelle de
+    /// l'utilisateur. Les champs nommés en XAML sont internes, donc invisibles depuis l'outil.
+    /// </summary>
+    public UsagePanel UsageBannerPanel => UsageBanner;
+
+    /// <summary>
+    /// Le bandeau n'interroge les fournisseurs que quand la fenêtre est réellement sous les yeux.
+    /// DockPad passe l'essentiel de son temps masqué dans la barre système : lire du disque et
+    /// appeler le réseau pour une fenêtre invisible ou réduite ne sert à rien.
+    /// </summary>
+    private void SyncUsageBanner()
+    {
+        if (IsVisible && WindowState != WindowState.Minimized)
+            UsageBanner.Start();
+        else
+            UsageBanner.Stop();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -204,6 +261,11 @@ public partial class QuickAccessWindow : Window
             WindowState = WindowState.Normal;
             Show();
             Activate();
+            // Rafraîchir explicitement : si la fenêtre était déjà visible, ni WindowState ni Show()
+            // ne changent quoi que ce soit, donc ni StateChanged ni IsVisibleChanged ne se
+            // déclenchent — le bandeau restait tel quel, sans lecture ni sablier, alors que mettre
+            // la fenêtre au premier plan est justement le moment où on veut des chiffres à jour.
+            SyncUsageBanner();
             Dispatcher.BeginInvoke(() => SearchBox.Focus());
             handled = true;
         }
@@ -255,6 +317,14 @@ public partial class QuickAccessWindow : Window
         dialog.ShowDialog();
     }
 
+    private void UsageConfig_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new UsageConfigDialog { Owner = this };
+        dialog.ShowDialog();
+        // Les réglages sont écrits au fil des clics : le bandeau doit relire en sortant.
+        _ = UsageBanner.ViewModel?.RefreshAsync();
+    }
+
     private void UpdateHotkeyDisplay()
     {
         var (mods, vk) = SettingsService.LoadHotkey();
@@ -285,7 +355,8 @@ public partial class QuickAccessWindow : Window
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
         foreach (var src in new[] { ShortcutService.FilePath, PageConfigService.FilePath,
-                                    BrowserConfigService.FilePath, McpConfigService.FilePath })
+                                    BrowserConfigService.FilePath, McpConfigService.FilePath,
+                                    UsageConfigService.FilePath })
         {
             if (!File.Exists(src)) continue;
             var dest = Path.Combine(backupDir,

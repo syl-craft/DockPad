@@ -1,0 +1,522 @@
+using System.Threading;
+using System.Threading.Tasks;
+using DockPad.Models;
+using DockPad.Services.Usage;
+
+namespace DockPad.Tests;
+
+public class UsageViewModelTests
+{
+    private sealed class StubProvider(AiUsage? usage) : IUsageProvider
+    {
+        public string Id => usage?.ProviderId ?? "vide";
+        public string Name => Id;
+        public AiProbe Probe() => new() { Available = true, DisplayName = Id };
+        public Task<AiUsage?> ReadAsync(CancellationToken ct) => Task.FromResult(usage);
+    }
+
+    private static AiUsage Usage(string id, string name = "", bool demo = false,
+                                 long session = 12_400, long day = 86_000, long month = 1_200_000,
+                                 int requests = 47, string cost = "$4", string model = "claude-opus-5",
+                                 int? sessionUsed = 62, int? weekUsed = 44,
+                                 string usageUrl = "") => new()
+    {
+        ProviderId = id,
+        Name = name.Length > 0 ? name : id,
+        Glyph = "X",
+        AccentColor = "#123456",
+        Model = model,
+        Cost = cost,
+        UsageUrl = usageUrl,
+        SessionTokens = session,
+        DayTokens = day,
+        MonthTokens = month,
+        Requests = requests,
+        Session = sessionUsed is null ? null : new UsageWindow { UsedPct = sessionUsed.Value },
+        Week = weekUsed is null ? null : new UsageWindow { UsedPct = weekUsed.Value },
+        IsDemo = demo,
+    };
+
+    private static UsageViewModel Build(UsageConfig config, params AiUsage?[] usages)
+    {
+        var providers = usages.Select(u => (IUsageProvider)new StubProvider(u)).ToList();
+        var service = new UsageService(providers);
+        return new UsageViewModel(service, () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+    }
+
+    private static UsageConfig ConfigFor(params (string Id, bool Hidden)[] providers)
+    {
+        var config = new UsageConfig();
+        var order = 0;
+        foreach (var (id, hidden) in providers)
+        {
+            config.Providers.Add(new AiProviderEntry { Id = id, Name = id, Hidden = hidden, Order = order++ });
+        }
+        return config;
+    }
+
+    // --- Métriques
+
+    [Fact]
+    public async Task Metrics_AvecCout_SixColonnesEtCoutEnCinquiemePosition()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+
+        Assert.Equal(6, vm.Metrics.Count);
+        Assert.Equal("Coût est.", vm.Metrics[4].Label);
+        Assert.Equal("$4", vm.Metrics[4].Value);
+        Assert.Equal("Modèle", vm.Metrics[5].Label);
+    }
+
+    [Fact]
+    public async Task Metrics_SansCout_CinqColonnes()
+    {
+        var config = ConfigFor(("a", false));
+        config.ShowCost = false;
+        var vm = Build(config, Usage("a"));
+        await vm.RefreshAsync();
+
+        Assert.Equal(5, vm.Metrics.Count);
+        Assert.DoesNotContain(vm.Metrics, m => m.Label.StartsWith("Coût"));
+        Assert.Equal("Modèle", vm.Metrics[4].Label);
+    }
+
+    [Fact]
+    public async Task Metrics_SessionNulle_AfficheTiretEtNonZero()
+    {
+        // Zéro jeton de session veut dire « aucun bloc actif » : une absence de mesure.
+        var vm = Build(ConfigFor(("a", false)), Usage("a", session: 0));
+        await vm.RefreshAsync();
+
+        Assert.Equal(UsageViewModel.Unknown, vm.Metrics[0].Value);
+    }
+
+    [Fact]
+    public async Task Metrics_CoutEtModeleVides_AffichentTiret()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a", cost: "", model: ""));
+        await vm.RefreshAsync();
+
+        Assert.Equal(UsageViewModel.Unknown, vm.Metrics[4].Value);
+        Assert.Equal(UsageViewModel.Unknown, vm.Metrics[5].Value);
+    }
+
+    // --- Onglets
+
+    [Fact]
+    public async Task ShowTabs_UnSeulFournisseur_PasDOnglets()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a", name: "Claude Code"));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.ShowTabs);
+        Assert.Empty(vm.Tabs);
+        Assert.Equal("Claude Code", vm.SoloName);
+    }
+
+    [Fact]
+    public async Task ShowTabs_DeuxFournisseurs_OngletsPresents()
+    {
+        var vm = Build(ConfigFor(("a", false), ("b", false)), Usage("a"), Usage("b"));
+        await vm.RefreshAsync();
+
+        Assert.True(vm.ShowTabs);
+        Assert.Equal(2, vm.Tabs.Count);
+        Assert.True(vm.Tabs[0].IsSelected);
+        Assert.False(vm.Tabs[1].IsSelected);
+    }
+
+    [Fact]
+    public async Task ShowTabs_FournisseurMasque_AbsentDesOnglets()
+    {
+        var vm = Build(ConfigFor(("a", false), ("b", true)), Usage("a"), Usage("b"));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.ShowTabs);
+        Assert.DoesNotContain(vm.Tabs, t => t.ProviderId == "b");
+    }
+
+    // --- Sélection
+
+    [Fact]
+    public async Task Select_ChangeLesMetriquesEtLesJauges()
+    {
+        var vm = Build(ConfigFor(("a", false), ("b", false)),
+                       Usage("a", day: 1_000, sessionUsed: 10),
+                       Usage("b", day: 2_000, sessionUsed: 90));
+        await vm.RefreshAsync();
+
+        vm.Select("b");
+
+        Assert.Equal("2k", vm.Metrics[1].Value);
+        Assert.Equal(90, vm.SessionGauge!.UsedPct);
+        Assert.True(vm.Tabs.Single(t => t.ProviderId == "b").IsSelected);
+        Assert.False(vm.Tabs.Single(t => t.ProviderId == "a").IsSelected);
+    }
+
+    [Fact]
+    public async Task Select_NeModifiePasLeReglageParDefaut()
+    {
+        // Le fournisseur affiché au démarrage est un réglage explicite ; un clic est une sélection
+        // de session. Écrire à chaque clic mettrait la config en concurrence avec sa fenêtre.
+        var config = ConfigFor(("a", false), ("b", false));
+        config.DefaultProviderId = "a";
+        var vm = Build(config, Usage("a"), Usage("b"));
+        await vm.RefreshAsync();
+
+        vm.Select("b");
+
+        Assert.Equal("a", config.DefaultProviderId);
+    }
+
+    [Fact]
+    public async Task Select_FournisseurInconnu_NeChangeRien()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a", day: 1_000));
+        await vm.RefreshAsync();
+
+        vm.Select("inexistant");
+
+        Assert.Equal("1k", vm.Metrics[1].Value);
+    }
+
+    [Fact]
+    public async Task DefaultProviderId_EstHonoreALOuverture()
+    {
+        var config = ConfigFor(("a", false), ("b", false));
+        config.DefaultProviderId = "b";
+        var vm = Build(config, Usage("a", day: 1_000), Usage("b", day: 2_000));
+
+        await vm.RefreshAsync();
+
+        Assert.Equal("2k", vm.Metrics[1].Value);
+    }
+
+    [Fact]
+    public async Task DefaultProviderId_Masque_RetombeSurLePremierVisibleSansEffacerLeReglage()
+    {
+        var config = ConfigFor(("a", false), ("b", true));
+        config.DefaultProviderId = "b";
+        var vm = Build(config, Usage("a", day: 1_000), Usage("b", day: 2_000));
+
+        await vm.RefreshAsync();
+
+        Assert.Equal("1k", vm.Metrics[1].Value);
+        Assert.Equal("b", config.DefaultProviderId);   // le réglage survit au masquage
+    }
+
+    [Fact]
+    public async Task DefaultProviderId_Inconnu_RetombeSurLePremierVisible()
+    {
+        var config = ConfigFor(("a", false));
+        config.DefaultProviderId = "jamais-vu";
+        var vm = Build(config, Usage("a", day: 1_000));
+
+        await vm.RefreshAsync();
+
+        Assert.Equal("1k", vm.Metrics[1].Value);
+    }
+
+    // --- Visibilité
+
+    [Fact]
+    public async Task IsVisible_TousMasques_Faux()
+    {
+        var vm = Build(ConfigFor(("a", true)), Usage("a"));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.IsVisible);
+        Assert.Empty(vm.Metrics);
+    }
+
+    [Fact]
+    public async Task IsVisible_ReglageDesactive_Faux()
+    {
+        var config = ConfigFor(("a", false));
+        config.Enabled = false;
+        var vm = Build(config, Usage("a"));
+
+        await vm.RefreshAsync();
+
+        Assert.False(vm.IsVisible);
+    }
+
+    [Fact]
+    public async Task ReglageDesactive_NInterrogeAucunFournisseur()
+    {
+        // « Désactivé » doit couper la surveillance, pas seulement l'affichage : aucun scan disque
+        // ni appel réseau, pour aucun fournisseur.
+        var spies = new[] { new CountingProvider("a"), new CountingProvider("b") };
+        var config = ConfigFor(("a", false), ("b", false));
+        config.Enabled = false;
+        var vm = new UsageViewModel(new UsageService(spies), () => config,
+                                    () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        await vm.RefreshAsync();
+
+        Assert.All(spies, spy => Assert.Equal(0, spy.ReadCount));
+    }
+
+    private sealed class CountingProvider(string id) : IUsageProvider
+    {
+        public int ReadCount { get; private set; }
+        public string Id => id;
+        public string Name => id;
+        public AiProbe Probe() => new() { Available = true, DisplayName = id };
+
+        public Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            ReadCount++;
+            return Task.FromResult<AiUsage?>(null);
+        }
+    }
+
+    [Fact]
+    public async Task IsVisible_ProviderSansDonnees_Faux()
+    {
+        // `null` seul lierait le tableau entier de params, pas un élément.
+        var vm = Build(ConfigFor(("a", false)), new AiUsage?[] { null });
+        await vm.RefreshAsync();
+
+        Assert.False(vm.IsVisible);
+    }
+
+    // --- Jauges
+
+    [Fact]
+    public async Task Jauge_SansQuota_NAffirmeAucuneMesure()
+    {
+        // HasQuota faux masque la jauge entière côté vue. Sans ça le pourcentage vaudrait 0 et
+        // afficherait « 0 % session », une mesure affirmée là où il n'y a pas de donnée — ce qui
+        // arrive au démarrage, avant que la première lecture ait abouti.
+        var vm = Build(ConfigFor(("a", false)), Usage("a", sessionUsed: null, weekUsed: null));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.SessionGauge!.HasQuota);
+        Assert.False(vm.WeekGauge!.HasQuota);
+        Assert.Equal("", vm.SessionGauge.Reset);
+        Assert.Equal("", vm.SessionGauge.Tooltip);
+    }
+
+    [Fact]
+    public async Task Jauge_CouleurSuitLeSeuilDeLaConfig()
+    {
+        var config = ConfigFor(("a", false));
+        config.AlertThreshold = 45;                       // restant 38 % < 45 → critique
+        var vm = Build(config, Usage("a", sessionUsed: 62));
+
+        await vm.RefreshAsync();
+
+        Assert.Equal(UsageFormat.Critical, vm.SessionGauge!.Color);
+    }
+
+    [Fact]
+    public async Task Jauge_ExposeLeConsommeEtLeRestant()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a", sessionUsed: 62));
+        await vm.RefreshAsync();
+
+        Assert.Equal(62, vm.SessionGauge!.UsedPct);
+        Assert.Equal(38, vm.SessionGauge.RemainingPct);
+    }
+
+    [Fact]
+    public async Task Jauge_LibelleCourtMaisInfobulleExplicite()
+    {
+        // Le libellé est court par choix. « 62 % session » ne disant pas si le chiffre est le
+        // consommé ou le restant, l'infobulle doit lever le doute — c'est le consommé que compte
+        // claude.ai/settings/usage, et deux références pour la même donnée ne doivent pas se
+        // contredire.
+        var vm = Build(ConfigFor(("a", false)), Usage("a", sessionUsed: 62));
+        await vm.RefreshAsync();
+
+        Assert.Equal("session", vm.SessionGauge!.Label);
+        Assert.Equal("semaine", vm.WeekGauge!.Label);
+        Assert.Contains("62 % utilisés", vm.SessionGauge.Tooltip);
+        Assert.Contains("38 % restants", vm.SessionGauge.Tooltip);
+    }
+
+    // --- Attente
+
+    private sealed class SlowProvider(AiUsage usage, TimeSpan delay) : IUsageProvider
+    {
+        public string Id => usage.ProviderId;
+        public string Name => Id;
+        public AiProbe Probe() => new() { Available = true, DisplayName = Id };
+
+        public async Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            await Task.Delay(delay, ct);
+            return usage;
+        }
+    }
+
+    [Fact]
+    public async Task IsLoading_VraiPendantLaLecturePuisFauxALaFin()
+    {
+        // Une lecture réelle parcourt des centaines de fichiers : l'attente doit se voir, et le
+        // bandeau garde ses valeurs précédentes pendant ce temps.
+        var config = ConfigFor(("a", false));
+        var vm = new UsageViewModel(
+            new UsageService([new SlowProvider(Usage("a"), TimeSpan.FromMilliseconds(300))]),
+            () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        var refresh = vm.RefreshAsync();
+        Assert.True(vm.IsLoading);
+
+        await refresh;
+        Assert.False(vm.IsLoading);
+    }
+
+    [Fact]
+    public async Task IsLoading_RetombeAFauxMemeEnCasDEchec()
+    {
+        var config = ConfigFor(("boom", false));
+        var vm = new UsageViewModel(new UsageService([new ThrowingProvider()]),
+                                    () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        await vm.RefreshAsync();
+
+        Assert.False(vm.IsLoading);
+    }
+
+    private sealed class ThrowingProvider : IUsageProvider
+    {
+        public string Id => "boom";
+        public string Name => "Boom";
+        public AiProbe Probe() => new() { Available = true, DisplayName = "Boom" };
+        public Task<AiUsage?> ReadAsync(CancellationToken ct) =>
+            throw new InvalidOperationException("lecture cassée");
+    }
+
+    [Fact]
+    public async Task IsLoading_UneLectureDepassee_NEteintPasLeSablier()
+    {
+        // Séquence de la touche Alt+Espace : masquer puis réafficher enchaîne deux rafraîchissements.
+        // Le finally de l'ancienne éteignait le sablier pendant la lecture de la nouvelle.
+        var config = ConfigFor(("a", false));
+        var vm = new UsageViewModel(
+            new UsageService([new SlowProvider(Usage("a"), TimeSpan.FromMilliseconds(400))]),
+            () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        var premier = vm.RefreshAsync();
+        var second = vm.RefreshAsync();      // supplante le premier
+
+        await premier;                        // l'annulé rend la main
+        Assert.True(vm.IsLoading);            // la lecture récente tourne toujours
+
+        await second;
+        Assert.False(vm.IsLoading);
+    }
+
+    [Fact]
+    public async Task UneLectureDepassee_NEcrasePasLesValeursRecentes()
+    {
+        // Le chemin d'exception de l'ancienne invocation faisait _snapshots = [] puis Rebuild, ce qui
+        // vidait le bandeau APRÈS que la récente l'avait rempli.
+        var config = ConfigFor(("casse", false), ("ok", false));
+        var vm = new UsageViewModel(
+            new UsageService([
+                new ThrowingAfterDelayProvider("casse", TimeSpan.FromMilliseconds(300)),
+                new SlowProvider(Usage("ok", day: 5_000), TimeSpan.FromMilliseconds(50)),
+            ]),
+            () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        var premier = vm.RefreshAsync();
+        await Task.Delay(50);
+        var second = vm.RefreshAsync();
+
+        await Task.WhenAll(premier, second);
+
+        Assert.True(vm.IsVisible);
+        Assert.NotEmpty(vm.Metrics);
+    }
+
+    private sealed class ThrowingAfterDelayProvider(string id, TimeSpan delay) : IUsageProvider
+    {
+        public string Id => id;
+        public string Name => id;
+        public AiProbe Probe() => new() { Available = true, DisplayName = id };
+
+        public async Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            await Task.Delay(delay, ct);
+            throw new InvalidOperationException("lecture cassée");
+        }
+    }
+
+    [Fact]
+    public async Task IsLoading_MarqueLOngletSelectionneSeulement()
+    {
+        // Providers lents : avec des lectures synchrones, RefreshAsync se termine avant l'assertion
+        // et l'état intermédiaire n'est jamais observable.
+        var config = ConfigFor(("a", false), ("b", false));
+        var slow = TimeSpan.FromMilliseconds(200);
+        var vm = new UsageViewModel(
+            new UsageService([new SlowProvider(Usage("a"), slow), new SlowProvider(Usage("b"), slow)]),
+            () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+        await vm.RefreshAsync();
+
+        // Les onglets existent : un nouveau rafraîchissement doit marquer le seul onglet affiché.
+        var refresh = vm.RefreshAsync();
+
+        Assert.True(vm.Tabs.Single(t => t.ProviderId == "a").IsLoading);
+        Assert.False(vm.Tabs.Single(t => t.ProviderId == "b").IsLoading);
+
+        await refresh;
+        Assert.All(vm.Tabs, t => Assert.False(t.IsLoading));
+    }
+
+    // --- Page du fournisseur
+
+    [Fact]
+    public async Task UsageUrl_SansUrl_LeLienEstMasque()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.HasUsageUrl);
+        Assert.Equal("", vm.UsageUrl);
+    }
+
+    [Fact]
+    public async Task UsageUrl_AvecUrl_LeLienEstVisible()
+    {
+        var vm = Build(ConfigFor(("a", false)),
+                       Usage("a", usageUrl: "https://claude.ai/new#settings/usage"));
+        await vm.RefreshAsync();
+
+        Assert.True(vm.HasUsageUrl);
+        Assert.Equal("https://claude.ai/new#settings/usage", vm.UsageUrl);
+    }
+
+    [Fact]
+    public async Task UsageUrl_SuitLeFournisseurAffiche()
+    {
+        var vm = Build(ConfigFor(("a", false), ("b", false)),
+                       Usage("a", usageUrl: "https://a.example/usage"),
+                       Usage("b"));
+        await vm.RefreshAsync();
+
+        Assert.Equal("https://a.example/usage", vm.UsageUrl);
+
+        vm.Select("b");
+        Assert.False(vm.HasUsageUrl);   // le fournisseur suivant n'a pas de page
+    }
+
+    // --- Démo
+
+    [Fact]
+    public async Task IsDemo_SuitLeFournisseurAffiche()
+    {
+        var vm = Build(ConfigFor(("reel", false), ("demo", false)),
+                       Usage("reel"), Usage("demo", demo: true));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.IsDemo);
+
+        vm.Select("demo");
+        Assert.True(vm.IsDemo);
+    }
+}
