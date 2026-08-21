@@ -66,6 +66,11 @@ public class UsageFormatTests
     [InlineData(999_000_000L, "999M")]
     [InlineData(1_000_000_000L, "1 Md")]
     [InlineData(2_741_932_310L, "2,7 Md")]
+    // Frontières d'arrondi : 999 999 / 1000 vaut 999,999, qui s'arrondit à 1000. Sans promotion
+    // d'unité, ces trois valeurs affichaient « 1000k », « 1000M » et « 1000 Md ».
+    [InlineData(999_949L, "999,9k")]
+    [InlineData(999_999L, "1M")]
+    [InlineData(999_999_999L, "1 Md")]
     public void Tokens_FormateEnCompact(long valeur, string attendu)
     {
         Assert.Equal(attendu, UsageFormat.Tokens(valeur));

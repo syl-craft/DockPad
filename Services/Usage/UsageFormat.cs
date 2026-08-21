@@ -46,8 +46,12 @@ public static class UsageFormat
     {
         if (n < 0) return "—";
         if (n < 1_000) return n.ToString(Fr);
-        if (n < 1_000_000) return Trim(n / 1_000d) + "k";
-        if (n < 1_000_000_000) return Trim(n / 1_000_000d) + "M";
+
+        // Les seuils portent sur la valeur APRÈS arrondi, pas avant : 999 999 divisé par mille donne
+        // 999,999, qui s'arrondit à une décimale en 1000 — donc « 1000k » au lieu de « 1M ». La
+        // frontière est là où l'arrondi reste sous le millier.
+        if (n < 999_950) return Trim(n / 1_000d) + "k";
+        if (n < 999_950_000) return Trim(n / 1_000_000d) + "M";
         return Trim(n / 1_000_000_000d) + " Md";
     }
 

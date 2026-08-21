@@ -107,6 +107,27 @@ public class UsageConfigServiceTests : IDisposable
     }
 
     [Fact]
+    public void Load_IdsEnDoublon_GardeLePremierSansLever()
+    {
+        // La fusion et l'agrégation indexent cette liste par id : un doublon y lèverait, et
+        // l'exception masquerait le bandeau entier. On écarte ici, à la porte d'entrée du fichier.
+        File.WriteAllText(_path, """
+        {
+          "providers": [
+            { "id": "claude", "name": "Le bon", "order": 0 },
+            { "id": "Claude", "name": "Le doublon", "order": 1 },
+            { "id": "demo", "name": "Démo", "order": 2 }
+          ]
+        }
+        """);
+
+        var cfg = UsageConfigService.Load(_path);
+
+        Assert.Equal(2, cfg.Providers.Count);
+        Assert.Equal("Le bon", cfg.Providers.Single(p => p.Id == "claude").Name);
+    }
+
+    [Fact]
     public void Save_CreeLeDossierManquant()
     {
         var nested = Path.Combine(Path.GetTempPath(), $"usagedir_{Guid.NewGuid():N}", "usage.json");

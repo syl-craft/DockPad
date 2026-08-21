@@ -203,10 +203,19 @@ public partial class UsageConfigDialog : Window
         lock (ConfigLock.Gate)
         {
             var config = UsageConfigService.Load();
-            var entry = config.Providers.FirstOrDefault(p => p.Id == row.Id);
-            if (entry is null) return;
-            entry.Hidden = box.IsChecked != true;
-            UsageConfigService.Save(config);
+            // Insensible à la casse, comme partout ailleurs sur cette clé : une entrée écrite
+            // « Claude » dans le fichier était trouvée par le bandeau mais pas ici.
+            var entry = config.Providers.FirstOrDefault(
+                p => string.Equals(p.Id, row.Id, StringComparison.OrdinalIgnoreCase));
+
+            // Sortir sans recharger laissait la case cochée alors que rien n'avait été enregistré :
+            // l'utilisateur croyait avoir masqué un fournisseur. Le rechargement remet l'affichage
+            // en accord avec le fichier, quelle que soit l'issue.
+            if (entry is not null)
+            {
+                entry.Hidden = box.IsChecked != true;
+                UsageConfigService.Save(config);
+            }
         }
 
         Load(row.Id);

@@ -27,6 +27,16 @@ public static class UsageConfigService
             // Une entrée sans id n'a pas de clé de fusion : inexploitable, mais elle ne doit pas
             // emporter le reste du fichier avec elle.
             config.Providers.RemoveAll(p => string.IsNullOrWhiteSpace(p.Id));
+
+            // Les doublons d'id sont écartés ici, à la seule porte d'entrée du fichier. Plus loin,
+            // la fusion et l'agrégation indexent cette liste par id : un doublon y lèverait, et
+            // l'exception, attrapée plus haut, masquerait le bandeau entier — exactement ce que la
+            // tolérance ci-dessus cherche à éviter. La première entrée gagne.
+            config.Providers = config.Providers
+                .GroupBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .ToList();
+
             return config;
         }
         catch (Exception ex)

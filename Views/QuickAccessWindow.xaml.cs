@@ -59,6 +59,15 @@ public partial class QuickAccessWindow : Window
             LayoutUpdated -= align;   // se désabonner évite la boucle : poser la taille relance un passage
         };
         LayoutUpdated += align;
+
+        // Un glissement de la poignée est diagonal : WPF repasse SizeToContent en Manual et la
+        // hauteur reste figée à ce que l'utilisateur a lâché — éventuellement sous la taille du
+        // contenu, sans barre de défilement pour le rattraper puisque toutes les lignes sont en
+        // Auto. On rend la hauteur au contenu ; la largeur, elle, reste libre.
+        SizeChanged += (_, _) =>
+        {
+            if (SizeToContent != SizeToContent.Height) SizeToContent = SizeToContent.Height;
+        };
         // Un seul point de branchement pour le bandeau : l'état d'affichage réel de la fenêtre.
         // Brancher chaque Show()/Hide() du code laisserait passer les prochains appels ajoutés.
         IsVisibleChanged += (_, _) => SyncUsageBanner();
