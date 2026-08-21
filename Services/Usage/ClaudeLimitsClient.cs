@@ -125,12 +125,17 @@ public sealed class ClaudeLimitsClient
     }
 
     /// <summary>
-    /// Interroge l'endpoint de quota. Renvoie <c>null</c> sur tout échec, sans lever : l'appelant
-    /// masque les jauges et garde les métriques de jetons.
+    /// Interroge l'endpoint de quota. Ne lève jamais : l'appelant masque les jauges et garde les
+    /// métriques de jetons.
     /// </summary>
-    public async Task<ClaudeLimits?> FetchAsync(string accessToken, CancellationToken ct)
+    /// <returns>
+    /// Le quota, et une raison d'échec quand il vaut <c>null</c>. La raison est destinée au journal
+    /// et ne contient que des faits non sensibles — un code de statut, un type d'exception : jamais
+    /// le jeton, jamais le corps de la réponse.
+    /// </returns>
+    public async Task<(ClaudeLimits? Limits, string Failure)> FetchAsync(string accessToken, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(accessToken)) return null;
+        if (string.IsNullOrEmpty(accessToken)) return (null, "jeton absent");
 
         try
         {
@@ -139,20 +144,26 @@ public sealed class ClaudeLimitsClient
             request.Headers.Add("anthropic-beta", BetaHeader);
 
             using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                return (null, $"HTTP {(int)response.StatusCode} {response.StatusCode}");
+            }
 
             var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-            return ParseUsage(body);
+            var limits = ParseUsage(body);
+            return limits is null
+                ? (null, $"forme de réponse inconnue ({body.Length} octets)")
+                : (limits, "");
         }
         catch (OperationCanceledException)
         {
             throw;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Aucune journalisation ici : le message pourrait embarquer l'URL et l'appelant sait
-            // déjà signaler l'indisponibilité une fois par session.
-            return null;
+            // Le type de l'exception, jamais son message : celui-ci pourrait embarquer l'URL ou des
+            // en-têtes.
+            return (null, ex.GetType().Name);
         }
     }
 

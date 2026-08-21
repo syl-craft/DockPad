@@ -84,6 +84,12 @@ public static class ClaudeUsageReader
             var entry = ParseLine(line);
             if (entry is null) continue;
             if (entry.Timestamp < since) continue;
+            // Une entrée sans aucun jeton n'est pas un appel facturé. Claude Code en écrit pour ses
+            // messages générés localement, sous le modèle « <synthetic> » — mesuré 25 entrées à zéro
+            // jeton sur un mois. Les garder ne changeait pas les totaux, mais le modèle affiché est
+            // celui de l'entrée la plus récente : une synthétique en dernier faisait afficher
+            // « <synthetic> » à la place du vrai modèle, et elles comptaient comme requêtes.
+            if (entry.Total == 0) continue;
             if (!seen.Add(entry.Key)) continue;   // même message réécrit ailleurs
             entries.Add(entry);
         }

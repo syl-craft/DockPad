@@ -114,8 +114,8 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             var token = ClaudeLimitsClient.ReadAccessToken(File.ReadAllText(path), DateTime.UtcNow);
             if (token is null) return null;
 
-            var limits = await _limits.FetchAsync(token, ct).ConfigureAwait(false);
-            if (limits is null) NoteQuotaUnavailable("réponse inexploitable");
+            var (limits, failure) = await _limits.FetchAsync(token, ct).ConfigureAwait(false);
+            if (limits is null) NoteQuotaUnavailable(failure);
             return limits;
         }
         catch (OperationCanceledException)

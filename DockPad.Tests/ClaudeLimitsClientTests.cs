@@ -214,10 +214,11 @@ public class ClaudeLimitsClientTests
         var handler = new StubHandler(HttpStatusCode.OK, UsageBody);
         var client = new ClaudeLimitsClient(new HttpClient(handler));
 
-        var limits = await client.FetchAsync("jeton", CancellationToken.None);
+        var (limits, failure) = await client.FetchAsync("jeton", CancellationToken.None);
 
         Assert.NotNull(limits);
         Assert.Equal(62, limits!.Session!.UsedPct);
+        Assert.Equal("", failure);
     }
 
     [Fact]
@@ -240,11 +241,29 @@ public class ClaudeLimitsClientTests
     [InlineData(HttpStatusCode.Forbidden)]
     [InlineData(HttpStatusCode.TooManyRequests)]
     [InlineData(HttpStatusCode.InternalServerError)]
-    public async Task FetchAsync_ReponseEnEchec_RetourneNull(HttpStatusCode status)
+    public async Task FetchAsync_ReponseEnEchec_NommeLeStatut(HttpStatusCode status)
     {
+        // Le journal doit distinguer un 401 d'un 429 : c'est la première question qu'on se pose, et
+        // un code de statut n'est pas une donnée sensible.
         var client = new ClaudeLimitsClient(new HttpClient(new StubHandler(status, "")));
 
-        Assert.Null(await client.FetchAsync("jeton", CancellationToken.None));
+        var (limits, failure) = await client.FetchAsync("jeton", CancellationToken.None);
+
+        Assert.Null(limits);
+        Assert.Contains(((int)status).ToString(), failure);
+    }
+
+    [Fact]
+    public async Task FetchAsync_FormeInconnue_LeDitSansCiterLeCorps()
+    {
+        var client = new ClaudeLimitsClient(
+            new HttpClient(new StubHandler(HttpStatusCode.OK, """{"autre_forme":1}""")));
+
+        var (limits, failure) = await client.FetchAsync("jeton", CancellationToken.None);
+
+        Assert.Null(limits);
+        Assert.Contains("forme de réponse inconnue", failure);
+        Assert.DoesNotContain("autre_forme", failure);   // jamais le corps dans le journal
     }
 
     [Fact]
@@ -253,7 +272,10 @@ public class ClaudeLimitsClientTests
         var handler = new StubHandler(HttpStatusCode.OK, UsageBody);
         var client = new ClaudeLimitsClient(new HttpClient(handler));
 
-        Assert.Null(await client.FetchAsync("", CancellationToken.None));
+        var (limits, failure) = await client.FetchAsync("", CancellationToken.None);
+
+        Assert.Null(limits);
+        Assert.Equal("jeton absent", failure);
         Assert.Null(handler.LastRequest);
     }
 
@@ -268,6 +290,11 @@ public class ClaudeLimitsClientTests
     {
         var client = new ClaudeLimitsClient(new HttpClient(new ThrowingHandler()));
 
-        Assert.Null(await client.FetchAsync("jeton", CancellationToken.None));
+        var (limits, failure) = await client.FetchAsync("jeton", CancellationToken.None);
+
+        Assert.Null(limits);
+        // Le type de l'exception, jamais son message : celui-ci pourrait embarquer l'URL.
+        Assert.Equal(nameof(HttpRequestException), failure);
+        Assert.DoesNotContain("injoignable", failure);
     }
 }

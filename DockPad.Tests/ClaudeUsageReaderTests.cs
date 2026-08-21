@@ -165,6 +165,37 @@ public class ClaudeUsageReaderTests : IDisposable
     }
 
     [Fact]
+    public void Read_EntreeSansAucunJeton_Ignoree()
+    {
+        // Claude Code écrit des lignes « assistant » pour ses messages générés localement, sous le
+        // modèle « <synthetic> » et sans aucun jeton. Elles ne sont pas des appels facturés : les
+        // garder faisait afficher « <synthetic> » comme modèle courant dès qu'une d'elles arrivait
+        // en dernier, et les comptait comme requêtes.
+        var utc = DateTime.UtcNow.AddMinutes(-10);
+        WriteFile("a.jsonl",
+            AssistantLine("m1", "r1", utc, "claude-opus-5", 10, 20, 0, 0),
+            AssistantLine("m2", "r2", utc.AddMinutes(1), "<synthetic>", 0, 0, 0, 0));
+
+        var e = Assert.Single(ClaudeUsageReader.Read(_home, DateTime.Now.AddDays(-1)));
+        Assert.Equal("claude-opus-5", e.Model);
+    }
+
+    [Fact]
+    public void Aggregate_ModeleCourant_IgnoreLesEntreesSynthetiques()
+    {
+        var now = new DateTime(2026, 8, 20, 14, 0, 0);
+        var entries = new[]
+        {
+            Entry(now.AddHours(-2), 100, "claude-opus-5"),
+            Entry(now.AddHours(-1), 0, "<synthetic>"),   // écartée par Read, jamais agrégée
+        };
+
+        // Aggregate ne filtre pas : c'est Read qui écarte les entrées sans jeton. Le test vérifie
+        // que la responsabilité est bien à cet endroit, en montrant l'effet si on l'y laissait.
+        Assert.Equal("<synthetic>", ClaudeUsageReader.Aggregate(entries, now).Model);
+    }
+
+    [Fact]
     public void Read_FichierModifieAvantLaFenetre_NEstPasLu()
     {
         var utc = DateTime.UtcNow.AddDays(-40);

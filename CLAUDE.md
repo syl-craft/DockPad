@@ -337,6 +337,7 @@ Extraite de `ClaudeUsageReader` à l'arrivée des trois autres : chacun lit sa s
 - **Fenêtre par `mtime`** : un fichier modifié avant le début de la période n'est pas ouvert
 - **`ScanRoots(home)` est la seule fonction qui sait où chercher** — le scan, la détection et les tests l'appellent. Deux listes de littéraux séparées, et c'est l'une des deux qui pourrit sans qu'un test le voie
 - **Timestamps UTC → `LocalDateTime`**, jamais `ToLocalTime().DateTime` : le second rend un `Kind` *Unspecified*, qui laisse passer un mélange UTC/local inaperçu (les bornes jour et mois sont locales)
+- **Une entrée sans aucun jeton est écartée** : ce n'est pas un appel facturé. Claude Code en écrit pour ses messages générés localement, sous le modèle `<synthetic>` — mesuré 25 entrées à zéro jeton sur un mois. Les garder ne changeait pas les totaux, mais le modèle affiché est celui de l'entrée la plus récente : une synthétique en dernier faisait afficher `<synthetic>` à la place du vrai modèle
 - **Bloc de session ancré** : il démarre à la première activité qu'aucun bloc ne couvre et dure 5 h. Un bloc fermé avant maintenant donne zéro, pas un total périmé
 - Lecture en `FileShare.ReadWrite` et JSON tronqué toléré : Claude Code écrit pendant qu'on lit
 
@@ -371,6 +372,8 @@ Table `assistant_usage_events` de `~/.copilot/session-store.db` — une ligne pa
 `GET https://api.anthropic.com/api/oauth/usage`, en-têtes `Authorization: Bearer <jeton>` + `anthropic-beta: oauth-2025-04-20`. Réponse acceptée sous deux formes : champs hérités `five_hour`/`seven_day`, ou liste `limits[]` (`kind` = `session` / `weekly_all`) — les hérités priment.
 
 - **Jamais un chemin critique** : l'endpoint n'est pas documenté et cassera. Jeton absent, expiré, 401, 429, réseau coupé, forme inconnue → `null`, donc jauges masquées et jetons conservés. Un `LogService.Info` une seule fois par session
+- **L'échec est nommé, pas seulement constaté** : `FetchAsync` renvoie le quota **et** une raison — code de statut HTTP, « forme de réponse inconnue », ou type d'exception. Jamais le jeton, jamais le corps de la réponse, jamais le message d'exception (qui peut embarquer l'URL). Un journal qui dit seulement « indisponible » ne permet pas de distinguer un 401 d'un 429, qui est la première question qu'on se pose
+- **Constat d'usage : l'endpoint est intermittent.** Sur une même machine et un même jeton, il a répondu, puis échoué plusieurs fois de suite, puis répondu de nouveau. C'est bien la raison pour laquelle il ne doit jamais être un chemin critique
 - **Traitement du secret** : le jeton vient de `%USERPROFILE%\.claude\.credentials.json` (`claudeAiOauth.accessToken`) — Windows n'a pas de keychain, ce fichier est la seule source. Il reste local à la méthode qui l'utilise : **jamais journalisé, jamais recopié dans une config, jamais envoyé ailleurs que sur `api.anthropic.com`**
 - **Deux pièges couverts par des tests** : `claudeAiOauth` explicitement `null` se décode en élément *présent* — tester la seule présence de la clé lirait un état déconnecté comme valide ; et `utilization` est un **pourcentage**, pas une fraction — l'heuristique « ≤ 1 donc fraction » transformerait une utilisation réelle de 1 % en 100 %, soit une fausse alerte rouge
 
