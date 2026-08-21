@@ -96,7 +96,6 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// <summary>Démarre le rafraîchissement périodique. À appeler quand la fenêtre s'affiche.</summary>
     public void Start()
     {
-        LogService.Info("[TRACE Usage] Start");   // TRACE TEMPORAIRE
         _running = true;
         _timer ??= CreateTimer();
         _timer.Start();
@@ -109,7 +108,6 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// </summary>
     public void Stop()
     {
-        LogService.Info("[TRACE Usage] Stop");   // TRACE TEMPORAIRE
         _running = false;
         _timer?.Stop();
         Cancel();
@@ -146,7 +144,6 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         }
         catch (OperationCanceledException)
         {
-            LogService.Info("[TRACE Usage] refresh annule");   // TRACE TEMPORAIRE
             return;   // un rafraîchissement plus récent a pris la main — le finally rend la main
         }
         catch (Exception ex)
@@ -158,11 +155,6 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         {
             IsLoading = false;
         }
-
-        // TRACE TEMPORAIRE
-        LogService.Info($"[TRACE Usage] refresh fini : enabled={_config.Enabled} " +
-                        $"instantanes={_snapshots.Count} " +
-                        $"[{string.Join(", ", _snapshots.Select(x => $"{x.ProviderId} jour={x.DayTokens} quotaSession={(x.Session is null ? "null" : x.Session.UsedPct.ToString())}"))}]");
 
         Rebuild();
     }
@@ -196,8 +188,6 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         SoloGlyph = selected?.Glyph ?? "";
         SoloAccent = selected?.AccentColor ?? "#000000";
 
-        LogService.Info($"[TRACE Usage] rebuild : visible={IsVisible} onglets={ShowTabs} " +
-                        $"selection='{selected?.ProviderId ?? "aucune"}' metriques={_snapshots.Count}");   // TRACE TEMPORAIRE
         BuildTabs(selected);
         BuildGauges(selected);
         BuildMetrics(selected);
