@@ -33,6 +33,16 @@ public static class UsageAggregator
         long Session, long Day, long Month, int Requests, string Model, decimal Cost);
 
     /// <summary>
+    /// Totaux d'un fournisseur détecté mais inactif sur la période.
+    /// </summary>
+    /// <remarks>
+    /// Ce n'est pas la même chose que l'absence de fournisseur : « installé, rien consommé » est une
+    /// information, et un onglet à zéro la porte. Disparaître du bandeau doit vouloir dire « pas
+    /// installé ».
+    /// </remarks>
+    public static readonly UsageTotals Empty = new(0, 0, 0, 0, "", 0m);
+
+    /// <summary>
     /// Totaux session / jour / mois.
     /// </summary>
     /// <param name="now">

@@ -123,7 +123,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (309 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (312 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -330,6 +330,7 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 - **Le dossier de départ est injectable** sur les quatre providers réels (repli sur `%USERPROFILE%`) : c'est ce qui rend détection et scan testables sur un dossier temporaire, sans toucher au profil réel
 - **`CODEX_HOME` et `COPILOT_HOME` sont respectées**, comme le font leurs CLI. Sans ça, un utilisateur qui a déplacé son dossier verrait un zéro silencieux
 - **`ReadAsync` renvoie `null`** pour « rien à afficher » — c'est le cas normal, pas une erreur. Une exception est attrapée par `UsageService`, journalisée en `Warn`, et traitée comme `null` : les autres fournisseurs s'affichent
+- **Détecté mais inactif = un onglet à zéro, pas une disparition.** `ReadAsync` ne renvoie `null` que si la sonde dit le fournisseur absent ; s'il est installé mais qu'aucune consommation ne tombe dans la fenêtre, il rend `UsageAggregator.Empty`. Sinon un assistant installé qu'on n'a pas utilisé ce mois-ci s'affiche « détecté » dans les réglages et reste introuvable dans le bandeau, sans rien qui explique l'écart — le cas vécu avec Gemini, dont la seule session du mois ne portait aucun jeton. **Disparaître du bandeau veut dire « pas installé », et rien d'autre**
 - **Un fournisseur masqué n'est pas interrogé du tout** : lire pour ne pas afficher, c'est du disque et du réseau pour rien
 - **La lecture passe par `Task.Run`** chez les quatre providers réels : elle parcourt des fichiers (mesuré 2,5 s sur le profil Claude réel) et gèlerait le thread d'interface avant le premier `await`
 
@@ -553,6 +554,7 @@ UsageShot.exe config     docs/screenshots/usage-config.png      # fenetre de reg
 UsageShot.exe window     docs/screenshots/usage-window.png      # integration dans la fenetre
 UsageShot.exe window-off ...                                    # bandeau desactive : verifie qu'il ne laisse aucune place
 UsageShot.exe panel-loading ...                                 # etat d'attente : sablier a la place de la pastille
+UsageShot.exe panel-idle ...                                    # fournisseur detecte mais inactif : onglet a zero
 ```
 
 - **Fixture exclusivement `DemoUsageProvider`** (quatre instances), `ClaudeUsageProvider` délibérément absent : les vrais chiffres de consommation sont des données personnelles, et une capture doit être reproductible. C'est la raison d'être de la liste injectable de `UsageService` — le registre de production reste intact

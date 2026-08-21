@@ -182,10 +182,25 @@ public class ClaudeUsageProviderTests : IDisposable
     }
 
     [Fact]
-    public async Task ReadAsync_SansAucuneDonnee_RetourneNull()
+    public async Task ReadAsync_InstalleSansDonnee_DonneUnInstantaneAZero()
     {
+        // Détecté mais inactif sur la période : le fournisseur garde son onglet, à zéro. Disparaître
+        // du bandeau doit vouloir dire « pas installé », et rien d'autre — sinon un outil installé
+        // qu'on n'a pas utilisé ce mois-ci semble ne pas être détecté du tout.
         ProjectsDir();
 
+        var usage = await new ClaudeUsageProvider(_home, Failing()).ReadAsync(CancellationToken.None);
+
+        Assert.NotNull(usage);
+        Assert.Equal(0, usage!.MonthTokens);
+        Assert.Equal(0, usage.Requests);
+        Assert.Equal("", usage.Model);
+    }
+
+    [Fact]
+    public async Task ReadAsync_NonInstalle_RetourneNull()
+    {
+        // Aucun dossier : rien à afficher, pas même un onglet vide.
         var usage = await new ClaudeUsageProvider(_home, Failing()).ReadAsync(CancellationToken.None);
 
         Assert.Null(usage);

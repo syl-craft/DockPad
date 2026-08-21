@@ -46,7 +46,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-loading|window|window-off|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-idle|panel-loading|window|window-off|config> <cheminPng>");
             return;
         }
 
@@ -61,7 +61,8 @@ internal static class Program
 
         // « panel-tabs » rend un second fournisseur visible : le cas par défaut n'a qu'un seul
         // fournisseur, et c'est celui qu'il faut montrer en premier.
-        var fixture = FixtureConfig(secondVisible: target == "panel-tabs");
+        var fixture = FixtureConfig(secondVisible: target is "panel-tabs" or "panel-idle",
+                                    idle: target == "panel-idle");
         // « window-off » : bandeau désactivé, pour vérifier qu'il ne laisse aucune place derrière lui.
         if (target == "window-off") fixture.Enabled = false;
         UsageConfigService.Save(fixture);
@@ -73,9 +74,9 @@ internal static class Program
         // Le bandeau seul est rendu hors écran : une fenêtre à SizeToContent mesure avant que les
         // données arrivent et n'en reprend pas la hauteur, ce qui rognait la capture. Measure et
         // Arrange explicites donnent des dimensions déterministes.
-        if (target is "panel" or "panel-tabs" or "panel-loading")
+        if (target is "panel" or "panel-tabs" or "panel-idle" or "panel-loading")
         {
-            CapturePanel(outPath, loading: target == "panel-loading");
+            CapturePanel(outPath, loading: target == "panel-loading", idle: target == "panel-idle");
             return;
         }
 
@@ -94,7 +95,7 @@ internal static class Program
 
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-loading | window | window-off | config)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | window | window-off | config)");
         }
 
         // Show + Dispatcher.Run : ShowDialog retourne immédiatement ici (Application jamais Run).
@@ -141,7 +142,7 @@ internal static class Program
     }
 
     /// <summary>Rend le bandeau seul, sur le fond de la grille, sans passer par une fenêtre.</summary>
-    private static void CapturePanel(string outPath, bool loading = false)
+    private static void CapturePanel(string outPath, bool loading = false, bool idle = false)
     {
         // 698 = largeur réelle du bandeau dans la fenêtre : le bloc de tuiles (6 × 118) moins les
         // 10 px de marges horizontales d'une tuile, pour affleurer leurs bords visibles. Capturer
@@ -149,7 +150,7 @@ internal static class Program
         // jauges se serrent.
         const double width = 698;   // 900 de bandeau + 24 de marge de chaque côté
 
-        var panel = new UsagePanel { ViewModel = FixtureViewModel(loading) };
+        var panel = new UsagePanel { ViewModel = FixtureViewModel(loading, idle) };
         var frame = new Border
         {
             Padding = new Thickness(24),
@@ -175,11 +176,36 @@ internal static class Program
     /// ViewModel alimenté par des fournisseurs de démonstration seulement. C'est la raison d'être de
     /// la liste injectable de <see cref="UsageService"/> : le registre de production reste intact.
     /// </summary>
-    private static UsageViewModel FixtureViewModel(bool loading = false)
+    private static UsageViewModel FixtureViewModel(bool loading = false, bool idle = false)
     {
-        var providers = FixtureProviders();
+        var providers = FixtureProviders(idle);
         if (loading) providers = providers.Select(p => (IUsageProvider)new SlowAfterFirstRead(p)).ToList();
         return new UsageViewModel(new UsageService(providers), UsageConfigService.Load);
+    }
+
+    /// <summary>
+    /// Fournisseur détecté mais inactif sur la période : tout à zéro, aucune fenêtre de quota.
+    /// </summary>
+    /// <remarks>
+    /// C'est l'état d'un assistant installé qu'on n'a pas utilisé ce mois-ci. Il garde son onglet
+    /// plutôt que de disparaître du bandeau — disparaître doit vouloir dire « pas installé », et
+    /// rien d'autre. La capture sert à vérifier que cet onglet reste lisible : des tirets là où la
+    /// valeur n'a pas de sens, des zéros là où zéro est la mesure.
+    /// </remarks>
+    private sealed class IdleProvider(string id, string name, string glyph, string accent) : IUsageProvider
+    {
+        public string Id => id;
+        public string Name => name;
+
+        public AiProbe Probe() => new()
+        {
+            Available = true, DisplayName = name, Glyph = glyph, AccentColor = accent,
+        };
+
+        public Task<AiUsage?> ReadAsync(CancellationToken ct) => Task.FromResult<AiUsage?>(new AiUsage
+        {
+            ProviderId = id, Name = name, Glyph = glyph, AccentColor = accent,
+        });
     }
 
     /// <summary>
@@ -206,17 +232,19 @@ internal static class Program
     /// Quatre fournisseurs plausibles. Copilot ne rapporte pas de coût (forfait) et n'a pas de
     /// quota hebdomadaire connu : la capture montre ainsi les deux cas dégradés du bandeau.
     /// </summary>
-    private static List<IUsageProvider> FixtureProviders() =>
+    private static List<IUsageProvider> FixtureProviders(bool idle = false) =>
     [
         new DemoUsageProvider("claude", "Claude", "✳", "#D97757",
             new DemoUsageProvider.DemoValues("claude-opus-5", 12_400, 86_000, 1_200_000, 47, "$4",
                 62, TimeSpan.FromHours(2) + TimeSpan.FromMinutes(40), 44, TimeSpan.FromDays(4),
                 UsageUrl: "https://claude.ai/new#settings/usage")),
 
-        new DemoUsageProvider("codex", "Codex", "C", "#10A37F",
-            new DemoUsageProvider.DemoValues("gpt-5-codex", 8_100, 54_000, 760_000, 31, "$2",
-                38, TimeSpan.FromHours(4), 27, TimeSpan.FromDays(4),
-                UsageUrl: "https://platform.openai.com/usage")),
+        idle
+            ? new IdleProvider("codex", "Codex", "C", "#10A37F")
+            : new DemoUsageProvider("codex", "Codex", "C", "#10A37F",
+                new DemoUsageProvider.DemoValues("gpt-5-codex", 8_100, 54_000, 760_000, 31, "$2",
+                    38, TimeSpan.FromHours(4), 27, TimeSpan.FromDays(4),
+                    UsageUrl: "https://platform.openai.com/usage")),
 
         new DemoUsageProvider("gemini", "Gemini", "G", "#4285F4",
             new DemoUsageProvider.DemoValues("gemini-2.5-pro", 3_600, 22_000, 310_000, 14, "$1",
@@ -234,12 +262,13 @@ internal static class Program
     /// démo apparaissent tout de même sur la capture de la fenêtre de réglages, que la machine de
     /// développement ne produit pas d'elle-même.
     /// </summary>
-    private static UsageConfig FixtureConfig(bool secondVisible) => new()
+    private static UsageConfig FixtureConfig(bool secondVisible, bool idle = false) => new()
     {
         Enabled = true,
         AlertThreshold = 15,
         ShowCost = true,
-        DefaultProviderId = "claude",
+        // « panel-idle » sélectionne le fournisseur inactif : c'est lui qu'il faut voir.
+        DefaultProviderId = idle ? "codex" : "claude",
         Providers =
         {
             new AiProviderEntry { Id = "claude",  Name = "Claude",  DetectedName = "Claude",

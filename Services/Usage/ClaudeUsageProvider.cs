@@ -114,7 +114,11 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         // Sans elle, tout ce travail s'exécute sur le thread d'interface avant le premier await,
         // et la fenêtre gèle à chaque affichage puis à chaque rafraîchissement.
         var totals = await Task.Run(() => ReadTotals(now), ct).ConfigureAwait(false);
-        if (totals is null) return null;
+
+        // Détecté mais inactif sur la période : un instantané à zéro plutôt que rien, pour que le
+        // fournisseur garde son onglet. Absent du bandeau veut dire « pas installé ».
+        if (totals is null && !Probe().Available) return null;
+        totals ??= UsageAggregator.Empty;
 
         var limits = await ReadLimitsAsync(ct).ConfigureAwait(false);
 

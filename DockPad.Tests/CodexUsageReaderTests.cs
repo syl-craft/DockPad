@@ -221,9 +221,25 @@ public class CodexUsageReaderTests : IDisposable
     }
 
     [Fact]
-    public async Task ReadAsync_AucunRollout_RetourneNull()
+    public async Task ReadAsync_InstalleSansRollout_DonneUnInstantaneAZero()
     {
+        // Détecté mais inactif : onglet conservé, valeurs à zéro.
         Dir("sessions");
+
+        var usage = await new CodexUsageProvider(_home).ReadAsync(CancellationToken.None);
+
+        Assert.NotNull(usage);
+        Assert.Equal(0, usage!.MonthTokens);
+        Assert.Equal(0, usage.Requests);
+    }
+
+    [Fact]
+    public async Task ReadAsync_NonInstalle_RetourneNull()
+    {
+        // La variable d'environnement est neutralisée : sinon un CODEX_HOME réel sur la machine de
+        // développement ferait passer le test pour une mauvaise raison.
+        Environment.SetEnvironmentVariable(CodexUsageReader.HomeVariable, null);
+
         Assert.Null(await new CodexUsageProvider(_home).ReadAsync(CancellationToken.None));
     }
 }

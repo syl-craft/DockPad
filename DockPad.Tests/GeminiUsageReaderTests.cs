@@ -235,9 +235,22 @@ public class GeminiUsageReaderTests : IDisposable
     }
 
     [Fact]
-    public async Task ReadAsync_AucuneSession_RetourneNull()
+    public async Task ReadAsync_InstalleSansSession_DonneUnInstantaneAZero()
     {
+        // Le cas vécu : Gemini est installé, la seule session du mois ne porte aucun jeton. Le
+        // fournisseur garde son onglet à zéro au lieu de disparaître sans explication.
         Dir("chats");
+
+        var usage = await new GeminiUsageProvider(_home).ReadAsync(CancellationToken.None);
+
+        Assert.NotNull(usage);
+        Assert.Equal(0, usage!.MonthTokens);
+        Assert.Equal(0, usage.Requests);
+    }
+
+    [Fact]
+    public async Task ReadAsync_NonInstalle_RetourneNull()
+    {
         Assert.Null(await new GeminiUsageProvider(_home).ReadAsync(CancellationToken.None));
     }
 }

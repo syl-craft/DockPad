@@ -46,8 +46,8 @@ public sealed class CopilotUsageProvider : IUsageProvider
                 {
                     Available = false,
                     DisplayName = Name,
-                Glyph = PastilleGlyph,
-                AccentColor = PastilleAccent,
+                    Glyph = PastilleGlyph,
+                    AccentColor = PastilleAccent,
                     Detail = installed ? "installé, aucune donnée de session" : "non installé",
                 };
             }
@@ -93,7 +93,10 @@ public sealed class CopilotUsageProvider : IUsageProvider
             }
         }, ct).ConfigureAwait(false);
 
-        if (totals is null) return null;
+        // Détecté mais inactif sur la période : un instantané à zéro plutôt que rien, pour que le
+        // fournisseur garde son onglet. Absent du bandeau veut dire « pas installé ».
+        if (totals is null && !Probe().Available) return null;
+        totals ??= UsageAggregator.Empty;
 
         return new AiUsage
         {
