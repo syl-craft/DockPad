@@ -23,6 +23,31 @@ public sealed class ClaudeUsageProvider : IUsageProvider
     /// <summary>Vrai dès que l'indisponibilité du quota a été signalée dans le journal.</summary>
     private static bool _limitsFailureLogged;
 
+    /// <summary>
+    /// Intervalle minimal entre deux appels au quota.
+    /// </summary>
+    /// <remarks>
+    /// Le bandeau se rafraîchit chaque minute, mais interroger le quota à cette cadence a valu des
+    /// <c>HTTP 429</c> en usage réel — l'endpoint limite le débit, et les jauges disparaissaient à
+    /// cause de notre propre insistance. Les fenêtres mesurées durent 5 h et 7 jours : cinq minutes
+    /// de fraîcheur sont largement suffisantes.
+    /// </remarks>
+    private static readonly TimeSpan QuotaMinInterval = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Âge au-delà duquel la dernière valeur connue n'est plus affichée.
+    /// </summary>
+    /// <remarks>
+    /// Entre deux appels, les jauges gardent la valeur précédente : un pourcentage de quelques
+    /// minutes vaut mieux qu'un vide, sur des fenêtres qui durent des heures. Passé ce délai en
+    /// revanche, on préfère ne rien affirmer plutôt qu'afficher un chiffre périmé.
+    /// </remarks>
+    private static readonly TimeSpan QuotaMaxAge = TimeSpan.FromMinutes(15);
+
+    private ClaudeLimitsClient.ClaudeLimits? _cachedLimits;
+    private DateTime _cachedAt;
+    private DateTime _lastAttempt;
+
     public string Id => "claude";
     public string Name => "Claude Code";
 
@@ -105,17 +130,34 @@ public sealed class ClaudeUsageProvider : IUsageProvider
 
     private async Task<ClaudeLimitsClient.ClaudeLimits?> ReadLimitsAsync(CancellationToken ct)
     {
+        var now = _clock();
+
+        // Trop tôt pour redemander : on rend la dernière valeur connue, ou rien si elle a vieilli.
+        // C'est aussi ce qui évite de marteler l'endpoint après un 429.
+        if (_lastAttempt != default && now - _lastAttempt < QuotaMinInterval) return FreshEnough(now);
+
+        _lastAttempt = now;
+
         try
         {
             var path = ClaudeLimitsClient.CredentialsPath(_home);
-            if (!File.Exists(path)) return null;
+            if (!File.Exists(path)) return FreshEnough(now);
 
             // Le jeton reste local à cette méthode : ni champ, ni journal, ni config.
             var token = ClaudeLimitsClient.ReadAccessToken(File.ReadAllText(path), DateTime.UtcNow);
-            if (token is null) return null;
+            if (token is null) return FreshEnough(now);
 
             var (limits, failure) = await _limits.FetchAsync(token, ct).ConfigureAwait(false);
-            if (limits is null) NoteQuotaUnavailable(failure);
+            if (limits is null)
+            {
+                NoteQuotaUnavailable(failure);
+                // Un échec passager ne doit pas faire disparaître des jauges qui étaient justes il y
+                // a une minute. Au-delà de QuotaMaxAge, en revanche, on ne prétend plus rien.
+                return FreshEnough(now);
+            }
+
+            _cachedLimits = limits;
+            _cachedAt = now;
             return limits;
         }
         catch (OperationCanceledException)
@@ -129,9 +171,13 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             // silencieuse — le journal ne permettait pas de distinguer « quota obtenu » de
             // « quota en échec », alors que c'est la première question qu'on se pose.
             NoteQuotaUnavailable(ex.GetType().Name);
-            return null;
+            return FreshEnough(now);
         }
     }
+
+    /// <summary>Dernière valeur connue, si elle n'a pas dépassé <see cref="QuotaMaxAge"/>.</summary>
+    private ClaudeLimitsClient.ClaudeLimits? FreshEnough(DateTime now) =>
+        _cachedLimits is not null && now - _cachedAt < QuotaMaxAge ? _cachedLimits : null;
 
     /// <summary>
     /// Signale l'indisponibilité du quota <b>une seule fois par session</b> : l'endpoint n'est pas

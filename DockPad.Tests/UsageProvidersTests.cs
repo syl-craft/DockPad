@@ -260,6 +260,108 @@ public class ClaudeUsageProviderTests : IDisposable
         Assert.Equal(44, usage.Week!.UsedPct);
     }
 
+    /// <summary>Compte les appels sortants, pour vérifier la cadence.</summary>
+    private sealed class CountingHandler(HttpStatusCode status, string body) : HttpMessageHandler
+    {
+        public int Calls { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Calls++;
+            return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body) });
+        }
+    }
+
+    private void WriteCredentials()
+    {
+        var expires = (long)(DateTime.UtcNow.AddHours(2) - DateTime.UnixEpoch).TotalMilliseconds;
+        Directory.CreateDirectory(Path.Combine(_home, ".claude"));
+        File.WriteAllText(Path.Combine(_home, ".claude", ".credentials.json"),
+            "{\"claudeAiOauth\":{\"accessToken\":\"t\",\"expiresAt\":" + expires + "}}");
+    }
+
+    private const string QuotaBody = """
+    { "five_hour": { "utilization": 62 }, "seven_day": { "utilization": 44 } }
+    """;
+
+    [Fact]
+    public async Task ReadAsync_QuotaInterrogeAuPlusUneFoisParIntervalle()
+    {
+        // Le bandeau se rafraîchit chaque minute ; interroger le quota à cette cadence a valu des
+        // HTTP 429 en usage réel, et les jauges disparaissaient à cause de notre propre insistance.
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        WriteCredentials();
+
+        var handler = new CountingHandler(HttpStatusCode.OK, QuotaBody);
+        var now = new DateTime(2026, 8, 21, 14, 0, 0);
+        var provider = new ClaudeUsageProvider(_home, new HttpClient(handler), () => now);
+
+        await provider.ReadAsync(CancellationToken.None);
+        await provider.ReadAsync(CancellationToken.None);
+        await provider.ReadAsync(CancellationToken.None);
+
+        Assert.Equal(1, handler.Calls);
+    }
+
+    [Fact]
+    public async Task ReadAsync_EntreDeuxAppels_LesJaugesGardentLaDerniereValeur()
+    {
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        WriteCredentials();
+
+        var handler = new CountingHandler(HttpStatusCode.OK, QuotaBody);
+        var now = new DateTime(2026, 8, 21, 14, 0, 0);
+        var provider = new ClaudeUsageProvider(_home, new HttpClient(handler), () => now);
+
+        await provider.ReadAsync(CancellationToken.None);
+        var second = await provider.ReadAsync(CancellationToken.None);
+
+        Assert.Equal(62, second!.Session!.UsedPct);
+    }
+
+    /// <summary>Répond une fois par entrée, puis répète la dernière.</summary>
+    private sealed class SequenceHandler(params (HttpStatusCode Status, string Body)[] responses) : HttpMessageHandler
+    {
+        private int _index;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var response = responses[Math.Min(_index++, responses.Length - 1)];
+            return Task.FromResult(new HttpResponseMessage(response.Status)
+            {
+                Content = new StringContent(response.Body),
+            });
+        }
+    }
+
+    [Fact]
+    public async Task ReadAsync_EchecPassagerPuisPerime_DegradeParPaliers()
+    {
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        WriteCredentials();
+
+        var handler = new SequenceHandler(
+            (HttpStatusCode.OK, QuotaBody),
+            (HttpStatusCode.TooManyRequests, ""));
+        var clock = new[] { new DateTime(2026, 8, 21, 14, 0, 0) };
+        var provider = new ClaudeUsageProvider(_home, new HttpClient(handler), () => clock[0]);
+
+        var premier = await provider.ReadAsync(CancellationToken.None);
+        Assert.Equal(62, premier!.Session!.UsedPct);
+
+        // Au-delà de l'intervalle : nouvel appel, qui échoue en 429. Un échec passager ne doit pas
+        // faire disparaître des jauges qui étaient justes il y a six minutes.
+        clock[0] = clock[0].AddMinutes(6);
+        var second = await provider.ReadAsync(CancellationToken.None);
+        Assert.Equal(62, second!.Session!.UsedPct);
+
+        // Au-delà de l'âge maximal : on préfère ne rien affirmer plutôt qu'un chiffre périmé.
+        clock[0] = clock[0].AddMinutes(20);
+        var troisieme = await provider.ReadAsync(CancellationToken.None);
+        Assert.Null(troisieme!.Session);
+        Assert.Equal(10, troisieme.DayTokens);   // les jetons, eux, restent
+    }
+
     [Fact]
     public void Registre_ContientClaudeEtDemo()
     {
