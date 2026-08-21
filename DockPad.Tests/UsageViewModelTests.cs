@@ -391,6 +391,62 @@ public class UsageViewModelTests
     }
 
     [Fact]
+    public async Task IsLoading_UneLectureDepassee_NEteintPasLeSablier()
+    {
+        // Séquence de la touche Alt+Espace : masquer puis réafficher enchaîne deux rafraîchissements.
+        // Le finally de l'ancienne éteignait le sablier pendant la lecture de la nouvelle.
+        var config = ConfigFor(("a", false));
+        var vm = new UsageViewModel(
+            new UsageService([new SlowProvider(Usage("a"), TimeSpan.FromMilliseconds(400))]),
+            () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        var premier = vm.RefreshAsync();
+        var second = vm.RefreshAsync();      // supplante le premier
+
+        await premier;                        // l'annulé rend la main
+        Assert.True(vm.IsLoading);            // la lecture récente tourne toujours
+
+        await second;
+        Assert.False(vm.IsLoading);
+    }
+
+    [Fact]
+    public async Task UneLectureDepassee_NEcrasePasLesValeursRecentes()
+    {
+        // Le chemin d'exception de l'ancienne invocation faisait _snapshots = [] puis Rebuild, ce qui
+        // vidait le bandeau APRÈS que la récente l'avait rempli.
+        var config = ConfigFor(("casse", false), ("ok", false));
+        var vm = new UsageViewModel(
+            new UsageService([
+                new ThrowingAfterDelayProvider("casse", TimeSpan.FromMilliseconds(300)),
+                new SlowProvider(Usage("ok", day: 5_000), TimeSpan.FromMilliseconds(50)),
+            ]),
+            () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+
+        var premier = vm.RefreshAsync();
+        await Task.Delay(50);
+        var second = vm.RefreshAsync();
+
+        await Task.WhenAll(premier, second);
+
+        Assert.True(vm.IsVisible);
+        Assert.NotEmpty(vm.Metrics);
+    }
+
+    private sealed class ThrowingAfterDelayProvider(string id, TimeSpan delay) : IUsageProvider
+    {
+        public string Id => id;
+        public string Name => id;
+        public AiProbe Probe() => new() { Available = true, DisplayName = id };
+
+        public async Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            await Task.Delay(delay, ct);
+            throw new InvalidOperationException("lecture cassée");
+        }
+    }
+
+    [Fact]
     public async Task IsLoading_MarqueLOngletSelectionneSeulement()
     {
         // Providers lents : avec des lectures synchrones, RefreshAsync se termine avant l'assertion

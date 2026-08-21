@@ -252,6 +252,11 @@ public partial class QuickAccessWindow : Window
             WindowState = WindowState.Normal;
             Show();
             Activate();
+            // Rafraîchir explicitement : si la fenêtre était déjà visible, ni WindowState ni Show()
+            // ne changent quoi que ce soit, donc ni StateChanged ni IsVisibleChanged ne se
+            // déclenchent — le bandeau restait tel quel, sans lecture ni sablier, alors que mettre
+            // la fenêtre au premier plan est justement le moment où on veut des chiffres à jour.
+            SyncUsageBanner();
             Dispatcher.BeginInvoke(() => SearchBox.Focus());
             handled = true;
         }

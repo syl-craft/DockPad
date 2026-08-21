@@ -145,6 +145,25 @@ public class ClaudeLimitsClientTests
     }
 
     [Fact]
+    public void ParseUsage_FormeMixte_NePerdPasLaFenetreManquante()
+    {
+        // Une seule fenêtre héritée présente, l'autre dans la liste : ne consulter la liste que
+        // lorsque les DEUX manquent faisait disparaître la jauge hebdomadaire alors que la donnée
+        // était là.
+        var json = """
+        {
+          "five_hour": { "utilization": 30 },
+          "limits": [ { "kind": "weekly_all", "percent": 80 } ]
+        }
+        """;
+
+        var limits = ClaudeLimitsClient.ParseUsage(json);
+
+        Assert.Equal(30, limits!.Session!.UsedPct);
+        Assert.Equal(80, limits.Week!.UsedPct);
+    }
+
+    [Fact]
     public void ParseUsage_PourcentageHorsBornes_EstRamene()
     {
         var json = """{ "five_hour": { "utilization": 143 }, "seven_day": { "utilization": -5 } }""";

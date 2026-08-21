@@ -103,7 +103,11 @@ public sealed class ClaudeLimitsClient
             var session = Window(root, "five_hour", "utilization");
             var week = Window(root, "seven_day", "utilization");
 
-            if (session is null && week is null && root.TryGetProperty("limits", out var limits)
+            // La liste est consultée dès qu'une des deux fenêtres manque, et non seulement quand les
+            // deux manquent : une réponse mixte — `five_hour` plus `limits[weekly_all]` — perdait
+            // sinon la jauge hebdomadaire alors que la donnée était dans la charge utile. La
+            // priorité des champs hérités reste assurée par les `??=` ci-dessous.
+            if ((session is null || week is null) && root.TryGetProperty("limits", out var limits)
                 && limits.ValueKind == JsonValueKind.Array)
             {
                 foreach (var entry in limits.EnumerateArray())

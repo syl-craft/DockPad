@@ -111,6 +111,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         _running = false;
         _timer?.Stop();
         Cancel();
+        // Plus personne ne lit : le sablier n'a plus rien à annoncer. Sans ça il resterait allumé
+        // jusqu'au prochain affichage, une lecture annulée ne repassant pas par la fin normale.
+        IsLoading = false;
     }
 
     /// <summary>Change le fournisseur affiché. Sélection de session : n'écrit rien dans la config.</summary>
@@ -121,42 +124,63 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         Rebuild();
     }
 
+    /// <summary>
+    /// Relit les fournisseurs et republie l'état affichable.
+    /// </summary>
+    /// <remarks>
+    /// <b>Une invocation dépassée ne publie rien.</b> Elle ne remet pas le sablier à zéro et
+    /// n'écrase pas les instantanés : la plus récente est seule à tenir l'état. Sans cette garde,
+    /// deux défauts se produisaient dès que deux rafraîchissements se suivaient de près — ce que
+    /// fait exactement la séquence masquer puis réafficher : le <c>finally</c> de l'ancienne
+    /// éteignait le sablier pendant la lecture de la nouvelle, et son chemin d'exception vidait le
+    /// bandeau <i>après</i> que la nouvelle l'avait rempli.
+    /// </remarks>
     public async Task RefreshAsync()
     {
-        Cancel();
         var cts = new CancellationTokenSource();
-        _inFlight = cts;
-
+        Supersede(cts);
         IsLoading = true;
+
+        var config = _config;
+        List<AiUsage> snapshots;
+
         try
         {
-            _config = _loadConfig();
+            config = _loadConfig();
+            SyncTimer(config);
 
-            // Bandeau désactivé : on arrête aussi le timer. Sans ça il continuait de battre toutes
-            // les minutes pour relire la config et constater qu'il n'y a rien à faire — aucun
-            // fournisseur n'était interrogé, mais « désactivé » doit vouloir dire au repos.
-            if (_running && !_config.Enabled) _timer?.Stop();
-            else if (_running) _timer?.Start();
-
-            _snapshots = _config.Enabled
-                ? await _service.RefreshAsync(_config, cts.Token).ConfigureAwait(true)
+            snapshots = config.Enabled
+                ? await _service.RefreshAsync(config, cts.Token).ConfigureAwait(true)
                 : [];
         }
         catch (OperationCanceledException)
         {
-            return;   // un rafraîchissement plus récent a pris la main — le finally rend la main
+            return;   // une invocation plus récente a pris la main : elle tient l'état
         }
         catch (Exception ex)
         {
             LogService.Warn(ex, "Rafraîchissement du bandeau Usage IA");
-            _snapshots = [];
-        }
-        finally
-        {
-            IsLoading = false;
+            snapshots = [];
         }
 
+        if (!ReferenceEquals(_inFlight, cts)) return;
+
+        _config = config;
+        _snapshots = snapshots;
+        IsLoading = false;
         Rebuild();
+    }
+
+    /// <summary>
+    /// Bandeau désactivé : on arrête aussi le timer. Sans ça il continuait de battre toutes les
+    /// minutes pour relire la config et constater qu'il n'y a rien à faire — aucun fournisseur
+    /// n'était interrogé, mais « désactivé » doit vouloir dire au repos.
+    /// </summary>
+    private void SyncTimer(UsageConfig config)
+    {
+        if (!_running) return;
+        if (config.Enabled) _timer?.Start();
+        else _timer?.Stop();
     }
 
     private DispatcherTimer CreateTimer()
@@ -166,13 +190,23 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         return timer;
     }
 
-    private void Cancel()
+    /// <summary>Annule la lecture en cours, s'il y en a une, sans en désigner de nouvelle.</summary>
+    private void Cancel() => Supersede(null);
+
+    /// <summary>
+    /// Annule la lecture en cours et désigne <paramref name="next"/> comme la seule qui compte.
+    /// </summary>
+    /// <remarks>
+    /// La source annulée n'est pas libérée : son jeton peut encore être détenu par une requête HTTP
+    /// en vol, et libérer la source pendant qu'une inscription vit dessus lève une
+    /// <c>ObjectDisposedException</c> — attrapée plus haut comme une panne de lecture, donc un
+    /// bandeau vidé pour une raison inventée. Le ramasse-miettes s'en occupe.
+    /// </remarks>
+    private void Supersede(CancellationTokenSource? next)
     {
         var previous = _inFlight;
-        _inFlight = null;
-        if (previous is null) return;
-        previous.Cancel();
-        previous.Dispose();
+        _inFlight = next;
+        previous?.Cancel();
     }
 
     private void Rebuild()
