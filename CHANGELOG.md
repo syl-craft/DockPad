@@ -1,5 +1,43 @@
-# Changelog
+# Changelog
+
+## [1.10.0] — 2026-08-21
 
+### Nouveautés utilisateur
+
+#### Bandeau Usage IA
+- Un bandeau sous la grille affiche la **consommation de jetons** de tes assistants de code, lue dans leurs journaux locaux : session, jour, mois, nombre de requêtes, modèle courant
+- **Quatre assistants détectés** : Claude Code, Codex, Gemini CLI et Copilot CLI. Un onglet par assistant, avec sa pastille de couleur ; un seul détecté, il n'y a pas d'onglet du tout
+- **Deux jauges pour Claude Code** — fenêtre de session (5 h) et fenêtre hebdomadaire — avec le pourcentage consommé et l'heure de remise à zéro. La barre se vide à mesure que tu consommes, comme une jauge de carburant, et passe à l'orange puis au rouge sous le seuil d'alerte
+- **Coût estimé** du mois pour Claude Code, dans la devise de la source (dollars, sans conversion). Les trois autres n'exposent aucun tarif public fiable : la colonne affiche un tiret plutôt qu'un montant inventé
+- **La pastille à droite ouvre la page d'usage officielle** de l'assistant affiché
+- Un **sablier** remplace la pastille pendant la lecture : parcourir les transcripts prend un instant, et les valeurs précédentes restent affichées
+- Un assistant **installé mais non utilisé sur la période garde son onglet**, à zéro. Disparaître du bandeau veut dire « pas installé », et rien d'autre
+- Une valeur inconnue s'affiche `—`, jamais `0` : une session à zéro veut dire « aucun bloc actif », pas « rien consommé ». Un quota indisponible masque la jauge entière au lieu d'annoncer 0 %
+
+#### Fenêtre « Usage IA »
+- ☰ → Paramètres → **📊 Usage IA** : afficher ou masquer le bandeau, seuil d'alerte, afficher le coût, assistant affiché à l'ouverture
+- **↻ Redétecter** liste les assistants installés avec leur chemin de données ; chaque ligne se masque sans être perdue. Un assistant masqué n'est **pas interrogé du tout**
+- Bandeau désactivé = **au repos** : aucun fichier lu, aucun appel réseau, et le bandeau ne laisse aucun espace vide sous la grille
+
+### Corrections
+- La fenêtre d'accès rapide prend désormais la hauteur de son contenu : plus de barre de défilement quand la pagination grandit
+
+### Notes
+- Le quota officiel de Claude Code est lu sur un endpoint non documenté, qui cassera un jour : toute panne — jeton absent, expiré, refus, réseau coupé — masque les jauges et conserve les compteurs de jetons, sans jamais afficher d'erreur
+- Le jeton d'accès est lu depuis `%USERPROFILE%\.claude\.credentials.json`, gardé en mémoire, et n'est jamais journalisé, recopié dans une config, ni envoyé ailleurs que sur `api.anthropic.com`
+- Codex : une session dérivée d'une autre (fork) peut être comptée deux fois, ses événements ne portant aucun identifiant permettant de dédupliquer entre fichiers
+
+### Interne
+- 207 tests ajoutés (312 au total) : formatage, tarifs, quota, fusion des fournisseurs, ViewModel, et les quatre lecteurs sur dossiers temporaires et base SQLite de fixture
+- `IUsageProvider` porte la détection **et** la lecture : un assistant = un fichier, et `UsageProviderRegistry` est le seul point d'enregistrement. L'arrivée de Codex, Gemini et Copilot n'a touché ni le bandeau ni la fenêtre de réglages
+- Déduplication des transcripts Claude sur `(message.id, requestId)` : mesuré 49 % de lignes en double sur 407 fichiers réels, sans quoi tous les totaux sont à peu près doublés
+- Quota appelé au plus toutes les 5 minutes, dernière valeur conservée 15 : le bandeau se rafraîchissant chaque minute, il se faisait refuser par l'API (HTTP 429) pour des fenêtres qui durent 5 h et 7 jours
+- Nouvelle config `%APPDATA%\DockPad\usage.json`, incluse dans 💾 Sauvegarder la configuration
+- Nouvel outil `tools/UsageShot` : capture le bandeau et sa fenêtre de réglages sur des fournisseurs de démonstration — aucune donnée de consommation réelle dans la documentation
+- Dépendance `Microsoft.Data.Sqlite` (base de Copilot CLI), alignée sur .NET 8 ; les binaires natifs des plateformes non Windows sont écartés de la publication
+
+---
+
 ## [1.9.0] — 2026-08-13
 
 ### Nouveautés utilisateur
