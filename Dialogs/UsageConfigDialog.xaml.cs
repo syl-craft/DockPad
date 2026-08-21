@@ -166,6 +166,9 @@ public partial class UsageConfigDialog : Window
     private static string Glyph(string id) => id switch
     {
         "claude" => "✳",
+        "codex" => "C",
+        "gemini" => "G",
+        "copilot" => "⊕",
         "demo" => "D",
         _ => id.Length > 0 ? char.ToUpperInvariant(id[0]).ToString() : "?",
     };
@@ -173,6 +176,9 @@ public partial class UsageConfigDialog : Window
     private static string Accent(string id) => id switch
     {
         "claude" => "#D97757",
+        "codex" => "#10A37F",
+        "gemini" => "#4285F4",
+        "copilot" => "#8957E5",
         "demo" => "#7C3AED",
         _ => "#8A8A8A",
     };

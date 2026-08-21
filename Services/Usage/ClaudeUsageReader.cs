@@ -20,21 +20,8 @@ namespace DockPad.Services.Usage;
 /// </remarks>
 public static class ClaudeUsageReader
 {
-    /// <summary>Durée du bloc de session, alignée sur la fenêtre de quota de Claude.</summary>
-    public static readonly TimeSpan BlockWindow = TimeSpan.FromHours(5);
-
-    /// <summary>Une consommation normalisée, dédupliquée, en heure locale.</summary>
-    /// <param name="Key">Clé de déduplication : <c>message.id</c> + <c>requestId</c>.</param>
-    public sealed record UsageEntry(
-        string Key, DateTime Timestamp, string Model,
-        long Input, long Output, long CacheWrite, long CacheRead)
-    {
-        public long Total => Input + Output + CacheWrite + CacheRead;
-    }
-
-    /// <summary>Totaux prêts à afficher. <paramref name="Cost"/> porte sur le mois en cours.</summary>
-    public sealed record UsageTotals(
-        long Session, long Day, long Month, int Requests, string Model, decimal Cost);
+    /// <summary>Alias de lecture : la fenêtre de bloc est commune à tous les fournisseurs.</summary>
+    public static TimeSpan BlockWindow => UsageAggregator.BlockWindow;
 
     /// <summary>
     /// Emplacements où Claude Code écrit ses transcripts. <b>Seule</b> fonction qui sait où chercher :
@@ -55,9 +42,9 @@ public static class ClaudeUsageReader
     /// contenir d'entrée dans la fenêtre. Avec plusieurs centaines de transcripts, c'est la
     /// différence entre un rafraîchissement instantané et une seconde de disque à chaque tick.
     /// </remarks>
-    public static List<UsageEntry> Read(string home, DateTime since)
+    public static List<UsageAggregator.UsageEntry> Read(string home, DateTime since)
     {
-        var entries = new List<UsageEntry>();
+        var entries = new List<UsageAggregator.UsageEntry>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var root in ScanRoots(home))
@@ -85,7 +72,7 @@ public static class ClaudeUsageReader
         return entries;
     }
 
-    private static void ReadFile(string file, DateTime since, List<UsageEntry> entries, HashSet<string> seen)
+    private static void ReadFile(string file, DateTime since, List<UsageAggregator.UsageEntry> entries, HashSet<string> seen)
     {
         // FileShare.ReadWrite : Claude Code garde le fichier ouvert en écriture pendant la session.
         using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -107,7 +94,7 @@ public static class ClaudeUsageReader
     /// Tolérant par construction : la dernière ligne d'un fichier en cours d'écriture est un JSON
     /// tronqué, et ce n'est pas une anomalie à signaler.
     /// </summary>
-    private static UsageEntry? ParseLine(string line)
+    private static UsageAggregator.UsageEntry? ParseLine(string line)
     {
         try
         {
@@ -127,7 +114,7 @@ public static class ClaudeUsageReader
             if (!DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
                                          DateTimeStyles.AdjustToUniversal, out var utc)) return null;
 
-            return new UsageEntry(
+            return new UsageAggregator.UsageEntry(
                 Key: messageId + "|" + requestId,
                 // Les timestamps sont en UTC, les bornes jour/mois sont locales : convertir ici, une
                 // fois, plutôt que dans chaque agrégat. `LocalDateTime` et non `ToLocalTime().DateTime`
@@ -150,65 +137,11 @@ public static class ClaudeUsageReader
         parent.TryGetProperty(name, out var value) && value.TryGetInt64(out var n) ? n : 0;
 
     /// <summary>
-    /// Totaux session / jour / mois. <paramref name="now"/> est explicite : sans lui, la fonction
-    /// dépendrait de l'horloge et les bornes ne seraient pas testables.
+    /// Totaux session / jour / mois, coût estimé aux tarifs Claude. L'agrégation elle-même est
+    /// commune à tous les fournisseurs, seule la tarification est propre à celui-ci.
     /// </summary>
-    public static UsageTotals Aggregate(IEnumerable<UsageEntry> entries, DateTime now)
-    {
-        var ordered = entries.OrderBy(e => e.Timestamp).ToList();
-        if (ordered.Count == 0) return new UsageTotals(0, 0, 0, 0, "", 0m);
-
-        var dayStart = now.Date;
-        var monthStart = new DateTime(now.Year, now.Month, 1);
-
-        long day = 0, month = 0;
-        int requests = 0;
-        decimal cost = 0m;
-
-        foreach (var e in ordered)
-        {
-            if (e.Timestamp >= monthStart)
-            {
-                month += e.Total;
-                cost += ClaudePricing.Cost(e.Model, e.Input, e.Output, e.CacheWrite, e.CacheRead);
-            }
-            if (e.Timestamp >= dayStart)
-            {
-                day += e.Total;
-                requests++;
-            }
-        }
-
-        return new UsageTotals(
-            Session: SessionTotal(ordered, now),
-            Day: day,
-            Month: month,
-            Requests: requests,
-            Model: ordered[^1].Model,
-            Cost: cost);
-    }
-
-    /// <summary>
-    /// Jetons du bloc actif. Les blocs sont <b>ancrés</b> : un bloc démarre à la première activité
-    /// qu'aucun bloc ne couvre et dure <see cref="BlockWindow"/>. Une coupure plus longue que la
-    /// fenêtre ouvre un nouveau bloc. Seul celui qui contient <paramref name="now"/> est actif — si
-    /// le dernier bloc s'est fermé avant, la session est à zéro plutôt qu'à un total périmé.
-    /// </summary>
-    private static long SessionTotal(List<UsageEntry> ordered, DateTime now)
-    {
-        var blockStart = ordered[0].Timestamp;
-        long total = 0;
-
-        foreach (var e in ordered)
-        {
-            if (e.Timestamp >= blockStart + BlockWindow)
-            {
-                blockStart = e.Timestamp;   // nouveau bloc
-                total = 0;
-            }
-            total += e.Total;
-        }
-
-        return now < blockStart + BlockWindow ? total : 0;
-    }
+    public static UsageAggregator.UsageTotals Aggregate(
+        IEnumerable<UsageAggregator.UsageEntry> entries, DateTime now) =>
+        UsageAggregator.Aggregate(entries, now,
+            e => ClaudePricing.Cost(e.Model, e.Input, e.Output, e.CacheWrite, e.CacheRead));
 }

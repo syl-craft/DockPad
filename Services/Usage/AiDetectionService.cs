@@ -53,12 +53,30 @@ public static class AiDetectionService
         lock (ConfigLock.Gate)
         {
             var config = UsageConfigService.Load();
-            if (config.Providers.Count > 0) return config;
+            if (!NeedsDetection(config)) return config;
 
             config = Detect(UsageProviderRegistry.All, config);
             UsageConfigService.Save(config);
             return config;
         }
+    }
+
+    /// <summary>
+    /// Faut-il détecter au démarrage ? Oui au premier lancement (config vide), et oui quand le
+    /// registre contient un fournisseur que la config ne connaît pas encore.
+    /// </summary>
+    /// <remarks>
+    /// Ce second cas est celui d'une mise à jour de DockPad qui apporte de nouveaux fournisseurs :
+    /// sans lui, ils n'apparaîtraient qu'après un ↻ Redétecter manuel, que personne ne pense à
+    /// faire — la fonctionnalité serait livrée et invisible. Ce n'est pas une détection en tâche de
+    /// fond pour autant : elle n'a lieu qu'une fois, jusqu'à ce que la config rattrape le registre.
+    /// </remarks>
+    private static bool NeedsDetection(UsageConfig config)
+    {
+        if (config.Providers.Count == 0) return true;
+
+        var known = config.Providers.Select(p => p.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return UsageProviderRegistry.All.Any(p => !known.Contains(p.Id));
     }
 
     /// <summary>

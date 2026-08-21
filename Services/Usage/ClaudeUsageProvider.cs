@@ -89,17 +89,11 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         };
     }
 
-    private ClaudeUsageReader.UsageTotals? ReadTotals(DateTime now)
+    private UsageAggregator.UsageTotals? ReadTotals(DateTime now)
     {
         try
         {
-            // Borne basse du scan : le début du mois, sauf le premier du mois au petit matin où le
-            // bloc de session actif peut avoir démarré le mois précédent.
-            var monthStart = new DateTime(now.Year, now.Month, 1);
-            var blockStart = now - ClaudeUsageReader.BlockWindow;
-            var since = monthStart < blockStart ? monthStart : blockStart;
-
-            var entries = ClaudeUsageReader.Read(_home, since);
+            var entries = ClaudeUsageReader.Read(_home, UsageWindows.ScanStart(now));
             return entries.Count == 0 ? null : ClaudeUsageReader.Aggregate(entries, now);
         }
         catch (Exception ex)

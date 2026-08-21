@@ -9,6 +9,7 @@ L'app démarre sans droits admin — l'élévation est demandée à la demande v
 - **Registre**  lecture/écriture via `Microsoft.Win32.Registry`
 - **Icônes**  `System.Drawing.Common` (NuGet) pour extraire les icônes `.exe`/`.dll`
 - **JSON**  `System.Text.Json` (built-in) pour la config des raccourcis rapides
+- **SQLite**  `Microsoft.Data.Sqlite` (NuGet, version alignée sur net8.0) — lecture seule de la base de Copilot CLI, seule source de consommation qui ne soit pas un fichier texte
 - **WMI**  `System.Management` (NuGet) pour lire la ligne de commande des processus (`SwitchToProcess`)
 - **Logs**  Serilog + Serilog.Sinks.File — logger central `LogService`
 
@@ -88,6 +89,14 @@ Services/Usage/
     ClaudeUsageReader.cs                  Scan des JSONL, déduplication, agrégation session/jour/mois
     ClaudeLimitsClient.cs                 Quota officiel via oauth/usage + lecture du jeton
     ClaudePricing.cs                      Tarifs par modèle → coût estimé en USD
+    CodexUsageProvider.cs                 Fournisseur Codex (rollouts locaux, sans quota ni coût)
+    CodexUsageReader.cs                   Scan des rollout-*.jsonl, événements token_count
+    GeminiUsageProvider.cs                Fournisseur Gemini CLI (sessions locales, sans quota ni coût)
+    GeminiUsageReader.cs                  Scan des sessions sous chats/, compteurs input/cached/thoughts/tool
+    CopilotUsageProvider.cs               Fournisseur Copilot CLI (base SQLite, sans quota ni coût)
+    CopilotUsageReader.cs                 Lecture de assistant_usage_events (Microsoft.Data.Sqlite)
+    UsageAggregator.cs                    Agrégation session/jour/mois commune à tous les fournisseurs
+    UsageWindows.cs                       Borne basse de scan (début du mois, ou bloc de session)
     DemoUsageProvider.cs                  Jeu de valeurs fixes paramétrable (captures, second onglet)
     AiDetectionService.cs                 Sonde les fournisseurs + fusion dans usage.json
     UsageService.cs                       Interroge les fournisseurs visibles en parallèle
@@ -114,8 +123,10 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (246 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (297 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
+                                         + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
+                                         + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
 
 tools/
     get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
@@ -301,12 +312,25 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 - **Glyphes** : `FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"` obligatoire sur les pastilles — Segoe UI ne contient ni ✳ (U+2733) ni ⊕, qui tombent en tofu
 
 #### Fournisseurs (`Services/Usage/`)
-`IUsageProvider` porte la détection (`Probe()`) **et** la lecture (`ReadAsync()`) : un assistant = un fichier. `UsageProviderRegistry.All` est le seul point d'enregistrement — ajouter Codex, c'est une classe et une ligne. `UsageService` reçoit sa liste en paramètre de construction (registre par défaut), ce qui permet aux tests et à `tools/UsageShot` de substituer la leur.
+`IUsageProvider` porte la détection (`Probe()`) **et** la lecture (`ReadAsync()`) : un assistant = un fichier. `UsageProviderRegistry.All` est le seul point d'enregistrement — l'arrivée de Codex, Gemini et Copilot n'a touché ni le bandeau ni la fenêtre de réglages, ce qui valide la frontière. `UsageService` reçoit sa liste en paramètre de construction (registre par défaut), ce qui permet aux tests et à `tools/UsageShot` de substituer la leur.
 
-- **`ClaudeUsageProvider`** — jetons lus dans `%USERPROFILE%\.claude\projects\**\*.jsonl` (lignes `type:"assistant"`, quatre compteurs de `message.usage`), quota officiel via `ClaudeLimitsClient`. Le **dossier de départ est injectable** (repli sur `%USERPROFILE%`) : c'est ce qui rend détection et scan testables sur un dossier temporaire
-- **`DemoUsageProvider`** — jeu de valeurs fixes **paramétrable** (id, nom, glyphe, couleur, valeurs). L'app en inscrit une instance (« Démo », masquée par défaut), `tools/UsageShot` en instancie quatre. Valeurs jamais aléatoires et resets exprimés en **décalage** sur l'horloge injectée : une capture doit être reproductible, et une date absolue serait périmée dès le lendemain
+| Fournisseur | Source | Quota | Coût |
+|---|---|---|---|
+| `ClaudeUsageProvider` | `~/.claude/projects/**/*.jsonl` | oui, via `oauth/usage` | oui, `ClaudePricing` |
+| `CodexUsageProvider` | `~/.codex/{sessions,archived_sessions}/**/rollout-*.jsonl` | non | non |
+| `GeminiUsageProvider` | `~/.gemini/tmp/<hash>/chats/session-*.json{,l}` | non | non |
+| `CopilotUsageProvider` | `~/.copilot/session-store.db` (SQLite) | non | non |
+| `DemoUsageProvider` | valeurs fixes paramétrables | oui | oui |
+
+- **Seul Claude a un quota et un coût.** Les trois autres n'exposent pas de pourcentage de limite lisible localement, et aucun tarif public fiable ne leur est appliqué : leurs deux jauges restent masquées et la colonne de coût affiche un tiret. **Inventer un tarif serait pire qu'afficher un tiret** — un montant faux se lit comme un montant
+- **Le dossier de départ est injectable** sur les quatre providers réels (repli sur `%USERPROFILE%`) : c'est ce qui rend détection et scan testables sur un dossier temporaire, sans toucher au profil réel
+- **`CODEX_HOME` et `COPILOT_HOME` sont respectées**, comme le font leurs CLI. Sans ça, un utilisateur qui a déplacé son dossier verrait un zéro silencieux
 - **`ReadAsync` renvoie `null`** pour « rien à afficher » — c'est le cas normal, pas une erreur. Une exception est attrapée par `UsageService`, journalisée en `Warn`, et traitée comme `null` : les autres fournisseurs s'affichent
 - **Un fournisseur masqué n'est pas interrogé du tout** : lire pour ne pas afficher, c'est du disque et du réseau pour rien
+- **La lecture passe par `Task.Run`** chez les quatre providers réels : elle parcourt des fichiers (mesuré 2,5 s sur le profil Claude réel) et gèlerait le thread d'interface avant le premier `await`
+
+#### Agrégation commune (`UsageAggregator`)
+Extraite de `ClaudeUsageReader` à l'arrivée des trois autres : chacun lit sa source à sa façon, tous comptent le temps de la même manière. `Aggregate` prend la tarification en paramètre (`null` = pas de coût), et `UsageWindows.ScanStart` donne la borne basse du scan — début du mois, sauf le premier du mois au petit matin où le bloc de session peut avoir démarré le mois précédent.
 
 #### Lecture des journaux Claude (`ClaudeUsageReader`)
 - **Déduplication sur `(message.id, requestId)` — indispensable** : reprise de session et sidechains réécrivent le même message ailleurs. Mesuré sur 407 fichiers réels : **49 % des lignes `assistant` sont des doublons**. Sans dédup, tous les totaux sont à peu près doublés
@@ -315,6 +339,33 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 - **Timestamps UTC → `LocalDateTime`**, jamais `ToLocalTime().DateTime` : le second rend un `Kind` *Unspecified*, qui laisse passer un mélange UTC/local inaperçu (les bornes jour et mois sont locales)
 - **Bloc de session ancré** : il démarre à la première activité qu'aucun bloc ne couvre et dure 5 h. Un bloc fermé avant maintenant donne zéro, pas un total périmé
 - Lecture en `FileShare.ReadWrite` et JSON tronqué toléré : Claude Code écrit pendant qu'on lit
+
+#### Lecture de Codex (`CodexUsageReader`)
+Lignes `type:"event_msg"` avec `payload.type:"token_count"` ; le delta du tour est dans `payload.info.last_token_usage`.
+
+- **Les deux racines doivent être lues.** Codex déplace un rollout de `sessions` vers `archived_sessions` : ce n'est pas une autre consommation mais le même fichier qui bouge. N'en lire qu'une ferait « disparaître » du passé
+- **Correspondance des compteurs** : `input_tokens` est le prompt entier, `cached_input_tokens` en est un sous-ensemble — soustrait pour ne pas compter deux fois. `output_tokens` inclut déjà le raisonnement, `reasoning_output_tokens` n'est donc pas ajouté
+- **Filtre textuel avant l'analyse JSON** : l'essentiel d'un gros rollout est de la conversation, qui ne contient pas le marqueur `token_count`
+- **Limite connue : une session dérivée peut être comptée deux fois.** Un fork rejoue l'historique du parent dans un nouveau rollout, qui réémet ses événements `token_count`. Contrairement à Claude, ces événements ne portent pas d'identifiant de message : il n'y a rien à dédupliquer entre fichiers. L'implémentation de référence résout le cas en comparant les rollouts entre eux, avec plusieurs centaines de lignes de machinerie — hors de proportion tant que personne n'a constaté l'écart
+- **Le quota existe mais n'est pas lu** : il faudrait lancer `codex app-server --stdio` et dialoguer en JSON-RPC, soit un processus enfant chaque minute pour deux nombres
+
+#### Lecture de Gemini (`GeminiUsageReader`)
+Un document par session sous `chats/`, avec un tableau `messages` dont les réponses portent un objet `tokens` (`input`, `cached`, `output`, `thoughts`, `tool`, `total`). La variante `.jsonl` existe aussi, un objet par ligne.
+
+- **Seul `chats/` est scanné.** Le voisin `logs/` contient des `.jsonl` de trace console et réseau, sans aucune consommation — mesuré 6 Mo sur une machine réelle. Les ouvrir coûterait le prix d'un gros fichier pour zéro entrée. L'implémentation de référence scanne tout `~/.gemini/tmp`
+- **Correspondance des compteurs, qui préserve `total`** : `input` contient déjà `cached`, soustrait pour ne pas compter deux fois ; `thoughts` est du raisonnement compté à part par Gemini mais bien de la sortie, donc ajouté à `output` ; pas d'écriture de cache. Vérifié sur les fichiers réels : 12 128 + 74 + 991 = 13 193, le `total` de la source
+- **Le même `id` peut être réécrit** (réponse mise à jour en cours de route) : la dernière valeur gagne, d'où un dictionnaire par fichier plutôt qu'une liste
+- Horodatage du message, à défaut `startTime` de la session
+
+#### Lecture de Copilot (`CopilotUsageReader`)
+Table `assistant_usage_events` de `~/.copilot/session-store.db` — une ligne par appel facturé.
+
+- **Seule source du projet qui soit une base de données**, d'où la dépendance `Microsoft.Data.Sqlite` et les binaires natifs SQLite qu'elle embarque dans la publication. Version **alignée sur le framework cible** (8.0.x) et non la dernière : le SDK installé est un .NET 10, l'application est publiée pour .NET 8
+- Ouverture en **lecture seule** : Copilot garde sa base ouverte
+- **`input_tokens` est le prompt entier** : lectures et écritures de cache en sont un sous-ensemble. Sans les soustraire, le même prompt serait compté trois fois
+- **Le filtre SQL sur `created_at` est un pré-filtre grossier** : la colonne est du texte, donc la comparaison est lexicographique. On recule d'un jour entier pour qu'aucune ligne de la fenêtre ne passe à la trappe à cause d'un décalage horaire écrit dans la valeur, puis on filtre pour de vrai après analyse
+- **La clé porte le chemin de la base** : l'identifiant de ligne n'est unique que dans une base, et `COPILOT_HOME` peut en désigner plusieurs
+- Table absente, base verrouillée ou fichier qui n'est pas une base → rien d'affiché pour ce fournisseur, ce qui vaut mieux qu'un total faux
 
 #### Quota officiel (`ClaudeLimitsClient`)
 `GET https://api.anthropic.com/api/oauth/usage`, en-têtes `Authorization: Bearer <jeton>` + `anthropic-beta: oauth-2025-04-20`. Réponse acceptée sous deux formes : champs hérités `five_hour`/`seven_day`, ou liste `limits[]` (`kind` = `session` / `weekly_all`) — les hérités priment.
@@ -336,6 +387,7 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
 - Un fournisseur absent des sondes est **conservé** avec `Detected = false` — le supprimer détruirait son masquage et son ordre pour une absence peut-être temporaire
 - Une entrée inconnue du registre est conservée telle quelle : un retour arrière de version ne doit rien perdre
 - `AiProbe.HiddenByDefault` n'agit **qu'à la découverte** : une redétection ne remasque jamais un fournisseur affiché
+- **`LoadForStartup` détecte aussi quand le registre contient un fournisseur inconnu de la config** : c'est le cas d'une mise à jour qui apporte de nouveaux assistants. Sans ça ils n'apparaîtraient qu'après un ↻ Redétecter manuel, que personne ne pense à faire — la fonctionnalité serait livrée et invisible. Ce n'est pas une détection en tâche de fond : elle a lieu une fois, jusqu'à ce que la config rattrape le registre
 - **Pas de « + Ajouter »** : un fournisseur exige une implémentation `IUsageProvider`, un ajout manuel donnerait une ligne vide
 
 #### Fenêtre « Usage IA » (`UsageConfigDialog`)

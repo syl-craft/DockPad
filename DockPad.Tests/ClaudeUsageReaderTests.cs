@@ -195,7 +195,7 @@ public class ClaudeUsageReaderTests : IDisposable
 
     // --- Aggregate
 
-    private static ClaudeUsageReader.UsageEntry Entry(DateTime local, long tokens, string model = "claude-opus-5") =>
+    private static UsageAggregator.UsageEntry Entry(DateTime local, long tokens, string model = "claude-opus-5") =>
         new($"k{local.Ticks}{tokens}", local, model, tokens, 0, 0, 0);
 
     [Fact]

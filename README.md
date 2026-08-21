@@ -14,7 +14,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Raccourcis prédéfinis** : Claude Code, PowerShell, VS Code, SSMS, GitHub Desktop
 - **Sélecteur de navigateur** : popup de choix au clic sur une URL + règles par domaine
 - **Serveur MCP** : Claude (Claude Code / Claude Desktop) peut gérer la grille, les pages et les navigateurs
-- **Bandeau Usage IA** : consommation de jetons et quotas des assistants IA, sous la grille
+- **Bandeau Usage IA** : consommation de jetons de Claude Code, Codex, Gemini et Copilot, sous la grille
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
 
@@ -49,11 +49,20 @@ Avec plusieurs fournisseurs, un onglet apparaît pour chacun :
 
 ![Bandeau Usage IA avec onglets](docs/screenshots/usage-panel-tabs.png)
 
-**Claude Code** est le seul fournisseur réel de cette version. Ses jetons sont lus dans les transcripts locaux (`%USERPROFILE%\.claude\projects`), sans réseau ; les pourcentages de quota viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine. Si ce quota n'est pas joignable, les jauges se masquent et les jetons restent affichés.
+Quatre assistants sont lus, chacun dans ses fichiers locaux, sans réseau :
+
+| Assistant | Source | Quota | Coût |
+|---|---|---|---|
+| **Claude Code** | `%USERPROFILE%\.claude\projects` | oui | estimé |
+| **Codex** | `%USERPROFILE%\.codex\sessions` et `archived_sessions` | non | non |
+| **Gemini CLI** | `%USERPROFILE%\.gemini\tmp\<hash>\chats` | non | non |
+| **Copilot CLI** | `%USERPROFILE%\.copilot\session-store.db` | non | non |
+
+Seul Claude expose des pourcentages de quota : ils viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine. Pour les trois autres, il n'existe pas de limite lisible localement — leurs deux jauges restent donc masquées, et seules les métriques de jetons s'affichent. Si le quota Claude n'est pas joignable, ses jauges se masquent aussi et les jetons restent affichés.
+
+Le **coût** n'est calculé que pour Claude, à partir des tarifs publics, et affiché dans la devise de la source — DockPad ne convertit jamais. Un abonnement Max ou Pro ne facture pas au jeton : le montant indique un ordre de grandeur, pas une facture. Pour les trois autres, la colonne affiche un tiret plutôt qu'un montant inventé.
 
 Un fournisseur **Démo** est fourni, masqué par défaut : il sert aux captures de documentation et permet d'essayer le changement d'onglet. Les chiffres de démonstration portent toujours un badge « démo ».
-
-Les coûts sont des **estimations** à partir des tarifs publics, affichées dans la devise de la source — DockPad ne convertit jamais. Un abonnement Max ou Pro ne facture pas au jeton : le montant indique un ordre de grandeur, pas une facture.
 
 Réglages via **☰ Menu → Paramètres → 📊 Usage IA** : afficher ou masquer le bandeau, seuil d'alerte des jauges, affichage du coût, fournisseur affiché à l'ouverture, et détection des assistants installés (**↻ Redétecter**, jamais en tâche de fond).
 
