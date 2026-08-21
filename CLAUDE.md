@@ -123,7 +123,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (297 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (309 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -325,6 +325,8 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 | `DemoUsageProvider` | valeurs fixes paramétrables | oui | oui |
 
 - **Seul Claude a un quota et un coût.** Les trois autres n'exposent pas de pourcentage de limite lisible localement, et aucun tarif public fiable ne leur est appliqué : leurs deux jauges restent masquées et la colonne de coût affiche un tiret. **Inventer un tarif serait pire qu'afficher un tiret** — un montant faux se lit comme un montant
+- **L'identité visuelle est déclarée une seule fois par fournisseur** (une constante privée, lue par `Probe()` et par l'instantané) et voyage jusqu'à la fenêtre de réglages via `AiProbe`. Une seconde table de littéraux dans le dialogue aurait montré un rond gris au prochain assistant ajouté, alors que le bandeau lui affichait sa vraie couleur
+- **La précision affichée au survol du coût vient du fournisseur** (`AiUsage.CostNote`), pour la même raison que la devise : lui seul sait comment sa source facture. « Un abonnement Max ou Pro ne facture pas au jeton » n'a aucun sens sur un onglet Codex ou Gemini
 - **Le dossier de départ est injectable** sur les quatre providers réels (repli sur `%USERPROFILE%`) : c'est ce qui rend détection et scan testables sur un dossier temporaire, sans toucher au profil réel
 - **`CODEX_HOME` et `COPILOT_HOME` sont respectées**, comme le font leurs CLI. Sans ça, un utilisateur qui a déplacé son dossier verrait un zéro silencieux
 - **`ReadAsync` renvoie `null`** pour « rien à afficher » — c'est le cas normal, pas une erreur. Une exception est attrapée par `UsageService`, journalisée en `Warn`, et traitée comme `null` : les autres fournisseurs s'affichent

@@ -22,6 +22,12 @@ public sealed class CodexUsageProvider : IUsageProvider
     public string Id => "codex";
     public string Name => "Codex";
 
+    /// <summary>
+    /// Identité visuelle, déclarée une seule fois : la sonde et l'instantané la lisent ici.
+    /// </summary>
+    private const string PastilleGlyph = "C";
+    private const string PastilleAccent = "#10A37F";
+
     public CodexUsageProvider(string? home = null, Func<DateTime>? clock = null)
     {
         _home = home ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -35,7 +41,14 @@ public sealed class CodexUsageProvider : IUsageProvider
             var root = CodexUsageReader.ScanRoots(_home).FirstOrDefault(Directory.Exists);
             if (root is null)
             {
-                return new AiProbe { Available = false, DisplayName = Name, Detail = "non installé" };
+                return new AiProbe
+                {
+                    Available = false,
+                    DisplayName = Name,
+                    Glyph = PastilleGlyph,
+                    AccentColor = PastilleAccent,
+                    Detail = "non installé",
+                };
             }
 
             var hasRollout = CodexUsageReader.ScanRoots(_home)
@@ -46,6 +59,8 @@ public sealed class CodexUsageProvider : IUsageProvider
             {
                 Available = true,
                 DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
                 DataPath = root,
                 Detail = hasRollout ? "" : "installé, aucune donnée de session",
             };
@@ -53,7 +68,14 @@ public sealed class CodexUsageProvider : IUsageProvider
         catch (Exception ex)
         {
             LogService.Warn(ex, "Détection de Codex");
-            return new AiProbe { Available = false, DisplayName = Name, Detail = "détection impossible" };
+            return new AiProbe
+            {
+                Available = false,
+                DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
+                Detail = "détection impossible",
+            };
         }
     }
 
@@ -81,8 +103,8 @@ public sealed class CodexUsageProvider : IUsageProvider
         {
             ProviderId = Id,
             Name = Name,
-            Glyph = "C",
-            AccentColor = "#10A37F",
+            Glyph = PastilleGlyph,
+            AccentColor = PastilleAccent,
             Model = totals.Model,
             SessionTokens = totals.Session,
             DayTokens = totals.Day,

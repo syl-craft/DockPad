@@ -193,15 +193,6 @@ public class ClaudeLimitsClientTests
     }
 
     [Fact]
-    public void ParseUsage_Plan_EstLuDansLesCredentials()
-    {
-        // Le plan ne vient pas de la réponse HTTP mais des credentials déjà lus.
-        Assert.Equal("Max 20x", ClaudeLimitsClient.PlanLabel("max", "default_claude_max_20x"));
-        Assert.Equal("Pro", ClaudeLimitsClient.PlanLabel("pro", "default_claude_pro"));
-        Assert.Equal("", ClaudeLimitsClient.PlanLabel(null, null));
-    }
-
-    [Fact]
     public void ParseUsage_ReponseVideOuInvalide_RetourneNull()
     {
         Assert.Null(ClaudeLimitsClient.ParseUsage("{}"));

@@ -88,8 +88,11 @@ public partial class UsageConfigDialog : Window
             {
                 Id = entry.Id,
                 Name = entry.Name.Length > 0 ? entry.Name : entry.Id,
-                Glyph = Glyph(entry.Id),
-                Accent = Accent(entry.Id),
+                // Identité visuelle lue chez le fournisseur, jamais redéfinie ici : une seconde
+                // table de littéraux aurait montré un rond gris au prochain assistant ajouté,
+                // alors que le bandeau lui affichait sa vraie couleur.
+                Glyph = probe?.Glyph is { Length: > 0 } glyph ? glyph : Initial(entry.Id),
+                Accent = probe?.AccentColor is { Length: > 0 } accent ? accent : UnknownAccent,
                 Detail = Detail(entry, probe),
                 Visible = !entry.Hidden,
                 Detected = entry.Detected,
@@ -158,30 +161,15 @@ public partial class UsageConfigDialog : Window
         return entry.Detected ? "" : "aucune donnée détectée";
     }
 
-    /// <summary>
-    /// Glyphe et couleur viennent de l'instantané du fournisseur, qui n'est pas disponible ici sans
-    /// lire sa consommation. On les déduit de l'identifiant — c'est de la présentation, pas de la
-    /// donnée, et une entrée inconnue reste lisible avec son initiale.
-    /// </summary>
-    private static string Glyph(string id) => id switch
-    {
-        "claude" => "✳",
-        "codex" => "C",
-        "gemini" => "G",
-        "copilot" => "⊕",
-        "demo" => "D",
-        _ => id.Length > 0 ? char.ToUpperInvariant(id[0]).ToString() : "?",
-    };
+    /// <summary>Couleur des entrées dont le fournisseur n'est plus dans le registre.</summary>
+    private const string UnknownAccent = "#8A8A8A";
 
-    private static string Accent(string id) => id switch
-    {
-        "claude" => "#D97757",
-        "codex" => "#10A37F",
-        "gemini" => "#4285F4",
-        "copilot" => "#8957E5",
-        "demo" => "#7C3AED",
-        _ => "#8A8A8A",
-    };
+    /// <summary>
+    /// Repli pour une entrée conservée dans le fichier mais inconnue du registre — cas d'un retour
+    /// arrière de version : son initiale reste lisible, à défaut de son identité.
+    /// </summary>
+    private static string Initial(string id) =>
+        id.Length > 0 ? char.ToUpperInvariant(id[0]).ToString() : "?";
 
     private void Setting_Changed(object sender, RoutedEventArgs e)
     {

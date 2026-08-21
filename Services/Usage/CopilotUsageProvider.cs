@@ -21,6 +21,12 @@ public sealed class CopilotUsageProvider : IUsageProvider
     public string Id => "copilot";
     public string Name => "Copilot CLI";
 
+    /// <summary>
+    /// Identité visuelle, déclarée une seule fois : la sonde et l'instantané la lisent ici.
+    /// </summary>
+    private const string PastilleGlyph = "⊕";
+    private const string PastilleAccent = "#8957E5";
+
     public CopilotUsageProvider(string? home = null, Func<DateTime>? clock = null)
     {
         _home = home ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -40,16 +46,32 @@ public sealed class CopilotUsageProvider : IUsageProvider
                 {
                     Available = false,
                     DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
                     Detail = installed ? "installé, aucune donnée de session" : "non installé",
                 };
             }
 
-            return new AiProbe { Available = true, DisplayName = Name, DataPath = path };
+            return new AiProbe
+            {
+                Available = true,
+                DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
+                DataPath = path,
+            };
         }
         catch (Exception ex)
         {
             LogService.Warn(ex, "Détection de Copilot CLI");
-            return new AiProbe { Available = false, DisplayName = Name, Detail = "détection impossible" };
+            return new AiProbe
+            {
+                Available = false,
+                DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
+                Detail = "détection impossible",
+            };
         }
     }
 
@@ -77,8 +99,8 @@ public sealed class CopilotUsageProvider : IUsageProvider
         {
             ProviderId = Id,
             Name = Name,
-            Glyph = "⊕",
-            AccentColor = "#8957E5",
+            Glyph = PastilleGlyph,
+            AccentColor = PastilleAccent,
             Model = totals.Model,
             SessionTokens = totals.Session,
             DayTokens = totals.Day,

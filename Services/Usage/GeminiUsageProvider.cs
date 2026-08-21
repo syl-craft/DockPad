@@ -21,6 +21,12 @@ public sealed class GeminiUsageProvider : IUsageProvider
     public string Id => "gemini";
     public string Name => "Gemini CLI";
 
+    /// <summary>
+    /// Identité visuelle, déclarée une seule fois : la sonde et l'instantané la lisent ici.
+    /// </summary>
+    private const string PastilleGlyph = "G";
+    private const string PastilleAccent = "#4285F4";
+
     public GeminiUsageProvider(string? home = null, Func<DateTime>? clock = null)
     {
         _home = home ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -34,7 +40,14 @@ public sealed class GeminiUsageProvider : IUsageProvider
             var root = GeminiUsageReader.ScanRoot(_home);
             if (!Directory.Exists(root))
             {
-                return new AiProbe { Available = false, DisplayName = Name, Detail = "non installé" };
+                return new AiProbe
+                {
+                    Available = false,
+                    DisplayName = Name,
+                    Glyph = PastilleGlyph,
+                    AccentColor = PastilleAccent,
+                    Detail = "non installé",
+                };
             }
 
             var hasSession = Directory.EnumerateDirectories(root, "chats", SearchOption.AllDirectories)
@@ -45,6 +58,8 @@ public sealed class GeminiUsageProvider : IUsageProvider
             {
                 Available = true,
                 DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
                 DataPath = root,
                 Detail = hasSession ? "" : "installé, aucune donnée de session",
             };
@@ -52,7 +67,14 @@ public sealed class GeminiUsageProvider : IUsageProvider
         catch (Exception ex)
         {
             LogService.Warn(ex, "Détection de Gemini CLI");
-            return new AiProbe { Available = false, DisplayName = Name, Detail = "détection impossible" };
+            return new AiProbe
+            {
+                Available = false,
+                DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
+                Detail = "détection impossible",
+            };
         }
     }
 
@@ -82,8 +104,8 @@ public sealed class GeminiUsageProvider : IUsageProvider
         {
             ProviderId = Id,
             Name = Name,
-            Glyph = "G",
-            AccentColor = "#4285F4",
+            Glyph = PastilleGlyph,
+            AccentColor = PastilleAccent,
             Model = totals.Model,
             SessionTokens = totals.Session,
             DayTokens = totals.Day,

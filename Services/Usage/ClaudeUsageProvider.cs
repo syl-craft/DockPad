@@ -51,6 +51,12 @@ public sealed class ClaudeUsageProvider : IUsageProvider
     public string Id => "claude";
     public string Name => "Claude Code";
 
+    /// <summary>
+    /// Identité visuelle, déclarée une seule fois : la sonde et l'instantané la lisent ici.
+    /// </summary>
+    private const string PastilleGlyph = "✳";
+    private const string PastilleAccent = "#D97757";
+
     public ClaudeUsageProvider(string? home = null, HttpClient? http = null, Func<DateTime>? clock = null)
     {
         _home = home ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -65,7 +71,14 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             var root = ClaudeUsageReader.ScanRoots(_home).FirstOrDefault(Directory.Exists);
             if (root is null)
             {
-                return new AiProbe { Available = false, DisplayName = Name, Detail = "non installé" };
+                return new AiProbe
+                {
+                    Available = false,
+                    DisplayName = Name,
+                    Glyph = PastilleGlyph,
+                    AccentColor = PastilleAccent,
+                    Detail = "non installé",
+                };
             }
 
             var count = Directory.EnumerateFiles(root, "*.jsonl", SearchOption.AllDirectories).Take(1).Count();
@@ -73,6 +86,8 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             {
                 Available = true,
                 DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
                 DataPath = root,
                 Detail = count == 0 ? "installé, aucune donnée de session" : "",
             };
@@ -80,7 +95,14 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         catch (Exception ex)
         {
             LogService.Warn(ex, "Détection de Claude Code");
-            return new AiProbe { Available = false, DisplayName = Name, Detail = "détection impossible" };
+            return new AiProbe
+            {
+                Available = false,
+                DisplayName = Name,
+                Glyph = PastilleGlyph,
+                AccentColor = PastilleAccent,
+                Detail = "détection impossible",
+            };
         }
     }
 
@@ -100,11 +122,13 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         {
             ProviderId = Id,
             Name = Name,
-            Glyph = "✳",
-            AccentColor = "#D97757",
+            Glyph = PastilleGlyph,
+            AccentColor = PastilleAccent,
             UsageUrl = "https://claude.ai/new#settings/usage",
             Model = totals.Model,
             Cost = ClaudePricing.Format(totals.Cost),
+            CostNote = "Équivalent API du mois en cours, estimé aux tarifs publics. "
+                     + "Un abonnement Max ou Pro ne facture pas au jeton.",
             SessionTokens = totals.Session,
             DayTokens = totals.Day,
             MonthTokens = totals.Month,

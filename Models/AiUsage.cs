@@ -24,6 +24,13 @@ public sealed class AiUsage
     /// </summary>
     public string Cost { get; init; } = "";
 
+    /// <summary>
+    /// Précision affichée au survol du coût, ou vide. Portée par le fournisseur pour la même raison
+    /// que la devise : lui seul sait comment sa source facture. Le texte « un abonnement Max ou Pro
+    /// ne facture pas au jeton » n'a aucun sens sur un onglet Codex ou Gemini.
+    /// </summary>
+    public string CostNote { get; init; } = "";
+
     /// <summary>Jetons du bloc glissant de 5 h. 0 = notion absente chez ce fournisseur.</summary>
     public long SessionTokens { get; init; }
     /// <summary>Jetons du jour local en cours.</summary>

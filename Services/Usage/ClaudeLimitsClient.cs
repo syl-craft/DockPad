@@ -37,8 +37,8 @@ public sealed class ClaudeLimitsClient
 
     private readonly HttpClient _http;
 
-    /// <summary>Le quota lu, plus le plan du compte.</summary>
-    public sealed record ClaudeLimits(UsageWindow? Session, UsageWindow? Week, string Plan);
+    /// <summary>Les deux fenêtres de quota lues sur l'endpoint.</summary>
+    public sealed record ClaudeLimits(UsageWindow? Session, UsageWindow? Week);
 
     public ClaudeLimitsClient(HttpClient? http = null)
     {
@@ -78,15 +78,6 @@ public sealed class ClaudeLimitsClient
         }
     }
 
-    /// <summary>Plan du compte, lu dans les credentials : « Max 20x », « Pro », ou vide.</summary>
-    public static string PlanLabel(string? subscriptionType, string? rateLimitTier)
-    {
-        if (string.IsNullOrWhiteSpace(subscriptionType)) return "";
-        var label = char.ToUpperInvariant(subscriptionType[0]) + subscriptionType[1..];
-        var multiplier = TierMultiplier(rateLimitTier);
-        return multiplier is null ? label : $"{label} {multiplier}";
-    }
-
     /// <summary>
     /// Analyse la réponse de <c>oauth/usage</c>. Deux formes coexistent : les champs hérités
     /// <c>five_hour</c>/<c>seven_day</c>, et la liste généralisée <c>limits[]</c>. Les champs
@@ -120,7 +111,7 @@ public sealed class ClaudeLimitsClient
                 }
             }
 
-            return session is null && week is null ? null : new ClaudeLimits(session, week, "");
+            return session is null && week is null ? null : new ClaudeLimits(session, week);
         }
         catch (JsonException)
         {
@@ -215,15 +206,5 @@ public sealed class ClaudeLimitsClient
         return new UsageWindow { UsedPct = used, ResetsAt = resetsAt };
     }
 
-    /// <summary>Multiplicateur du palier (« 20x », « 5x »), ou <c>null</c> s'il n'y en a pas.</summary>
-    private static string? TierMultiplier(string? tier)
-    {
-        if (string.IsNullOrWhiteSpace(tier)) return null;
-        foreach (var part in tier.Split('_'))
-        {
-            if (part.Length < 2 || !part.EndsWith('x')) continue;
-            if (part[..^1].All(char.IsDigit)) return part;
-        }
-        return null;
-    }
+
 }

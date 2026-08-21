@@ -56,6 +56,8 @@ public sealed class DemoUsageProvider : IUsageProvider
     {
         Available = true,
         DisplayName = Name,
+        Glyph = _glyph,
+        AccentColor = _accent,
         DataPath = "",
         Detail = "données de démonstration",
         IsDemo = true,

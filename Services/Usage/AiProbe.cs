@@ -15,6 +15,17 @@ public sealed class AiProbe
     /// <summary>Précision d'affichage : version détectée, « aucune donnée », etc.</summary>
     public string Detail { get; init; } = "";
 
+    /// <summary>
+    /// Glyphe de la pastille, et couleur d'accent en notation <c>#RRGGBB</c>.
+    /// </summary>
+    /// <remarks>
+    /// Portés par la sonde pour que la fenêtre de réglages les lise chez le fournisseur, au lieu de
+    /// maintenir sa propre table : une seconde liste de littéraux aurait fait afficher un rond gris
+    /// au prochain assistant ajouté, alors que le bandeau lui montrait sa vraie couleur.
+    /// </remarks>
+    public string Glyph { get; init; } = "";
+    public string AccentColor { get; init; } = "";
+
     /// <summary>Fournisseur de démonstration : l'affichage doit le signaler.</summary>
     public bool IsDemo { get; init; }
 

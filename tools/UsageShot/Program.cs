@@ -144,9 +144,9 @@ internal static class Program
     private static void CapturePanel(string outPath, bool loading = false)
     {
         // 698 = largeur réelle du bandeau dans la fenêtre : le bloc de tuiles (6 × 118) moins les
-        // marges horizontales d'une tuile, pour affleurer leurs bords visibles. Capturer plus large
-        // donnerait une image flatteuse mais irréaliste — c'est à cette largeur que les jauges se
-        // serrent.
+        // 10 px de marges horizontales d'une tuile, pour affleurer leurs bords visibles. Capturer
+        // plus large donnerait une image flatteuse mais irréaliste — c'est à cette largeur que les
+        // jauges se serrent.
         const double width = 698;   // 900 de bandeau + 24 de marge de chaque côté
 
         var panel = new UsagePanel { ViewModel = FixtureViewModel(loading) };
@@ -272,8 +272,6 @@ internal static class Program
             {
                 win.UpdateLayout();
                 // GetDpi plutôt que PresentationSource.FromVisual, nul dans ce contexte hébergé.
-                double scale = VisualTreeHelper.GetDpi(win).DpiScaleX;
-
                 // On rend l'élément de contenu, pas la fenêtre : sur une fenêtre sans chrome
                 // (WindowStyle=None) le rendu du Window lui-même sort transparent.
                 var visual = win.Content as FrameworkElement ?? (FrameworkElement)win;
