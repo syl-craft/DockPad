@@ -35,11 +35,21 @@
   <!-- Microsoft.Data.Sqlite embarque les binaires natifs de toutes les plateformes : mesure faite,
        26 Mo de runtimes/ dont 19 Mo pour Linux, macOS et wasm, dans une application net8.0-windows
        x64. On ne garde que les cibles Windows. -->
+  <!--
+    Ne garde que le binaire natif win-x64. Microsoft.Data.Sqlite embarque son moteur pour toutes les
+    plateformes de son package : Linux, macOS, et les quatre architectures Windows. L'application est
+    publiee en x64 seul (voir Platform dans le profil), donc x86, arm et arm64 sont du poids mort —
+    mesure : 5,7 Mo sur 12, soit un zip qui avait plus que double depuis la version precedente.
+    Deux RID sont gardes, et « win » en fait partie : c'est lui qui porte le dossier
+    runtimes/win/lib, donc System.Management (le WMI de SwitchToProcess) et
+    System.Diagnostics.EventLog. Ne garder que « win-x64 » compile et publie sans broncher,
+    puis casse la bascule de processus a l'execution.
+  -->
   <Target Name="TrimForeignRuntimes" AfterTargets="ResolvePackageAssets">
     <ItemGroup>
       <RuntimeTargetsCopyLocalItems
           Remove="@(RuntimeTargetsCopyLocalItems)"
-          Condition="!$([System.String]::new('%(RuntimeIdentifier)').StartsWith('win'))" />
+          Condition="'%(RuntimeIdentifier)' != 'win-x64' And '%(RuntimeIdentifier)' != 'win'" />
     </ItemGroup>
   </Target>
 
