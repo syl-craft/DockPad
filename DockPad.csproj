@@ -32,6 +32,17 @@
     <None Include="CHANGELOG.md" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
+  <!-- Microsoft.Data.Sqlite embarque les binaires natifs de toutes les plateformes : mesure faite,
+       26 Mo de runtimes/ dont 19 Mo pour Linux, macOS et wasm, dans une application net8.0-windows
+       x64. On ne garde que les cibles Windows. -->
+  <Target Name="TrimForeignRuntimes" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <RuntimeTargetsCopyLocalItems
+          Remove="@(RuntimeTargetsCopyLocalItems)"
+          Condition="!$([System.String]::new('%(RuntimeIdentifier)').StartsWith('win'))" />
+    </ItemGroup>
+  </Target>
+
   <Target Name="ZipAfterPublish" AfterTargets="Publish">
     <MakeDir Directories="$(MSBuildProjectDirectory)\release" />
     <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip" Overwrite="true" />
