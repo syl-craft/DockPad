@@ -116,7 +116,7 @@ public partial class ContextMenuManagerWindow : Window
         {
             if (!AppDialog.Confirm(
                     Loc.F("CtxMenu_AlreadyExists", entry.RegistryKey),
-                    "Conflit", this)) return;
+                    Loc.T("CtxMenu_Title_Conflict"), this)) return;
         }
 
         try
@@ -186,7 +186,7 @@ public partial class ContextMenuManagerWindow : Window
         {
             if (!AppDialog.Confirm(
                     Loc.F("CtxMenu_AlreadyExists", entry.RegistryKey),
-                    "Conflit", this)) return;
+                    Loc.T("CtxMenu_Title_Conflict"), this)) return;
         }
 
         try
@@ -208,7 +208,7 @@ public partial class ContextMenuManagerWindow : Window
 
         if (!AppDialog.Confirm(
                 Loc.F("CtxMenu_ConfirmDelete", vm.DisplayName, vm.TargetLabel),
-                "Confirmer la suppression", this)) return;
+                Loc.T("CtxMenu_Title_ConfirmDelete"), this)) return;
 
         try
         {

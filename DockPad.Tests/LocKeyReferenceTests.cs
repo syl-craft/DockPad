@@ -7,77 +7,109 @@ using DockPad.Services.Localization;
 namespace DockPad.Tests;
 
 /// <summary>
-/// Toute clé citée dans le code ou dans un XAML existe dans les ressources.
+/// Cohérence entre les clés citées par le code et le contenu du magasin, dans les deux sens.
 /// </summary>
 /// <remarks>
-/// C'est le pendant de la garde anti-régression des XAML. <c>Loc.T</c> rend <c>[Clé]</c> plutôt que
-/// de lever — un choix délibéré, pour qu'une clé oubliée n'empêche pas une fenêtre de s'ouvrir — mais
-/// du coup une faute de frappe ne se voit qu'à l'écran, et seulement sur l'écran concerné. Ce test la
-/// transforme en échec de suite de tests, en citant le fichier et la clé.
+/// <para>
+/// <b>Sens 1 — toute clé citée existe.</b> <c>Loc.T</c> rend <c>[Clé]</c> plutôt que de lever, choix
+/// délibéré pour qu'une clé oubliée n'empêche pas une fenêtre de s'ouvrir. Du coup une faute de
+/// frappe ne se voit qu'à l'écran, et seulement sur l'écran concerné.
+/// </para>
+/// <para>
+/// <b>Sens 2 — toute clé du magasin sert.</b> La parité vérifie que les deux langues portent les
+/// mêmes clés, pas qu'elles servent : deux doublons morts s'étaient glissés dans le magasin, avec la
+/// même valeur qu'une clé existante. À la modification suivante, « laquelle fait foi ? » n'aurait pas
+/// eu de réponse.
+/// </para>
+/// <para>
+/// Le scanner ne se contente pas de <c>Loc.T("Clé")</c> : les clés voyagent aussi dans un ternaire —
+/// <c>Loc.T(cond ? "A" : "B")</c> — et un détecteur qui ne verrait que la forme directe déclarerait
+/// ces clés orphelines.
+/// </para>
 /// </remarks>
 public class LocKeyReferenceTests
 {
-    /// <summary>Appels <c>Loc.T("…")</c> et <c>Loc.F("…", …)</c> dans le code C#.</summary>
-    private static readonly Regex CodeCall =
-        new(@"Loc\.(?:T|F)\(""(?<key>[A-Za-z0-9_]+)""", RegexOptions.Compiled);
+    /// <summary>Début d'un appel de localisation, en C# comme en XAML.</summary>
+    private static readonly Regex CallStart =
+        new(@"Loc\.(?:T|F)\(|\{loc:T\s+", RegexOptions.Compiled);
 
-    /// <summary>Extension de balisage <c>{loc:T Clé}</c> dans les XAML.</summary>
-    private static readonly Regex MarkupCall =
-        new(@"\{loc:T\s+(?<key>[A-Za-z0-9_]+)\s*\}", RegexOptions.Compiled);
-
-    /// <summary>Clés construites à l'exécution : leur préfixe est vérifié à la place.</summary>
-    private static readonly Regex Interpolated =
-        new(@"Loc\.T\(\$""(?<prefix>[A-Za-z0-9_]+)_\{", RegexOptions.Compiled);
+    /// <summary>Forme d'une clé : <c>Zone_Element</c>.</summary>
+    private static readonly Regex KeyShape =
+        new(@"[A-Z][A-Za-z0-9]*_[A-Za-z0-9_]+", RegexOptions.Compiled);
 
     /// <summary>
     /// Clés volontairement absentes du magasin : <c>LocTests</c> en a besoin d'une pour vérifier
     /// qu'une clé manquante s'affiche <c>[Clé]</c> au lieu de lever.
     /// </summary>
-    private static readonly HashSet<string> DeliberatelyAbsent = new(StringComparer.Ordinal)
-    {
-        "Nope_Missing",
-    };
+    private static readonly HashSet<string> DeliberatelyAbsent =
+        new(StringComparer.Ordinal) { "Nope_Missing" };
+
+    /// <summary>
+    /// Familles composées à l'exécution (<c>Loc.T($"Key_{name}")</c>), donc introuvables par
+    /// recherche textuelle. Un test de préfixe les couvre.
+    /// </summary>
+    private static readonly string[] DynamicFamilies = ["Key_"];
 
     [Fact]
     public void ToutesLesClesCiteesExistentDansLesRessources()
     {
-        var known = Loc.AllEntries(CultureInfo.GetCultureInfo("en")).Select(e => e.Key).ToHashSet();
-        var manquantes = new List<string>();
-
-        foreach (var (file, text) in Sources())
-        {
-            var regex = file.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase) ? MarkupCall : CodeCall;
-            foreach (Match match in regex.Matches(text))
-            {
-                var key = match.Groups["key"].Value;
-                if (known.Contains(key) || DeliberatelyAbsent.Contains(key)) continue;
-                manquantes.Add($"{Path.GetFileName(file)} → {key}");
-            }
-        }
+        var known = Keys();
+        var manquantes = Cited()
+            .Where(c => !known.Contains(c.Key) && !DeliberatelyAbsent.Contains(c.Key))
+            .Select(c => $"{c.File} → {c.Key}")
+            .Distinct()
+            .ToList();
 
         Assert.Empty(manquantes);
     }
 
     [Fact]
-    public void LesClesConstruitesOntAuMoinsUneRessourceAvecLeurPrefixe()
+    public void AucuneCleDuMagasinNEstOrpheline()
     {
-        // HotkeyService fabrique « Key_Space » depuis un identifiant : on ne peut pas vérifier la clé
-        // exacte, mais on peut vérifier que la famille existe. Sans ça, renommer le préfixe des
-        // touches passerait inaperçu jusqu'à ce qu'un utilisateur ouvre les Options.
-        var known = Loc.AllEntries(CultureInfo.GetCultureInfo("en")).Select(e => e.Key).ToList();
-        var orphelins = new List<string>();
+        var cited = Cited().Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
 
+        var orphelines = Keys()
+            .Where(k => !cited.Contains(k))
+            .Where(k => !DynamicFamilies.Any(f => k.StartsWith(f, StringComparison.Ordinal)))
+            .OrderBy(k => k, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Empty(orphelines);
+    }
+
+    [Fact]
+    public void LesFamillesComposeesALExecutionExistentDansLeMagasin()
+    {
+        // Renommer le préfixe des touches ne casserait aucun appel : « Key_Space » est fabriqué par
+        // interpolation. Ce test attrape le renommage.
+        var known = Keys();
+
+        foreach (var family in DynamicFamilies)
+            Assert.Contains(known, k => k.StartsWith(family, StringComparison.Ordinal));
+    }
+
+    private static HashSet<string> Keys() =>
+        Loc.AllEntries(CultureInfo.GetCultureInfo("en")).Select(e => e.Key).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Clés citées dans les sources : pour chaque appel de localisation, les clés trouvées dans ses
+    /// arguments. La fenêtre s'arrête à la fin de l'appel — parenthèse fermante en C#, accolade en
+    /// XAML — pour ne pas ramasser la ligne suivante.
+    /// </summary>
+    private static IEnumerable<(string File, string Key)> Cited()
+    {
         foreach (var (file, text) in Sources())
         {
-            foreach (Match match in Interpolated.Matches(text))
+            foreach (Match call in CallStart.Matches(text))
             {
-                var prefix = match.Groups["prefix"].Value + "_";
-                if (!known.Any(k => k.StartsWith(prefix, StringComparison.Ordinal)))
-                    orphelins.Add($"{Path.GetFileName(file)} → {prefix}*");
+                var start = call.Index + call.Length;
+                var end = text.IndexOfAny([')', '}'], start);
+                if (end < 0) end = Math.Min(text.Length, start + 200);
+
+                foreach (Match key in KeyShape.Matches(text[start..end]))
+                    yield return (Path.GetFileName(file), key.Value);
             }
         }
-
-        Assert.Empty(orphelins);
     }
 
     private static IEnumerable<(string File, string Text)> Sources()

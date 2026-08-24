@@ -53,7 +53,18 @@ internal static class Program
         app.InitializeComponent();
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-        Loc.SetCulture(CultureInfo.GetCultureInfo(lang));
+        // Loc.Parse rend null sur une etiquette inconnue, ce qui vaudrait « automatique » et
+        // capturerait silencieusement la mauvaise langue : ici on prefere le dire.
+        var culture = Loc.Parse(lang);
+        if (culture is null)
+        {
+            Console.WriteLine($"langue inconnue : {lang} (fr | en)");
+            return;
+        }
+        Loc.SetCulture(culture);
+        // OnStartup n'est jamais appele dans cet hote : c'est lui qui pose normalement la langue a
+        // WPF, dont dependent les StringFormat de liaison.
+        App.ApplyWpfLanguage();
 
         Window window = target switch
         {

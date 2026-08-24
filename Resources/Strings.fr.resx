@@ -143,9 +143,6 @@ Les règles de domaine associées seront supprimées aussi.</value>
   <data name="Common_Apply" xml:space="preserve">
     <value>✔ Appliquer</value>
   </data>
-  <data name="Common_Browse" xml:space="preserve">
-    <value>...</value>
-  </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Annuler</value>
   </data>
@@ -282,6 +279,12 @@ Cette action est irréversible.</value>
   </data>
   <data name="CtxMenu_Title" xml:space="preserve">
     <value>Gestionnaire de menu contextuel Windows</value>
+  </data>
+  <data name="CtxMenu_Title_ConfirmDelete" xml:space="preserve">
+    <value>Confirmer la suppression</value>
+  </data>
+  <data name="CtxMenu_Title_Conflict" xml:space="preserve">
+    <value>Conflit</value>
   </data>
   <data name="CtxMenu_UpdateError" xml:space="preserve">
     <value>Erreur lors de la modification :
@@ -717,8 +720,14 @@ Cette action est irréversible.</value>
   <data name="Shortcut_Command" xml:space="preserve">
     <value>Commande *</value>
   </data>
+  <data name="Shortcut_Err_CommandRequired" xml:space="preserve">
+    <value>La commande / le chemin est obligatoire.</value>
+  </data>
   <data name="Shortcut_Err_ExeAndField" xml:space="preserve">
     <value>L'exécutable et le {0} sont obligatoires.</value>
+  </data>
+  <data name="Shortcut_Err_NameRequired" xml:space="preserve">
+    <value>Le nom est obligatoire.</value>
   </data>
   <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
     <value>Veuillez sélectionner un terminal.</value>
@@ -741,6 +750,12 @@ Cette action est irréversible.</value>
   <data name="Shortcut_FieldLabel_Title" xml:space="preserve">
     <value>titre de fenêtre</value>
   </data>
+  <data name="Shortcut_Header_Edit" xml:space="preserve">
+    <value>Modifier le raccourci</value>
+  </data>
+  <data name="Shortcut_Header_New" xml:space="preserve">
+    <value>Nouveau raccourci</value>
+  </data>
   <data name="Shortcut_Icon" xml:space="preserve">
     <value>Icône (optionnel)</value>
   </data>
@@ -762,11 +777,17 @@ Cette action est irréversible.</value>
   <data name="Shortcut_PickExe_Filter" xml:space="preserve">
     <value>Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*</value>
   </data>
+  <data name="Shortcut_PickFolder" xml:space="preserve">
+    <value>Choisir un dossier</value>
+  </data>
   <data name="Shortcut_PickIcon_Filter" xml:space="preserve">
     <value>Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*</value>
   </data>
   <data name="Shortcut_PickStartFolder" xml:space="preserve">
     <value>Choisir le dossier de départ</value>
+  </data>
+  <data name="Shortcut_PickTerminal" xml:space="preserve">
+    <value>Choisir un terminal</value>
   </data>
   <data name="Shortcut_Preview" xml:space="preserve">
     <value>Aperçu :</value>
@@ -877,9 +898,6 @@ Cette action est irréversible.</value>
     <value>Aucun fournisseur connu. Utilisez ↻ Redétecter.</value>
   </data>
   <data name="UsageCfg_FirstAvailable" xml:space="preserve">
-    <value>Premier disponible</value>
-  </data>
-  <data name="UsageCfg_FirstAvailableLabel" xml:space="preserve">
     <value>Premier disponible</value>
   </data>
   <data name="UsageCfg_HiddenSuffix" xml:space="preserve">

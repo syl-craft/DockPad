@@ -143,9 +143,6 @@ The associated domain rules will be deleted as well.</value>
   <data name="Common_Apply" xml:space="preserve">
     <value>✔ Apply</value>
   </data>
-  <data name="Common_Browse" xml:space="preserve">
-    <value>...</value>
-  </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -282,6 +279,12 @@ This cannot be undone.</value>
   </data>
   <data name="CtxMenu_Title" xml:space="preserve">
     <value>Windows context menu manager</value>
+  </data>
+  <data name="CtxMenu_Title_ConfirmDelete" xml:space="preserve">
+    <value>Confirm deletion</value>
+  </data>
+  <data name="CtxMenu_Title_Conflict" xml:space="preserve">
+    <value>Conflict</value>
   </data>
   <data name="CtxMenu_UpdateError" xml:space="preserve">
     <value>Error while updating:
@@ -717,8 +720,14 @@ This cannot be undone.</value>
   <data name="Shortcut_Command" xml:space="preserve">
     <value>Command *</value>
   </data>
+  <data name="Shortcut_Err_CommandRequired" xml:space="preserve">
+    <value>The command / path is required.</value>
+  </data>
   <data name="Shortcut_Err_ExeAndField" xml:space="preserve">
     <value>The executable and the {0} are required.</value>
+  </data>
+  <data name="Shortcut_Err_NameRequired" xml:space="preserve">
+    <value>The name is required.</value>
   </data>
   <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
     <value>Please select a terminal.</value>
@@ -741,6 +750,12 @@ This cannot be undone.</value>
   <data name="Shortcut_FieldLabel_Title" xml:space="preserve">
     <value>window title</value>
   </data>
+  <data name="Shortcut_Header_Edit" xml:space="preserve">
+    <value>Edit the shortcut</value>
+  </data>
+  <data name="Shortcut_Header_New" xml:space="preserve">
+    <value>New shortcut</value>
+  </data>
   <data name="Shortcut_Icon" xml:space="preserve">
     <value>Icon (optional)</value>
   </data>
@@ -762,11 +777,17 @@ This cannot be undone.</value>
   <data name="Shortcut_PickExe_Filter" xml:space="preserve">
     <value>Executables (*.exe)|*.exe|All files (*.*)|*.*</value>
   </data>
+  <data name="Shortcut_PickFolder" xml:space="preserve">
+    <value>Choose a folder</value>
+  </data>
   <data name="Shortcut_PickIcon_Filter" xml:space="preserve">
     <value>Images and executables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|All files|*.*</value>
   </data>
   <data name="Shortcut_PickStartFolder" xml:space="preserve">
     <value>Choose the starting folder</value>
+  </data>
+  <data name="Shortcut_PickTerminal" xml:space="preserve">
+    <value>Choose a terminal</value>
   </data>
   <data name="Shortcut_Preview" xml:space="preserve">
     <value>Preview:</value>
@@ -877,9 +898,6 @@ This cannot be undone.</value>
     <value>No known provider. Use ↻ Detect again.</value>
   </data>
   <data name="UsageCfg_FirstAvailable" xml:space="preserve">
-    <value>First available</value>
-  </data>
-  <data name="UsageCfg_FirstAvailableLabel" xml:space="preserve">
     <value>First available</value>
   </data>
   <data name="UsageCfg_HiddenSuffix" xml:space="preserve">

@@ -28,8 +28,8 @@ public partial class App : Application
         Services.LogService.Init();
 
         // Avant toute fenêtre : une vue construite avant ce point figerait ses libellés dans la
-        // langue par défaut. L'OverrideMetadata est indispensable en plus des cultures — WPF ignore
-        // CurrentCulture pour les StringFormat de liaison et lit FrameworkElement.Language.
+        // langue par défaut. ApplyWpfLanguage fait suivre FrameworkElement.Language, que WPF lit
+        // pour les StringFormat de liaison au lieu de CurrentCulture — voir sa remarque.
         Services.Localization.Loc.SetCulture(
             Services.Localization.Loc.Parse(Services.SettingsService.LoadLanguage()));
         ApplyWpfLanguage();
@@ -190,7 +190,14 @@ public partial class App : Application
     /// son contenu.
     /// </para>
     /// </remarks>
-    private static void ApplyWpfLanguage()
+    /// <remarks>
+    /// <c>public</c> et non <c>private</c> : les outils de capture n'appellent jamais
+    /// <c>OnStartup</c> — par conception, il monte mutex, systray et fenêtres — et doivent pourtant
+    /// poser la langue à WPF, sans quoi tout <c>StringFormat</c> de liaison rendrait en <c>en-US</c>
+    /// quelle que soit la langue demandée pour la capture. Même raison que
+    /// <c>QuickAccessWindow.UsageBannerPanel</c>.
+    /// </remarks>
+    public static void ApplyWpfLanguage()
     {
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
             new RoutedEventHandler((sender, _) =>

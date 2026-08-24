@@ -87,7 +87,7 @@ public partial class PresetsDialog : Window
         }
 
         if (errors.Count > 0)
-            AppDialog.Error($"Erreurs :\n{string.Join("\n", errors)}", owner: this);
+            AppDialog.Error(Loc.F("Presets_Errors", string.Join("\n", errors)), owner: this);
 
         DialogResult = InstalledCount > 0;
         Close();

@@ -60,25 +60,66 @@ public sealed class TExtension : MarkupExtension
 /// </remarks>
 public static class ButtonFlash
 {
+    /// <summary>
+    /// Boutons dont un feedback est en cours, avec la liaison à reposer.
+    /// </summary>
+    /// <remarks>
+    /// Sans ce registre, un second clic pendant le feedback lisait une liaison déjà effacée par le
+    /// premier et mémorisait « Copié ✓ » comme texte d'origine : le bouton restait bloqué sur le
+    /// message pour le reste de la session. Un dictionnaire à clés faibles pour ne pas retenir un
+    /// bouton dont la fenêtre est fermée.
+    /// </remarks>
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<
+        System.Windows.Controls.Button, PendingFlash> Pending = new();
+
+    private sealed class PendingFlash
+    {
+        public System.Windows.Data.BindingBase? Binding;
+        public object? Original;
+        public System.Windows.Threading.DispatcherTimer? Timer;
+    }
+
     public static void Flash(System.Windows.Controls.Button button, string message,
                              TimeSpan duration)
     {
-        var binding = System.Windows.Data.BindingOperations.GetBinding(
-            button, System.Windows.Controls.ContentControl.ContentProperty);
-        var original = button.Content;
+        // Un feedback déjà en cours : on garde SA liaison d'origine et on relance seulement le
+        // minuteur. Relire Content maintenant ne rendrait que le message précédent.
+        if (Pending.TryGetValue(button, out var current))
+        {
+            current.Timer?.Stop();
+            button.Content = message;
+            current.Timer = StartTimer(button, current, duration);
+            return;
+        }
+
+        var state = new PendingFlash
+        {
+            Binding = System.Windows.Data.BindingOperations.GetBinding(
+                button, System.Windows.Controls.ContentControl.ContentProperty),
+            Original = button.Content,
+        };
+        Pending.Add(button, state);
 
         button.Content = message;
+        state.Timer = StartTimer(button, state, duration);
+    }
 
+    private static System.Windows.Threading.DispatcherTimer StartTimer(
+        System.Windows.Controls.Button button, PendingFlash state, TimeSpan duration)
+    {
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = duration };
         timer.Tick += (_, _) =>
         {
             timer.Stop();
-            if (binding is not null)
+            Pending.Remove(button);
+
+            if (state.Binding is not null)
                 System.Windows.Data.BindingOperations.SetBinding(
-                    button, System.Windows.Controls.ContentControl.ContentProperty, binding);
+                    button, System.Windows.Controls.ContentControl.ContentProperty, state.Binding);
             else
-                button.Content = original;
+                button.Content = state.Original;
         };
         timer.Start();
+        return timer;
     }
 }

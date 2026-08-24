@@ -47,7 +47,7 @@ public partial class ShortcutDialog : Window
         if (!string.IsNullOrEmpty(Entry.IconPath) && !File.Exists(Entry.IconPath))
             Entry.IconPath = "";
 
-        TxtHeader.Text   = existing != null ? "Modifier le raccourci" : "Nouveau raccourci";
+        TxtHeader.Text   = Loc.T(existing != null ? "Shortcut_Header_Edit" : "Shortcut_Header_New");
         TxtName.Text     = Entry.Name;
         TxtCommand.Text  = Entry.Command;
         TxtIconPath.Text = !string.IsNullOrEmpty(Entry.IconPath)
@@ -166,7 +166,7 @@ public partial class ShortcutDialog : Window
     {
         var dlg = new OpenFileDialog
         {
-            Title  = "Choisir un terminal",
+            Title  = Loc.T("Shortcut_PickTerminal"),
             Filter = Loc.T("Shortcut_PickExe_Filter")
         };
         if (dlg.ShowDialog() != true) return;
@@ -226,7 +226,7 @@ public partial class ShortcutDialog : Window
         if (LblPsSearchTerm == null) return;
         var mode = (CmbPsSearchMode.SelectedItem as ComboBoxItem)?.Tag?.ToString();
         bool isByTitle = mode == "ByWindowTitle";
-        LblPsSearchTerm.Content          = isByTitle ? Loc.T("Shortcut_WindowTitle") : "Nom du processus *";
+        LblPsSearchTerm.Content          = Loc.T(isByTitle ? "Shortcut_WindowTitle" : "Shortcut_ProcessName");
         TxtPsProcessName.ToolTip         = isByTitle
             ? Loc.T("Shortcut_WindowTitle_Tip")
             : Loc.T("Shortcut_ProcessName_Tip");
@@ -296,7 +296,7 @@ public partial class ShortcutDialog : Window
         {
             var dlg = new System.Windows.Forms.FolderBrowserDialog
             {
-                Description        = "Choisir un dossier",
+                Description        = Loc.T("Shortcut_PickFolder"),
                 UseDescriptionForTitle = true,
             };
             if (Directory.Exists(TxtCommand.Text))
@@ -390,7 +390,7 @@ public partial class ShortcutDialog : Window
         string name = TxtName.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            AppDialog.Warning("Le nom est obligatoire.", owner: this);
+            AppDialog.Warning(Loc.T("Shortcut_Err_NameRequired"), owner: this);
             TxtName.Focus();
             return;
         }
@@ -424,7 +424,8 @@ public partial class ShortcutDialog : Window
                 out ProcessSearchMode parsedMode) ? parsedMode : ProcessSearchMode.ByProcessName;
             if (string.IsNullOrWhiteSpace(exe) || string.IsNullOrWhiteSpace(procName))
             {
-                string fieldLabel = psMode == ProcessSearchMode.ByWindowTitle ? Loc.T("Shortcut_FieldLabel_Title") : "nom du processus";
+                string fieldLabel = Loc.T(psMode == ProcessSearchMode.ByWindowTitle
+                    ? "Shortcut_FieldLabel_Title" : "Shortcut_FieldLabel_Process");
                 AppDialog.Warning(Loc.F("Shortcut_Err_ExeAndField", fieldLabel), owner: this);
                 (string.IsNullOrWhiteSpace(exe) ? TxtPsExecutable : TxtPsProcessName).Focus();
                 return;
@@ -448,7 +449,7 @@ public partial class ShortcutDialog : Window
             string command = TxtCommand.Text.Trim();
             if (string.IsNullOrWhiteSpace(command))
             {
-                AppDialog.Warning("La commande / le chemin est obligatoire.", owner: this);
+                AppDialog.Warning(Loc.T("Shortcut_Err_CommandRequired"), owner: this);
                 TxtCommand.Focus();
                 return;
             }

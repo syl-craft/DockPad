@@ -340,10 +340,23 @@ Les chaînes vivent dans deux RESX : `Resources/Strings.resx` en **anglais neutr
 - **Un `StringFormat` ne peut pas porter un texte traduit** : les deux qui en portaient
   (`Remise à zéro à {0}`, `Ouvrir {0}`) sont passés par le ViewModel (`ResetTooltip`,
   `UsageUrlTooltip`), conformément à « aucun calcul dans le XAML »
-- **Assigner `Content` casse la liaison `{loc:T}}`** : c'est une valeur locale, qui la remplace
+- **Assigner `Content` casse la liaison `{loc:T}`** : c'est une valeur locale, qui la remplace
   définitivement. Les feedbacks « Copié ✓ » passent par `ButtonFlash`, qui mémorise la liaison et la
   repose au lieu de recopier une chaîne — sinon le bouton devient sourd aux changements de langue
-  pour le reste de la session
+  pour le reste de la session. `ButtonFlash` tient un registre à clés faibles des feedbacks en
+  cours : sans lui, un **second clic** pendant l'animation lisait une liaison déjà effacée par le
+  premier et mémorisait « Copié ✓ » comme texte d'origine, ce qui bloquait le bouton sur le message
+  pour de bon. Corollaire : ne posez pas de `{loc:T}` sur une propriété que le code affecte aussi —
+  le verrou des tuiles n'en a pas sur son `ToolTip`, `ApplyTileLock` l'écraserait dès l'init
+- **Ce qui est construit en code ne se retraduit pas seul.** `QuickAccessWindow` et `UsageViewModel`
+  s'abonnent donc à `LanguageChanged` : badge de raccourci, infobulles de tuiles, libellés de type,
+  menus contextuels, libellés et nombres du bandeau. Le piège : la langue s'applique **au changement
+  de liste**, pas au bouton Sauvegarder — annuler les Options après avoir changé de langue laissait
+  sinon la grille dans l'ancienne, le chemin d'annulation ne rafraîchissant rien
+- **Trois chaînes sont rendues par le fournisseur** et voyagent dans l'instantané : notice de quota,
+  sa précision technique, note de coût. `UsageViewModel.OnLanguageChanged` fait donc un `Rebuild`
+  (libellés immédiats) **puis** une relecture — sinon elles restaient dans l'ancienne langue jusqu'au
+  tic suivant, au milieu de libellés déjà basculés
 - **Les libellés construits en code ne se retraduisent pas seuls** : les listes de `SettingsDialog`
   (modificateurs, touches) et ses avertissements sont refaits sur `Loc.LanguageChanged`, sélection
   conservée
@@ -399,8 +412,19 @@ Son `ListFormatter` porte la conjonction localisée : `{1:list:{}|, | and }` rem
 `Loc` (résolution, repli, threads d'arrière-plan, notification d'indexeur), pluriel aux trois valeurs
 qui séparent les deux langues, **parité des clés**, valeurs non vides, **placeholders identiques**
 entre langues, **parsabilité de tous les gabarits** — ce dernier ramène à la suite de tests le mode
-de panne qu'on introduit en mettant de la syntaxe dans les valeurs. Plus une **garde
-anti-régression** qui parcourt les XAML et échoue si un texte littéral revient.
+de panne qu'on introduit en mettant de la syntaxe dans les valeurs.
+
+Trois gardes de cohérence, toutes vérifiées par mutation :
+
+- **aucun texte littéral dans un XAML** (`XamlLiteralGuardTests`) ;
+- **toute clé citée existe** — `Loc.T` rend `[Clé]` au lieu de lever, donc une faute de frappe ne se
+  verrait que sur l'écran concerné ;
+- **aucune clé du magasin n'est orpheline** — la parité vérifie la symétrie des deux langues, pas
+  leur utilité : deux doublons morts s'y étaient glissés avec la même valeur qu'une clé existante.
+
+Le scanner de clés lit les **arguments** de chaque appel, pas seulement la forme
+`Loc.T("Clé")` : les clés voyagent aussi dans un ternaire — `Loc.T(cond ? "A" : "B")` — et un
+détecteur qui ne verrait que la forme directe déclarerait ces clés orphelines.
 
 > **Un test de localisation doit poser la langue explicitement.** Sinon il hérite de celle laissée
 > par une autre classe et passe ou casse selon l'ordonnancement. La parallélisation de xUnit est

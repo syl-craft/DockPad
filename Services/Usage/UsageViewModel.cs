@@ -118,7 +118,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
         // La langue se change depuis les Options, avec la grille et son bandeau visibles derrière :
         // sans cet abonnement, libellés et nombres restaient dans l'ancienne langue jusqu'au
-        // rafraîchissement suivant, soit jusqu'à une minute plus tard.
+        // rafraîchissement suivant, soit jusqu'à une minute plus tard. Voir OnLanguageChanged.
         Loc.LanguageChanged -= OnLanguageChanged;
         Loc.LanguageChanged += OnLanguageChanged;
 
@@ -224,7 +224,19 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// et leurs libellés le font. Interroger le disque et le réseau pour un changement de libellé
     /// serait absurde, et ferait clignoter le sablier.
     /// </remarks>
-    private void OnLanguageChanged(object? sender, EventArgs e) => Rebuild();
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        // Rebuild d'abord : les libellés et la mise en forme changent immédiatement, sans attendre
+        // une lecture disque.
+        Rebuild();
+
+        // Puis une relecture, parce que trois chaînes sont rendues par le fournisseur et voyagent
+        // dans l'instantané : la notice de quota, sa précision technique et la note de coût. Elles
+        // resteraient dans l'ancienne langue jusqu'au tic suivant, au milieu de libellés déjà
+        // basculés. Un changement de langue est une action rare et volontaire : une lecture de plus
+        // vaut mieux qu'un bandeau à deux langues.
+        _ = RefreshAsync();
+    }
 
     /// <summary>Annule la lecture en cours, s'il y en a une, sans en désigner de nouvelle.</summary>
     private void Cancel() => Supersede(null);

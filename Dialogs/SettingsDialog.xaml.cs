@@ -146,7 +146,9 @@ public partial class SettingsDialog : Window
         if (ChkAlt.IsChecked   == true) parts.Add("Alt");
         if (ChkShift.IsChecked == true) parts.Add("Shift");
         if (ChkWin.IsChecked   == true) parts.Add("Win");
-        if (CmbKey.SelectedIndex >= 0)  parts.Add(Keys[CmbKey.SelectedIndex].Name);
+        // Display et non Name : depuis que Keys porte des identifiants stables, afficher Name
+        // donnait « Space » dans un apercu francais sous une liste qui dit « Espace ».
+        if (CmbKey.SelectedIndex >= 0)  parts.Add(HotkeyService.Display(Keys[CmbKey.SelectedIndex].Name));
 
         TxtPreview.Text = parts.Count > 0
             ? Loc.F("Settings_Hotkey_Current", string.Join("+", parts))

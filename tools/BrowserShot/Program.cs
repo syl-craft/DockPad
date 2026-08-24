@@ -47,8 +47,15 @@ internal static class Program
         // deplacer les arguments existants des cibles.
         var shotLang = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_LANG");
         if (!string.IsNullOrWhiteSpace(shotLang))
+        {
+            // Loc.Parse et non GetCultureInfo : une etiquette inconnue vaut « automatique » au lieu
+            // de lever une CultureNotFoundException au milieu d'une capture.
             DockPad.Services.Localization.Loc.SetCulture(
-                System.Globalization.CultureInfo.GetCultureInfo(shotLang));
+                DockPad.Services.Localization.Loc.Parse(shotLang));
+            // Sans ca, Window.Language reste au defaut et les StringFormat de liaison rendent en
+            // en-US : OnStartup, qui s'en charge normalement, n'est jamais appele ici.
+            DockPad.App.ApplyWpfLanguage();
+        }
 
 
         Window win;

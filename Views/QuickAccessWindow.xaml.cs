@@ -40,6 +40,15 @@ public partial class QuickAccessWindow : Window
         PopulateGrid();
         UpdateHotkeyDisplay();
         UpdateTriggerMods();
+        ApplyTileLock();
+
+        // La langue se change depuis les Options, qui sont modales : cette fenêtre est visible
+        // derrière, et son contenu construit en code — badge de raccourci, infobulles de tuiles,
+        // menus contextuels — ne se retraduit pas seul. Sans cet abonnement, annuler les Options
+        // après avoir changé la langue laissait la grille dans l'ancienne indéfiniment, puisque le
+        // chemin d'annulation ne rafraîchit rien.
+        Loc.LanguageChanged += OnLanguageChanged;
+        Closed += (_, _) => Loc.LanguageChanged -= OnLanguageChanged;
 
         var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
@@ -116,6 +125,17 @@ public partial class QuickAccessWindow : Window
     }
 
     /// <summary>Reporte l'état du verrou sur le bouton de la toolbar.</summary>
+    /// <summary>
+    /// Retraduit ce que la fenêtre construit en code : les libellés liés par <c>{loc:T}</c> se
+    /// mettent à jour seuls, pas les tuiles ni le badge de raccourci.
+    /// </summary>
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        UpdateHotkeyDisplay();
+        ApplyTileLock();
+        PopulateGrid();   // infobulles de tuiles et libellés de type
+    }
+
     private void ApplyTileLock()
     {
         TileLockButton.Content = _tileLock.Glyph;
@@ -632,7 +652,7 @@ public partial class QuickAccessWindow : Window
         var menu = new ContextMenu();
         var changeIcon = new MenuItem { Header = Loc.T("Quick_Tile_ChangeIcon") };
         changeIcon.Click += (_, _) => ChangeIcon(btn, entry);
-        var edit = new MenuItem { Header = "✏ Modifier" };
+        var edit = new MenuItem { Header = Loc.T("Quick_Tile_Edit") };
         edit.Click += (_, _) => EditTile(entry);
         var duplicate = new MenuItem { Header = Loc.T("Quick_Tile_Duplicate") };
         duplicate.Click += (_, _) => DuplicateTile(entry);
