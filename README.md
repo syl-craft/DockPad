@@ -7,6 +7,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Grille de tuiles** multi-pages (4 × 6) avec raccourci clavier global configurable
 - **Types de raccourcis** : lancer une commande, ouvrir un dossier, URL, terminal, basculer vers un processus
 - **Drag & drop** depuis l'Explorateur Windows (dossier → OpenFolder, fichier .url → OpenUrl)
+- **Verrou du déplacement des tuiles** : un bouton de la toolbar (🔒 → ✓) ouvre la réorganisation, pour qu'un clic manqué ne déplace pas la tuile qu'on voulait lancer. Ranger la fenêtre repose le verrou
 - **Barre de recherche** globale avec navigation clavier
 - **Overlay numérique** (Ctrl/Shift + 1–9) pour exécution rapide au clavier
 - **Store d'icônes** portable dans `%APPDATA%\DockPad\icons\`

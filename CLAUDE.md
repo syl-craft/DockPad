@@ -74,6 +74,7 @@ Services/
     RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
     ResourceStringResolver.cs            Résolution des @dll,-id via SHLoadIndirectString
     SettingsService.cs                   Lecture/écriture paramètres HKCU + autostart
+    TileLockState.cs                      Verrou du déplacement des tuiles (état + glyphe + infobulle, sans WPF)
     ShortcutActionService.cs              Actions sur la grille de raccourcis, partagées UI ↔ MCP (cœurs purs + enveloppes verrou/IO)
     ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
@@ -123,7 +124,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (322 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (327 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -180,7 +181,7 @@ tools/
 - Icônes supportées : `.exe`, `.dll`, `.ico`, `.png`, `.bmp`, `.jpg`
 - Cases vides affichées en `+` grisé
 - Fenêtre sans barre Windows (`WindowStyle=None`), déplaçable par drag, icône `app.ico`
-- Toolbar : **☰ Menu** (déroulant) | **─** (réduire) | **⬇** (masquer dans la barre système)
+- Toolbar : **☰ Menu** (déroulant) | **🔒 / ✓** (verrou du déplacement des tuiles) | **─** (réduire) | **⬇** (masquer dans la barre système)
 - **Menu ☰** organisé en sections :
   - *Menu contextuel* : ☰ Gestion, 📋 Raccourcis prédéfinis
   - *Paramètres* : ⚙ Options, 🌐 Navigateurs, 🔌 Serveur MCP, 📊 Usage IA
@@ -194,9 +195,19 @@ tools/
 - **Clic droit sur une tuile OpenFolder** : section supplémentaire avec les entrées `Directory\Background\shell` du registre (substitution `%V` → chemin du dossier)
 - **Clic droit sur une case vide** : ➕ Ajouter
 - **Clic droit sur un bouton de page** : 🖼 Changer l'icône | ← / → Déplacer | 🗑 Supprimer la page
-- **Drag & drop** entre tuiles pour les réorganiser
+- **Drag & drop** entre tuiles pour les réorganiser — **verrouillé par défaut** (voir « Verrou du déplacement » ci-dessous)
 - **Drag & drop depuis l'Explorateur** : glisser un dossier → raccourci `OpenFolder` (icône dossier par défaut `Assets/folder.png`) ; glisser un `.url` → raccourci `OpenUrl` (icône navigateur par défaut détectée via registre)
 - **Déplacer vers la page** : place à la même position si libre, sinon première case disponible ; grisé seulement si la page est pleine
+
+### Verrou du déplacement des tuiles
+- Bouton de toolbar à gauche de **─** : **🔒** (verrouillé, style secondaire) ↔ **✓** (déverrouillé, fond bleu accent)
+- Le clic sur une tuile lance son action, et le même geste manqué de quelques pixels la déplaçait : la réorganisation devient **un mode qu'on demande**, plutôt qu'un accident possible à chaque clic
+- **Le verrou ne ferme qu'une porte** : `TileDrag_MouseMove` sort avant `DoDragDrop`. Le clic simple, les dépôts depuis l'Explorateur (`TileDrop_Drop` avec `_dragSource == null`), « ↗ Déplacer vers la page » du clic droit et la réorganisation des pages restent ouverts — ce sont des gestes délibérés, qu'on ne déclenche pas en visant une tuile
+- **Ranger la fenêtre repose le verrou** (masquée ou réduite) : on ne peut pas oublier de le refermer. Branché sur `SyncWindowActivity()`, le point unique qui répond à « la fenêtre est-elle sous les yeux de l'utilisateur ? » — le même qui démarre et arrête le bandeau Usage. Un rappel posé dans chaque `Hide()` se serait perdu au premier appel ajouté ensuite
+- **Rien n'est écrit sur le disque** : un état déverrouillé qui survivrait à un redémarrage annulerait la protection sans que personne s'en souvienne
+- L'état vit dans `Services/TileLockState.cs` et non dans le code-behind, pour la même raison que `UsageViewModel` : le glyphe et l'infobulle sont des décisions, elles se testent sans WPF. Le code-behind ne fait que brancher le clic, lire les trois propriétés et choisir le style
+- **`MinWidth="40"` sur le bouton** : sans elle, `✓` est plus étroit que `🔒` et toute la toolbar — barre de recherche comprise — se décalait de 4 px à chaque bascule
+- Les tuiles, elles, ne changent pas d'apparence : le bouton porte l'information
 
 ### Barre de recherche globale
 - Champ de recherche dans la toolbar : filtre les raccourcis par nom sur toutes les pages
@@ -559,6 +570,7 @@ UsageShot.exe window-off ...                                    # bandeau desact
 UsageShot.exe panel-loading ...                                 # etat d'attente : sablier a la place de la pastille
 UsageShot.exe panel-idle ...                                    # fournisseur detecte mais inactif : onglet a zero
 UsageShot.exe panel-quota docs/screenshots/usage-panel-quota.png # quota refuse : la notice a la place des jauges
+UsageShot.exe window-unlocked ...                               # verrou des tuiles ouvert : bouton en coche bleue
 ```
 
 - **Fixture exclusivement `DemoUsageProvider`** (quatre instances), `ClaudeUsageProvider` délibérément absent : les vrais chiffres de consommation sont des données personnelles, et une capture doit être reproductible. C'est la raison d'être de la liste injectable de `UsageService` — le registre de production reste intact

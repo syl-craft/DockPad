@@ -21,6 +21,12 @@ public partial class QuickAccessWindow : Window
 
     private IntPtr _hwnd;
     private Point _dragStartPoint;
+
+    /// <summary>
+    /// Verrou du déplacement des tuiles, posé au démarrage. Voir <see cref="TileLockState"/> : sans
+    /// lui, un clic manqué de quelques pixels déplaçait la tuile qu'on voulait lancer.
+    /// </summary>
+    private readonly TileLockState _tileLock = new();
     private ShortcutEntry? _dragSource;
 
     private readonly List<UIElement> _hintElements = [];
@@ -70,8 +76,8 @@ public partial class QuickAccessWindow : Window
         };
         // Un seul point de branchement pour le bandeau : l'état d'affichage réel de la fenêtre.
         // Brancher chaque Show()/Hide() du code laisserait passer les prochains appels ajoutés.
-        IsVisibleChanged += (_, _) => SyncUsageBanner();
-        StateChanged += (_, _) => SyncUsageBanner();
+        IsVisibleChanged += (_, _) => SyncWindowActivity();
+        StateChanged += (_, _) => SyncWindowActivity();
     }
 
     /// <summary>
@@ -86,12 +92,44 @@ public partial class QuickAccessWindow : Window
     /// DockPad passe l'essentiel de son temps masqué dans la barre système : lire du disque et
     /// appeler le réseau pour une fenêtre invisible ou réduite ne sert à rien.
     /// </summary>
-    private void SyncUsageBanner()
+    /// <summary>
+    /// La fenêtre est-elle sous les yeux de l'utilisateur ? Le bandeau se met à jour ou se met au
+    /// repos, et le verrou des tuiles se repose quand la fenêtre est rangée.
+    /// </summary>
+    /// <remarks>
+    /// Un seul point pour les deux : DockPad passe l'essentiel de son temps dans la barre système,
+    /// et cette question est posée par <c>IsVisibleChanged</c>, <c>StateChanged</c> et le raccourci
+    /// global. Un rappel dans chaque <c>Hide()</c> se serait perdu au premier appel ajouté ensuite.
+    /// </remarks>
+    private void SyncWindowActivity()
     {
         if (IsVisible && WindowState != WindowState.Minimized)
+        {
             UsageBanner.Start();
-        else
-            UsageBanner.Stop();
+            return;
+        }
+
+        UsageBanner.Stop();
+        // Ranger la fenêtre repose le verrou : on ne peut pas oublier de le refermer.
+        _tileLock.Lock();
+        ApplyTileLock();
+    }
+
+    /// <summary>Reporte l'état du verrou sur le bouton de la toolbar.</summary>
+    private void ApplyTileLock()
+    {
+        TileLockButton.Content = _tileLock.Glyph;
+        TileLockButton.ToolTip = _tileLock.Tooltip;
+        // Déverrouillé, le bouton passe en bleu accent : c'est un mode actif, il doit se voir depuis
+        // l'autre bout de la fenêtre. Le Padding posé en XAML est une valeur locale, il survit au
+        // changement de style.
+        TileLockButton.Style = (Style)FindResource(_tileLock.IsUnlocked ? "PrimaryButton" : "SecondaryButton");
+    }
+
+    private void ToggleTileLock_Click(object sender, RoutedEventArgs e)
+    {
+        _tileLock.Toggle();
+        ApplyTileLock();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -265,7 +303,7 @@ public partial class QuickAccessWindow : Window
             // ne changent quoi que ce soit, donc ni StateChanged ni IsVisibleChanged ne se
             // déclenchent — le bandeau restait tel quel, sans lecture ni sablier, alors que mettre
             // la fenêtre au premier plan est justement le moment où on veut des chiffres à jour.
-            SyncUsageBanner();
+            SyncWindowActivity();
             Dispatcher.BeginInvoke(() => SearchBox.Focus());
             handled = true;
         }
@@ -945,6 +983,10 @@ public partial class QuickAccessWindow : Window
 
     private void TileDrag_MouseMove(object sender, MouseEventArgs e)
     {
+        // La seule porte que le verrou ferme : le glissement d'une tuile vers une autre. Le clic
+        // simple continue de lancer l'action dans les deux états, et les dépôts venus de
+        // l'Explorateur passent par TileDrop_Drop, qui n'est pas concerné.
+        if (!_tileLock.IsUnlocked) return;
         if (e.LeftButton != MouseButtonState.Pressed) return;
         if (sender is not Button dragBtn || dragBtn.DataContext is not ShortcutEntry entry) return;
 

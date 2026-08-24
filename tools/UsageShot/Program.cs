@@ -46,7 +46,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-idle|panel-loading|panel-quota|window|window-off|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-idle|panel-loading|panel-quota|window|window-off|window-unlocked|config> <cheminPng>");
             return;
         }
 
@@ -81,9 +81,9 @@ internal static class Program
             return;
         }
 
-        if (target is "window" or "window-off")
+        if (target is "window" or "window-off" or "window-unlocked")
         {
-            CaptureWindow(outPath);
+            CaptureWindow(outPath, unlockTiles: target == "window-unlocked");
             return;
         }
 
@@ -96,7 +96,7 @@ internal static class Program
 
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | panel-quota | window | window-off | config)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | panel-quota | window | window-off | window-unlocked | config)");
         }
 
         // Show + Dispatcher.Run : ShowDialog retourne immédiatement ici (Application jamais Run).
@@ -116,9 +116,15 @@ internal static class Program
     /// son contenu contourne l'instanciation de la fenêtre. Le ViewModel de production est remplacé
     /// par la fixture avant toute lecture : sinon la capture embarquerait la consommation réelle.
     /// </remarks>
-    private static void CaptureWindow(string outPath)
+    private static void CaptureWindow(string outPath, bool unlockTiles = false)
     {
         var quick = new QuickAccessWindow();
+
+        // Le verrou des tuiles n'a pas d'autre déclencheur que son bouton : on lève son événement
+        // Click, plutôt que d'ouvrir l'état en public pour le seul besoin de la capture.
+        if (unlockTiles && quick.FindName("TileLockButton") is Button lockButton)
+            lockButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+
         // Largeur lue sur la fenêtre ; la hauteur vient de la mesure, la fenêtre étant en
         // SizeToContent (sa propriété Height vaut NaN).
         double width = quick.Width;

@@ -248,6 +248,16 @@
 
                 <!-- Boutons droite -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <!-- Verrou du déplacement des tuiles. Le clic sur une tuile lance son action, et
+                         le même geste manqué de quelques pixels la déplaçait : la réorganisation
+                         devient un mode qu'on demande. Glyphe, infobulle et style sont posés par le
+                         code-behind depuis TileLockState — l'état par défaut est le verrou. -->
+                    <Button x:Name="TileLockButton" Content="🔒"
+                            Style="{StaticResource SecondaryButton}"
+                            FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                            Padding="10,6" Margin="0,0,8,0" MinWidth="40"
+                            ToolTip="Déverrouiller le déplacement des tuiles"
+                            Click="ToggleTileLock_Click"/>
                     <Button Content="─" Style="{StaticResource SecondaryButton}"
                             Padding="10,6" Margin="0,0,8,0" ToolTip="Réduire"
                             Click="Minimize_Click"/>
