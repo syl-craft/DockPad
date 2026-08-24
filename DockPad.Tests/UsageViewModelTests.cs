@@ -380,6 +380,41 @@ public class UsageViewModelTests
         Assert.False(vm.HasQuotaNotice);
     }
 
+    // --- Langue
+
+    [Fact]
+    public async Task Langue_BasculeePendantQueLeBandeauTourne_LesLibellesSuivent()
+    {
+        // La langue se change depuis les Options, avec la grille et son bandeau visibles derriere :
+        // sans abonnement, le bandeau gardait ses libelles et ses nombres jusqu'au rafraichissement
+        // suivant, soit jusqu'a une minute plus tard.
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+        vm.Start();
+        Assert.Equal("Jour", vm.Metrics[1].Label);
+
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("en"));
+
+        Assert.Equal("Day", vm.Metrics[1].Label);
+        Assert.Equal("session", vm.SessionGauge!.Label);
+        vm.Stop();
+    }
+
+    [Fact]
+    public async Task Langue_BasculeeApresStop_NeTouchePlusAuBandeau()
+    {
+        // Une fenetre rangee n'a rien a mettre a jour, et l'abonnement doit lacher : un evenement
+        // statique qui retient chaque ViewModel cree est une fuite, et les captures en creent
+        // plusieurs par processus.
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+        vm.Start();
+        vm.Stop();
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("en"));
+
+        Assert.Equal("Jour", vm.Metrics[1].Label);
+    }
+
     // --- Attente
 
     private sealed class SlowProvider(AiUsage usage, TimeSpan delay) : IUsageProvider

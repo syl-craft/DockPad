@@ -115,6 +115,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         _running = true;
         _timer ??= CreateTimer();
         _timer.Start();
+
+        // La langue se change depuis les Options, avec la grille et son bandeau visibles derrière :
+        // sans cet abonnement, libellés et nombres restaient dans l'ancienne langue jusqu'au
+        // rafraîchissement suivant, soit jusqu'à une minute plus tard.
+        Loc.LanguageChanged -= OnLanguageChanged;
+        Loc.LanguageChanged += OnLanguageChanged;
+
         _ = RefreshAsync();
     }
 
@@ -126,6 +133,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     {
         _running = false;
         _timer?.Stop();
+        // L'événement est statique : ne pas s'en détacher retiendrait chaque ViewModel créé pour la
+        // vie du processus. Une fenêtre rangée n'a de toute façon rien à retraduire.
+        Loc.LanguageChanged -= OnLanguageChanged;
         Cancel();
         // Plus personne ne lit : le sablier n'a plus rien à annoncer. Sans ça il resterait allumé
         // jusqu'au prochain affichage, une lecture annulée ne repassant pas par la fin normale.
@@ -205,6 +215,16 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         timer.Tick += (_, _) => _ = RefreshAsync();
         return timer;
     }
+
+    /// <summary>
+    /// Republie l'état affichable avec les libellés de la nouvelle langue.
+    /// </summary>
+    /// <remarks>
+    /// Aucune relecture des fournisseurs : les instantanés ne changent pas, seuls leur mise en forme
+    /// et leurs libellés le font. Interroger le disque et le réseau pour un changement de libellé
+    /// serait absurde, et ferait clignoter le sablier.
+    /// </remarks>
+    private void OnLanguageChanged(object? sender, EventArgs e) => Rebuild();
 
     /// <summary>Annule la lecture en cours, s'il y en a une, sans en désigner de nouvelle.</summary>
     private void Cancel() => Supersede(null);
