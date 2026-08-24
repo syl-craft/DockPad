@@ -217,7 +217,7 @@ public class CopilotUsageReaderTests : IDisposable
         var probe = new CopilotUsageProvider(_home).Probe();
 
         Assert.False(probe.Available);
-        Assert.Equal("non installé", probe.Detail);
+        Assert.Equal(Loc.T("Probe_NotInstalled"), probe.Detail);
     }
 
     [Fact]

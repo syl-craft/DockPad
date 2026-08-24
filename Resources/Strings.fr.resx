@@ -12,8 +12,133 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Browsers_Add_Tip" xml:space="preserve">
+    <value>Ajouter un navigateur</value>
+  </data>
+  <data name="Browsers_Args" xml:space="preserve">
+    <value>Arguments :</value>
+  </data>
+  <data name="Browsers_Args_Tip" xml:space="preserve">
+    <value>Ex : --profile-directory="Profile 1", --incognito, -inprivate. %1 = URL.</value>
+  </data>
+  <data name="Browsers_AutoOpen" xml:space="preserve">
+    <value>Ouverture automatique :</value>
+  </data>
+  <data name="Browsers_AutoOpen_Hint" xml:space="preserve">
+    <value>secondes avant d'ouvrir avec le navigateur n°1 (0 = désactivé)</value>
+  </data>
+  <data name="Browsers_Badge_Hidden" xml:space="preserve">
+    <value>masqué</value>
+  </data>
+  <data name="Browsers_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer {0} ?
+Les règles de domaine associées seront supprimées aussi.</value>
+  </data>
+  <data name="Browsers_DetectedAdded" xml:space="preserve">
+    <value>{1:list:{}|, | et } ajouté{0:plural:|s}.</value>
+  </data>
+  <data name="Browsers_DetectedBrowsers" xml:space="preserve">
+    <value>{0} {0:plural:navigateur|navigateurs}</value>
+  </data>
+  <data name="Browsers_DetectedNothing" xml:space="preserve">
+    <value>Aucun nouveau navigateur ni profil détecté.</value>
+  </data>
+  <data name="Browsers_DetectedProfiles" xml:space="preserve">
+    <value>{0} {0:plural:profil|profils}</value>
+  </data>
+  <data name="Browsers_Exe" xml:space="preserve">
+    <value>Exécutable :</value>
+  </data>
+  <data name="Browsers_Name" xml:space="preserve">
+    <value>Nom :</value>
+  </data>
+  <data name="Browsers_ParentFallback" xml:space="preserve">
+    <value>son navigateur</value>
+  </data>
+  <data name="Browsers_Pick_Exe_Filter" xml:space="preserve">
+    <value>Exécutables (*.exe)|*.exe</value>
+  </data>
+  <data name="Browsers_PopupList" xml:space="preserve">
+    <value>Navigateurs de la popup</value>
+  </data>
+  <data name="Browsers_ProfileHint" xml:space="preserve">
+    <value>Profil « {0} » de {1} — lancé avec --profile-directory="{0}". Le chemin de l'exécutable suit celui du navigateur.</value>
+  </data>
+  <data name="Browsers_Redetect" xml:space="preserve">
+    <value>↻ Redétecter</value>
+  </data>
+  <data name="Browsers_Redetect_Tip" xml:space="preserve">
+    <value>Ajoute les navigateurs nouvellement installés et leurs profils (n'écrase rien)</value>
+  </data>
+  <data name="Browsers_Register" xml:space="preserve">
+    <value>S'enregistrer comme navigateur</value>
+  </data>
+  <data name="Browsers_RegisterError" xml:space="preserve">
+    <value>Impossible d'enregistrer DockPad comme navigateur :
+{0}</value>
+  </data>
   <data name="Browsers_RuleCount" xml:space="preserve">
     <value>{0} {0:plural:règle|règles}</value>
+  </data>
+  <data name="Browsers_RuleCountFiltered" xml:space="preserve">
+    <value>{1} / {0} {0:plural:règle|règles}</value>
+  </data>
+  <data name="Browsers_Rules_Browser_Tip" xml:space="preserve">
+    <value>Navigateur qui ouvrira ce domaine</value>
+  </data>
+  <data name="Browsers_Rules_Delete_Tip" xml:space="preserve">
+    <value>Supprimer la règle</value>
+  </data>
+  <data name="Browsers_Rules_Empty" xml:space="preserve">
+    <value>Aucune règle — cochez « Toujours pour ce domaine » dans la popup pour en créer une.</value>
+  </data>
+  <data name="Browsers_Rules_Intro" xml:space="preserve">
+    <value>Ces domaines s'ouvrent directement dans le navigateur associé, sans popup. Les règles se créent via « Toujours pour ce domaine » dans la popup.</value>
+  </data>
+  <data name="Browsers_Rules_Search_Tip" xml:space="preserve">
+    <value>Rechercher dans les noms de domaine</value>
+  </data>
+  <data name="Browsers_State_Default" xml:space="preserve">
+    <value>✔ DockPad est le navigateur par défaut : les URLs cliquées affichent la popup de choix.</value>
+  </data>
+  <data name="Browsers_State_NotRegistered" xml:space="preserve">
+    <value>DockPad n'est pas enregistré comme navigateur. Enregistre-le puis choisis-le comme navigateur par défaut dans les paramètres Windows.</value>
+  </data>
+  <data name="Browsers_State_Registered" xml:space="preserve">
+    <value>DockPad est enregistré comme navigateur. Pour intercepter les URLs, choisis-le comme navigateur par défaut dans les paramètres Windows (bouton ci-dessous).</value>
+  </data>
+  <data name="Browsers_SubjectAlone" xml:space="preserve">
+    <value>« {0} »</value>
+  </data>
+  <data name="Browsers_SubjectWithProfiles" xml:space="preserve">
+    <value>« {0} » et ses {1} {1:plural:profil|profils}</value>
+  </data>
+  <data name="Browsers_Tab_Browsers" xml:space="preserve">
+    <value>Navigateurs</value>
+  </data>
+  <data name="Browsers_Tab_Rules" xml:space="preserve">
+    <value>Règles de domaine</value>
+  </data>
+  <data name="Browsers_Title" xml:space="preserve">
+    <value>Navigateurs</value>
+  </data>
+  <data name="Browsers_UrlInterception" xml:space="preserve">
+    <value>Interception des URLs</value>
+  </data>
+  <data name="Browsers_Visible_Tip" xml:space="preserve">
+    <value>Décocher pour ne plus proposer cette entrée dans la popup</value>
+  </data>
+  <data name="Browsers_WindowsSettings" xml:space="preserve">
+    <value>Paramètres Windows…</value>
+  </data>
+  <data name="Browsers_WindowsSettings_Tip" xml:space="preserve">
+    <value>Choisir DockPad comme navigateur par défaut (Applications par défaut)</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+    <value>+ Ajouter</value>
+  </data>
+  <data name="Common_Apply" xml:space="preserve">
+    <value>✔ Appliquer</value>
   </data>
   <data name="Common_Browse" xml:space="preserve">
     <value>...</value>
@@ -33,14 +158,32 @@
   <data name="Common_Copy" xml:space="preserve">
     <value>⧉ Copier</value>
   </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="Common_Duplicate" xml:space="preserve">
+    <value>Dupliquer</value>
+  </data>
+  <data name="Common_Edit" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
   <data name="Common_Elevate" xml:space="preserve">
     <value>🛡 Élever</value>
+  </data>
+  <data name="Common_MoveDown" xml:space="preserve">
+    <value>Descendre</value>
+  </data>
+  <data name="Common_MoveUp" xml:space="preserve">
+    <value>Monter</value>
   </data>
   <data name="Common_No" xml:space="preserve">
     <value>Non</value>
   </data>
   <data name="Common_Ok" xml:space="preserve">
     <value>OK</value>
+  </data>
+  <data name="Common_Ready" xml:space="preserve">
+    <value>Prêt.</value>
   </data>
   <data name="Common_Refresh" xml:space="preserve">
     <value>↻ Actualiser</value>
@@ -50,6 +193,103 @@
   </data>
   <data name="Common_Yes" xml:space="preserve">
     <value>Oui</value>
+  </data>
+  <data name="CtxMenu_Added" xml:space="preserve">
+    <value>Raccourci « {0} » ajouté avec succès.</value>
+  </data>
+  <data name="CtxMenu_AdminBanner" xml:space="preserve">
+    <value>Droits administrateur requis pour modifier les entrées. Cliquez sur « Élever » pour relancer en admin.</value>
+  </data>
+  <data name="CtxMenu_AlreadyExists" xml:space="preserve">
+    <value>Une entrée '{0}' existe déjà pour cette cible.
+Voulez-vous la remplacer ?</value>
+  </data>
+  <data name="CtxMenu_Col_AppliesTo" xml:space="preserve">
+    <value>S'applique à</value>
+  </data>
+  <data name="CtxMenu_Col_Command" xml:space="preserve">
+    <value>Commande</value>
+  </data>
+  <data name="CtxMenu_Col_DisplayName" xml:space="preserve">
+    <value>Nom affiché</value>
+  </data>
+  <data name="CtxMenu_Col_Icon" xml:space="preserve">
+    <value>Icône</value>
+  </data>
+  <data name="CtxMenu_Col_RegistryKey" xml:space="preserve">
+    <value>Clé de registre</value>
+  </data>
+  <data name="CtxMenu_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer le raccourci « {0} » ({1}) ?
+
+Cette action est irréversible.</value>
+  </data>
+  <data name="CtxMenu_DeleteError" xml:space="preserve">
+    <value>Erreur lors de la suppression :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Deleted" xml:space="preserve">
+    <value>Raccourci « {0} » supprimé.</value>
+  </data>
+  <data name="CtxMenu_Duplicated" xml:space="preserve">
+    <value>Raccourci « {0} » dupliqué avec succès.</value>
+  </data>
+  <data name="CtxMenu_ElevationCancelled" xml:space="preserve">
+    <value>Élévation annulée.</value>
+  </data>
+  <data name="CtxMenu_Empty" xml:space="preserve">
+    <value>Aucun raccourci trouvé.</value>
+  </data>
+  <data name="CtxMenu_Filter" xml:space="preserve">
+    <value>Afficher : </value>
+  </data>
+  <data name="CtxMenu_Filter_All" xml:space="preserve">
+    <value>Tout</value>
+  </data>
+  <data name="CtxMenu_Filter_Background" xml:space="preserve">
+    <value>Fond de dossier</value>
+  </data>
+  <data name="CtxMenu_Filter_Files" xml:space="preserve">
+    <value>Fichiers</value>
+  </data>
+  <data name="CtxMenu_Filter_Folders" xml:space="preserve">
+    <value>Dossiers</value>
+  </data>
+  <data name="CtxMenu_FoundTotal" xml:space="preserve">
+    <value>{0} {0:plural:raccourci|raccourcis} trouvé{0:plural:|s} au total.</value>
+  </data>
+  <data name="CtxMenu_Heading" xml:space="preserve">
+    <value>Gestionnaire de menu contextuel</value>
+  </data>
+  <data name="CtxMenu_LoadError" xml:space="preserve">
+    <value>Erreur de chargement : {0}</value>
+  </data>
+  <data name="CtxMenu_ReadRegistryError" xml:space="preserve">
+    <value>Impossible de lire le registre :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Refresh" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="CtxMenu_Subtitle" xml:space="preserve">
+    <value>Ajoutez, modifiez et supprimez des raccourcis dans le menu clic droit de l'Explorateur Windows.</value>
+  </data>
+  <data name="CtxMenu_Target_Drives" xml:space="preserve">
+    <value>Lecteurs</value>
+  </data>
+  <data name="CtxMenu_Title" xml:space="preserve">
+    <value>Gestionnaire de menu contextuel Windows</value>
+  </data>
+  <data name="CtxMenu_UpdateError" xml:space="preserve">
+    <value>Erreur lors de la modification :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Updated" xml:space="preserve">
+    <value>Raccourci « {0} » mis à jour.</value>
+  </data>
+  <data name="CtxMenu_WriteRegistryError" xml:space="preserve">
+    <value>Impossible d'écrire dans le registre :
+{0}</value>
   </data>
   <data name="Dialog_Title_Confirm" xml:space="preserve">
     <value>Confirmation</value>

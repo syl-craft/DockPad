@@ -49,7 +49,7 @@ public partial class ContextMenuManagerWindow : Window
         }
         catch
         {
-            TxtStatus.Text = "Élévation annulée.";
+            TxtStatus.Text = Loc.T("CtxMenu_ElevationCancelled");
         }
     }
 
@@ -66,13 +66,13 @@ public partial class ContextMenuManagerWindow : Window
                 .ToList();
 
             ApplyFilter();
-            TxtStatus.Text = $"{_allEntries.Count} raccourci(s) trouvé(s) au total.";
+            TxtStatus.Text = Loc.F("CtxMenu_FoundTotal", _allEntries.Count);
         }
         catch (Exception ex)
         {
             Services.LogService.Error(ex, "Lecture des entrées de menu contextuel dans le registre");
-            TxtStatus.Text = $"Erreur de chargement : {ex.Message}";
-            AppDialog.Error($"Impossible de lire le registre :\n{ex.Message}", owner: this);
+            TxtStatus.Text = Loc.F("CtxMenu_LoadError", ex.Message);
+            AppDialog.Error(Loc.F("CtxMenu_ReadRegistryError", ex.Message), owner: this);
         }
     }
 
@@ -115,7 +115,7 @@ public partial class ContextMenuManagerWindow : Window
         if (RegistryService.KeyExists(entry.Target, entry.RegistryKey))
         {
             if (!AppDialog.Confirm(
-                    $"Une entrée '{entry.RegistryKey}' existe déjà pour cette cible.\nVoulez-vous la remplacer ?",
+                    Loc.F("CtxMenu_AlreadyExists", entry.RegistryKey),
                     "Conflit", this)) return;
         }
 
@@ -123,12 +123,12 @@ public partial class ContextMenuManagerWindow : Window
         {
             RegistryService.Save(entry);
             LoadEntries();
-            TxtStatus.Text = $"Raccourci « {entry.DisplayName} » ajouté avec succès.";
+            TxtStatus.Text = Loc.F("CtxMenu_Added", entry.DisplayName);
         }
         catch (Exception ex)
         {
             Services.LogService.Error(ex, $"Ajout de l'entrée de menu contextuel « {entry.DisplayName} »");
-            AppDialog.Error($"Impossible d'écrire dans le registre :\n{ex.Message}", owner: this);
+            AppDialog.Error(Loc.F("CtxMenu_WriteRegistryError", ex.Message), owner: this);
         }
     }
 
@@ -154,12 +154,12 @@ public partial class ContextMenuManagerWindow : Window
 
             RegistryService.Save(updated);
             LoadEntries();
-            TxtStatus.Text = $"Raccourci « {updated.DisplayName} » mis à jour.";
+            TxtStatus.Text = Loc.F("CtxMenu_Updated", updated.DisplayName);
         }
         catch (Exception ex)
         {
             Services.LogService.Error(ex, $"Modification de l'entrée de menu contextuel « {updated.DisplayName} »");
-            AppDialog.Error($"Erreur lors de la modification :\n{ex.Message}", owner: this);
+            AppDialog.Error(Loc.F("CtxMenu_UpdateError", ex.Message), owner: this);
         }
     }
 
@@ -185,7 +185,7 @@ public partial class ContextMenuManagerWindow : Window
         if (RegistryService.KeyExists(entry.Target, entry.RegistryKey))
         {
             if (!AppDialog.Confirm(
-                    $"Une entrée '{entry.RegistryKey}' existe déjà pour cette cible.\nVoulez-vous la remplacer ?",
+                    Loc.F("CtxMenu_AlreadyExists", entry.RegistryKey),
                     "Conflit", this)) return;
         }
 
@@ -193,12 +193,12 @@ public partial class ContextMenuManagerWindow : Window
         {
             RegistryService.Save(entry);
             LoadEntries();
-            TxtStatus.Text = $"Raccourci « {entry.DisplayName} » dupliqué avec succès.";
+            TxtStatus.Text = Loc.F("CtxMenu_Duplicated", entry.DisplayName);
         }
         catch (Exception ex)
         {
             Services.LogService.Error(ex, $"Duplication de l'entrée de menu contextuel « {entry.DisplayName} »");
-            AppDialog.Error($"Impossible d'écrire dans le registre :\n{ex.Message}", owner: this);
+            AppDialog.Error(Loc.F("CtxMenu_WriteRegistryError", ex.Message), owner: this);
         }
     }
 
@@ -207,19 +207,19 @@ public partial class ContextMenuManagerWindow : Window
         if (LvEntries.SelectedItem is not ContextMenuEntryViewModel vm) return;
 
         if (!AppDialog.Confirm(
-                $"Supprimer le raccourci « {vm.DisplayName} » ({vm.TargetLabel}) ?\n\nCette action est irréversible.",
+                Loc.F("CtxMenu_ConfirmDelete", vm.DisplayName, vm.TargetLabel),
                 "Confirmer la suppression", this)) return;
 
         try
         {
             RegistryService.Delete(vm.ToModel());
             LoadEntries();
-            TxtStatus.Text = $"Raccourci « {vm.DisplayName} » supprimé.";
+            TxtStatus.Text = Loc.F("CtxMenu_Deleted", vm.DisplayName);
         }
         catch (Exception ex)
         {
             Services.LogService.Error(ex, $"Suppression de l'entrée de menu contextuel « {vm.DisplayName} »");
-            AppDialog.Error($"Erreur lors de la suppression :\n{ex.Message}", owner: this);
+            AppDialog.Error(Loc.F("CtxMenu_DeleteError", ex.Message), owner: this);
         }
     }
 

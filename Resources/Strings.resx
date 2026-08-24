@@ -12,8 +12,133 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Browsers_Add_Tip" xml:space="preserve">
+    <value>Add a browser</value>
+  </data>
+  <data name="Browsers_Args" xml:space="preserve">
+    <value>Arguments:</value>
+  </data>
+  <data name="Browsers_Args_Tip" xml:space="preserve">
+    <value>e.g. --profile-directory="Profile 1", --incognito, -inprivate. %1 = URL.</value>
+  </data>
+  <data name="Browsers_AutoOpen" xml:space="preserve">
+    <value>Automatic opening:</value>
+  </data>
+  <data name="Browsers_AutoOpen_Hint" xml:space="preserve">
+    <value>seconds before opening with browser #1 (0 = disabled)</value>
+  </data>
+  <data name="Browsers_Badge_Hidden" xml:space="preserve">
+    <value>hidden</value>
+  </data>
+  <data name="Browsers_ConfirmDelete" xml:space="preserve">
+    <value>Delete {0}?
+The associated domain rules will be deleted as well.</value>
+  </data>
+  <data name="Browsers_DetectedAdded" xml:space="preserve">
+    <value>{1:list:{}|, | and } {0:plural:was|were} added.</value>
+  </data>
+  <data name="Browsers_DetectedBrowsers" xml:space="preserve">
+    <value>{0} {0:plural:browser|browsers}</value>
+  </data>
+  <data name="Browsers_DetectedNothing" xml:space="preserve">
+    <value>No new browser or profile detected.</value>
+  </data>
+  <data name="Browsers_DetectedProfiles" xml:space="preserve">
+    <value>{0} {0:plural:profile|profiles}</value>
+  </data>
+  <data name="Browsers_Exe" xml:space="preserve">
+    <value>Executable:</value>
+  </data>
+  <data name="Browsers_Name" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="Browsers_ParentFallback" xml:space="preserve">
+    <value>its browser</value>
+  </data>
+  <data name="Browsers_Pick_Exe_Filter" xml:space="preserve">
+    <value>Executables (*.exe)|*.exe</value>
+  </data>
+  <data name="Browsers_PopupList" xml:space="preserve">
+    <value>Browsers in the popup</value>
+  </data>
+  <data name="Browsers_ProfileHint" xml:space="preserve">
+    <value>Profile “{0}” of {1} — launched with --profile-directory="{0}". The executable path follows the browser's.</value>
+  </data>
+  <data name="Browsers_Redetect" xml:space="preserve">
+    <value>↻ Detect again</value>
+  </data>
+  <data name="Browsers_Redetect_Tip" xml:space="preserve">
+    <value>Adds newly installed browsers and their profiles (overwrites nothing)</value>
+  </data>
+  <data name="Browsers_Register" xml:space="preserve">
+    <value>Register as a browser</value>
+  </data>
+  <data name="Browsers_RegisterError" xml:space="preserve">
+    <value>Cannot register DockPad as a browser:
+{0}</value>
+  </data>
   <data name="Browsers_RuleCount" xml:space="preserve">
     <value>{0} {0:plural:rule|rules}</value>
+  </data>
+  <data name="Browsers_RuleCountFiltered" xml:space="preserve">
+    <value>{1} / {0} {0:plural:rule|rules}</value>
+  </data>
+  <data name="Browsers_Rules_Browser_Tip" xml:space="preserve">
+    <value>Browser that will open this domain</value>
+  </data>
+  <data name="Browsers_Rules_Delete_Tip" xml:space="preserve">
+    <value>Delete the rule</value>
+  </data>
+  <data name="Browsers_Rules_Empty" xml:space="preserve">
+    <value>No rule — tick “Always for this domain” in the popup to create one.</value>
+  </data>
+  <data name="Browsers_Rules_Intro" xml:space="preserve">
+    <value>These domains open directly in the associated browser, without the popup. Rules are created with “Always for this domain” in the popup.</value>
+  </data>
+  <data name="Browsers_Rules_Search_Tip" xml:space="preserve">
+    <value>Search in domain names</value>
+  </data>
+  <data name="Browsers_State_Default" xml:space="preserve">
+    <value>✔ DockPad is the default browser: clicked URLs show the picker.</value>
+  </data>
+  <data name="Browsers_State_NotRegistered" xml:space="preserve">
+    <value>DockPad is not registered as a browser. Register it, then choose it as the default browser in the Windows settings.</value>
+  </data>
+  <data name="Browsers_State_Registered" xml:space="preserve">
+    <value>DockPad is registered as a browser. To intercept URLs, choose it as the default browser in the Windows settings (button below).</value>
+  </data>
+  <data name="Browsers_SubjectAlone" xml:space="preserve">
+    <value>“{0}”</value>
+  </data>
+  <data name="Browsers_SubjectWithProfiles" xml:space="preserve">
+    <value>“{0}” and its {1} {1:plural:profile|profiles}</value>
+  </data>
+  <data name="Browsers_Tab_Browsers" xml:space="preserve">
+    <value>Browsers</value>
+  </data>
+  <data name="Browsers_Tab_Rules" xml:space="preserve">
+    <value>Domain rules</value>
+  </data>
+  <data name="Browsers_Title" xml:space="preserve">
+    <value>Browsers</value>
+  </data>
+  <data name="Browsers_UrlInterception" xml:space="preserve">
+    <value>URL interception</value>
+  </data>
+  <data name="Browsers_Visible_Tip" xml:space="preserve">
+    <value>Uncheck to stop offering this entry in the popup</value>
+  </data>
+  <data name="Browsers_WindowsSettings" xml:space="preserve">
+    <value>Windows settings…</value>
+  </data>
+  <data name="Browsers_WindowsSettings_Tip" xml:space="preserve">
+    <value>Choose DockPad as the default browser (Default apps)</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+    <value>+ Add</value>
+  </data>
+  <data name="Common_Apply" xml:space="preserve">
+    <value>✔ Apply</value>
   </data>
   <data name="Common_Browse" xml:space="preserve">
     <value>...</value>
@@ -33,14 +158,32 @@
   <data name="Common_Copy" xml:space="preserve">
     <value>⧉ Copy</value>
   </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common_Duplicate" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
+  <data name="Common_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
   <data name="Common_Elevate" xml:space="preserve">
     <value>🛡 Elevate</value>
+  </data>
+  <data name="Common_MoveDown" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="Common_MoveUp" xml:space="preserve">
+    <value>Move up</value>
   </data>
   <data name="Common_No" xml:space="preserve">
     <value>No</value>
   </data>
   <data name="Common_Ok" xml:space="preserve">
     <value>OK</value>
+  </data>
+  <data name="Common_Ready" xml:space="preserve">
+    <value>Ready.</value>
   </data>
   <data name="Common_Refresh" xml:space="preserve">
     <value>↻ Refresh</value>
@@ -50,6 +193,103 @@
   </data>
   <data name="Common_Yes" xml:space="preserve">
     <value>Yes</value>
+  </data>
+  <data name="CtxMenu_Added" xml:space="preserve">
+    <value>Shortcut “{0}” added successfully.</value>
+  </data>
+  <data name="CtxMenu_AdminBanner" xml:space="preserve">
+    <value>Administrator rights are required to change entries. Click “Elevate” to restart as admin.</value>
+  </data>
+  <data name="CtxMenu_AlreadyExists" xml:space="preserve">
+    <value>An entry '{0}' already exists for this target.
+Do you want to replace it?</value>
+  </data>
+  <data name="CtxMenu_Col_AppliesTo" xml:space="preserve">
+    <value>Applies to</value>
+  </data>
+  <data name="CtxMenu_Col_Command" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="CtxMenu_Col_DisplayName" xml:space="preserve">
+    <value>Display name</value>
+  </data>
+  <data name="CtxMenu_Col_Icon" xml:space="preserve">
+    <value>Icon</value>
+  </data>
+  <data name="CtxMenu_Col_RegistryKey" xml:space="preserve">
+    <value>Registry key</value>
+  </data>
+  <data name="CtxMenu_ConfirmDelete" xml:space="preserve">
+    <value>Delete the shortcut “{0}” ({1})?
+
+This cannot be undone.</value>
+  </data>
+  <data name="CtxMenu_DeleteError" xml:space="preserve">
+    <value>Error while deleting:
+{0}</value>
+  </data>
+  <data name="CtxMenu_Deleted" xml:space="preserve">
+    <value>Shortcut “{0}” deleted.</value>
+  </data>
+  <data name="CtxMenu_Duplicated" xml:space="preserve">
+    <value>Shortcut “{0}” duplicated successfully.</value>
+  </data>
+  <data name="CtxMenu_ElevationCancelled" xml:space="preserve">
+    <value>Elevation cancelled.</value>
+  </data>
+  <data name="CtxMenu_Empty" xml:space="preserve">
+    <value>No shortcut found.</value>
+  </data>
+  <data name="CtxMenu_Filter" xml:space="preserve">
+    <value>Show: </value>
+  </data>
+  <data name="CtxMenu_Filter_All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="CtxMenu_Filter_Background" xml:space="preserve">
+    <value>Folder background</value>
+  </data>
+  <data name="CtxMenu_Filter_Files" xml:space="preserve">
+    <value>Files</value>
+  </data>
+  <data name="CtxMenu_Filter_Folders" xml:space="preserve">
+    <value>Folders</value>
+  </data>
+  <data name="CtxMenu_FoundTotal" xml:space="preserve">
+    <value>{0} {0:plural:shortcut|shortcuts} found in total.</value>
+  </data>
+  <data name="CtxMenu_Heading" xml:space="preserve">
+    <value>Context menu manager</value>
+  </data>
+  <data name="CtxMenu_LoadError" xml:space="preserve">
+    <value>Loading error: {0}</value>
+  </data>
+  <data name="CtxMenu_ReadRegistryError" xml:space="preserve">
+    <value>Cannot read the registry:
+{0}</value>
+  </data>
+  <data name="CtxMenu_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="CtxMenu_Subtitle" xml:space="preserve">
+    <value>Add, edit and remove shortcuts in the Windows Explorer right-click menu.</value>
+  </data>
+  <data name="CtxMenu_Target_Drives" xml:space="preserve">
+    <value>Drives</value>
+  </data>
+  <data name="CtxMenu_Title" xml:space="preserve">
+    <value>Windows context menu manager</value>
+  </data>
+  <data name="CtxMenu_UpdateError" xml:space="preserve">
+    <value>Error while updating:
+{0}</value>
+  </data>
+  <data name="CtxMenu_Updated" xml:space="preserve">
+    <value>Shortcut “{0}” updated.</value>
+  </data>
+  <data name="CtxMenu_WriteRegistryError" xml:space="preserve">
+    <value>Cannot write to the registry:
+{0}</value>
   </data>
   <data name="Dialog_Title_Confirm" xml:space="preserve">
     <value>Confirmation</value>

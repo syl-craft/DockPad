@@ -36,7 +36,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings> <fr|en> <chemin.png>");
+            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp> <fr|en> <chemin.png>");
             return;
         }
 
@@ -58,6 +58,9 @@ internal static class Program
         Window window = target switch
         {
             "settings" => new SettingsDialog(),
+            "ctxmenu" => new ContextMenuManagerWindow(),
+            "presets" => new PresetsDialog(),
+            "mcp" => new McpConfigDialog(),
             _ => throw new ArgumentException($"fenêtre inconnue : {target}"),
         };
 
