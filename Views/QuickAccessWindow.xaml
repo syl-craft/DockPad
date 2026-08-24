@@ -55,6 +55,58 @@
             <Setter Property="Opacity" Value="0.4"/>
         </Style>
 
+        <!-- Gabarit d'une tuile occupee. Les gestionnaires d'evenements sont declares ici et se
+             resolvent dans le code-behind de la fenetre : le glisser-deposer et le survol ont besoin
+             de leurs arguments d'evenement, une commande ne les porterait pas.
+             Le menu contextuel est construit a l'ouverture (ContextMenuOpening) et non a la
+             construction : il depend des pages existantes et, pour un dossier, d'une lecture du
+             registre — on ne la faisait jusqu'ici pour chaque tuile a chaque peuplement. -->
+        <DataTemplate x:Key="TileTemplate">
+            <Button Style="{StaticResource TileButton}"
+                    ToolTip="{Binding Tooltip}"
+                    Tag="{Binding Band}"
+                    AutomationProperties.Name="{Binding Name}"
+                    Click="Tile_Click"
+                    MouseEnter="TileHover_Enter" MouseLeave="TileHover_Leave"
+                    PreviewMouseLeftButtonDown="TileDrag_MouseDown" PreviewMouseMove="TileDrag_MouseMove"
+                    AllowDrop="True" DragOver="TileDrop_DragOver" DragLeave="TileDrop_DragLeave"
+                    Drop="TileDrop_Drop"
+                    ContextMenuOpening="Tile_ContextMenuOpening">
+                <!-- Un menu vide, rempli a l'ouverture. Il doit exister des la construction : WPF ne
+                     leve ContextMenuOpening que sur un element qui porte deja un menu, et le menu
+                     affiche est celui capture avant le gestionnaire. En assigner un neuf depuis le
+                     gestionnaire ne montrerait rien. -->
+                <Button.ContextMenu>
+                    <ContextMenu/>
+                </Button.ContextMenu>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Source="{Binding Icon}" Width="36" Height="36" Stretch="Uniform"
+                           Margin="0,0,0,6"/>
+                    <TextBlock Text="{Binding Name}" TextAlignment="Center" TextWrapping="Wrap"
+                               MaxWidth="94" FontSize="11"/>
+                </StackPanel>
+            </Button>
+        </DataTemplate>
+
+        <!-- Case libre : le « + » grise, et le depot depuis l'Explorateur, qui doit fonctionner
+             exactement comme sur une tuile occupee. -->
+        <DataTemplate x:Key="EmptyTileTemplate">
+            <Button Style="{StaticResource EmptyTileButton}"
+                    AutomationProperties.Name="{loc:T Quick_Tile_Add}"
+                    AllowDrop="True" DragOver="TileDrop_DragOver" DragLeave="TileDrop_DragLeave"
+                    Drop="TileDrop_Drop"
+                    ContextMenuOpening="EmptyTile_ContextMenuOpening">
+                <Button.ContextMenu>
+                    <ContextMenu/>
+                </Button.ContextMenu>
+                <TextBlock Text="+" FontSize="22" Foreground="{StaticResource Brush.BorderStrong}"/>
+            </Button>
+        </DataTemplate>
+
+        <views:TileTemplateSelector x:Key="TileSelector"
+                                    Tile="{StaticResource TileTemplate}"
+                                    Empty="{StaticResource EmptyTileTemplate}"/>
+
         <Style x:Key="PageButton" TargetType="Button">
             <Setter Property="Width" Value="30"/>
             <Setter Property="Height" Value="30"/>
@@ -284,23 +336,25 @@
             <!-- Marge basse à 5 : ajoutée aux 5 px de marge d'une tuile, l'écart entre la dernière
                  rangée et le bandeau vaut 10 px, soit le pas entre deux tuiles. Avec une ligne Auto
                  il n'y a plus de mou, donc l'écart est déterminé sans avoir à ancrer la grille. -->
-            <Grid x:Name="ShortcutsGrid"
-                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                  Margin="20,20,20,5">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,20,20,5">
+                <!-- Les tuiles. Les cases ont une taille fixe : un UniformGrid 4 x 6 donne la meme
+                     geometrie que les rangees et colonnes Auto d'avant, sans avoir a poser
+                     Grid.Row et Grid.Column sur chaque enfant depuis le code. -->
+                <ItemsControl x:Name="ShortcutsGrid"
+                              ItemTemplateSelector="{StaticResource TileSelector}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="4" Columns="6"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <!-- L'overlay des raccourcis clavier, par-dessus et sans interception : il occupe la
+                     meme grille de cases, ce qui le rend independant de la facon dont les tuiles
+                     sont construites. Avant, ses elements etaient ajoutes DANS la grille des
+                     tuiles. -->
+                <UniformGrid x:Name="HintOverlay" Rows="4" Columns="6"
+                             IsHitTestVisible="False" Visibility="Collapsed"/>
             </Grid>
         </ScrollViewer>
 

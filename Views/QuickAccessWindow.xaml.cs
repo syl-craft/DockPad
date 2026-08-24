@@ -79,8 +79,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         align = (_, _) =>
         {
             if (ShortcutsGrid.ActualWidth <= 0) return;
-            if (ShortcutsGrid.Children.Count == 0) return;
-            if (ShortcutsGrid.Children[0] is not FrameworkElement tile || tile.ActualHeight <= 0) return;
+            // Une tuile REELLE, cherchee dans l'arbre visuel : les enfants d'un ItemsControl sont
+            // generes, on ne les prend plus directement dans une collection Children.
+            if (FirstTile() is not { } tile || tile.ActualHeight <= 0) return;
 
             // Dimensions prises sur la grille et sur une tuile réelle, pas recopiées depuis le
             // style : une seule source de vérité, qui suit automatiquement un changement de taille
@@ -427,30 +428,47 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
         TxtHotkey.Text = string.Join(" + ", parts);
     }
+    /// <summary>
+    /// Recharge les vingt-quatre cases de la page courante.
+    /// </summary>
+    /// <remarks>
+    /// La grille est décrite en XAML : ici on ne fabrique plus de boutons, on fournit des données.
+    /// Le gabarit et le sélecteur font le reste.
+    /// </remarks>
     private void PopulateGrid()
     {
-        ShortcutsGrid.Children.Clear();
         var all = ShortcutService.Load();
-
         UpdatePagination(all);
 
-        var pageEntries = all.Where(s => s.Page == _currentPage).ToList();
+        var onPage = all.Where(s => s.Page == _currentPage).ToList();
+        var cells = new List<TileCell>(ShortcutActionService.GridRows * ShortcutActionService.GridCols);
 
         for (int row = 0; row < ShortcutActionService.GridRows; row++)
         {
             for (int col = 0; col < ShortcutActionService.GridCols; col++)
             {
-                var entry = pageEntries.FirstOrDefault(s => s.Row == row && s.Col == col);
-                var btn = entry is { Name.Length: > 0 }
-                    ? CreateTile(entry)
-                    : CreateEmptyTile(row, col);
-
-                Grid.SetRow(btn, row);
-                Grid.SetColumn(btn, col);
-                ShortcutsGrid.Children.Add(btn);
+                var entry = onPage.FirstOrDefault(s => s.Row == row && s.Col == col);
+                cells.Add(entry is { Name.Length: > 0 } ? Occupied(entry) : new TileCell { Row = row, Col = col });
             }
         }
+
+        ShortcutsGrid.ItemsSource = cells;
     }
+
+    private static TileCell Occupied(ShortcutEntry entry) => new()
+    {
+        Row = entry.Row,
+        Col = entry.Col,
+        Entry = entry,
+        Icon = IconStoreService.LoadImage(
+            IconStoreService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath),
+        Tooltip = $"[{TypeLabel(entry.Type)}] {entry.Command}",
+        Band = TypeBandBrush(entry.Type),
+    };
+
+    /// <summary>Cellule portée par un contrôle du gabarit, ou <c>null</c> si l'objet n'en vient pas.</summary>
+    private static TileCell? CellOf(object sender) =>
+        (sender as FrameworkElement)?.DataContext as TileCell;
 
     private void UpdatePagination(List<ShortcutEntry> all)
     {
@@ -607,100 +625,55 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         PopulateGrid();
     }
 
-    private Button CreateTile(ShortcutEntry entry)
+    /// <summary>
+    /// Construit le menu d'une tuile <b>à l'ouverture</b>.
+    /// </summary>
+    /// <remarks>
+    /// Il était fabriqué pour les vingt-quatre cases à chaque peuplement de la grille — donc à
+    /// chaque changement de page et de langue — y compris la lecture du registre que fait
+    /// <see cref="BuildFolderContextMenuSection"/> pour chaque tuile de dossier. Différé, ce travail
+    /// n'a lieu que sur la tuile qu'on ouvre.
+    /// </remarks>
+    private void Tile_ContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
-        var icon = new Image
-        {
-            Width = 36,
-            Height = 36,
-            Stretch = Stretch.Uniform,
-            Margin = new Thickness(0, 0, 0, 6),
-            Source = IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath)
-        };
+        if (sender is not Button button || CellOf(sender)?.Entry is not { } entry) return;
+        if (button.ContextMenu is not { } menu) return;
 
-        var label = new TextBlock
-        {
-            Text = entry.Name,
-            TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.Wrap,
-            MaxWidth = 94,
-            FontSize = 11,
-        };
+        menu.Items.Clear();
 
-        var btn = new Button
-        {
-            Style = (Style)FindResource("TileButton"),
-            ToolTip = $"[{TypeLabel(entry.Type)}] {entry.Command}",
-            DataContext = entry,
-            Tag = TypeBandBrush(entry.Type),
-            Content = new StackPanel
-            {
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Children = { icon, label }
-            }
-        };
-
-        btn.Click += Tile_Click;
-        btn.MouseEnter += TileHover_Enter;
-        btn.MouseLeave += TileHover_Leave;
-        btn.PreviewMouseLeftButtonDown += TileDrag_MouseDown;
-        btn.PreviewMouseMove += TileDrag_MouseMove;
-        btn.AllowDrop = true;
-        btn.DragOver  += TileDrop_DragOver;
-        btn.DragLeave += TileDrop_DragLeave;
-        btn.Drop      += TileDrop_Drop;
-
-        var menu = new ContextMenu();
         var changeIcon = new MenuItem { Header = Loc.T("Quick_Tile_ChangeIcon") };
-        changeIcon.Click += (_, _) => ChangeIcon(btn, entry);
+        changeIcon.Click += (_, _) => ChangeIcon(entry);
         var edit = new MenuItem { Header = Loc.T("Quick_Tile_Edit") };
         edit.Click += (_, _) => EditTile(entry);
         var duplicate = new MenuItem { Header = Loc.T("Quick_Tile_Duplicate") };
         duplicate.Click += (_, _) => DuplicateTile(entry);
         var delete = new MenuItem { Header = Loc.T("Quick_Tile_Delete") };
         delete.Click += (_, _) => DeleteTile(entry);
-        var moveToPage = BuildMoveToPageMenu(entry);
+
         menu.Items.Add(changeIcon);
         menu.Items.Add(new Separator());
         menu.Items.Add(edit);
         menu.Items.Add(duplicate);
-        menu.Items.Add(moveToPage);
+        menu.Items.Add(BuildMoveToPageMenu(entry));
 
         if (entry.Type == ShortcutType.OpenFolder)
             BuildFolderContextMenuSection(menu, entry.Command);
 
         menu.Items.Add(new Separator());
         menu.Items.Add(delete);
-        btn.ContextMenu = menu;
-
-        return btn;
     }
 
-    private Button CreateEmptyTile(int row, int col)
+    /// <summary>Menu d'une case libre : ajouter, à l'endroit où l'on a cliqué.</summary>
+    private void EmptyTile_ContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
-        var btn = new Button
-        {
-            Style = (Style)FindResource("EmptyTileButton"),
-            Content = new TextBlock
-            {
-                Text = "+",
-                FontSize = 22,
-                Foreground = EmptyTileForeground,
-            }
-        };
-        btn.AllowDrop = true;
-        btn.DragOver  += TileDrop_DragOver;
-        btn.DragLeave += TileDrop_DragLeave;
-        btn.Drop      += TileDrop_Drop;
+        if (sender is not Button button || CellOf(sender) is not { } cell) return;
+        if (button.ContextMenu is not { } menu) return;
 
-        var menu = new ContextMenu();
+        menu.Items.Clear();
+
         var add = new MenuItem { Header = Loc.T("Quick_Tile_Add") };
-        add.Click += (_, _) => AddTile(row, col);
+        add.Click += (_, _) => AddTile(cell.Row, cell.Col);
         menu.Items.Add(add);
-        btn.ContextMenu = menu;
-
-        return btn;
     }
 
     private void AddTile(int row, int col)
@@ -857,7 +830,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     private void Tile_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button btn || btn.DataContext is not ShortcutEntry entry) return;
+        if (CellOf(sender)?.Entry is not { } entry) return;
         ExecuteEntry(entry);
     }
 
@@ -932,7 +905,6 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         new[] { BandRunCommand, BandOpenFolder, BandOpenUrl, BandOpenTerminal, BandSwitchToProcess }
             .ToDictionary(b => b, b => Frozen(Color.FromArgb(60, b.Color.R, b.Color.G, b.Color.B)));
 
-    private static readonly SolidColorBrush EmptyTileForeground = Frozen(0xCC, 0xCC, 0xCC);
     private static readonly SolidColorBrush HintVeil  = Frozen(Color.FromArgb(0x55, 0x60, 0x60, 0x60));
     private static readonly SolidColorBrush HintBadge = Frozen(Color.FromArgb(0xBB, 0x55, 0x55, 0x55));
 
@@ -945,7 +917,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         _                            => BandRunCommand,
     };
 
-    private void ChangeIcon(Button btn, ShortcutEntry entry)
+    private void ChangeIcon(ShortcutEntry entry)
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
@@ -972,8 +944,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         }
         ShortcutService.Save(all);
 
-        if (btn.Content is StackPanel sp && sp.Children[0] is Image img)
-            img.Source = IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(profilePath) ?? dlg.FileName);
+        // Le contenu du bouton est engendre par le gabarit : on ne va plus y chercher l'Image a
+        // la main. Repeupler la grille republie la cellule, donc l'icone.
+        PopulateGrid();
     }
 
     private void TileDrag_MouseDown(object sender, MouseButtonEventArgs e)
@@ -988,7 +961,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // l'Explorateur passent par TileDrop_Drop, qui n'est pas concerné.
         if (!_tileLock.IsUnlocked) return;
         if (e.LeftButton != MouseButtonState.Pressed) return;
-        if (sender is not Button dragBtn || dragBtn.DataContext is not ShortcutEntry entry) return;
+        if (sender is not Button dragBtn || CellOf(dragBtn)?.Entry is not { } entry) return;
 
         var pos  = e.GetPosition(null);
         var diff = _dragStartPoint - pos;
@@ -1031,8 +1004,11 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         if (sender is Button b) b.BorderBrush = DefaultBorder;
         if (sender is not Button targetBtn) return;
 
-        int targetRow = Grid.GetRow(targetBtn);
-        int targetCol = Grid.GetColumn(targetBtn);
+        // La position vient de la cellule : les boutons ne sont plus des enfants d'une Grid,
+        // Grid.GetRow rendait donc 0 pour toutes les cases — tout depot atterrissait en (0,0).
+        if (CellOf(targetBtn) is not { } cell) return;
+        int targetRow = cell.Row;
+        int targetCol = cell.Col;
 
         // Drop depuis l'Explorateur Windows
         if (_dragSource == null && e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -1227,6 +1203,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private void ShowHintOverlay(bool isCtrl)
     {
         HideHintOverlay();
+        // La grille de l'overlay est repliée au repos : masquée, elle ne participe pas à la mesure
+        // de la zone des tuiles.
+        HintOverlay.Visibility = Visibility.Visible;
 
         for (int row = 0; row < ShortcutActionService.GridRows; row++)
         {
@@ -1271,19 +1250,53 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         }
     }
 
+    /// <summary>
+    /// Place un element de l'overlay dans sa case.
+    /// </summary>
+    /// <remarks>
+    /// L'overlay a sa propre grille, superposee a celle des tuiles : ses elements etaient auparavant
+    /// ajoutes DANS la grille des tuiles, ce qui liait leur position a la facon dont les tuiles
+    /// etaient construites. Un UniformGrid range ses enfants dans l'ordre : chaque case recoit donc
+    /// un conteneur, meme vide, pour que les indices correspondent.
+    /// </remarks>
     private void AddHintOverlayElement(int row, int col, UIElement element)
     {
-        Grid.SetRow(element, row);
-        Grid.SetColumn(element, col);
-        ShortcutsGrid.Children.Add(element);
+        EnsureHintCells();
+
+        if (HintOverlay.Children[row * ShortcutActionService.GridCols + col] is Grid cell)
+            cell.Children.Add(element);
+
         _hintElements.Add(element);
+    }
+
+    /// <summary>Un conteneur par case, cree une seule fois.</summary>
+    private void EnsureHintCells()
+    {
+        if (HintOverlay.Children.Count > 0) return;
+
+        for (int i = 0; i < ShortcutActionService.GridRows * ShortcutActionService.GridCols; i++)
+            HintOverlay.Children.Add(new Grid());
     }
 
     private void HideHintOverlay()
     {
-        foreach (var el in _hintElements)
-            ShortcutsGrid.Children.Remove(el);
+        foreach (var element in _hintElements)
+            if (VisualTreeHelper.GetParent(element) is Grid cell)
+                cell.Children.Remove(element);
+
         _hintElements.Clear();
+        HintOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>Premiere tuile reellement rendue, pour aligner le bandeau sur sa geometrie.</summary>
+    private FrameworkElement? FirstTile()
+    {
+        if (ShortcutsGrid.Items.Count == 0) return null;
+
+        return ShortcutsGrid.ItemContainerGenerator.ContainerFromIndex(0) is ContentPresenter presenter
+               && VisualTreeHelper.GetChildrenCount(presenter) > 0
+            ? VisualTreeHelper.GetChild(presenter, 0) as FrameworkElement
+            : null;
     }
 
     private void ExecuteByHintKey(int keyNum, bool isCtrl)
