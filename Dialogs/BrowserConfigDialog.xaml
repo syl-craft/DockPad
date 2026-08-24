@@ -7,7 +7,7 @@
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize" MinWidth="640" MinHeight="600"
-        Background="#F3F3F3"
+        Background="{StaticResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Grid>
         <Grid.RowDefinitions>
@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#0078D4" Padding="20,14">
+        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T Browsers_Title}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
@@ -42,7 +42,7 @@
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="Bd" Property="BorderBrush" Value="#0078D4"/>
-                                        <Setter Property="Foreground" Value="#0078D4"/>
+                                        <Setter Property="Foreground" Value="{StaticResource Brush.Accent}"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
@@ -150,24 +150,24 @@
                                                        TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                         <TextBlock Grid.Column="4" Text="{Binding HiddenLabel}" FontSize="10"
-                                                   Foreground="#C42B1C" VerticalAlignment="Center"/>
+                                                   Foreground="{StaticResource Brush.Danger}" VerticalAlignment="Center"/>
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
 
                         <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                            <Button x:Name="BtnUp"     Content="▲"  Width="34" Height="30" Padding="0" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Up_Click"     ToolTip="{loc:T Common_MoveUp}"/>
-                            <Button x:Name="BtnDown"   Content="▼"  Width="34" Height="30" Padding="0" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Down_Click"   ToolTip="{loc:T Common_MoveDown}"/>
-                            <Button x:Name="BtnDelete" Content="🗑" Width="34" Height="30" Padding="0" Margin="0,0,0,12" Style="{StaticResource SecondaryButton}" Click="Delete_Click" ToolTip="{loc:T Common_Delete}"/>
-                            <Button Content="➕" Width="34" Height="30" Padding="0" Style="{StaticResource SecondaryButton}" Click="Add_Click" ToolTip="{loc:T Browsers_Add_Tip}"/>
+                            <Button x:Name="BtnUp"     Content="▲"  Width="34" Height="30" Padding="0" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Up_Click"     ToolTip="{loc:T Common_MoveUp}" AutomationProperties.Name="{loc:T Common_MoveUp}"/>
+                            <Button x:Name="BtnDown"   Content="▼"  Width="34" Height="30" Padding="0" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Down_Click"   ToolTip="{loc:T Common_MoveDown}" AutomationProperties.Name="{loc:T Common_MoveDown}"/>
+                            <Button x:Name="BtnDelete" Content="🗑" Width="34" Height="30" Padding="0" Margin="0,0,0,12" Style="{StaticResource SecondaryButton}" Click="Delete_Click" ToolTip="{loc:T Common_Delete}" AutomationProperties.Name="{loc:T Common_Delete}"/>
+                            <Button Content="➕" Width="34" Height="30" Padding="0" Style="{StaticResource SecondaryButton}" Click="Add_Click" ToolTip="{loc:T Browsers_Add_Tip}" AutomationProperties.Name="{loc:T Browsers_Add_Tip}"/>
                         </StackPanel>
                     </Grid>
 
                     <!-- Édition de l'entrée sélectionnée (désactivé sans sélection) -->
                     <Border x:Name="PnlEdit" Grid.Row="4" IsEnabled="False"
                             Background="White" CornerRadius="6" Padding="12" Margin="0,10,0,0"
-                            BorderBrush="#E0E0E0" BorderThickness="1"
+                            BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
                             SnapsToDevicePixels="True" UseLayoutRounding="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -193,6 +193,7 @@
                             <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
                                       Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
                             <Button   x:Name="BtnBrowseExe" Grid.Row="1" Grid.Column="2" Content="…" Width="30"
+                              AutomationProperties.Name="{loc:T Browsers_Exe}"
                                       Padding="0" Margin="0,0,0,8"
                                       Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
 
@@ -235,6 +236,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="TxtRuleSearch" Grid.Column="0" Padding="6,5" Margin="0,0,8,0"
+                                 AutomationProperties.Name="{loc:T Browsers_Rules_Search_Tip}"
                                  FontSize="12" TextChanged="RuleFilter_Changed"
                                  ToolTip="{loc:T Browsers_Rules_Search_Tip}"/>
                         <ComboBox x:Name="CmbRuleFilter" Grid.Column="1" Width="190"
@@ -264,6 +266,7 @@
                                               SelectionChanged="RuleBrowser_Changed"
                                               ToolTip="{loc:T Browsers_Rules_Browser_Tip}"/>
                                     <Button Grid.Column="2" Content="🗑" Width="30"
+                                        AutomationProperties.Name="{loc:T Browsers_Rules_Delete_Tip}"
                                             Style="{StaticResource SecondaryButton}" Padding="4"
                                             Click="DeleteRule_Click" ToolTip="{loc:T Browsers_Rules_Delete_Tip}"/>
                                 </Grid>

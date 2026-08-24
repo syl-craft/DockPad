@@ -7,7 +7,7 @@
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize" MinWidth="560" MinHeight="440"
-        Background="#F3F3F3"
+        Background="{StaticResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Grid>
         <Grid.RowDefinitions>
@@ -18,13 +18,13 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#0078D4" Padding="20,14">
+        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T UsageCfg_Title}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
         <!-- Réglages du bandeau. Sauvegarde immédiate à chaque changement. -->
         <Border Grid.Row="1" Background="White" Margin="16,12,16,0" Padding="16,12"
-                BorderBrush="#E4E4E4" BorderThickness="1" CornerRadius="8"
+                BorderBrush="{StaticResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="8"
                 SnapsToDevicePixels="True" UseLayoutRounding="True">
             <StackPanel>
                 <TextBlock Text="{loc:T UsageCfg_Banner}" FontWeight="SemiBold" Margin="0,0,0,10"/>
@@ -68,7 +68,7 @@
 
         <!-- Fournisseurs détectés -->
         <Border Grid.Row="2" Background="White" Margin="16,12,16,12" Padding="16,12"
-                BorderBrush="#E4E4E4" BorderThickness="1" CornerRadius="8"
+                BorderBrush="{StaticResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="8"
                 SnapsToDevicePixels="True" UseLayoutRounding="True">
             <Grid>
                 <Grid.RowDefinitions>
@@ -138,10 +138,10 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
-                                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="10" Foreground="#7C3AED"/>
+                                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="10" Foreground="{StaticResource Brush.Demo}"/>
                                     </Border>
 
-                                    <TextBlock Text="{loc:T UsageCfg_Badge_Hidden}" FontSize="10" Foreground="#C42B1C"
+                                    <TextBlock Text="{loc:T UsageCfg_Badge_Hidden}" FontSize="10" Foreground="{StaticResource Brush.Danger}"
                                                Margin="8,0,0,0">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">

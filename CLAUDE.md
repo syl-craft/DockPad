@@ -766,6 +766,38 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 
 > Une **valeur locale** (attribut posé sur l'élément, ex. `Visibility="Collapsed"`) bat les `Setter` des `DataTrigger` d'un `Style` : elle ne sera jamais remplacée. Mettre la valeur par défaut dans un `<Setter>` du `Style` et laisser les triggers la surcharger — sinon le trigger paraît « ne rien faire » (cas vécu sur le filet d'indentation des profils de navigateur).
 
+## Palette et couleurs (App.xaml)
+
+Les couleurs qui se répètent ou qui portent un sens vivent dans `App.xaml`, en brosses nommées
+`Brush.<Role>` : `Brush.Accent`, `Brush.Border`, `Brush.Surface`, `Brush.Text`, `Brush.TextMuted`,
+`Brush.Danger`, `Brush.Demo`… Une couleur **unique et locale** — le brun d'un badge
+d'avertissement — reste sur place : extraire les quarante-cinq nuances du projet donnerait
+quarante-cinq clés dont trente ne serviraient qu'une fois, du bruit et pas de la structure.
+
+- Avant, l'accent `#0078D4` était écrit **vingt-deux fois** dans huit fichiers : le changer
+  demandait vingt-deux modifications, et un thème sombre était hors d'atteinte
+- **Le C# lit la même palette** : `Application.Current.FindResource("Brush.Accent")`. Redéclarer la
+  valeur en dur dans le code-behind, c'était deux endroits à changer au lieu d'un
+- Les brosses d'un `ResourceDictionary` sont **gelées par WPF au chargement** ; celles créées en
+  code appellent `Freeze()` explicitement — une `Freezable` gelée est moins chère, partageable entre
+  threads, et ne peut plus être modifiée par accident depuis ailleurs
+- `Color="#…"` n'est **pas** une brosse : un `DropShadowEffect` ou un `GradientStop` attendent une
+  couleur, ces occurrences restent telles quelles
+
+> Toute vérification d'un changement censé être invisible passe par une **comparaison pixel** des
+> captures avant/après (`tools/DialogShot`, `UsageShot`, `BrowserShot` sur les dix fenêtres). Trois
+> écarts sont normaux et attendus : le numéro de version si un outil n'a pas été reconstruit, une
+> heure de reset du bandeau si l'heure a tourné entre deux exécutions, et une icône dont l'index
+> change. Tout le reste est une régression.
+
+## Accessibilité
+
+Tout contrôle dont le contenu n'est qu'un glyphe porte un `AutomationProperties.Name` : `☰`, `─`,
+`⬇`, `🔒`, `▲`, `▼`, `🗑`, `➕`, `…`, la pastille du bandeau, et les deux champs de recherche. Un
+lecteur d'écran annonce sinon « bouton » sans plus — **l'infobulle n'y supplée pas, elle n'est pas
+lue**. Les clés sont celles des infobulles quand elles existent : même texte, une seule traduction.
+Le nom du verrou de tuiles est posé en code avec son infobulle, puisqu'il suit l'état.
+
 ## Styles des menus contextuels (App.xaml)
 
 - `ContextMenu` : fond blanc, `CornerRadius=6`, `DropShadowEffect`, padding `0,4`

@@ -140,6 +140,8 @@ public partial class QuickAccessWindow : Window
     {
         TileLockButton.Content = _tileLock.Glyph;
         TileLockButton.ToolTip = _tileLock.Tooltip;
+        // Le glyphe seul n'est pas lu par un lecteur d'ecran, et l'infobulle ne le supplee pas.
+        System.Windows.Automation.AutomationProperties.SetName(TileLockButton, _tileLock.Tooltip);
         // Déverrouillé, le bouton passe en bleu accent : c'est un mode actif, il doit se voir depuis
         // l'autre bout de la fenêtre. Le Padding posé en XAML est une valeur locale, il survit au
         // changement de style.
@@ -1046,8 +1048,13 @@ public partial class QuickAccessWindow : Window
         _dragSource = null;
     }
 
-    private static readonly Brush DragOverBrush = Frozen(0x00, 0x78, 0xD4);
-    private static readonly Brush DefaultBorder  = Frozen(0xE0, 0xE0, 0xE0);
+    // Ces deux-la existent deja dans la palette d'App.xaml : les redeclarer en dur, c'etait deux
+    // valeurs a changer au lieu d'une le jour ou l'accent bouge. Le type n'est charge qu'une fois
+    // l'Application montee, FindResource est donc sur ici.
+    private static readonly Brush DragOverBrush = Palette("Brush.Accent");
+    private static readonly Brush DefaultBorder = Palette("Brush.Border");
+
+    private static Brush Palette(string key) => (Brush)Application.Current.FindResource(key);
 
     private void TileDrop_DragOver(object sender, DragEventArgs e)
     {

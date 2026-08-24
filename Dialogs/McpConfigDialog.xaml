@@ -7,7 +7,7 @@
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize" MinWidth="560" MinHeight="500"
-        Background="#F3F3F3"
+        Background="{StaticResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Window.Resources>
         <Style x:Key="MessageTextStyle" TargetType="TextBlock">
@@ -27,7 +27,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#0078D4" Padding="20,14">
+        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T Mcp_Title}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
@@ -52,7 +52,7 @@
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="Bd" Property="BorderBrush" Value="#0078D4"/>
-                                        <Setter Property="Foreground" Value="#0078D4"/>
+                                        <Setter Property="Foreground" Value="{StaticResource Brush.Accent}"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>

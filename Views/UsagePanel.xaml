@@ -25,7 +25,7 @@
             <Setter Property="MinWidth" Value="36"/>
             <Setter Property="Minimum" Value="0"/>
             <Setter Property="Maximum" Value="100"/>
-            <Setter Property="Background" Value="#EEEEEE"/>
+            <Setter Property="Background" Value="{StaticResource Brush.Separator}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Template">
@@ -65,7 +65,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
-                        <Border Width="16" Height="16" CornerRadius="8" Background="#E4E4E4"
+                        <Border Width="16" Height="16" CornerRadius="8" Background="{StaticResource Brush.BorderSoft}"
                                 SnapsToDevicePixels="True" UseLayoutRounding="True">
                             <TextBlock x:Name="Glyph" Text="↻" Foreground="#707070"
                                        FontFamily="Segoe UI Symbol, Segoe UI"
@@ -148,7 +148,7 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" VerticalAlignment="Center"
-                           FontSize="11" Foreground="#8A8A8A"
+                           FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
                            ToolTip="{Binding Tooltip}"
                            ToolTipService.IsEnabled="{Binding Tooltip.Length}">
                     <Run Text="{Binding UsedPct, Mode=OneWay}"
@@ -165,7 +165,7 @@
                              Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"/>
 
                 <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0"
-                           FontSize="11" Foreground="#8A8A8A"
+                           FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
                            Text="{Binding Reset, StringFormat=↻ {0}}"
                            ToolTip="{Binding ResetTooltip}">
                     <TextBlock.Style>
@@ -183,7 +183,7 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <Border Background="White" BorderBrush="#E4E4E4" BorderThickness="1" CornerRadius="12"
+    <Border Background="White" BorderBrush="{StaticResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="12"
             Padding="12,8"
             SnapsToDevicePixels="True" UseLayoutRounding="True">
         <!-- Centré : la hauteur du bandeau est imposée (celle d'une tuile), le contenu est un peu
@@ -229,7 +229,7 @@
                                                FontWeight="{Binding Weight}"/>
                                     <Border Style="{StaticResource DemoBadge}"
                                             Visibility="{Binding IsDemo, Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="9" Foreground="#7C3AED"/>
+                                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="9" Foreground="{StaticResource Brush.Demo}"/>
                                     </Border>
                                 </StackPanel>
                             </Button>
@@ -264,7 +264,7 @@
                                FontWeight="SemiBold" Foreground="#333" VerticalAlignment="Center"/>
                     <Border Style="{StaticResource DemoBadge}"
                             Visibility="{Binding IsDemo, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="9" Foreground="#7C3AED"/>
+                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="9" Foreground="{StaticResource Brush.Demo}"/>
                     </Border>
                 </StackPanel>
 
@@ -281,7 +281,7 @@
                      prend leur place, avec la cause technique au survol. Vide pour les fournisseurs
                      qui n'ont pas de quota du tout : là, l'absence est normale. -->
                 <TextBlock Grid.Column="1" Grid.ColumnSpan="2" Margin="16,0,0,0"
-                           VerticalAlignment="Center" FontSize="11" Foreground="#8A8A8A"
+                           VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
                            FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
                            TextTrimming="CharacterEllipsis"
                            Text="{Binding QuotaNotice, StringFormat=⚠ {0}}"
@@ -291,6 +291,7 @@
                 <!-- La pastille du fournisseur, à droite de la ligne haute, ouvre sa page officielle.
                      Masquée quand le fournisseur n'a pas de page. -->
                 <Button Grid.Column="3" Click="OpenUsagePage_Click"
+                        AutomationProperties.Name="{Binding UsageUrlTooltip}"
                         VerticalAlignment="Center" Margin="12,0,0,0" Cursor="Hand"
                         Visibility="{Binding HasUsageUrl, Converter={StaticResource BoolToVisibilityConverter}}"
                         ToolTip="{Binding UsageUrlTooltip}">
@@ -321,7 +322,7 @@
             </Grid>
 
             <!-- Métriques : une colonne par mesure, filet de séparation au-dessus -->
-            <Border BorderBrush="#F0F0F0" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,6,0,0">
+            <Border BorderBrush="{StaticResource Brush.SurfaceHover}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,6,0,0">
                 <ItemsControl ItemsSource="{Binding Metrics}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate>

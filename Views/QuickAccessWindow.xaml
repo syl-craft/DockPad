@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
-        Background="#F3F3F3"
+        Background="{StaticResource Brush.Surface}"
         FontFamily="Segoe UI"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
@@ -22,7 +22,7 @@
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -61,7 +61,7 @@
             <Setter Property="Margin" Value="3,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderStrong}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="#555555"/>
@@ -76,8 +76,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#EEF6FC"/>
-                                <Setter Property="BorderBrush" Value="#0078D4"/>
+                                <Setter Property="Background" Value="{StaticResource Brush.AccentSoft}"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -87,22 +87,22 @@
 
         <Style x:Key="PageButtonActive" TargetType="Button" BasedOn="{StaticResource PageButton}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="#0078D4"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}"/>
             <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Foreground" Value="#0078D4"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Accent}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style x:Key="SearchTextBox" TargetType="TextBox">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="6,0"/>
             <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#1A1A1A"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border Background="{TemplateBinding Background}"
-                                BorderBrush="#CCCCCC" BorderThickness="1"
+                                BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1"
                                 CornerRadius="4"
                                 SnapsToDevicePixels="True"
                                 UseLayoutRounding="True">
@@ -135,7 +135,7 @@
 
         <!-- Toolbar -->
         <Border Grid.Row="0" Background="White" Padding="12,8"
-                BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -145,6 +145,7 @@
 
                 <!-- Menu (gauche) -->
                 <Button Grid.Column="0" Content="☰" Style="{StaticResource SecondaryButton}"
+                            AutomationProperties.Name="{loc:T Quick_Menu_Tip}"
                         Padding="10,6" ToolTip="{loc:T Quick_Menu_Tip}" Click="Menu_Click">
                     <Button.ContextMenu>
                         <ContextMenu>
@@ -193,7 +194,7 @@
 
                 <!-- Barre de recherche (centre) -->
                 <Grid Grid.Column="1" Margin="150,0" VerticalAlignment="Stretch" Background="AliceBlue">
-                    <TextBox x:Name="SearchBox"
+                    <TextBox x:Name="SearchBox" AutomationProperties.Name="{loc:T Quick_Search}"
                              Style="{StaticResource SearchTextBox}"
                              TextChanged="SearchBox_TextChanged"
                              PreviewKeyDown="SearchBox_PreviewKeyDown"/>
@@ -204,7 +205,7 @@
                            AllowsTransparency="True">
                         <Border MinWidth="{Binding ActualWidth, ElementName=SearchBox}"
                                 Background="White"
-                                BorderBrush="#CCCCCC" BorderThickness="1"
+                                BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1"
                                 CornerRadius="0,0,4,4"
                                 SnapsToDevicePixels="True" UseLayoutRounding="True">
                             <Border.Effect>
@@ -261,9 +262,11 @@
                             Padding="10,6" Margin="0,0,8,0" MinWidth="40"
                             Click="ToggleTileLock_Click"/>
                     <Button Content="─" Style="{StaticResource SecondaryButton}"
+                            AutomationProperties.Name="{loc:T Quick_Minimize}"
                             Padding="10,6" Margin="0,0,8,0" ToolTip="{loc:T Quick_Minimize}"
                             Click="Minimize_Click"/>
                     <Button Content="⬇" Style="{StaticResource SecondaryButton}"
+                            AutomationProperties.Name="{loc:T Quick_HideToTray}"
                             Padding="10,6" Margin="0,0,8,0" ToolTip="{loc:T Quick_HideToTray}"
                             Click="HideToSystray_Click"/>
                 </StackPanel>
@@ -304,13 +307,13 @@
 
         <!-- Barre de pagination -->
         <Border Grid.Row="3" Background="White" Padding="12,10"
-                BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0">
             <Grid>
                 <StackPanel x:Name="PaginationBar" Orientation="Horizontal" HorizontalAlignment="Center"/>
                 <TextBlock x:Name="TxtVersion" HorizontalAlignment="Left" VerticalAlignment="Center"
                            FontFamily="Consolas" FontSize="11" Foreground="#AAAAAA"/>
                 <Border HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Background="#F3F3F3" BorderBrush="#E0E0E0" BorderThickness="1"
+                        Background="{StaticResource Brush.Surface}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
                         CornerRadius="4" Padding="8,3"
                         SnapsToDevicePixels="True" UseLayoutRounding="True">
                     <TextBlock x:Name="TxtHotkey" FontFamily="Consolas" FontSize="11"

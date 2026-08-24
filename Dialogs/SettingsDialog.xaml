@@ -7,7 +7,7 @@
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#F3F3F3"
+        Background="{StaticResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Grid>
         <Grid.RowDefinitions>
@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#0078D4" Padding="20,14">
+        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T Settings_Title}" FontSize="16"
                        FontWeight="SemiBold" Foreground="White"/>
         </Border>
@@ -51,7 +51,7 @@
                 <ComboBox x:Name="CmbKey" Width="120"/>
             </StackPanel>
 
-            <TextBlock x:Name="TxtPreview" Foreground="#0078D4" FontSize="12"/>
+            <TextBlock x:Name="TxtPreview" Foreground="{StaticResource Brush.Accent}" FontSize="12"/>
 
             <Separator Margin="0,20,0,16"/>
 
@@ -75,7 +75,7 @@
                            Foreground="#555" Margin="0,0,12,0"/>
                 <ComboBox  Grid.Row="1" Grid.Column="1" x:Name="CmbTriggerSecond" Width="200"/>
             </Grid>
-            <TextBlock x:Name="TxtTriggerWarn" Foreground="#C42B1C" FontSize="11"
+            <TextBlock x:Name="TxtTriggerWarn" Foreground="{StaticResource Brush.Danger}" FontSize="11"
                        TextWrapping="Wrap" Visibility="Collapsed"/>
 
             <Separator Margin="0,20,0,16"/>
@@ -94,7 +94,7 @@
                        FontSize="13" Margin="0,0,0,14"/>
             <TextBlock Text="{loc:T Settings_Claude_ExtraArgs}" Foreground="#555" Margin="0,0,0,8"/>
             <TextBox x:Name="TxtClaudeArgs" FontFamily="Consolas" FontSize="12"
-                     Padding="6,5" BorderBrush="#CCCCCC" BorderThickness="1"
+                     Padding="6,5" BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1"
                      ToolTip="{loc:T Settings_Claude_ArgsHint}"/>
         </StackPanel>
 

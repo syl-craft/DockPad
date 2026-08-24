@@ -36,7 +36,7 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <TextBlock x:Name="TitleText" FontSize="15" FontWeight="SemiBold"
-                               Foreground="#1A1A1A" VerticalAlignment="Center"
+                               Foreground="{StaticResource Brush.Text}" VerticalAlignment="Center"
                                TextWrapping="Wrap" MaxWidth="290"/>
                 </StackPanel>
 

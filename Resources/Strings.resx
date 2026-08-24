@@ -651,6 +651,9 @@ This cannot be undone.</value>
     <value>Cannot run:
 {0}</value>
   </data>
+  <data name="Quick_Search" xml:space="preserve">
+    <value>Search the shortcuts</value>
+  </data>
   <data name="Quick_TileLock_Locked" xml:space="preserve">
     <value>Unlock tile moving</value>
   </data>

@@ -651,6 +651,9 @@ Cette action est irréversible.</value>
     <value>Impossible d'exécuter :
 {0}</value>
   </data>
+  <data name="Quick_Search" xml:space="preserve">
+    <value>Rechercher dans les raccourcis</value>
+  </data>
   <data name="Quick_TileLock_Locked" xml:space="preserve">
     <value>Déverrouiller le déplacement des tuiles</value>
   </data>

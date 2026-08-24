@@ -6,30 +6,30 @@
         Width="520" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#F3F3F3"
+        Background="{StaticResource Brush.Surface}"
         FontFamily="Segoe UI">
 
     <Window.Resources>
         <Style TargetType="TextBox">
             <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderStrong}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="13"/>
             <Style.Triggers>
                 <Trigger Property="IsFocused" Value="True">
-                    <Setter Property="BorderBrush" Value="#0078D4"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
         <Style TargetType="ComboBox">
             <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderStrong}"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
         <Style TargetType="Label">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}"/>
             <Setter Property="Padding" Value="0,0,0,4"/>
         </Style>
     </Window.Resources>
@@ -42,7 +42,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#0078D4" Padding="20,14">
+        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
                        FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
@@ -91,7 +91,7 @@
                         Style="{StaticResource SecondaryButton}"
                         Click="BrowseIcon_Click"/>
                 <Border Grid.Column="2" Width="36" Height="36" Margin="6,0,0,0"
-                        BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4"
+                        BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1" CornerRadius="4"
                         SnapsToDevicePixels="True" UseLayoutRounding="True">
                     <Image x:Name="ImgIconPreview" Stretch="Uniform" Margin="4"/>
                 </Border>
@@ -121,7 +121,7 @@
 
         <!-- Footer -->
         <Border Grid.Row="2" Background="White" Padding="24,12"
-                BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="{loc:T Common_Cancel}" Style="{StaticResource SecondaryButton}"
                         Margin="0,0,12,0" Click="Cancel_Click"/>

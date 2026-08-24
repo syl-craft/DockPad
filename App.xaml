@@ -4,12 +4,36 @@
              xmlns:local="clr-namespace:DockPad">
     <Application.Resources>
         <ResourceDictionary>
+            <!-- ============================================================================
+                 Palette. Une couleur qui se repete ou qui porte un sens vit ici ; une couleur
+                 unique et locale reste sur place. Avant cette section, l'accent etait ecrit
+                 vingt-deux fois : le changer demandait vingt-deux modifications dans huit
+                 fichiers. Les brosses d'un ResourceDictionary sont gelees par WPF au chargement.
+                 ============================================================================ -->
+            <SolidColorBrush x:Key="Brush.Accent" Color="#0078D4"/>   <!-- bleu d'accent : boutons primaires, en-tetes, selection -->
+            <SolidColorBrush x:Key="Brush.AccentHover" Color="#106EBE"/>   <!-- accent au survol -->
+            <SolidColorBrush x:Key="Brush.AccentPressed" Color="#005A9E"/>   <!-- accent enfonce -->
+            <SolidColorBrush x:Key="Brush.AccentSoft" Color="#EEF6FC"/>   <!-- fond tres clair derive de l'accent -->
+            <SolidColorBrush x:Key="Brush.Surface" Color="#F3F3F3"/>   <!-- fond de fenetre et des boutons secondaires -->
+            <SolidColorBrush x:Key="Brush.SurfaceHover" Color="#F0F0F0"/>   <!-- survol sur une surface claire -->
+            <SolidColorBrush x:Key="Brush.Border" Color="#E0E0E0"/>   <!-- bordure standard -->
+            <SolidColorBrush x:Key="Brush.BorderSoft" Color="#E4E4E4"/>   <!-- bordure attenuee (cartes du bandeau) -->
+            <SolidColorBrush x:Key="Brush.BorderStrong" Color="#CCCCCC"/>   <!-- bordure de champ de saisie, texte desactive -->
+            <SolidColorBrush x:Key="Brush.Text" Color="#1A1A1A"/>   <!-- texte principal -->
+            <SolidColorBrush x:Key="Brush.TextSecondary" Color="#333333"/>   <!-- texte secondaire -->
+            <SolidColorBrush x:Key="Brush.TextMuted" Color="#8A8A8A"/>   <!-- texte d'appoint : unites, chemins, aide -->
+            <SolidColorBrush x:Key="Brush.Danger" Color="#C42B1C"/>   <!-- erreur et suppression -->
+            <SolidColorBrush x:Key="Brush.DangerStrong" Color="#D13438"/>   <!-- accent d'un dialogue d'erreur -->
+            <SolidColorBrush x:Key="Brush.Demo" Color="#7C3AED"/>   <!-- violet du badge de demonstration -->
+            <SolidColorBrush x:Key="Brush.Separator" Color="#EEEEEE"/>   <!-- filets et separateurs -->
+            <SolidColorBrush x:Key="Brush.SeparatorStrong" Color="#DDDDDD"/>   <!-- filets marques -->
+
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
             <local:StringToBrushConverter x:Key="StringToBrushConverter"/>
 
             <Style x:Key="PrimaryButton" TargetType="Button">
-                <Setter Property="Background" Value="#0078D4"/>
+                <Setter Property="Background" Value="{StaticResource Brush.Accent}"/>
                 <Setter Property="Foreground" Value="White"/>
                 <Setter Property="Padding" Value="16,8"/>
                 <Setter Property="BorderThickness" Value="0"/>
@@ -27,13 +51,13 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#106EBE"/>
+                                    <Setter Property="Background" Value="{StaticResource Brush.AccentHover}"/>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter Property="Background" Value="#005A9E"/>
+                                    <Setter Property="Background" Value="{StaticResource Brush.AccentPressed}"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Background" Value="#CCCCCC"/>
+                                    <Setter Property="Background" Value="{StaticResource Brush.BorderStrong}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -41,7 +65,7 @@
                 </Setter>
             </Style>
             <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-                <Setter Property="Background" Value="#D13438"/>
+                <Setter Property="Background" Value="{StaticResource Brush.DangerStrong}"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="#A80000"/>
@@ -52,11 +76,11 @@
                 </Style.Triggers>
             </Style>
             <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-                <Setter Property="Background" Value="#F3F3F3"/>
-                <Setter Property="Foreground" Value="#1A1A1A"/>
+                <Setter Property="Background" Value="{StaticResource Brush.Surface}"/>
+                <Setter Property="Foreground" Value="{StaticResource Brush.Text}"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#E0E0E0"/>
+                        <Setter Property="Background" Value="{StaticResource Brush.Border}"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
                         <Setter Property="Background" Value="#C8C8C8"/>
@@ -68,7 +92,7 @@
             <Style x:Key="DialogFooter" TargetType="Border">
                 <Setter Property="Background" Value="White"/>
                 <Setter Property="Padding" Value="24,12"/>
-                <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
                 <Setter Property="BorderThickness" Value="0,1,0,0"/>
             </Style>
             <Style x:Key="FooterVersion" TargetType="TextBlock">
@@ -80,7 +104,7 @@
             <!-- ContextMenu -->
             <Style TargetType="ContextMenu">
                 <Setter Property="Background" Value="White"/>
-                <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Padding" Value="0,4"/>
                 <Setter Property="FontFamily" Value="Segoe UI"/>
@@ -109,7 +133,7 @@
             <Style TargetType="MenuItem">
                 <Setter Property="FontFamily" Value="Segoe UI"/>
                 <Setter Property="FontSize" Value="12"/>
-                <Setter Property="Foreground" Value="#1A1A1A"/>
+                <Setter Property="Foreground" Value="{StaticResource Brush.Text}"/>
                 <Setter Property="Padding" Value="10,4"/>
                 <Setter Property="Template">
                     <Setter.Value>
@@ -142,7 +166,7 @@
                                        Placement="Right" HorizontalOffset="-4"
                                        PopupAnimation="Fade">
                                     <Border Background="White"
-                                            BorderBrush="#E0E0E0" BorderThickness="1"
+                                            BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
                                             CornerRadius="6" Padding="0,4"
                                             SnapsToDevicePixels="True" UseLayoutRounding="True">
                                         <Border.Effect>
@@ -174,7 +198,7 @@
             <!-- Separator dans les menus -->
             <Style TargetType="Separator">
                 <Setter Property="Margin" Value="8,4"/>
-                <Setter Property="Background" Value="#E0E0E0"/>
+                <Setter Property="Background" Value="{StaticResource Brush.Border}"/>
                 <Setter Property="Height" Value="1"/>
                 <Setter Property="Template">
                     <Setter.Value>
