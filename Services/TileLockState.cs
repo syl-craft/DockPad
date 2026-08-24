@@ -48,6 +48,6 @@ public sealed class TileLockState
 
     /// <summary>Infobulle du bouton : elle nomme l'action, là où le glyphe dit l'état.</summary>
     public string Tooltip => IsUnlocked
-        ? "Terminer — le déplacement des tuiles est actif"
-        : "Déverrouiller le déplacement des tuiles";
+        ? Loc.T("Quick_TileLock_Unlocked")
+        : Loc.T("Quick_TileLock_Locked");
 }

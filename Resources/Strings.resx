@@ -502,6 +502,131 @@ This cannot be undone.</value>
   <data name="Probe_NotInstalled" xml:space="preserve">
     <value>not installed</value>
   </data>
+  <data name="Quick_AddPage" xml:space="preserve">
+    <value>Add a page</value>
+  </data>
+  <data name="Quick_BackupCreated" xml:space="preserve">
+    <value>Backup created in:
+{0}</value>
+  </data>
+  <data name="Quick_HideToTray" xml:space="preserve">
+    <value>Hide in the system tray</value>
+  </data>
+  <data name="Quick_HotkeyBadge_Tip" xml:space="preserve">
+    <value>Shortcut to show DockPad</value>
+  </data>
+  <data name="Quick_Menu_Browsers" xml:space="preserve">
+    <value>Browsers</value>
+  </data>
+  <data name="Quick_Menu_Config" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="Quick_Menu_ContextMenu" xml:space="preserve">
+    <value>Context menu</value>
+  </data>
+  <data name="Quick_Menu_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Quick_Menu_Manage" xml:space="preserve">
+    <value>Manage</value>
+  </data>
+  <data name="Quick_Menu_Mcp" xml:space="preserve">
+    <value>MCP server</value>
+  </data>
+  <data name="Quick_Menu_OpenFolder" xml:space="preserve">
+    <value>Show the folder</value>
+  </data>
+  <data name="Quick_Menu_Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="Quick_Menu_Presets" xml:space="preserve">
+    <value>Predefined shortcuts</value>
+  </data>
+  <data name="Quick_Menu_Quit" xml:space="preserve">
+    <value>Quit the application</value>
+  </data>
+  <data name="Quick_Menu_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Quick_Menu_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Quick_Menu_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Quick_Menu_Tip" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="Quick_Menu_Usage" xml:space="preserve">
+    <value>AI usage</value>
+  </data>
+  <data name="Quick_Minimize" xml:space="preserve">
+    <value>Minimize</value>
+  </data>
+  <data name="Quick_NoTerminal" xml:space="preserve">
+    <value>No terminal found (wt, pwsh, powershell, cmd).</value>
+  </data>
+  <data name="Quick_Page" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="Quick_Page_ChangeIcon" xml:space="preserve">
+    <value>🖼 Change the icon</value>
+  </data>
+  <data name="Quick_Page_ConfirmDelete" xml:space="preserve">
+    <value>Delete page {0} and its {1} {1:plural:shortcut|shortcuts}?</value>
+  </data>
+  <data name="Quick_Page_ConfirmDeleteEmpty" xml:space="preserve">
+    <value>Delete page {0}?</value>
+  </data>
+  <data name="Quick_Page_Delete" xml:space="preserve">
+    <value>🗑 Delete the page</value>
+  </data>
+  <data name="Quick_Page_MoveLeft" xml:space="preserve">
+    <value>← Move left</value>
+  </data>
+  <data name="Quick_Page_MoveRight" xml:space="preserve">
+    <value>→ Move right</value>
+  </data>
+  <data name="Quick_Page_PickIcon" xml:space="preserve">
+    <value>Choose an icon for the page</value>
+  </data>
+  <data name="Quick_Page_RemoveIcon" xml:space="preserve">
+    <value>🗑 Remove the icon</value>
+  </data>
+  <data name="Quick_RunError" xml:space="preserve">
+    <value>Cannot run:
+{0}</value>
+  </data>
+  <data name="Quick_TileLock_Locked" xml:space="preserve">
+    <value>Unlock tile moving</value>
+  </data>
+  <data name="Quick_TileLock_Unlocked" xml:space="preserve">
+    <value>Done — tile moving is active</value>
+  </data>
+  <data name="Quick_Tile_Add" xml:space="preserve">
+    <value>➕ Add</value>
+  </data>
+  <data name="Quick_Tile_ChangeIcon" xml:space="preserve">
+    <value>🖼 Change the icon</value>
+  </data>
+  <data name="Quick_Tile_ConfirmDelete" xml:space="preserve">
+    <value>Delete “{0}”?</value>
+  </data>
+  <data name="Quick_Tile_Delete" xml:space="preserve">
+    <value>🗑 Delete</value>
+  </data>
+  <data name="Quick_Tile_Duplicate" xml:space="preserve">
+    <value>⧉ Duplicate</value>
+  </data>
+  <data name="Quick_Tile_Edit" xml:space="preserve">
+    <value>✏ Edit</value>
+  </data>
+  <data name="Quick_Tile_MoveToPage" xml:space="preserve">
+    <value>↗ Move to page</value>
+  </data>
+  <data name="Quick_Tile_PickIcon" xml:space="preserve">
+    <value>Choose an icon</value>
+  </data>
   <data name="Settings_Claude_ArgsHint" xml:space="preserve">
     <value>e.g. --enable-auto-mode</value>
   </data>
@@ -555,6 +680,141 @@ This cannot be undone.</value>
   </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="Shortcut_Command" xml:space="preserve">
+    <value>Command *</value>
+  </data>
+  <data name="Shortcut_Err_ExeAndField" xml:space="preserve">
+    <value>The executable and the {0} are required.</value>
+  </data>
+  <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
+    <value>Please select a terminal.</value>
+  </data>
+  <data name="Shortcut_Exe" xml:space="preserve">
+    <value>Executable *</value>
+  </data>
+  <data name="Shortcut_Exe_Tip" xml:space="preserve">
+    <value>Full path to the executable</value>
+  </data>
+  <data name="Shortcut_ExtraArgs" xml:space="preserve">
+    <value>Free parameters (optional)</value>
+  </data>
+  <data name="Shortcut_ExtraArgs_Tip" xml:space="preserve">
+    <value>Extra arguments inserted before the command to run</value>
+  </data>
+  <data name="Shortcut_FieldLabel_Process" xml:space="preserve">
+    <value>process name</value>
+  </data>
+  <data name="Shortcut_FieldLabel_Title" xml:space="preserve">
+    <value>window title</value>
+  </data>
+  <data name="Shortcut_Icon" xml:space="preserve">
+    <value>Icon (optional)</value>
+  </data>
+  <data name="Shortcut_Name" xml:space="preserve">
+    <value>Name *</value>
+  </data>
+  <data name="Shortcut_NewTab" xml:space="preserve">
+    <value>Open in a new tab</value>
+  </data>
+  <data name="Shortcut_Params" xml:space="preserve">
+    <value>Parameters (optional)</value>
+  </data>
+  <data name="Shortcut_Params_Tip_Name" xml:space="preserve">
+    <value>Arguments passed at launch and searched in the command line of the existing process</value>
+  </data>
+  <data name="Shortcut_Params_Tip_Title" xml:space="preserve">
+    <value>Arguments passed to the executable at launch if the window is not found</value>
+  </data>
+  <data name="Shortcut_PickExe_Filter" xml:space="preserve">
+    <value>Executables (*.exe)|*.exe|All files (*.*)|*.*</value>
+  </data>
+  <data name="Shortcut_PickIcon_Filter" xml:space="preserve">
+    <value>Images and executables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|All files|*.*</value>
+  </data>
+  <data name="Shortcut_PickStartFolder" xml:space="preserve">
+    <value>Choose the starting folder</value>
+  </data>
+  <data name="Shortcut_Preview" xml:space="preserve">
+    <value>Preview:</value>
+  </data>
+  <data name="Shortcut_ProcessName" xml:space="preserve">
+    <value>Process name *</value>
+  </data>
+  <data name="Shortcut_ProcessName_Tip" xml:space="preserve">
+    <value>Process name as it appears in Task Manager (e.g. devenv.exe)</value>
+  </data>
+  <data name="Shortcut_RunCommand" xml:space="preserve">
+    <value>Command to run (optional)</value>
+  </data>
+  <data name="Shortcut_RunCommand_Tip" xml:space="preserve">
+    <value>Command executed after the terminal opens (e.g. claude, npm run dev)</value>
+  </data>
+  <data name="Shortcut_SearchMode" xml:space="preserve">
+    <value>Search mode *</value>
+  </data>
+  <data name="Shortcut_SearchMode_ByName" xml:space="preserve">
+    <value>By process name</value>
+  </data>
+  <data name="Shortcut_SearchMode_ByTitle" xml:space="preserve">
+    <value>By window title</value>
+  </data>
+  <data name="Shortcut_StartFolder" xml:space="preserve">
+    <value>Starting folder</value>
+  </data>
+  <data name="Shortcut_StartFolder_Tip" xml:space="preserve">
+    <value>Path of the folder to open. Leave empty for the default directory.</value>
+  </data>
+  <data name="Shortcut_Terminal" xml:space="preserve">
+    <value>Terminal *</value>
+  </data>
+  <data name="Shortcut_Terminal_Tip" xml:space="preserve">
+    <value>Choose a terminal executable</value>
+  </data>
+  <data name="Shortcut_Title" xml:space="preserve">
+    <value>Quick shortcut</value>
+  </data>
+  <data name="Shortcut_Type" xml:space="preserve">
+    <value>Type *</value>
+  </data>
+  <data name="Shortcut_Type_OpenFolder" xml:space="preserve">
+    <value>Open a folder</value>
+  </data>
+  <data name="Shortcut_Type_OpenTerminal" xml:space="preserve">
+    <value>Open a terminal</value>
+  </data>
+  <data name="Shortcut_Type_OpenUrl" xml:space="preserve">
+    <value>Open in the browser</value>
+  </data>
+  <data name="Shortcut_Type_RunCommand" xml:space="preserve">
+    <value>Run a command</value>
+  </data>
+  <data name="Shortcut_Type_SwitchProcess" xml:space="preserve">
+    <value>Switch to a process</value>
+  </data>
+  <data name="Shortcut_WindowTitle" xml:space="preserve">
+    <value>Window title *</value>
+  </data>
+  <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
+    <value>Text searched in the titles of open windows (e.g. Calculator)</value>
+  </data>
+  <data name="Type_Browser" xml:space="preserve">
+    <value>Browser</value>
+  </data>
+  <data name="Type_Command" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="Type_Folder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="Type_Process" xml:space="preserve">
+    <value>Process</value>
+  </data>
+  <data name="Type_Terminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="Type_Url" xml:space="preserve">
+    <value>URL</value>
   </data>
   <data name="UsageCfg_AlertThreshold" xml:space="preserve">
     <value>Alert threshold:</value>
@@ -619,11 +879,68 @@ This cannot be undone.</value>
   <data name="UsageCfg_Visible_Tip" xml:space="preserve">
     <value>Uncheck to remove this provider from the banner, without losing its settings</value>
   </data>
+  <data name="Usage_CostNote_Claude" xml:space="preserve">
+    <value>API equivalent for the current month, estimated from public rates. A Max or Pro subscription is not billed per token.</value>
+  </data>
   <data name="Usage_DayTimeFormat" xml:space="preserve">
     <value>ddd HH:mm</value>
   </data>
   <data name="Usage_Demo" xml:space="preserve">
     <value>demo</value>
+  </data>
+  <data name="Usage_Gauge_Session" xml:space="preserve">
+    <value>session</value>
+  </data>
+  <data name="Usage_Gauge_Tooltip" xml:space="preserve">
+    <value>{0} % used, {1} % left</value>
+  </data>
+  <data name="Usage_Gauge_Week" xml:space="preserve">
+    <value>week</value>
+  </data>
+  <data name="Usage_Metric_Cost" xml:space="preserve">
+    <value>Est. cost</value>
+  </data>
+  <data name="Usage_Metric_Day" xml:space="preserve">
+    <value>Day</value>
+  </data>
+  <data name="Usage_Metric_Model" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="Usage_Metric_Month" xml:space="preserve">
+    <value>Month</value>
+  </data>
+  <data name="Usage_Metric_Requests" xml:space="preserve">
+    <value>Requests</value>
+  </data>
+  <data name="Usage_Metric_Session" xml:space="preserve">
+    <value>Session</value>
+  </data>
+  <data name="Usage_OpenPage_Tooltip" xml:space="preserve">
+    <value>Open {0}</value>
+  </data>
+  <data name="Usage_Quota_Notice" xml:space="preserve">
+    <value>Quota unavailable — {0}</value>
+  </data>
+  <data name="Usage_Quota_NoticeNote" xml:space="preserve">
+    <value>{0}. The gauges stay hidden; the token metrics, read from the local transcripts, are exact.</value>
+  </data>
+  <data name="Usage_Quota_RetryIn" xml:space="preserve">
+    <value>retrying in {0} min</value>
+  </data>
+  <data name="Usage_Quota_RetryNext" xml:space="preserve">
+    <value>retrying at the next refresh</value>
+  </data>
+  <data name="Usage_Reset_Tooltip" xml:space="preserve">
+    <value>Resets at {0}</value>
+  </data>
+  <data name="Usage_Suffix_Billion" xml:space="preserve">
+    <value>B</value>
+  </data>
+  <data name="Usage_Suffix_Million" xml:space="preserve">
+    <value>M</value>
+  </data>
+  <data name="Usage_Suffix_Thousand" xml:space="preserve">
+    <value>k</value>
   </data>
   <data name="Usage_TimeFormat" xml:space="preserve">
     <value>HH:mm</value>

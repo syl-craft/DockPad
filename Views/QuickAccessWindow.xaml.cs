@@ -402,7 +402,7 @@ public partial class QuickAccessWindow : Window
             File.Copy(src, dest);
         }
 
-        AppDialog.Info($"Sauvegarde créée dans :\n{backupDir}", owner: this);
+        AppDialog.Info(Loc.F("Quick_BackupCreated", backupDir), owner: this);
     }
 
     private void PopulateGrid()
@@ -456,7 +456,7 @@ public partial class QuickAccessWindow : Window
         {
             Content  = "+",
             Style    = (Style)FindResource("PageButton"),
-            ToolTip  = "Ajouter une page",
+            ToolTip  = Loc.T("Quick_AddPage"),
             FontSize = 15,
             FontWeight = FontWeights.Light,
         };
@@ -486,34 +486,34 @@ public partial class QuickAccessWindow : Window
         {
             Content = content,
             Style   = (Style)FindResource(active ? "PageButtonActive" : "PageButton"),
-            ToolTip = $"Page {page + 1}",
+            ToolTip = Loc.F("Quick_Page", page + 1),
         };
 
         var menu = new ContextMenu();
 
         if (config != null && (!string.IsNullOrEmpty(config.IconPath) || !string.IsNullOrEmpty(config.IconProfilePath)))
         {
-            var removeIcon = new MenuItem { Header = "🗑 Supprimer l'icône" };
+            var removeIcon = new MenuItem { Header = Loc.T("Quick_Page_RemoveIcon") };
             removeIcon.Click += (_, _) => ClearPageIcon(page);
             menu.Items.Add(removeIcon);
         }
-        var changeIcon = new MenuItem { Header = "🖼 Changer l'icône" };
+        var changeIcon = new MenuItem { Header = Loc.T("Quick_Page_ChangeIcon") };
         changeIcon.Click += (_, _) => ChangePageIcon(page);
         menu.Items.Add(changeIcon);
 
         menu.Items.Add(new Separator());
 
-        var moveLeft = new MenuItem { Header = "← Déplacer à gauche", IsEnabled = page > 0 };
+        var moveLeft = new MenuItem { Header = Loc.T("Quick_Page_MoveLeft"), IsEnabled = page > 0 };
         moveLeft.Click += (_, _) => MovePage(page, page - 1);
         menu.Items.Add(moveLeft);
 
-        var moveRight = new MenuItem { Header = "→ Déplacer à droite", IsEnabled = page < lastShown };
+        var moveRight = new MenuItem { Header = Loc.T("Quick_Page_MoveRight"), IsEnabled = page < lastShown };
         moveRight.Click += (_, _) => MovePage(page, page + 1);
         menu.Items.Add(moveRight);
 
         menu.Items.Add(new Separator());
 
-        var deletePage = new MenuItem { Header = "🗑 Supprimer la page" };
+        var deletePage = new MenuItem { Header = Loc.T("Quick_Page_Delete") };
         deletePage.Click += (_, _) => DeletePage(page);
         menu.Items.Add(deletePage);
 
@@ -531,8 +531,8 @@ public partial class QuickAccessWindow : Window
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
-            Title  = "Choisir une icône pour la page",
-            Filter = "Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*",
+            Title  = Loc.T("Quick_Page_PickIcon"),
+            Filter = Loc.T("Shortcut_PickIcon_Filter"),
         };
         var configs = PageConfigService.Load();
         var current = configs.FirstOrDefault(p => p.Index == pageIndex);
@@ -569,10 +569,10 @@ public partial class QuickAccessWindow : Window
         var shortcuts    = ShortcutService.Load();
         int entryCount   = shortcuts.Count(s => s.Page == pageIndex);
         string msg = entryCount > 0
-            ? $"Supprimer la page {pageIndex + 1} et ses {entryCount} raccourci(s) ?"
-            : $"Supprimer la page {pageIndex + 1} ?";
+            ? Loc.F("Quick_Page_ConfirmDelete", pageIndex + 1, entryCount)
+            : Loc.F("Quick_Page_ConfirmDeleteEmpty", pageIndex + 1);
 
-        if (!AppDialog.Confirm(msg, "Supprimer la page", this))
+        if (!AppDialog.Confirm(msg, Loc.T("Quick_Page_Delete"), this))
             return;
 
         var r = PageActionService.Delete(pageIndex);
@@ -630,13 +630,13 @@ public partial class QuickAccessWindow : Window
         btn.Drop      += TileDrop_Drop;
 
         var menu = new ContextMenu();
-        var changeIcon = new MenuItem { Header = "🖼 Changer l'icône" };
+        var changeIcon = new MenuItem { Header = Loc.T("Quick_Tile_ChangeIcon") };
         changeIcon.Click += (_, _) => ChangeIcon(btn, entry);
         var edit = new MenuItem { Header = "✏ Modifier" };
         edit.Click += (_, _) => EditTile(entry);
-        var duplicate = new MenuItem { Header = "⧉ Dupliquer" };
+        var duplicate = new MenuItem { Header = Loc.T("Quick_Tile_Duplicate") };
         duplicate.Click += (_, _) => DuplicateTile(entry);
-        var delete = new MenuItem { Header = "🗑 Supprimer" };
+        var delete = new MenuItem { Header = Loc.T("Quick_Tile_Delete") };
         delete.Click += (_, _) => DeleteTile(entry);
         var moveToPage = BuildMoveToPageMenu(entry);
         menu.Items.Add(changeIcon);
@@ -673,7 +673,7 @@ public partial class QuickAccessWindow : Window
         btn.Drop      += TileDrop_Drop;
 
         var menu = new ContextMenu();
-        var add = new MenuItem { Header = "➕ Ajouter" };
+        var add = new MenuItem { Header = Loc.T("Quick_Tile_Add") };
         add.Click += (_, _) => AddTile(row, col);
         menu.Items.Add(add);
         btn.ContextMenu = menu;
@@ -721,7 +721,7 @@ public partial class QuickAccessWindow : Window
 
     private MenuItem BuildMoveToPageMenu(ShortcutEntry entry)
     {
-        var moveMenu = new MenuItem { Header = "↗ Déplacer vers la page" };
+        var moveMenu = new MenuItem { Header = Loc.T("Quick_Tile_MoveToPage") };
 
         var all     = ShortcutService.Load();
         var configs = PageConfigService.Load();
@@ -750,12 +750,12 @@ public partial class QuickAccessWindow : Window
                     var sp = new StackPanel { Orientation = Orientation.Horizontal };
                     sp.Children.Add(new Image { Source = src, Width = 14, Height = 14,
                         Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 6, 0) });
-                    sp.Children.Add(new TextBlock { Text = $"Page {p + 1}" });
+                    sp.Children.Add(new TextBlock { Text = Loc.F("Quick_Page", p + 1) });
                     header = sp;
                 }
-                else header = $"Page {p + 1}";
+                else header = Loc.F("Quick_Page", p + 1);
             }
-            else header = $"Page {p + 1}";
+            else header = Loc.F("Quick_Page", p + 1);
 
             var item = new MenuItem { Header = header };
 
@@ -819,7 +819,7 @@ public partial class QuickAccessWindow : Window
                 catch (Exception ex)
                 {
                     Services.LogService.Error(ex, $"Exécution d'une entrée du menu contextuel dossier : {cmd}");
-                    AppDialog.Error($"Impossible d'exécuter :\n{ex.Message}", owner: this);
+                    AppDialog.Error(Loc.F("Quick_RunError", ex.Message), owner: this);
                 }
             };
             menu.Items.Add(item);
@@ -828,7 +828,7 @@ public partial class QuickAccessWindow : Window
 
     private void DeleteTile(ShortcutEntry entry)
     {
-        if (!AppDialog.Confirm($"Supprimer « {entry.Name} » ?", owner: this)) return;
+        if (!AppDialog.Confirm(Loc.F("Quick_Tile_ConfirmDelete", entry.Name), owner: this)) return;
 
         ShortcutActionService.Delete(entry.Page, entry.Row, entry.Col);
         PopulateGrid();
@@ -870,7 +870,7 @@ public partial class QuickAccessWindow : Window
         catch (Exception ex)
         {
             Services.LogService.Error(ex, $"Exécution du raccourci « {entry.Name} » ({entry.Type})");
-            AppDialog.Error($"Impossible d'exécuter :\n{ex.Message}", owner: this);
+            AppDialog.Error(Loc.F("Quick_RunError", ex.Message), owner: this);
         }
     }
 
@@ -901,16 +901,16 @@ public partial class QuickAccessWindow : Window
             }
             catch (Exception ex) { Services.LogService.Warn(ex, $"Terminal candidat indisponible : {term}"); }
         }
-        throw new InvalidOperationException("Aucun terminal trouvé (wt, pwsh, powershell, cmd).");
+        throw new InvalidOperationException(Loc.T("Quick_NoTerminal"));
     }
 
     private static string TypeLabel(ShortcutType t) => t switch
     {
-        ShortcutType.OpenFolder      => "Dossier",
-        ShortcutType.OpenUrl         => "Navigateur",
-        ShortcutType.OpenTerminal    => "Terminal",
-        ShortcutType.SwitchToProcess => "Processus",
-        _                            => "Commande",
+        ShortcutType.OpenFolder      => Loc.T("Type_Folder"),
+        ShortcutType.OpenUrl         => Loc.T("Type_Browser"),
+        ShortcutType.OpenTerminal    => Loc.T("Type_Terminal"),
+        ShortcutType.SwitchToProcess => Loc.T("Type_Process"),
+        _                            => Loc.T("Type_Command"),
     };
 
     private static readonly SolidColorBrush TileDefaultBackground = new(Colors.White);
@@ -949,8 +949,8 @@ public partial class QuickAccessWindow : Window
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Choisir une icône",
-            Filter = "Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*"
+            Title = Loc.T("Quick_Tile_PickIcon"),
+            Filter = Loc.T("Shortcut_PickIcon_Filter")
         };
 
         var initDir = GetIconInitialDir(entry.IconPath, entry.IconProfilePath);
@@ -1549,10 +1549,10 @@ public partial class QuickAccessWindow : Window
     {
         public string TypeLabel => Entry.Type switch
         {
-            ShortcutType.OpenFolder   => "Dossier",
-            ShortcutType.OpenUrl      => "URL",
-            ShortcutType.OpenTerminal => "Terminal",
-            _                         => "Commande",
+            ShortcutType.OpenFolder   => Loc.T("Type_Folder"),
+            ShortcutType.OpenUrl      => Loc.T("Type_Url"),
+            ShortcutType.OpenTerminal => Loc.T("Type_Terminal"),
+            _                         => Loc.T("Type_Command"),
         };
 
         public SolidColorBrush TypeBrush => Entry.Type switch

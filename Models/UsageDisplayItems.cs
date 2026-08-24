@@ -77,6 +77,9 @@ public sealed class UsageGaugeItem
     public int RemainingPct { get; init; }
 
     public string Reset { get; init; } = "";
+
+    /// <summary>Infobulle de l'heure de remise à zéro, construite par le ViewModel.</summary>
+    public string ResetTooltip { get; init; } = "";
     public string Color { get; init; } = "";
 
     /// <summary>Précision au survol : le libellé affiché est volontairement court.</summary>

@@ -502,6 +502,131 @@ Cette action est irréversible.</value>
   <data name="Probe_NotInstalled" xml:space="preserve">
     <value>non installé</value>
   </data>
+  <data name="Quick_AddPage" xml:space="preserve">
+    <value>Ajouter une page</value>
+  </data>
+  <data name="Quick_BackupCreated" xml:space="preserve">
+    <value>Sauvegarde créée dans :
+{0}</value>
+  </data>
+  <data name="Quick_HideToTray" xml:space="preserve">
+    <value>Masquer dans la barre système</value>
+  </data>
+  <data name="Quick_HotkeyBadge_Tip" xml:space="preserve">
+    <value>Raccourci pour afficher DockPad</value>
+  </data>
+  <data name="Quick_Menu_Browsers" xml:space="preserve">
+    <value>Navigateurs</value>
+  </data>
+  <data name="Quick_Menu_Config" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="Quick_Menu_ContextMenu" xml:space="preserve">
+    <value>Menu contextuel</value>
+  </data>
+  <data name="Quick_Menu_Edit" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
+  <data name="Quick_Menu_Manage" xml:space="preserve">
+    <value>Gestion</value>
+  </data>
+  <data name="Quick_Menu_Mcp" xml:space="preserve">
+    <value>Serveur MCP</value>
+  </data>
+  <data name="Quick_Menu_OpenFolder" xml:space="preserve">
+    <value>Voir le dossier</value>
+  </data>
+  <data name="Quick_Menu_Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="Quick_Menu_Presets" xml:space="preserve">
+    <value>Raccourcis prédéfinis</value>
+  </data>
+  <data name="Quick_Menu_Quit" xml:space="preserve">
+    <value>Quitter l'application</value>
+  </data>
+  <data name="Quick_Menu_Refresh" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="Quick_Menu_Save" xml:space="preserve">
+    <value>Sauvegarder</value>
+  </data>
+  <data name="Quick_Menu_Settings" xml:space="preserve">
+    <value>Paramètres</value>
+  </data>
+  <data name="Quick_Menu_Tip" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="Quick_Menu_Usage" xml:space="preserve">
+    <value>Usage IA</value>
+  </data>
+  <data name="Quick_Minimize" xml:space="preserve">
+    <value>Réduire</value>
+  </data>
+  <data name="Quick_NoTerminal" xml:space="preserve">
+    <value>Aucun terminal trouvé (wt, pwsh, powershell, cmd).</value>
+  </data>
+  <data name="Quick_Page" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="Quick_Page_ChangeIcon" xml:space="preserve">
+    <value>🖼 Changer l'icône</value>
+  </data>
+  <data name="Quick_Page_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer la page {0} et ses {1} {1:plural:raccourci|raccourcis} ?</value>
+  </data>
+  <data name="Quick_Page_ConfirmDeleteEmpty" xml:space="preserve">
+    <value>Supprimer la page {0} ?</value>
+  </data>
+  <data name="Quick_Page_Delete" xml:space="preserve">
+    <value>🗑 Supprimer la page</value>
+  </data>
+  <data name="Quick_Page_MoveLeft" xml:space="preserve">
+    <value>← Déplacer à gauche</value>
+  </data>
+  <data name="Quick_Page_MoveRight" xml:space="preserve">
+    <value>→ Déplacer à droite</value>
+  </data>
+  <data name="Quick_Page_PickIcon" xml:space="preserve">
+    <value>Choisir une icône pour la page</value>
+  </data>
+  <data name="Quick_Page_RemoveIcon" xml:space="preserve">
+    <value>🗑 Supprimer l'icône</value>
+  </data>
+  <data name="Quick_RunError" xml:space="preserve">
+    <value>Impossible d'exécuter :
+{0}</value>
+  </data>
+  <data name="Quick_TileLock_Locked" xml:space="preserve">
+    <value>Déverrouiller le déplacement des tuiles</value>
+  </data>
+  <data name="Quick_TileLock_Unlocked" xml:space="preserve">
+    <value>Terminer — le déplacement des tuiles est actif</value>
+  </data>
+  <data name="Quick_Tile_Add" xml:space="preserve">
+    <value>➕ Ajouter</value>
+  </data>
+  <data name="Quick_Tile_ChangeIcon" xml:space="preserve">
+    <value>🖼 Changer l'icône</value>
+  </data>
+  <data name="Quick_Tile_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer « {0} » ?</value>
+  </data>
+  <data name="Quick_Tile_Delete" xml:space="preserve">
+    <value>🗑 Supprimer</value>
+  </data>
+  <data name="Quick_Tile_Duplicate" xml:space="preserve">
+    <value>⧉ Dupliquer</value>
+  </data>
+  <data name="Quick_Tile_Edit" xml:space="preserve">
+    <value>✏ Modifier</value>
+  </data>
+  <data name="Quick_Tile_MoveToPage" xml:space="preserve">
+    <value>↗ Déplacer vers la page</value>
+  </data>
+  <data name="Quick_Tile_PickIcon" xml:space="preserve">
+    <value>Choisir une icône</value>
+  </data>
   <data name="Settings_Claude_ArgsHint" xml:space="preserve">
     <value>Ex : --enable-auto-mode</value>
   </data>
@@ -555,6 +680,141 @@ Cette action est irréversible.</value>
   </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Paramètres</value>
+  </data>
+  <data name="Shortcut_Command" xml:space="preserve">
+    <value>Commande *</value>
+  </data>
+  <data name="Shortcut_Err_ExeAndField" xml:space="preserve">
+    <value>L'exécutable et le {0} sont obligatoires.</value>
+  </data>
+  <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
+    <value>Veuillez sélectionner un terminal.</value>
+  </data>
+  <data name="Shortcut_Exe" xml:space="preserve">
+    <value>Exécutable *</value>
+  </data>
+  <data name="Shortcut_Exe_Tip" xml:space="preserve">
+    <value>Chemin complet vers l'exécutable</value>
+  </data>
+  <data name="Shortcut_ExtraArgs" xml:space="preserve">
+    <value>Paramètres libres (optionnel)</value>
+  </data>
+  <data name="Shortcut_ExtraArgs_Tip" xml:space="preserve">
+    <value>Arguments supplémentaires insérés avant la commande à lancer</value>
+  </data>
+  <data name="Shortcut_FieldLabel_Process" xml:space="preserve">
+    <value>nom du processus</value>
+  </data>
+  <data name="Shortcut_FieldLabel_Title" xml:space="preserve">
+    <value>titre de fenêtre</value>
+  </data>
+  <data name="Shortcut_Icon" xml:space="preserve">
+    <value>Icône (optionnel)</value>
+  </data>
+  <data name="Shortcut_Name" xml:space="preserve">
+    <value>Nom *</value>
+  </data>
+  <data name="Shortcut_NewTab" xml:space="preserve">
+    <value>Ouvrir dans un nouvel onglet</value>
+  </data>
+  <data name="Shortcut_Params" xml:space="preserve">
+    <value>Paramètres (optionnel)</value>
+  </data>
+  <data name="Shortcut_Params_Tip_Name" xml:space="preserve">
+    <value>Arguments passés au lancement et recherchés dans la ligne de commande du processus existant</value>
+  </data>
+  <data name="Shortcut_Params_Tip_Title" xml:space="preserve">
+    <value>Arguments passés à l'exécutable au lancement si la fenêtre n'est pas trouvée</value>
+  </data>
+  <data name="Shortcut_PickExe_Filter" xml:space="preserve">
+    <value>Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*</value>
+  </data>
+  <data name="Shortcut_PickIcon_Filter" xml:space="preserve">
+    <value>Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*</value>
+  </data>
+  <data name="Shortcut_PickStartFolder" xml:space="preserve">
+    <value>Choisir le dossier de départ</value>
+  </data>
+  <data name="Shortcut_Preview" xml:space="preserve">
+    <value>Aperçu :</value>
+  </data>
+  <data name="Shortcut_ProcessName" xml:space="preserve">
+    <value>Nom du processus *</value>
+  </data>
+  <data name="Shortcut_ProcessName_Tip" xml:space="preserve">
+    <value>Nom du processus tel qu'il apparaît dans le gestionnaire des tâches (ex: devenv.exe)</value>
+  </data>
+  <data name="Shortcut_RunCommand" xml:space="preserve">
+    <value>Commande à lancer (optionnel)</value>
+  </data>
+  <data name="Shortcut_RunCommand_Tip" xml:space="preserve">
+    <value>Commande exécutée après l'ouverture du terminal (ex : claude, npm run dev)</value>
+  </data>
+  <data name="Shortcut_SearchMode" xml:space="preserve">
+    <value>Mode de recherche *</value>
+  </data>
+  <data name="Shortcut_SearchMode_ByName" xml:space="preserve">
+    <value>Par nom de processus</value>
+  </data>
+  <data name="Shortcut_SearchMode_ByTitle" xml:space="preserve">
+    <value>Par titre de fenêtre</value>
+  </data>
+  <data name="Shortcut_StartFolder" xml:space="preserve">
+    <value>Dossier de départ</value>
+  </data>
+  <data name="Shortcut_StartFolder_Tip" xml:space="preserve">
+    <value>Chemin du dossier à ouvrir. Laissez vide pour le répertoire par défaut.</value>
+  </data>
+  <data name="Shortcut_Terminal" xml:space="preserve">
+    <value>Terminal *</value>
+  </data>
+  <data name="Shortcut_Terminal_Tip" xml:space="preserve">
+    <value>Choisir un exécutable de terminal</value>
+  </data>
+  <data name="Shortcut_Title" xml:space="preserve">
+    <value>Raccourci rapide</value>
+  </data>
+  <data name="Shortcut_Type" xml:space="preserve">
+    <value>Type *</value>
+  </data>
+  <data name="Shortcut_Type_OpenFolder" xml:space="preserve">
+    <value>Ouvrir un dossier</value>
+  </data>
+  <data name="Shortcut_Type_OpenTerminal" xml:space="preserve">
+    <value>Ouvrir un terminal</value>
+  </data>
+  <data name="Shortcut_Type_OpenUrl" xml:space="preserve">
+    <value>Ouvrir dans le navigateur</value>
+  </data>
+  <data name="Shortcut_Type_RunCommand" xml:space="preserve">
+    <value>Lancer une commande</value>
+  </data>
+  <data name="Shortcut_Type_SwitchProcess" xml:space="preserve">
+    <value>Basculer vers un processus</value>
+  </data>
+  <data name="Shortcut_WindowTitle" xml:space="preserve">
+    <value>Titre de la fenêtre *</value>
+  </data>
+  <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
+    <value>Texte recherché dans le titre des fenêtres ouvertes (ex: Calculatrice)</value>
+  </data>
+  <data name="Type_Browser" xml:space="preserve">
+    <value>Navigateur</value>
+  </data>
+  <data name="Type_Command" xml:space="preserve">
+    <value>Commande</value>
+  </data>
+  <data name="Type_Folder" xml:space="preserve">
+    <value>Dossier</value>
+  </data>
+  <data name="Type_Process" xml:space="preserve">
+    <value>Processus</value>
+  </data>
+  <data name="Type_Terminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="Type_Url" xml:space="preserve">
+    <value>URL</value>
   </data>
   <data name="UsageCfg_AlertThreshold" xml:space="preserve">
     <value>Seuil d'alerte :</value>
@@ -619,11 +879,68 @@ Cette action est irréversible.</value>
   <data name="UsageCfg_Visible_Tip" xml:space="preserve">
     <value>Décocher pour retirer ce fournisseur du bandeau, sans perdre son réglage</value>
   </data>
+  <data name="Usage_CostNote_Claude" xml:space="preserve">
+    <value>Équivalent API du mois en cours, estimé aux tarifs publics. Un abonnement Max ou Pro ne facture pas au jeton.</value>
+  </data>
   <data name="Usage_DayTimeFormat" xml:space="preserve">
     <value>ddd HH\h</value>
   </data>
   <data name="Usage_Demo" xml:space="preserve">
     <value>démo</value>
+  </data>
+  <data name="Usage_Gauge_Session" xml:space="preserve">
+    <value>session</value>
+  </data>
+  <data name="Usage_Gauge_Tooltip" xml:space="preserve">
+    <value>{0} % utilisés, {1} % restants</value>
+  </data>
+  <data name="Usage_Gauge_Week" xml:space="preserve">
+    <value>semaine</value>
+  </data>
+  <data name="Usage_Metric_Cost" xml:space="preserve">
+    <value>Coût est.</value>
+  </data>
+  <data name="Usage_Metric_Day" xml:space="preserve">
+    <value>Jour</value>
+  </data>
+  <data name="Usage_Metric_Model" xml:space="preserve">
+    <value>Modèle</value>
+  </data>
+  <data name="Usage_Metric_Month" xml:space="preserve">
+    <value>Mois</value>
+  </data>
+  <data name="Usage_Metric_Requests" xml:space="preserve">
+    <value>Requêtes</value>
+  </data>
+  <data name="Usage_Metric_Session" xml:space="preserve">
+    <value>Session</value>
+  </data>
+  <data name="Usage_OpenPage_Tooltip" xml:space="preserve">
+    <value>Ouvrir {0}</value>
+  </data>
+  <data name="Usage_Quota_Notice" xml:space="preserve">
+    <value>Quota indisponible — {0}</value>
+  </data>
+  <data name="Usage_Quota_NoticeNote" xml:space="preserve">
+    <value>{0}. Les jauges restent masquées ; les métriques de jetons, lues dans les transcripts locaux, sont exactes.</value>
+  </data>
+  <data name="Usage_Quota_RetryIn" xml:space="preserve">
+    <value>nouvelle tentative dans {0} min</value>
+  </data>
+  <data name="Usage_Quota_RetryNext" xml:space="preserve">
+    <value>nouvelle tentative au prochain rafraîchissement</value>
+  </data>
+  <data name="Usage_Reset_Tooltip" xml:space="preserve">
+    <value>Remise à zéro à {0}</value>
+  </data>
+  <data name="Usage_Suffix_Billion" xml:space="preserve">
+    <value> Md</value>
+  </data>
+  <data name="Usage_Suffix_Million" xml:space="preserve">
+    <value>M</value>
+  </data>
+  <data name="Usage_Suffix_Thousand" xml:space="preserve">
+    <value>k</value>
   </data>
   <data name="Usage_TimeFormat" xml:space="preserve">
     <value>HH\hmm</value>

@@ -103,6 +103,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// <summary>Précision technique affichée au survol de la notice.</summary>
     public string QuotaNoticeTooltip { get; private set; } = "";
 
+    /// <summary>Infobulle du lien vers la page du fournisseur, vide s'il n'y en a pas.</summary>
+    public string UsageUrlTooltip { get; private set; } = "";
+
     /// <summary>Il y a une notice à montrer.</summary>
     public bool HasQuotaNotice => QuotaNotice.Length > 0;
 
@@ -231,6 +234,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         IsDemo = selected?.IsDemo ?? false;
         UsageUrl = selected?.UsageUrl ?? "";
         QuotaNotice = selected?.QuotaNotice ?? "";
+        UsageUrlTooltip = UsageUrl.Length > 0 ? Loc.F("Usage_OpenPage_Tooltip", UsageUrl) : "";
         QuotaNoticeTooltip = selected?.QuotaNoticeNote ?? "";
 
         SoloName = selected?.Name ?? "";
@@ -280,8 +284,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
     private void BuildGauges(AiUsage? selected)
     {
-        SessionGauge = Gauge("session", selected?.Session);
-        WeekGauge = Gauge("semaine", selected?.Week);
+        SessionGauge = Gauge(Loc.T("Usage_Gauge_Session"), selected?.Session);
+        WeekGauge = Gauge(Loc.T("Usage_Gauge_Week"), selected?.Week);
     }
 
     private UsageGaugeItem Gauge(string label, UsageWindow? window)
@@ -298,10 +302,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             UsedPct = window.UsedPct,
             RemainingPct = window.RemainingPct,
             Reset = UsageFormat.Reset(window.ResetsAt, _clock()),
+            ResetTooltip = window.ResetsAt is null
+                ? ""
+                : Loc.F("Usage_Reset_Tooltip", UsageFormat.Reset(window.ResetsAt, _clock())),
             Color = UsageFormat.GaugeColor(window.UsedPct, _config.AlertThreshold),
             // Le libellé est court par choix, mais « 62 % session » ne dit pas si le chiffre est le
             // consommé ou le restant. L'infobulle lève le doute sans coûter de place.
-            Tooltip = $"{window.UsedPct} % utilisés, {window.RemainingPct} % restants",
+            Tooltip = Loc.F("Usage_Gauge_Tooltip", window.UsedPct, window.RemainingPct),
         };
     }
 
@@ -310,10 +317,10 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         Metrics.Clear();
         if (selected is null) return;
 
-        Metrics.Add(new UsageMetric { Label = "Session", Value = Tokens(selected.SessionTokens) });
-        Metrics.Add(new UsageMetric { Label = "Jour", Value = UsageFormat.Tokens(selected.DayTokens) });
-        Metrics.Add(new UsageMetric { Label = "Mois", Value = UsageFormat.Tokens(selected.MonthTokens) });
-        Metrics.Add(new UsageMetric { Label = "Requêtes", Value = selected.Requests.ToString() });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Session"), Value = Tokens(selected.SessionTokens) });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Day"), Value = UsageFormat.Tokens(selected.DayTokens) });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Month"), Value = UsageFormat.Tokens(selected.MonthTokens) });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Requests"), Value = selected.Requests.ToString(Loc.Current) });
 
         if (_config.ShowCost)
         {
@@ -322,13 +329,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             // mais la façon de facturer est propre à chaque source.
             Metrics.Add(new UsageMetric
             {
-                Label = "Coût est.",
+                Label = Loc.T("Usage_Metric_Cost"),
                 Value = Text(selected.Cost),
                 Tooltip = selected.CostNote,
             });
         }
 
-        Metrics.Add(new UsageMetric { Label = "Modèle", Value = Text(selected.Model) });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Model"), Value = Text(selected.Model) });
     }
 
     /// <summary>
@@ -349,6 +356,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                      nameof(SoloAccent), nameof(IsDemo), nameof(SessionGauge), nameof(WeekGauge),
                      nameof(UsageUrl), nameof(HasUsageUrl),
                      nameof(QuotaNotice), nameof(QuotaNoticeTooltip), nameof(HasQuotaNotice),
+                     nameof(UsageUrlTooltip),
                  })
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

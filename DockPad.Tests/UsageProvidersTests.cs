@@ -103,6 +103,13 @@ public class ClaudeUsageProviderTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), $"claudeprov_{Guid.NewGuid():N}");
 
+    public ClaudeUsageProviderTests()
+    {
+        // Les notices attendues ci-dessous sont les françaises : la langue est posée explicitement,
+        // le texte de la notice étant traduit depuis l'internationalisation.
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("fr"));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);

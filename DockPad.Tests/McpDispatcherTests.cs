@@ -3,9 +3,15 @@ using DockPad.Models;
 using DockPad.Services;
 using Xunit;
 
-// McpDispatcher.Handle écrit dans McpLogService.Entries (collection statique partagée avec
-// McpLogServiceTests) : la parallélisation par défaut de xUnit entre classes de test provoque
-// des faux échecs par pollution croisée. Un seul test assembly ici, donc pas d'impact perf.
+// Deux états statiques partagés interdisent la parallélisation entre classes de test :
+//
+//   - McpDispatcher.Handle écrit dans McpLogService.Entries (collection statique partagée avec
+//     McpLogServiceTests) ;
+//   - Loc.SetCulture écrit la langue du processus (CurrentUICulture et les DefaultThread…), donc
+//     une classe qui bascule en anglais casserait une autre qui vérifie un libellé français.
+//
+// Dans les deux cas l'échec dépendrait de l'ordonnancement, ce qui est le pire des tests instables.
+// Un seul assembly de test ici, et la suite tourne en 3 s : pas d'impact perf.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace DockPad.Tests;

@@ -167,7 +167,7 @@
                 <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0"
                            FontSize="11" Foreground="#8A8A8A"
                            Text="{Binding Reset, StringFormat=↻ {0}}"
-                           ToolTip="{Binding Reset, StringFormat=Remise à zéro à {0}}">
+                           ToolTip="{Binding ResetTooltip}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Visible"/>
@@ -293,7 +293,7 @@
                 <Button Grid.Column="3" Click="OpenUsagePage_Click"
                         VerticalAlignment="Center" Margin="12,0,0,0" Cursor="Hand"
                         Visibility="{Binding HasUsageUrl, Converter={StaticResource BoolToVisibilityConverter}}"
-                        ToolTip="{Binding UsageUrl, StringFormat=Ouvrir {0}}">
+                        ToolTip="{Binding UsageUrlTooltip}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="Chrome" Background="Transparent" CornerRadius="6"

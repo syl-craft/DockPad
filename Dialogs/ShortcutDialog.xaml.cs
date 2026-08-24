@@ -167,7 +167,7 @@ public partial class ShortcutDialog : Window
         var dlg = new OpenFileDialog
         {
             Title  = "Choisir un terminal",
-            Filter = "Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*"
+            Filter = Loc.T("Shortcut_PickExe_Filter")
         };
         if (dlg.ShowDialog() != true) return;
 
@@ -196,7 +196,7 @@ public partial class ShortcutDialog : Window
     {
         var dlg = new System.Windows.Forms.FolderBrowserDialog
         {
-            Description        = "Choisir le dossier de départ",
+            Description        = Loc.T("Shortcut_PickStartFolder"),
             UseDescriptionForTitle = true,
         };
         if (Directory.Exists(TxtTerminalDir.Text))
@@ -226,21 +226,21 @@ public partial class ShortcutDialog : Window
         if (LblPsSearchTerm == null) return;
         var mode = (CmbPsSearchMode.SelectedItem as ComboBoxItem)?.Tag?.ToString();
         bool isByTitle = mode == "ByWindowTitle";
-        LblPsSearchTerm.Content          = isByTitle ? "Titre de la fenêtre *" : "Nom du processus *";
+        LblPsSearchTerm.Content          = isByTitle ? Loc.T("Shortcut_WindowTitle") : "Nom du processus *";
         TxtPsProcessName.ToolTip         = isByTitle
-            ? "Texte recherché dans le titre des fenêtres ouvertes (ex: Calculatrice)"
-            : "Nom du processus tel qu'il apparaît dans le gestionnaire des tâches (ex: devenv.exe)";
+            ? Loc.T("Shortcut_WindowTitle_Tip")
+            : Loc.T("Shortcut_ProcessName_Tip");
         TxtPsParameters.ToolTip = isByTitle
-            ? "Arguments passés à l'exécutable au lancement si la fenêtre n'est pas trouvée"
-            : "Arguments passés au lancement et recherchés dans la ligne de commande du processus existant";
+            ? Loc.T("Shortcut_Params_Tip_Title")
+            : Loc.T("Shortcut_Params_Tip_Name");
     }
 
     private void BrowsePsExecutable_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new OpenFileDialog
         {
-            Title  = "Choisir un exécutable",
-            Filter = "Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*"
+            Title  = Loc.T("Entry_Pick_Exe"),
+            Filter = Loc.T("Shortcut_PickExe_Filter")
         };
         if (!string.IsNullOrEmpty(TxtPsExecutable.Text))
         {
@@ -308,8 +308,8 @@ public partial class ShortcutDialog : Window
         {
             var dlg = new OpenFileDialog
             {
-                Title  = "Choisir un exécutable",
-                Filter = "Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*"
+                Title  = Loc.T("Entry_Pick_Exe"),
+                Filter = Loc.T("Shortcut_PickExe_Filter")
             };
             if (dlg.ShowDialog() == true)
                 TxtCommand.Text = dlg.FileName;
@@ -322,8 +322,8 @@ public partial class ShortcutDialog : Window
     {
         var dlg = new OpenFileDialog
         {
-            Title  = "Choisir une icône",
-            Filter = "Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*"
+            Title  = Loc.T("Quick_Tile_PickIcon"),
+            Filter = Loc.T("Shortcut_PickIcon_Filter")
         };
         var initDir = GetIconInitialDir(Entry.IconPath, Entry.IconProfilePath);
         if (initDir != null) dlg.InitialDirectory = initDir;
@@ -404,7 +404,7 @@ public partial class ShortcutDialog : Window
             var cfg = BuildTerminalConfig();
             if (cfg == null)
             {
-                AppDialog.Warning("Veuillez sélectionner un terminal.", owner: this);
+                AppDialog.Warning(Loc.T("Shortcut_Err_NoTerminal"), owner: this);
                 CmbTerminal.Focus();
                 return;
             }
@@ -424,8 +424,8 @@ public partial class ShortcutDialog : Window
                 out ProcessSearchMode parsedMode) ? parsedMode : ProcessSearchMode.ByProcessName;
             if (string.IsNullOrWhiteSpace(exe) || string.IsNullOrWhiteSpace(procName))
             {
-                string fieldLabel = psMode == ProcessSearchMode.ByWindowTitle ? "titre de fenêtre" : "nom du processus";
-                AppDialog.Warning($"L'exécutable et le {fieldLabel} sont obligatoires.", owner: this);
+                string fieldLabel = psMode == ProcessSearchMode.ByWindowTitle ? Loc.T("Shortcut_FieldLabel_Title") : "nom du processus";
+                AppDialog.Warning(Loc.F("Shortcut_Err_ExeAndField", fieldLabel), owner: this);
                 (string.IsNullOrWhiteSpace(exe) ? TxtPsExecutable : TxtPsProcessName).Focus();
                 return;
             }

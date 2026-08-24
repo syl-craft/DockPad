@@ -20,7 +20,8 @@ public static class UsageFormat
     /// La culture d'affichage est figée : DockPad est une application française, et le rendu ne doit
     /// pas changer selon les paramètres régionaux de la machine (« 12,4k » ici, « 12.4k » ailleurs).
     /// </summary>
-    private static readonly CultureInfo Fr = CultureInfo.GetCultureInfo("fr-FR");
+    // La culture d'affichage, pas une culture fixe : « 12,4k » en français, « 12.4k » en anglais.
+    private static CultureInfo Display => Loc.Current;
 
     /// <summary>
     /// Couleur d'une jauge. Le seuil porte sur le <b>restant</b> — c'est ce que l'utilisateur règle
@@ -45,14 +46,16 @@ public static class UsageFormat
     public static string Tokens(long n)
     {
         if (n < 0) return "—";
-        if (n < 1_000) return n.ToString(Fr);
+        if (n < 1_000) return n.ToString(Display);
 
         // Les seuils portent sur la valeur APRÈS arrondi, pas avant : 999 999 divisé par mille donne
         // 999,999, qui s'arrondit à une décimale en 1000 — donc « 1000k » au lieu de « 1M ». La
         // frontière est là où l'arrondi reste sous le millier.
-        if (n < 999_950) return Trim(n / 1_000d) + "k";
-        if (n < 999_950_000) return Trim(n / 1_000_000d) + "M";
-        return Trim(n / 1_000_000_000d) + " Md";
+        // Les suffixes viennent des ressources : « Md » est francais, l'anglais dit « B », et
+        // l'espace qui precede l'un mais pas l'autre fait partie du choix typographique de la langue.
+        if (n < 999_950) return Trim(n / 1_000d) + Loc.T("Usage_Suffix_Thousand");
+        if (n < 999_950_000) return Trim(n / 1_000_000d) + Loc.T("Usage_Suffix_Million");
+        return Trim(n / 1_000_000_000d) + Loc.T("Usage_Suffix_Billion");
     }
 
     /// <summary>
@@ -64,14 +67,16 @@ public static class UsageFormat
     {
         if (resetsAt is not { } reset) return "";
         return reset.Date == now.Date
-            ? reset.ToString(@"HH\hmm", Fr)
-            : reset.ToString(@"ddd HH\h", Fr);
+            // Le gabarit lui-meme est traduit : le « h » separateur de « 11h54 » est une convention
+            // francaise, qu'aucune CultureInfo ne corrige puisqu'il est ecrit en dur.
+            ? reset.ToString(Loc.T("Usage_TimeFormat"), Display)
+            : reset.ToString(Loc.T("Usage_DayTimeFormat"), Display);
     }
 
     /// <summary>Une décimale, mais pas de « ,0 » inutile : 1 000 → « 1 », 1 050 → « 1,1 ».</summary>
     private static string Trim(double value)
     {
-        var s = value.ToString("0.#", Fr);
+        var s = value.ToString("0.#", Display);
         return s;
     }
 }

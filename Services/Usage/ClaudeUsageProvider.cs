@@ -143,8 +143,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             UsageUrl = "https://claude.ai/new#settings/usage",
             Model = totals.Model,
             Cost = ClaudePricing.Format(totals.Cost),
-            CostNote = "Équivalent API du mois en cours, estimé aux tarifs publics. "
-                     + "Un abonnement Max ou Pro ne facture pas au jeton.",
+            CostNote = Loc.T("Usage_CostNote_Claude"),
             SessionTokens = totals.Session,
             DayTokens = totals.Day,
             MonthTokens = totals.Month,
@@ -272,11 +271,10 @@ public sealed class ClaudeUsageProvider : IUsageProvider
 
         var remaining = _lastAttempt + QuotaMinInterval - _clock();
         var retry = remaining > TimeSpan.Zero
-            ? $"nouvelle tentative dans {Math.Max(1, (int)Math.Ceiling(remaining.TotalMinutes))} min"
-            : "nouvelle tentative au prochain rafraîchissement";
+            ? Loc.F("Usage_Quota_RetryIn", Math.Max(1, (int)Math.Ceiling(remaining.TotalMinutes)))
+            : Loc.T("Usage_Quota_RetryNext");
 
-        return ($"Quota indisponible — {retry}",
-                $"{_quotaFailure}. Les jauges restent masquées ; les métriques de jetons, "
-                + "lues dans les transcripts locaux, sont exactes.");
+        return (Loc.F("Usage_Quota_Notice", retry),
+                Loc.F("Usage_Quota_NoticeNote", _quotaFailure));
     }
 }

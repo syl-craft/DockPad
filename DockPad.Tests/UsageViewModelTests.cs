@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DockPad.Models;
+using DockPad.Services.Localization;
 using DockPad.Services.Usage;
 
 namespace DockPad.Tests;
@@ -41,6 +42,10 @@ public class UsageViewModelTests
 
     private static UsageViewModel Build(UsageConfig config, params AiUsage?[] usages)
     {
+        // Les libellés attendus par ces tests sont les français : la langue est posée
+        // explicitement, sinon le résultat dépendrait de celle laissée par une autre classe.
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("fr"));
+
         var providers = usages.Select(u => (IUsageProvider)new StubProvider(u)).ToList();
         var service = new UsageService(providers);
         return new UsageViewModel(service, () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
