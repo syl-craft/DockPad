@@ -24,6 +24,90 @@
   <data name="Common_Save" xml:space="preserve">
     <value>Save</value>
   </data>
+  <data name="Key_Delete" xml:space="preserve">
+    <value>Del</value>
+  </data>
+  <data name="Key_End" xml:space="preserve">
+    <value>End</value>
+  </data>
+  <data name="Key_Enter" xml:space="preserve">
+    <value>Enter</value>
+  </data>
+  <data name="Key_Esc" xml:space="preserve">
+    <value>Esc</value>
+  </data>
+  <data name="Key_Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Key_Insert" xml:space="preserve">
+    <value>Ins</value>
+  </data>
+  <data name="Key_PageDown" xml:space="preserve">
+    <value>PgDn</value>
+  </data>
+  <data name="Key_PageUp" xml:space="preserve">
+    <value>PgUp</value>
+  </data>
+  <data name="Key_Space" xml:space="preserve">
+    <value>Space</value>
+  </data>
+  <data name="Key_Tab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="Language_Auto" xml:space="preserve">
+    <value>Automatic (Windows)</value>
+  </data>
+  <data name="Settings_Claude_ArgsHint" xml:space="preserve">
+    <value>e.g. --enable-auto-mode</value>
+  </data>
+  <data name="Settings_Claude_ExtraArgs" xml:space="preserve">
+    <value>Extra arguments:</value>
+  </data>
+  <data name="Settings_Claude_Section" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="Settings_Hotkey_Current" xml:space="preserve">
+    <value>Current shortcut: {0}</value>
+  </data>
+  <data name="Settings_Hotkey_Key" xml:space="preserve">
+    <value>Key:</value>
+  </data>
+  <data name="Settings_Hotkey_Modifiers" xml:space="preserve">
+    <value>Modifiers:</value>
+  </data>
+  <data name="Settings_Hotkey_Section" xml:space="preserve">
+    <value>Global keyboard shortcut</value>
+  </data>
+  <data name="Settings_Language_Section" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings_Startup_Section" xml:space="preserve">
+    <value>Startup</value>
+  </data>
+  <data name="Settings_Startup_WithWindows" xml:space="preserve">
+    <value>Start with Windows</value>
+  </data>
+  <data name="Settings_Tiles_Help" xml:space="preserve">
+    <value>Modifier + 1-9 / 0 / ↑ / ↓ runs a tile from the left or right half of the grid.</value>
+  </data>
+  <data name="Settings_Tiles_LeftHalf" xml:space="preserve">
+    <value>Left half:</value>
+  </data>
+  <data name="Settings_Tiles_RightHalf" xml:space="preserve">
+    <value>Right half:</value>
+  </data>
+  <data name="Settings_Tiles_Section" xml:space="preserve">
+    <value>Tile shortcuts</value>
+  </data>
+  <data name="Settings_Tiles_TriggerAuto" xml:space="preserve">
+    <value>Auto (follows the global shortcut)</value>
+  </data>
+  <data name="Settings_Tiles_WarnPartial" xml:space="preserve">
+    <value>Both halves must be set together — otherwise Auto mode applies.</value>
+  </data>
+  <data name="Settings_Tiles_WarnSame" xml:space="preserve">
+    <value>Both halves must use different modifiers.</value>
+  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Settings</value>
   </data>

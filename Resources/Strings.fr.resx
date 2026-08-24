@@ -24,6 +24,90 @@
   <data name="Common_Save" xml:space="preserve">
     <value>Enregistrer</value>
   </data>
+  <data name="Key_Delete" xml:space="preserve">
+    <value>Suppr</value>
+  </data>
+  <data name="Key_End" xml:space="preserve">
+    <value>Fin</value>
+  </data>
+  <data name="Key_Enter" xml:space="preserve">
+    <value>Entrée</value>
+  </data>
+  <data name="Key_Esc" xml:space="preserve">
+    <value>Échap</value>
+  </data>
+  <data name="Key_Home" xml:space="preserve">
+    <value>Début</value>
+  </data>
+  <data name="Key_Insert" xml:space="preserve">
+    <value>Inser</value>
+  </data>
+  <data name="Key_PageDown" xml:space="preserve">
+    <value>PgSuiv</value>
+  </data>
+  <data name="Key_PageUp" xml:space="preserve">
+    <value>PgPréc</value>
+  </data>
+  <data name="Key_Space" xml:space="preserve">
+    <value>Espace</value>
+  </data>
+  <data name="Key_Tab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="Language_Auto" xml:space="preserve">
+    <value>Automatique (Windows)</value>
+  </data>
+  <data name="Settings_Claude_ArgsHint" xml:space="preserve">
+    <value>Ex : --enable-auto-mode</value>
+  </data>
+  <data name="Settings_Claude_ExtraArgs" xml:space="preserve">
+    <value>Arguments supplémentaires :</value>
+  </data>
+  <data name="Settings_Claude_Section" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="Settings_Hotkey_Current" xml:space="preserve">
+    <value>Raccourci actuel : {0}</value>
+  </data>
+  <data name="Settings_Hotkey_Key" xml:space="preserve">
+    <value>Touche :</value>
+  </data>
+  <data name="Settings_Hotkey_Modifiers" xml:space="preserve">
+    <value>Modificateurs :</value>
+  </data>
+  <data name="Settings_Hotkey_Section" xml:space="preserve">
+    <value>Raccourci clavier global</value>
+  </data>
+  <data name="Settings_Language_Section" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="Settings_Startup_Section" xml:space="preserve">
+    <value>Démarrage</value>
+  </data>
+  <data name="Settings_Startup_WithWindows" xml:space="preserve">
+    <value>Démarrer avec Windows</value>
+  </data>
+  <data name="Settings_Tiles_Help" xml:space="preserve">
+    <value>Modificateur + 1-9 / 0 / ↑ / ↓ exécute une tuile de la moitié gauche ou droite de la grille.</value>
+  </data>
+  <data name="Settings_Tiles_LeftHalf" xml:space="preserve">
+    <value>Moitié gauche :</value>
+  </data>
+  <data name="Settings_Tiles_RightHalf" xml:space="preserve">
+    <value>Moitié droite :</value>
+  </data>
+  <data name="Settings_Tiles_Section" xml:space="preserve">
+    <value>Raccourcis des tuiles</value>
+  </data>
+  <data name="Settings_Tiles_TriggerAuto" xml:space="preserve">
+    <value>Auto (selon le raccourci global)</value>
+  </data>
+  <data name="Settings_Tiles_WarnPartial" xml:space="preserve">
+    <value>Les deux moitiés doivent être configurées ensemble — sinon le mode Auto s'applique.</value>
+  </data>
+  <data name="Settings_Tiles_WarnSame" xml:space="preserve">
+    <value>Les deux moitiés doivent utiliser des modificateurs différents.</value>
+  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Paramètres</value>
   </data>

@@ -71,6 +71,22 @@ public static class SettingsService
         key.SetValue("TriggerSecond", second, RegistryValueKind.String);
     }
 
+    /// <summary>
+    /// Étiquette de langue choisie, ou chaîne vide pour « automatique ». Même convention que
+    /// <c>TriggerFirst</c>/<c>TriggerSecond</c> : le vide veut dire « laisse le système décider ».
+    /// </summary>
+    public static string LoadLanguage()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RegPath);
+        return key?.GetValue("Language") as string ?? "";
+    }
+
+    public static void SaveLanguage(string tag)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(RegPath);
+        key.SetValue("Language", tag, RegistryValueKind.String);
+    }
+
     public static string LoadClaudeArgs()
     {
         using var key = Registry.CurrentUser.OpenSubKey(RegPath);

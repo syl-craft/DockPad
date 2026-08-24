@@ -1,6 +1,8 @@
 using System.Drawing;
 using System.Threading;
 using System.Windows;
+using System.Windows.Markup;
+using DockPad.Services.Localization;
 using WinForms = System.Windows.Forms;
 
 namespace DockPad;
@@ -24,6 +26,13 @@ public partial class App : Application
         base.OnStartup(e);
 
         Services.LogService.Init();
+
+        // Avant toute fenêtre : une vue construite avant ce point figerait ses libellés dans la
+        // langue par défaut. L'OverrideMetadata est indispensable en plus des cultures — WPF ignore
+        // CurrentCulture pour les StringFormat de liaison et lit FrameworkElement.Language.
+        Services.Localization.Loc.SetCulture(
+            Services.Localization.Loc.Parse(Services.SettingsService.LoadLanguage()));
+        ApplyWpfLanguage();
 
         // Filets de sécurité : une exception non gérée ne doit pas tuer l'app résidente
         // (systray + hotkey). Tracée dans %APPDATA%\DockPad\logs\ + dialog d'erreur.
@@ -158,4 +167,46 @@ public partial class App : Application
 
         return tray;
     }
+
+    /// <summary>
+    /// Fait suivre à WPF la langue courante, en plus des cultures posées par
+    /// <see cref="Loc.SetCulture"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// WPF ignore <c>CurrentCulture</c> pour les <c>StringFormat</c> de liaison : il lit
+    /// <c>FrameworkElement.Language</c>. Sans ça, un nombre ou une date formaté par une liaison sort
+    /// en <c>en-US</c> quelle que soit la culture du thread.
+    /// </para>
+    /// <para>
+    /// <b>Pourquoi un gestionnaire de classe et non un <c>OverrideMetadata</c>.</b>
+    /// <c>OverrideMetadata</c> ne s'appelle qu'une fois par propriété et par type : il figerait la
+    /// langue du démarrage, et une fenêtre ouverte après une bascule hériterait de l'ancienne. Poser
+    /// la langue au <c>Loaded</c> de chaque fenêtre couvre les deux cas, y compris les fenêtres
+    /// ajoutées au projet plus tard, sans rien à brancher dans leur code.
+    /// </para>
+    /// <para>
+    /// <c>Language</c> étant une propriété héritée, la poser sur la fenêtre suffit à couvrir tout
+    /// son contenu.
+    /// </para>
+    /// </remarks>
+    private static void ApplyWpfLanguage()
+    {
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
+            new RoutedEventHandler((sender, _) =>
+            {
+                if (sender is Window window) window.Language = CurrentXmlLanguage();
+            }));
+
+        // Les fenêtres déjà ouvertes au moment de la bascule : le gestionnaire ci-dessus ne les
+        // reverra pas, leur Loaded est passé.
+        Loc.LanguageChanged += (_, _) =>
+        {
+            var language = CurrentXmlLanguage();
+            foreach (Window window in Current.Windows) window.Language = language;
+        };
+    }
+
+    private static XmlLanguage CurrentXmlLanguage() =>
+        XmlLanguage.GetLanguage(Loc.Current.IetfLanguageTag);
 }

@@ -1,5 +1,7 @@
 using System.Windows;
+using System.Windows.Controls;
 using DockPad.Services;
+using DockPad.Services.Localization;
 
 namespace DockPad;
 
@@ -10,21 +12,33 @@ public partial class SettingsDialog : Window
 
     private static readonly (string Name, uint VK)[] Keys = HotkeyService.Keys;
 
-    // Index 0 = auto ; les autres valeurs sont stockées telles quelles dans le registre
-    private static readonly string[] TriggerChoices =
-        ["Auto (selon le raccourci global)", "Ctrl", "Alt", "Shift"];
+    // Index 0 = auto ; les autres valeurs sont stockées telles quelles dans le registre.
+    // Une méthode et non un tableau statique : le libellé d'index 0 est traduit, et il doit se
+    // reconstruire quand la langue change sous la fenêtre ouverte.
+    private static string[] TriggerChoices() =>
+        [Loc.T("Settings_Tiles_TriggerAuto"), "Ctrl", "Alt", "Shift"];
+
+    /// <summary>Une entrée de la liste des langues : ce qu'on stocke, et ce qu'on affiche.</summary>
+    private sealed record LanguageChoice(string Tag, string Label);
+
+    /// <summary>
+    /// Vrai pendant le remplissage des listes : les <c>SelectionChanged</c> qu'il déclenche ne
+    /// doivent ni écrire dans le registre ni rebasculer la langue.
+    /// </summary>
+    private bool _filling;
 
     public SettingsDialog()
     {
         InitializeComponent();
 
-        CmbKey.ItemsSource = Keys.Select(k => k.Name).ToList();
+        FillKeys();
 
-        CmbTriggerFirst.ItemsSource  = TriggerChoices;
-        CmbTriggerSecond.ItemsSource = TriggerChoices;
+        var choices = TriggerChoices();
+        CmbTriggerFirst.ItemsSource  = choices;
+        CmbTriggerSecond.ItemsSource = choices;
         var (trigFirst, trigSecond) = SettingsService.LoadTriggerMods();
-        CmbTriggerFirst.SelectedIndex  = Math.Max(0, Array.IndexOf(TriggerChoices, trigFirst));
-        CmbTriggerSecond.SelectedIndex = Math.Max(0, Array.IndexOf(TriggerChoices, trigSecond));
+        CmbTriggerFirst.SelectedIndex  = Math.Max(0, Array.IndexOf(choices, trigFirst));
+        CmbTriggerSecond.SelectedIndex = Math.Max(0, Array.IndexOf(choices, trigSecond));
         CmbTriggerFirst.SelectionChanged  += (_, _) => ValidateTriggers();
         CmbTriggerSecond.SelectionChanged += (_, _) => ValidateTriggers();
 
@@ -55,6 +69,74 @@ public partial class SettingsDialog : Window
         ChkWin.Checked     += (_, _) => UpdatePreview();
         ChkWin.Unchecked   += (_, _) => UpdatePreview();
         CmbKey.SelectionChanged += (_, _) => UpdatePreview();
+
+        FillLanguages();
+
+        // La langue peut changer pendant que cette fenêtre est ouverte — c'est même le cas normal,
+        // puisque c'est ici qu'on la change. Les libellés liés par {loc:T} se retraduisent seuls ;
+        // ceux construits en code, eux, doivent être refaits.
+        Loc.LanguageChanged += OnLanguageChanged;
+        Closed += (_, _) => Loc.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        FillLanguages();
+
+        // Les noms de touches nommées sont traduits (« Espace » / « Space ») : la liste doit être
+        // refaite, la sélection conservée.
+        var key = CmbKey.SelectedIndex;
+        FillKeys();
+        CmbKey.SelectedIndex = key;
+
+        var choices = TriggerChoices();
+        int first = CmbTriggerFirst.SelectedIndex, second = CmbTriggerSecond.SelectedIndex;
+        _filling = true;
+        CmbTriggerFirst.ItemsSource  = choices;
+        CmbTriggerSecond.ItemsSource = choices;
+        CmbTriggerFirst.SelectedIndex  = first;
+        CmbTriggerSecond.SelectedIndex = second;
+        _filling = false;
+
+        UpdatePreview();
+        ValidateTriggers();
+    }
+
+    private void FillKeys()
+    {
+        _filling = true;
+        CmbKey.ItemsSource = Keys.Select(k => HotkeyService.Display(k.Name)).ToList();
+        _filling = false;
+    }
+
+    /// <summary>
+    /// Remplit la liste des langues. Les noms de langue ne sont pas traduits — une langue s'écrit
+    /// dans sa propre langue, c'est ce qui permet de la retrouver quand l'interface est dans une
+    /// langue qu'on ne lit pas.
+    /// </summary>
+    private void FillLanguages()
+    {
+        var selected = SettingsService.LoadLanguage();
+        _filling = true;
+        CmbLanguage.ItemsSource = new[]
+        {
+            new LanguageChoice("",   Loc.T("Language_Auto")),
+            new LanguageChoice("fr", "Français"),
+            new LanguageChoice("en", "English"),
+        };
+        CmbLanguage.DisplayMemberPath = nameof(LanguageChoice.Label);
+        CmbLanguage.SelectedIndex = selected switch { "fr" => 1, "en" => 2, _ => 0 };
+        _filling = false;
+    }
+
+    private void Language_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_filling || CmbLanguage.SelectedItem is not LanguageChoice choice) return;
+
+        // Sauvegarde immédiate puis application : la fenêtre se retraduit sous les yeux, sans
+        // attendre le bouton Sauvegarder — qui ne concerne que le raccourci et le démarrage.
+        SettingsService.SaveLanguage(choice.Tag);
+        Loc.SetCulture(Loc.Parse(choice.Tag));
     }
 
     private void UpdatePreview()
@@ -67,7 +149,7 @@ public partial class SettingsDialog : Window
         if (CmbKey.SelectedIndex >= 0)  parts.Add(Keys[CmbKey.SelectedIndex].Name);
 
         TxtPreview.Text = parts.Count > 0
-            ? $"Raccourci actuel : {string.Join("+", parts)}"
+            ? Loc.F("Settings_Hotkey_Current", string.Join("+", parts))
             : "";
     }
 
@@ -79,9 +161,9 @@ public partial class SettingsDialog : Window
         bool conflict = bothExplicit && CmbTriggerFirst.SelectedIndex == CmbTriggerSecond.SelectedIndex;
 
         TxtTriggerWarn.Text = conflict
-            ? "Les deux moitiés doivent utiliser des modificateurs différents."
+            ? Loc.T("Settings_Tiles_WarnSame")
             : (CmbTriggerFirst.SelectedIndex > 0) != (CmbTriggerSecond.SelectedIndex > 0)
-                ? "Les deux moitiés doivent être configurées ensemble — sinon le mode Auto s'applique."
+                ? Loc.T("Settings_Tiles_WarnPartial")
                 : "";
         TxtTriggerWarn.Visibility = TxtTriggerWarn.Text.Length > 0
             ? Visibility.Visible : Visibility.Collapsed;
@@ -104,9 +186,10 @@ public partial class SettingsDialog : Window
         SelectedKey = Keys[CmbKey.SelectedIndex].VK;
 
         SettingsService.SaveHotkey(SelectedModifiers, SelectedKey);
+        var saved = TriggerChoices();
         SettingsService.SaveTriggerMods(
-            CmbTriggerFirst.SelectedIndex  > 0 ? TriggerChoices[CmbTriggerFirst.SelectedIndex]  : "",
-            CmbTriggerSecond.SelectedIndex > 0 ? TriggerChoices[CmbTriggerSecond.SelectedIndex] : "");
+            CmbTriggerFirst.SelectedIndex  > 0 ? saved[CmbTriggerFirst.SelectedIndex]  : "",
+            CmbTriggerSecond.SelectedIndex > 0 ? saved[CmbTriggerSecond.SelectedIndex] : "");
         SettingsService.SaveAutoStart(ChkAutoStart.IsChecked == true);
         SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
         DialogResult = true;
