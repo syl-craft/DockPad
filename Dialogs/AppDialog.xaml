@@ -1,6 +1,7 @@
 <Window x:Class="DockPad.AppDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:DockPad.Services.Localization"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -45,12 +46,12 @@
 
                 <!-- Boutons -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                    <Button x:Name="BtnSecondary" Content="Non"
+                    <Button x:Name="BtnSecondary" Content="{loc:T Common_No}"
                             Style="{StaticResource SecondaryButton}"
                             Padding="18,7" Margin="0,0,8,0"
                             Visibility="Collapsed"
                             Click="BtnSecondary_Click"/>
-                    <Button x:Name="BtnPrimary" Content="OK"
+                    <Button x:Name="BtnPrimary" Content="{loc:T Common_Ok}"
                             Padding="18,7"
                             Click="BtnPrimary_Click"/>
                 </StackPanel>

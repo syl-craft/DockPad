@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using DockPad.Services.Usage;
 
+using DockPad.Services.Localization;
+
 namespace DockPad.Tests;
 
 public class CodexUsageReaderTests : IDisposable
@@ -200,7 +202,9 @@ public class CodexUsageReaderTests : IDisposable
         var probe = new CodexUsageProvider(_home).Probe();
 
         Assert.True(probe.Available);
-        Assert.Contains("aucune donnée", probe.Detail);
+        // Le libellé est traduit : le comparer en dur ferait échouer le test selon la langue
+        // courante du processus, ce qui est précisément le défaut qu'on veut éviter.
+        Assert.Equal(Loc.T("Probe_NoSessionData"), probe.Detail);
     }
 
     [Fact]

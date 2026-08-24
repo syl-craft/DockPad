@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DockPad.csproj" />
+  </ItemGroup>
+
+  <!-- QuickAccessWindow référence app.ico par pack URI, qui se résout dans l'assembly HÔTE :
+       sans cette ligne, la cible qui la rend lève une IOException au chargement du XAML. -->
+  <ItemGroup>
+    <Resource Include="..\..\app.ico" Link="app.ico" />
+  </ItemGroup>
+
+</Project>

@@ -19,8 +19,8 @@ public class PresetEntry
 
     public string BadgeText => Status switch
     {
-        PresetStatus.UpToDate => "Déjà installé",
-        PresetStatus.UpdateAvailable => "Mise à jour disponible",
+        PresetStatus.UpToDate => Loc.T("Presets_Badge_UpToDate"),
+        PresetStatus.UpdateAvailable => Loc.T("Presets_Badge_UpdateAvail"),
         _ => ""
     };
     public string BadgeBackground => Status switch

@@ -29,7 +29,7 @@ public static class AiDetectionService
                 LogService.Warn(ex, $"Détection du fournisseur IA « {provider.Id} »");
                 probes.Add((provider, new AiProbe
                 {
-                    Available = false, DisplayName = provider.Name, Detail = "détection impossible",
+                    Available = false, DisplayName = provider.Name, Detail = Loc.T("Probe_DetectionFailed"),
                 }));
             }
         }

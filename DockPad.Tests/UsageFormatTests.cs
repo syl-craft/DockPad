@@ -1,10 +1,22 @@
 using System.Globalization;
+using DockPad.Services.Localization;
 using DockPad.Services.Usage;
 
 namespace DockPad.Tests;
 
+/// <summary>
+/// Formatage des jetons et des heures de reset.
+/// </summary>
+/// <remarks>
+/// Chaque test pose la langue explicitement. Le rendu dépend d'elle par conception depuis
+/// l'internationalisation — « 12,4k » en français, « 12.4k » en anglais — et un test qui hérite de
+/// la langue laissée par un autre passerait ou casserait selon l'ordre d'exécution.
+/// </remarks>
 public class UsageFormatTests
 {
+    private static void Francais() => Loc.SetCulture(CultureInfo.GetCultureInfo("fr"));
+    private static void Anglais() => Loc.SetCulture(CultureInfo.GetCultureInfo("en"));
+
     private const string Rouge = "#E5484D";
     private const string Ambre = "#F5A623";
     private const string Vert  = "#34A853";
@@ -73,14 +85,33 @@ public class UsageFormatTests
     [InlineData(999_999_999L, "1 Md")]
     public void Tokens_FormateEnCompact(long valeur, string attendu)
     {
+        Francais();
+
+        Assert.Equal(attendu, UsageFormat.Tokens(valeur));
+    }
+
+    [Theory]
+    [InlineData(999L, "999")]
+    [InlineData(1_050L, "1.1k")]
+    [InlineData(12_400L, "12.4k")]
+    [InlineData(1_200_000L, "1.2M")]
+    [InlineData(2_741_932_310L, "2.7B")]
+    public void Tokens_EnAnglais_PointDecimalEtSuffixeB(long valeur, string attendu)
+    {
+        // Le séparateur décimal vient de la culture, mais le suffixe vient des ressources : « Md »
+        // est français, l'anglais dit « B », et l'espace qui précède l'un et pas l'autre est un
+        // choix typographique de la langue, qu'aucune CultureInfo ne connaît.
+        Anglais();
+
         Assert.Equal(attendu, UsageFormat.Tokens(valeur));
     }
 
     [Fact]
-    public void Tokens_SousCultureAllemande_GardeLaVirguleDecimale()
+    public void Tokens_SuitLaLangueChoisieEtNonLaCultureDuThread()
     {
-        // Le rendu ne doit pas dépendre de la culture de la machine : en de-DE le séparateur
-        // décimal natif est aussi la virgule, mais en en-US ce serait un point. On fige fr-FR.
+        // Le rendu suit la langue de l'application, pas une culture de thread posée par ailleurs :
+        // c'est Loc qui décide. Sans cette garantie, un Task.Run parti avant une bascule
+        // afficherait des nombres dans l'ancienne langue.
         var precedente = CultureInfo.CurrentCulture;
         try
         {
@@ -97,13 +128,26 @@ public class UsageFormatTests
     [Fact]
     public void Reset_MemeJour_DonneLHeure()
     {
+        Francais();
         var now = new DateTime(2026, 8, 20, 11, 30, 0);
         Assert.Equal("14h00", UsageFormat.Reset(new DateTime(2026, 8, 20, 14, 0, 0), now));
     }
 
     [Fact]
+    public void Reset_EnAnglais_SeparateurDeuxPoints()
+    {
+        // Le « h » de « 14h00 » est une convention française écrite en dur dans le gabarit : aucune
+        // CultureInfo ne la corrige, d'où un gabarit par langue dans les ressources.
+        Anglais();
+        var now = new DateTime(2026, 8, 20, 11, 30, 0);
+
+        Assert.Equal("14:00", UsageFormat.Reset(new DateTime(2026, 8, 20, 14, 0, 0), now));
+    }
+
+    [Fact]
     public void Reset_AutreJour_DonneLeJourAbrege()
     {
+        Francais();
         var now = new DateTime(2026, 8, 20, 11, 30, 0);   // jeudi
         Assert.Equal("lun. 00h", UsageFormat.Reset(new DateTime(2026, 8, 24, 0, 0, 0), now));
     }
@@ -115,13 +159,15 @@ public class UsageFormatTests
     }
 
     [Fact]
-    public void Reset_SousCultureAnglaise_GardeLeFormatFrancais()
+    public void Reset_SuitLaLangueChoisieEtNonLaCultureDuThread()
     {
+        Francais();
         var precedente = CultureInfo.CurrentCulture;
         try
         {
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
             var now = new DateTime(2026, 8, 20, 11, 30, 0);
+
             Assert.Equal("14h00", UsageFormat.Reset(new DateTime(2026, 8, 20, 14, 0, 0), now));
             Assert.Equal("lun. 00h", UsageFormat.Reset(new DateTime(2026, 8, 24, 0, 0, 0), now));
         }

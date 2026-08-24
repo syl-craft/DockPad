@@ -35,7 +35,7 @@ public partial class AppDialog : Window
 
         if (isConfirm)
         {
-            BtnPrimary.Content            = "Oui";
+            BtnPrimary.Content            = Loc.T("Common_Yes");
             BtnSecondary.Visibility       = Visibility.Visible;
         }
 
@@ -52,31 +52,31 @@ public partial class AppDialog : Window
 
     // ── API statique ────────────────────────────────────────────────────────────
 
-    public static bool Confirm(string message, string title = "Confirmation", Window? owner = null)
+    public static bool Confirm(string message, string? title = null, Window? owner = null)
     {
-        var dlg = new AppDialog(title, message, AppDialogType.Confirm, isConfirm: true);
+        var dlg = new AppDialog(title ?? Loc.T("Dialog_Title_Confirm"), message, AppDialogType.Confirm, isConfirm: true);
         CenterOn(dlg, owner);
         dlg.ShowDialog();
         return dlg.Result;
     }
 
-    public static void Error(string message, string title = "Erreur", Window? owner = null)
+    public static void Error(string message, string? title = null, Window? owner = null)
     {
-        var dlg = new AppDialog(title, message, AppDialogType.Error, isConfirm: false);
+        var dlg = new AppDialog(title ?? Loc.T("Dialog_Title_Error"), message, AppDialogType.Error, isConfirm: false);
         CenterOn(dlg, owner);
         dlg.ShowDialog();
     }
 
-    public static void Warning(string message, string title = "Attention", Window? owner = null)
+    public static void Warning(string message, string? title = null, Window? owner = null)
     {
-        var dlg = new AppDialog(title, message, AppDialogType.Warning, isConfirm: false);
+        var dlg = new AppDialog(title ?? Loc.T("Dialog_Title_Warning"), message, AppDialogType.Warning, isConfirm: false);
         CenterOn(dlg, owner);
         dlg.ShowDialog();
     }
 
-    public static void Info(string message, string title = "Information", Window? owner = null)
+    public static void Info(string message, string? title = null, Window? owner = null)
     {
-        var dlg = new AppDialog(title, message, AppDialogType.Info, isConfirm: false);
+        var dlg = new AppDialog(title ?? Loc.T("Dialog_Title_Info"), message, AppDialogType.Info, isConfirm: false);
         CenterOn(dlg, owner);
         dlg.ShowDialog();
     }

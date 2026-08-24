@@ -103,6 +103,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// <summary>Précision technique affichée au survol de la notice.</summary>
     public string QuotaNoticeTooltip { get; private set; } = "";
 
+    /// <summary>Infobulle du lien vers la page du fournisseur, vide s'il n'y en a pas.</summary>
+    public string UsageUrlTooltip { get; private set; } = "";
+
     /// <summary>Il y a une notice à montrer.</summary>
     public bool HasQuotaNotice => QuotaNotice.Length > 0;
 
@@ -112,6 +115,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         _running = true;
         _timer ??= CreateTimer();
         _timer.Start();
+
+        // La langue se change depuis les Options, avec la grille et son bandeau visibles derrière :
+        // sans cet abonnement, libellés et nombres restaient dans l'ancienne langue jusqu'au
+        // rafraîchissement suivant, soit jusqu'à une minute plus tard. Voir OnLanguageChanged.
+        Loc.LanguageChanged -= OnLanguageChanged;
+        Loc.LanguageChanged += OnLanguageChanged;
+
         _ = RefreshAsync();
     }
 
@@ -123,6 +133,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     {
         _running = false;
         _timer?.Stop();
+        // L'événement est statique : ne pas s'en détacher retiendrait chaque ViewModel créé pour la
+        // vie du processus. Une fenêtre rangée n'a de toute façon rien à retraduire.
+        Loc.LanguageChanged -= OnLanguageChanged;
         Cancel();
         // Plus personne ne lit : le sablier n'a plus rien à annoncer. Sans ça il resterait allumé
         // jusqu'au prochain affichage, une lecture annulée ne repassant pas par la fin normale.
@@ -203,6 +216,28 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         return timer;
     }
 
+    /// <summary>
+    /// Republie l'état affichable avec les libellés de la nouvelle langue.
+    /// </summary>
+    /// <remarks>
+    /// Aucune relecture des fournisseurs : les instantanés ne changent pas, seuls leur mise en forme
+    /// et leurs libellés le font. Interroger le disque et le réseau pour un changement de libellé
+    /// serait absurde, et ferait clignoter le sablier.
+    /// </remarks>
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        // Rebuild d'abord : les libellés et la mise en forme changent immédiatement, sans attendre
+        // une lecture disque.
+        Rebuild();
+
+        // Puis une relecture, parce que trois chaînes sont rendues par le fournisseur et voyagent
+        // dans l'instantané : la notice de quota, sa précision technique et la note de coût. Elles
+        // resteraient dans l'ancienne langue jusqu'au tic suivant, au milieu de libellés déjà
+        // basculés. Un changement de langue est une action rare et volontaire : une lecture de plus
+        // vaut mieux qu'un bandeau à deux langues.
+        _ = RefreshAsync();
+    }
+
     /// <summary>Annule la lecture en cours, s'il y en a une, sans en désigner de nouvelle.</summary>
     private void Cancel() => Supersede(null);
 
@@ -231,6 +266,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         IsDemo = selected?.IsDemo ?? false;
         UsageUrl = selected?.UsageUrl ?? "";
         QuotaNotice = selected?.QuotaNotice ?? "";
+        UsageUrlTooltip = UsageUrl.Length > 0 ? Loc.F("Usage_OpenPage_Tooltip", UsageUrl) : "";
         QuotaNoticeTooltip = selected?.QuotaNoticeNote ?? "";
 
         SoloName = selected?.Name ?? "";
@@ -280,8 +316,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
     private void BuildGauges(AiUsage? selected)
     {
-        SessionGauge = Gauge("session", selected?.Session);
-        WeekGauge = Gauge("semaine", selected?.Week);
+        SessionGauge = Gauge(Loc.T("Usage_Gauge_Session"), selected?.Session);
+        WeekGauge = Gauge(Loc.T("Usage_Gauge_Week"), selected?.Week);
     }
 
     private UsageGaugeItem Gauge(string label, UsageWindow? window)
@@ -298,10 +334,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             UsedPct = window.UsedPct,
             RemainingPct = window.RemainingPct,
             Reset = UsageFormat.Reset(window.ResetsAt, _clock()),
+            ResetTooltip = window.ResetsAt is null
+                ? ""
+                : Loc.F("Usage_Reset_Tooltip", UsageFormat.Reset(window.ResetsAt, _clock())),
             Color = UsageFormat.GaugeColor(window.UsedPct, _config.AlertThreshold),
             // Le libellé est court par choix, mais « 62 % session » ne dit pas si le chiffre est le
             // consommé ou le restant. L'infobulle lève le doute sans coûter de place.
-            Tooltip = $"{window.UsedPct} % utilisés, {window.RemainingPct} % restants",
+            Tooltip = Loc.F("Usage_Gauge_Tooltip", window.UsedPct, window.RemainingPct),
         };
     }
 
@@ -310,10 +349,10 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         Metrics.Clear();
         if (selected is null) return;
 
-        Metrics.Add(new UsageMetric { Label = "Session", Value = Tokens(selected.SessionTokens) });
-        Metrics.Add(new UsageMetric { Label = "Jour", Value = UsageFormat.Tokens(selected.DayTokens) });
-        Metrics.Add(new UsageMetric { Label = "Mois", Value = UsageFormat.Tokens(selected.MonthTokens) });
-        Metrics.Add(new UsageMetric { Label = "Requêtes", Value = selected.Requests.ToString() });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Session"), Value = Tokens(selected.SessionTokens) });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Day"), Value = UsageFormat.Tokens(selected.DayTokens) });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Month"), Value = UsageFormat.Tokens(selected.MonthTokens) });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Requests"), Value = selected.Requests.ToString(Loc.Current) });
 
         if (_config.ShowCost)
         {
@@ -322,13 +361,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             // mais la façon de facturer est propre à chaque source.
             Metrics.Add(new UsageMetric
             {
-                Label = "Coût est.",
+                Label = Loc.T("Usage_Metric_Cost"),
                 Value = Text(selected.Cost),
                 Tooltip = selected.CostNote,
             });
         }
 
-        Metrics.Add(new UsageMetric { Label = "Modèle", Value = Text(selected.Model) });
+        Metrics.Add(new UsageMetric { Label = Loc.T("Usage_Metric_Model"), Value = Text(selected.Model) });
     }
 
     /// <summary>
@@ -349,6 +388,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                      nameof(SoloAccent), nameof(IsDemo), nameof(SessionGauge), nameof(WeekGauge),
                      nameof(UsageUrl), nameof(HasUsageUrl),
                      nameof(QuotaNotice), nameof(QuotaNoticeTooltip), nameof(HasQuotaNotice),
+                     nameof(UsageUrlTooltip),
                  })
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

@@ -87,7 +87,7 @@ public partial class BrowserConfigDialog : Window
                      ?? (string.IsNullOrEmpty(r.Entry.IconPath) ? r.Entry.ExePath : r.Entry.IconPath)),
             r.Entry.Name,
             Detail(r.Entry),
-            r.Entry.Hidden ? "masqué" : "",
+            r.Entry.Hidden ? Loc.T("Browsers_Badge_Hidden") : "",
             !r.Entry.Hidden,
             r.IsChild)).ToList();
 
@@ -109,7 +109,7 @@ public partial class BrowserConfigDialog : Window
         // (Re)peuple le filtre navigateur en préservant la sélection courante.
         _refreshingRuleFilter = true;
         var selectedFilter = CmbRuleFilter.SelectedValue as string;
-        var options = new List<RuleFilterOption> { new(null, "Tous les navigateurs") };
+        var options = new List<RuleFilterOption> { new(null, Loc.T("Browsers_Rules_FilterAll")) };
         options.AddRange(BrowserOptions());
         CmbRuleFilter.ItemsSource = options;
         CmbRuleFilter.SelectedValue = selectedFilter is not null && options.Any(o => o.Id == selectedFilter)
@@ -131,8 +131,8 @@ public partial class BrowserConfigDialog : Window
         LstRules.ItemsSource = filtered;
         TxtRulesEmpty.Visibility = _config.Rules.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         TxtRulesCount.Text = filtered.Count == _config.Rules.Count
-            ? $"{_config.Rules.Count} règle(s)"
-            : $"{filtered.Count} / {_config.Rules.Count} règle(s)";
+            ? Loc.F("Browsers_RuleCount", _config.Rules.Count)
+            : Loc.F("Browsers_RuleCountFiltered", _config.Rules.Count, filtered.Count);
     }
 
     /// <summary>
@@ -166,14 +166,9 @@ public partial class BrowserConfigDialog : Window
         var status = BrowserRegistrationService.GetStatus();
         (TxtRegStatus.Text, BtnRegister.IsEnabled) = status switch
         {
-            BrowserRegistrationStatus.Default =>
-                ("✔ DockPad est le navigateur par défaut : les URLs cliquées affichent la popup de choix.", false),
-            BrowserRegistrationStatus.Registered =>
-                ("DockPad est enregistré comme navigateur. Pour intercepter les URLs, choisis-le comme " +
-                 "navigateur par défaut dans les paramètres Windows (bouton ci-dessous).", false),
-            _ =>
-                ("DockPad n'est pas enregistré comme navigateur. Enregistre-le puis choisis-le comme " +
-                 "navigateur par défaut dans les paramètres Windows.", true),
+            BrowserRegistrationStatus.Default => (Loc.T("Browsers_State_Default"), false),
+            BrowserRegistrationStatus.Registered => (Loc.T("Browsers_State_Registered"), false),
+            _ => (Loc.T("Browsers_State_NotRegistered"), true),
         };
     }
 
@@ -196,7 +191,7 @@ public partial class BrowserConfigDialog : Window
         catch (Exception ex)
         {
             Services.LogService.Error(ex, "Enregistrement de DockPad comme navigateur (HKCU)");
-            AppDialog.Error($"Impossible d'enregistrer DockPad comme navigateur :\n{ex.Message}", owner: this);
+            AppDialog.Error(Loc.F("Browsers_RegisterError", ex.Message), owner: this);
             return;
         }
         RefreshRegistrationStatus();
@@ -220,13 +215,11 @@ public partial class BrowserConfigDialog : Window
         TxtExe.IsEnabled = BtnBrowseExe.IsEnabled = !isProfile;
         TxtProfileInfo.Visibility = isProfile ? Visibility.Visible : Visibility.Collapsed;
         if (isProfile)
-            TxtProfileInfo.Text = $"Profil « {b!.ProfileDirectory} » de {ParentName(b)} — lancé avec " +
-                                  $"--profile-directory=\"{b.ProfileDirectory}\". " +
-                                  "Le chemin de l'exécutable suit celui du navigateur.";
+            TxtProfileInfo.Text = Loc.F("Browsers_ProfileHint", b!.ProfileDirectory, ParentName(b));
     }
 
     private string ParentName(BrowserEntry child) =>
-        _config.Browsers.FirstOrDefault(b => b.Id == child.ParentId)?.Name ?? "son navigateur";
+        _config.Browsers.FirstOrDefault(b => b.Id == child.ParentId)?.Name ?? Loc.T("Browsers_ParentFallback");
 
     private void Redetect_Click(object sender, RoutedEventArgs e)
     {
@@ -261,12 +254,14 @@ public partial class BrowserConfigDialog : Window
             RefreshRules();
         }
 
+        // La conjonction (« et » / « and ») et l'accord du participe appartiennent a la langue :
+        // le ListFormatter de SmartFormat pose la premiere, le nombre total le second.
         var parts = new List<string>();
-        if (addedBrowsers > 0) parts.Add($"{addedBrowsers} navigateur(s)");
-        if (addedProfiles > 0) parts.Add($"{addedProfiles} profil(s)");
+        if (addedBrowsers > 0) parts.Add(Loc.F("Browsers_DetectedBrowsers", addedBrowsers));
+        if (addedProfiles > 0) parts.Add(Loc.F("Browsers_DetectedProfiles", addedProfiles));
         AppDialog.Info(parts.Count > 0
-            ? string.Join(" et ", parts) + " ajouté(s)."
-            : "Aucun nouveau navigateur ni profil détecté.", owner: this);
+            ? Loc.F("Browsers_DetectedAdded", addedBrowsers + addedProfiles, parts)
+            : Loc.T("Browsers_DetectedNothing"), owner: this);
     }
 
     private void Up_Click(object sender, RoutedEventArgs e)   => MoveSelected(-1);
@@ -301,9 +296,10 @@ public partial class BrowserConfigDialog : Window
         if (b is null) return;
 
         var children = BrowserRowLayout.Children(_config, b.Id);
-        var subject = children.Count > 0 ? $"« {b.Name} » et ses {children.Count} profil(s)" : $"« {b.Name} »";
-        if (!AppDialog.Confirm($"Supprimer {subject} ?\nLes règles de domaine associées seront supprimées aussi.",
-                               owner: this))
+        var subject = children.Count > 0
+            ? Loc.F("Browsers_SubjectWithProfiles", b.Name, children.Count)
+            : Loc.F("Browsers_SubjectAlone", b.Name);
+        if (!AppDialog.Confirm(Loc.F("Browsers_ConfirmDelete", subject), owner: this))
             return;
 
         var ids = children.Select(c => c.Id).Append(b.Id).ToHashSet();
@@ -317,7 +313,10 @@ public partial class BrowserConfigDialog : Window
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
-        var entry = new BrowserEntry { Name = "Nouveau navigateur" };
+        // Le nom par defaut est traduit a la creation, puis devient de la donnee utilisateur dans
+        // browsers.json : il ne suit pas les bascules de langue ensuite, comme tout nom
+        // personnalisable.
+        var entry = new BrowserEntry { Name = Loc.T("Browsers_NewBrowser") };
         entry.Order = _config.Browsers.Count == 0 ? 0 : _config.Browsers.Max(b => b.Order) + 1;
         _config.Browsers.Add(entry);
         Save();
@@ -328,7 +327,7 @@ public partial class BrowserConfigDialog : Window
 
     private void BrowseExe_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new OpenFileDialog { Filter = "Exécutables (*.exe)|*.exe", CheckFileExists = true };
+        var dlg = new OpenFileDialog { Filter = Loc.T("Browsers_Pick_Exe_Filter"), CheckFileExists = true };
         if (dlg.ShowDialog(this) == true) TxtExe.Text = dlg.FileName;
     }
 

@@ -1,4 +1,5 @@
 using DockPad.Services;
+using DockPad.Services.Localization;
 
 namespace DockPad.Tests;
 
@@ -12,7 +13,7 @@ public class TileLockStateTests
 
         Assert.False(state.IsUnlocked);
         Assert.Equal("🔒", state.Glyph);
-        Assert.Contains("Déverrouiller", state.Tooltip);
+        Assert.Equal(Loc.T("Quick_TileLock_Locked"), state.Tooltip);
     }
 
     [Fact]
@@ -24,7 +25,7 @@ public class TileLockStateTests
 
         Assert.True(state.IsUnlocked);
         Assert.Equal("✓", state.Glyph);
-        Assert.Contains("Terminer", state.Tooltip);
+        Assert.Equal(Loc.T("Quick_TileLock_Unlocked"), state.Tooltip);
     }
 
     [Fact]

@@ -70,6 +70,20 @@ internal static class Program
         var app = new App();
         app.InitializeComponent();
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        // Langue de la capture : variable d'environnement plutot qu'un argument, pour ne pas
+        // deplacer les arguments existants des cibles.
+        var shotLang = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_LANG");
+        if (!string.IsNullOrWhiteSpace(shotLang))
+        {
+            // Loc.Parse et non GetCultureInfo : une etiquette inconnue vaut « automatique » au lieu
+            // de lever une CultureNotFoundException au milieu d'une capture.
+            DockPad.Services.Localization.Loc.SetCulture(
+                DockPad.Services.Localization.Loc.Parse(shotLang));
+            // Sans ca, Window.Language reste au defaut et les StringFormat de liaison rendent en
+            // en-US : OnStartup, qui s'en charge normalement, n'est jamais appele ici.
+            DockPad.App.ApplyWpfLanguage();
+        }
+
 
         // Le bandeau seul est rendu hors écran : une fenêtre à SizeToContent mesure avant que les
         // données arrivent et n'en reprend pas la hauteur, ce qui rognait la capture. Measure et

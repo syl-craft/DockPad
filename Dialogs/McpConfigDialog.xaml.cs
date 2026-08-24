@@ -59,7 +59,7 @@ public partial class McpConfigDialog : Window
     }
 
     private void UpdateLogCount() =>
-        TxtLogCount.Text = $"{McpLogService.Entries.Count} action(s) MCP cette session";
+        TxtLogCount.Text = Loc.F("Mcp_LogCount", McpLogService.Entries.Count);
 
     private void ClearLog_Click(object sender, RoutedEventArgs e) => McpLogService.Clear();
 
@@ -77,10 +77,6 @@ public partial class McpConfigDialog : Window
     private static void CopyWithFeedback(string text, System.Windows.Controls.Button btn)
     {
         try { Clipboard.SetText(text); } catch { return; }
-        var original = btn.Content;
-        btn.Content = "Copié ✓";
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
-        timer.Tick += (_, _) => { btn.Content = original; timer.Stop(); };
-        timer.Start();
+        ButtonFlash.Flash(btn, Loc.T("Common_Copied"), TimeSpan.FromSeconds(1.5));
     }
 }

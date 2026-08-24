@@ -9,6 +9,7 @@ L'app démarre sans droits admin — l'élévation est demandée à la demande v
 - **Registre**  lecture/écriture via `Microsoft.Win32.Registry`
 - **Icônes**  `System.Drawing.Common` (NuGet) pour extraire les icônes `.exe`/`.dll`
 - **JSON**  `System.Text.Json` (built-in) pour la config des raccourcis rapides
+- **i18n**  RESX + assemblys satellites, et `SmartFormat` (NuGet, cœur seul — pas le bundle `SmartFormat.NET`, qui tire `Newtonsoft.Json`) pour le pluriel CLDR et les listes localisées
 - **SQLite**  `Microsoft.Data.Sqlite` (NuGet, version alignée sur net8.0) — lecture seule de la base de Copilot CLI, seule source de consommation qui ne soit pas un fichier texte
 - **WMI**  `System.Management` (NuGet) pour lire la ligne de commande des processus (`SwitchToProcess`)
 - **Logs**  Serilog + Serilog.Sinks.File — logger central `LogService`
@@ -49,6 +50,14 @@ Models/
     UsageDisplayItems.cs                  Onglet, métrique et jauge du bandeau (modèles d'affichage)
     TerminalConfig.cs                    Config d'un terminal (exePath, startingDirectory, runCommand…)
     TerminalInfo.cs                      Informations d'un terminal détecté
+
+Services/Localization/
+    Loc.cs                                Seule porte d'accès aux chaînes traduites (C# pur, sans WPF)
+    LocExtension.cs                       Extension de balisage {loc:T Clé} + ButtonFlash (feedback sans casser la liaison)
+
+Resources/
+    Strings.resx                          Anglais, langue neutre
+    Strings.fr.resx                       Français, satellite fr\DockPad.resources.dll
 
 Services/
     AppInfo.cs                            Infos application (VersionText affiché dans les footers)
@@ -267,6 +276,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Enregistrement géré par `QuickAccessWindow`
 
 ### Paramètres (SettingsDialog)
+- **Langue** en tête de fenêtre : `Automatique (Windows)` / `Français` / `English`. Stockée dans `HKCU\Software\DockPad\Settings\Language`, `""` = automatique — même convention que `TriggerFirst`/`TriggerSecond`. Application immédiate, sans redémarrage : la fenêtre se retraduit sous les yeux
 - Configuration du raccourci clavier global
 - **Raccourcis des tuiles** : choix des modificateurs gauche/droite de l'overlay (Auto, Ctrl, Alt, Shift) avec validation (modificateurs différents)
 - **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
@@ -298,6 +308,140 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
   - **Attention** : les boutons carrés (34px) doivent avoir `Padding="0"` — le `Padding 16,8` hérité du style `PrimaryButton` ne laisse que 2px au glyphe (boutons invisibles)
 - Icônes chargées via `LoadIcon` (même pattern dans `BrowserPickerWindow` et `BrowserConfigDialog`) : extraction `.exe`/`.dll` via `System.Drawing.Icon.ExtractAssociatedIcon` puis `DeleteObject` sur le handle GDI (anti-fuite mémoire) ; `IconStoreService.ParseIconRef` découpe `chemin[,index]` et `Icon.ExtractIcon` respecte l'index (négatif = ID de ressource)
 - Config stockée dans `%APPDATA%\DockPad\browsers.json`, incluse dans **💾 Sauvegarder la configuration**
+
+### Internationalisation (français / anglais)
+
+Les chaînes vivent dans deux RESX : `Resources/Strings.resx` en **anglais neutre** et
+`Resources/Strings.fr.resx` en satellite. L'anglais est le neutre parce que le repli de
+`ResourceManager` remonte à la langue neutre — c'est ce que verra un poste japonais, il doit donc
+être une vraie langue et pas un dépotoir de clés.
+
+- **Une seule porte** : `Services/Localization/Loc.cs`, C# pur, **aucune référence WPF**. C'est ce
+  qui permet de traduire `UsageViewModel`, les fournisseurs de consommation et les services d'action
+  tout en les gardant testables sans instance `Application`. `Loc.T("Clé")` pour un texte,
+  `Loc.F("Clé", args)` pour un gabarit
+- **Convention de clés** `Zone_Element` en `PascalCase`. Jamais de clé dérivée du texte anglais : le
+  jour où le texte change, la clé mentirait
+- **La bascule à chaud tient à une ligne** : `SetCulture` notifie `"Item[]"`, ce qui invalide toutes
+  les liaisons d'indexeur de l'application d'un coup. `{loc:T Clé}` ne fabrique rien d'autre que
+  cette liaison — aucun abonnement à gérer par fenêtre, et une fenêtre ajoutée plus tard en
+  bénéficie sans rien brancher
+- **Quatre affectations de culture, pas deux** : `CurrentUICulture` et `CurrentCulture` pour le
+  thread courant, `DefaultThreadCurrentCulture`/`DefaultThreadCurrentUICulture` pour ceux qui
+  n'existent pas encore — sans elles les `Task.Run` des fournisseurs formatent dans la culture
+  d'origine sous une interface déjà traduite
+- **« Automatique » lit la langue capturée au chargement du type**, pas `CurrentUICulture` :
+  `SetCulture` écrit dedans, donc la lire aurait figé « automatique » sur la dernière langue choisie
+- **WPF ignore `CurrentCulture` pour les `StringFormat` de liaison** : il lit
+  `FrameworkElement.Language`. `App.ApplyWpfLanguage` la pose au `Loaded` de **chaque** fenêtre via
+  un gestionnaire de classe, et non par un `OverrideMetadata` — celui-ci ne s'appelle qu'une fois et
+  figerait la langue du démarrage, si bien qu'une fenêtre ouverte après une bascule hériterait de
+  l'ancienne
+- **Un `StringFormat` ne peut pas porter un texte traduit** : les deux qui en portaient
+  (`Remise à zéro à {0}`, `Ouvrir {0}`) sont passés par le ViewModel (`ResetTooltip`,
+  `UsageUrlTooltip`), conformément à « aucun calcul dans le XAML »
+- **Assigner `Content` casse la liaison `{loc:T}`** : c'est une valeur locale, qui la remplace
+  définitivement. Les feedbacks « Copié ✓ » passent par `ButtonFlash`, qui mémorise la liaison et la
+  repose au lieu de recopier une chaîne — sinon le bouton devient sourd aux changements de langue
+  pour le reste de la session. `ButtonFlash` tient un registre à clés faibles des feedbacks en
+  cours : sans lui, un **second clic** pendant l'animation lisait une liaison déjà effacée par le
+  premier et mémorisait « Copié ✓ » comme texte d'origine, ce qui bloquait le bouton sur le message
+  pour de bon. Corollaire : ne posez pas de `{loc:T}` sur une propriété que le code affecte aussi —
+  le verrou des tuiles n'en a pas sur son `ToolTip`, `ApplyTileLock` l'écraserait dès l'init
+- **Ce qui est construit en code ne se retraduit pas seul.** `QuickAccessWindow` et `UsageViewModel`
+  s'abonnent donc à `LanguageChanged` : badge de raccourci, infobulles de tuiles, libellés de type,
+  menus contextuels, libellés et nombres du bandeau. Le piège : la langue s'applique **au changement
+  de liste**, pas au bouton Sauvegarder — annuler les Options après avoir changé de langue laissait
+  sinon la grille dans l'ancienne, le chemin d'annulation ne rafraîchissant rien
+- **Trois chaînes sont rendues par le fournisseur** et voyagent dans l'instantané : notice de quota,
+  sa précision technique, note de coût. `UsageViewModel.OnLanguageChanged` fait donc un `Rebuild`
+  (libellés immédiats) **puis** une relecture — sinon elles restaient dans l'ancienne langue jusqu'au
+  tic suivant, au milieu de libellés déjà basculés
+- **Les libellés construits en code ne se retraduisent pas seuls** : les listes de `SettingsDialog`
+  (modificateurs, touches) et ses avertissements sont refaits sur `Loc.LanguageChanged`, sélection
+  conservée
+
+#### Pluriel et listes (SmartFormat)
+RESX n'a aucun moteur de pluriel et le BCL .NET n'expose pas les catégories CLDR. `SmartFormat`
+les apporte, et ses règles sont exactes pour les deux langues — vérifié dans son source :
+
+```csharp
+{ "en", DualOneOther },        // n == 1        → « 0 rules »
+{ "fr", DualFromZeroToTwo },   // 0 <= n < 2    → « 0 règle »
+```
+
+Les deux langues n'ont que deux formes mais **ne basculent pas au même endroit** : les deux
+raccourcis qu'on écrit d'instinct sont faux tous les deux (`n > 1` donne « 0 rule », `n == 1` donne
+« 0 règles »). La règle appartient à la langue, jamais au site d'appel. Gabarit dans la valeur :
+`{0} {0:plural:rule|rules}`.
+
+Son `ListFormatter` porte la conjonction localisée : `{1:list:{}|, | and }` remplace le
+`string.Join(" et ", …)` qui devenait faux en anglais.
+
+#### Ce qui n'est pas traduit, et pourquoi
+- **Le journal** (`LogService.*`) : un log qui change de langue selon le poste n'est plus grep-able,
+  et son lecteur est le développeur
+- **Les causes d'indisponibilité du quota** — « HTTP 429 TooManyRequests », « access token missing or
+  expired », « unknown response shape (N bytes) » : diagnostics, donc **en anglais et jamais
+  traduits**, comme les noms de type d'exception qui les côtoient. Elles partent au journal, où une
+  langue stable est ce qui rend une trace comparable d'un poste à l'autre, et s'affichent en
+  infobulle derrière une phrase, elle, traduite
+- **Les messages d'exception** (`throw new …`) : mêmes raisons, et l'utilisateur ne les voit que
+  derrière une phrase déjà traduite qui porte le sens
+- **Les messages MCP** : leur lecteur est un modèle, pas un humain. L'onglet Journal de la fenêtre
+  MCP affiche le message **brut** du service — il rapporte ce qui a été renvoyé à Claude, il ne doit
+  pas le réécrire
+- **Les noms d'outils** (`Claude Code`, `Codex`…) et **les noms stockés** dans `usage.json` /
+  `browsers.json` : un nom persisté et personnalisable ne peut pas suivre la langue sans écraser la
+  personnalisation
+- **Les noms de langue** dans le sélecteur : une langue s'écrit dans sa propre langue, c'est ce qui
+  permet de la retrouver quand l'interface est dans une langue qu'on ne lit pas
+- **Les noms de touches non nommées** (lettres, F1-F12, pavé numérique, flèches) : identiques
+  partout, les mettre dans le magasin serait du bruit. Les dix nommées passent par
+  `HotkeyService.Display`
+
+#### Nombres, heures, registre
+- `UsageFormat` n'épingle plus `fr-FR` : il lit `Loc.Current` — « 12,4k » / « 12.4k »
+- **Les gabarits d'heure et les suffixes sont des clés** : le `h` de « 14h00 » et le « Md » des
+  milliards sont des conventions françaises écrites en dur, qu'aucune `CultureInfo` ne corrige.
+  L'anglais dit « 14:00 » et « B »
+- `ClaudePricing.Format` **reste** en `InvariantCulture` : le montant est en dollars parce que la
+  source facture en dollars
+- **Prédéfinis** : la clé de registre est un identifiant ASCII stable, donc changer de langue ne crée
+  aucun doublon. `PresetService.CompareStatus` compare **aussi le nom affiché** — sans ça une entrée
+  installée dans l'autre langue s'annonçait « déjà installée » et le bouton refusait de la
+  réappliquer, rendant la traduction du menu contextuel inatteignable. La mise à jour reste
+  manuelle, par le bouton
+- La description montrée par Windows dans « Applications par défaut » est écrite dans la langue du
+  moment de l'enregistrement ; se réenregistrer la met à jour
+
+#### Tests (sans WPF)
+`Loc` (résolution, repli, threads d'arrière-plan, notification d'indexeur), pluriel aux trois valeurs
+qui séparent les deux langues, **parité des clés**, valeurs non vides, **placeholders identiques**
+entre langues, **parsabilité de tous les gabarits** — ce dernier ramène à la suite de tests le mode
+de panne qu'on introduit en mettant de la syntaxe dans les valeurs.
+
+Quatre gardes de cohérence, toutes vérifiées par mutation :
+
+- **aucun texte littéral dans un XAML** (`XamlLiteralGuardTests`) ;
+- **aucun texte français d'interface en dur dans le C#** (`FrenchLiteralGuardTests`). Le critère est
+  la présence d'un **mot-outil français**, pas d'un accent : le balayage manuel de la migration
+  cherchait des accents et a laissé passer « Tous les navigateurs », « La page est pleine »,
+  « Nouveau navigateur » et « Chemin du dossier * » — quatre libellés qui n'en portent aucun, dont un
+  trouvé par l'utilisateur après la revue. Sont exclus : les appels à `LogService`, les messages
+  d'exception (diagnostics, et lus dans le journal) et les fichiers qui parlent au serveur MCP ;
+- **toute clé citée existe** — `Loc.T` rend `[Clé]` au lieu de lever, donc une faute de frappe ne se
+  verrait que sur l'écran concerné ;
+- **aucune clé du magasin n'est orpheline** — la parité vérifie la symétrie des deux langues, pas
+  leur utilité : deux doublons morts s'y étaient glissés avec la même valeur qu'une clé existante.
+
+Le scanner de clés lit les **arguments** de chaque appel, pas seulement la forme
+`Loc.T("Clé")` : les clés voyagent aussi dans un ternaire — `Loc.T(cond ? "A" : "B")` — et un
+détecteur qui ne verrait que la forme directe déclarerait ces clés orphelines.
+
+> **Un test de localisation doit poser la langue explicitement.** Sinon il hérite de celle laissée
+> par une autre classe et passe ou casse selon l'ordonnancement. La parallélisation de xUnit est
+> désactivée pour cette raison (et pour l'état statique du journal MCP).
 
 ### Bandeau Usage IA
 Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWindow` : toolbar / grille / **bandeau** / pagination.
@@ -584,6 +728,19 @@ UsageShot.exe window-unlocked ...                               # verrou des tui
 - **La fixture n'expose que deux fournisseurs visibles**, et un seul pour la cible `panel`. Quatre onglets écrasaient les jauges à la largeur réelle ; et le cas par défaut n'a de toute façon qu'un fournisseur
 
 > **La cible `window` ne doit jamais appeler `Show()`.** Affichée dans un hôte qui n'est pas une vraie application, `QuickAccessWindow` déclenche une boucle qui affame le dispatcher : le processus tourne à 80 % d'un cœur et rien ne s'exécute plus — ni `ContentRendered`, ni un `DispatcherTimer` posé après `Show`. Reproduit y compris à un commit où cette cible produisait encore une image correcte, donc ce n'est pas la mise en page. Le contournement est de **mesurer et arranger son contenu hors écran**, comme la cible `panel` : l'instanciation de la fenêtre est évitée et le rendu est immédiat.
+
+`tools/DialogShot <fenêtre> <fr|en> <cheminPng>` — n'importe quelle fenêtre, dans une langue donnée :
+
+```bash
+dotnet build tools/DialogShot
+DialogShot.exe settings en out.png      # Options en anglais
+DialogShot.exe ctxmenu fr out.png       # gestionnaire de menu contextuel
+```
+
+Rendu **hors écran** (`Measure`/`Arrange`, jamais `Show()`), profil de fixture via
+`DOCKPAD_PROFILE_DIR`. Les outils plus anciens (`UsageShot`, `BrowserShot`) acceptent la variable
+d'environnement **`DOCKPAD_SHOT_LANG`** — une variable plutôt qu'un argument, pour ne pas déplacer
+les arguments de leurs cibles.
 
 `tools/McpShot <tabIndex> <cheminPng>` — fenêtre Serveur MCP, avec des entrées de journal de démonstration et les chemins `C:\DockPad` dans les commandes affichées :
 

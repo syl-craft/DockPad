@@ -1,0 +1,1029 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Browsers_Add_Tip" xml:space="preserve">
+    <value>Ajouter un navigateur</value>
+  </data>
+  <data name="Browsers_AppDescription" xml:space="preserve">
+    <value>Sélecteur de navigateur DockPad</value>
+  </data>
+  <data name="Browsers_Args" xml:space="preserve">
+    <value>Arguments :</value>
+  </data>
+  <data name="Browsers_Args_Tip" xml:space="preserve">
+    <value>Ex : --profile-directory="Profile 1", --incognito, -inprivate. %1 = URL.</value>
+  </data>
+  <data name="Browsers_AutoOpen" xml:space="preserve">
+    <value>Ouverture automatique :</value>
+  </data>
+  <data name="Browsers_AutoOpen_Hint" xml:space="preserve">
+    <value>secondes avant d'ouvrir avec le navigateur n°1 (0 = désactivé)</value>
+  </data>
+  <data name="Browsers_Badge_Hidden" xml:space="preserve">
+    <value>masqué</value>
+  </data>
+  <data name="Browsers_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer {0} ?
+Les règles de domaine associées seront supprimées aussi.</value>
+  </data>
+  <data name="Browsers_DetectedAdded" xml:space="preserve">
+    <value>{1:list:{}|, | et } ajouté{0:plural:|s}.</value>
+  </data>
+  <data name="Browsers_DetectedBrowsers" xml:space="preserve">
+    <value>{0} {0:plural:navigateur|navigateurs}</value>
+  </data>
+  <data name="Browsers_DetectedNothing" xml:space="preserve">
+    <value>Aucun nouveau navigateur ni profil détecté.</value>
+  </data>
+  <data name="Browsers_DetectedProfiles" xml:space="preserve">
+    <value>{0} {0:plural:profil|profils}</value>
+  </data>
+  <data name="Browsers_Exe" xml:space="preserve">
+    <value>Exécutable :</value>
+  </data>
+  <data name="Browsers_Name" xml:space="preserve">
+    <value>Nom :</value>
+  </data>
+  <data name="Browsers_NewBrowser" xml:space="preserve">
+    <value>Nouveau navigateur</value>
+  </data>
+  <data name="Browsers_ParentFallback" xml:space="preserve">
+    <value>son navigateur</value>
+  </data>
+  <data name="Browsers_Pick_Exe_Filter" xml:space="preserve">
+    <value>Exécutables (*.exe)|*.exe</value>
+  </data>
+  <data name="Browsers_PopupList" xml:space="preserve">
+    <value>Navigateurs de la popup</value>
+  </data>
+  <data name="Browsers_ProfileHint" xml:space="preserve">
+    <value>Profil « {0} » de {1} — lancé avec --profile-directory="{0}". Le chemin de l'exécutable suit celui du navigateur.</value>
+  </data>
+  <data name="Browsers_Redetect" xml:space="preserve">
+    <value>↻ Redétecter</value>
+  </data>
+  <data name="Browsers_Redetect_Tip" xml:space="preserve">
+    <value>Ajoute les navigateurs nouvellement installés et leurs profils (n'écrase rien)</value>
+  </data>
+  <data name="Browsers_Register" xml:space="preserve">
+    <value>S'enregistrer comme navigateur</value>
+  </data>
+  <data name="Browsers_RegisterError" xml:space="preserve">
+    <value>Impossible d'enregistrer DockPad comme navigateur :
+{0}</value>
+  </data>
+  <data name="Browsers_RuleCount" xml:space="preserve">
+    <value>{0} {0:plural:règle|règles}</value>
+  </data>
+  <data name="Browsers_RuleCountFiltered" xml:space="preserve">
+    <value>{1} / {0} {0:plural:règle|règles}</value>
+  </data>
+  <data name="Browsers_Rules_Browser_Tip" xml:space="preserve">
+    <value>Navigateur qui ouvrira ce domaine</value>
+  </data>
+  <data name="Browsers_Rules_Delete_Tip" xml:space="preserve">
+    <value>Supprimer la règle</value>
+  </data>
+  <data name="Browsers_Rules_Empty" xml:space="preserve">
+    <value>Aucune règle — cochez « Toujours pour ce domaine » dans la popup pour en créer une.</value>
+  </data>
+  <data name="Browsers_Rules_FilterAll" xml:space="preserve">
+    <value>Tous les navigateurs</value>
+  </data>
+  <data name="Browsers_Rules_Intro" xml:space="preserve">
+    <value>Ces domaines s'ouvrent directement dans le navigateur associé, sans popup. Les règles se créent via « Toujours pour ce domaine » dans la popup.</value>
+  </data>
+  <data name="Browsers_Rules_Search_Tip" xml:space="preserve">
+    <value>Rechercher dans les noms de domaine</value>
+  </data>
+  <data name="Browsers_State_Default" xml:space="preserve">
+    <value>✔ DockPad est le navigateur par défaut : les URLs cliquées affichent la popup de choix.</value>
+  </data>
+  <data name="Browsers_State_NotRegistered" xml:space="preserve">
+    <value>DockPad n'est pas enregistré comme navigateur. Enregistre-le puis choisis-le comme navigateur par défaut dans les paramètres Windows.</value>
+  </data>
+  <data name="Browsers_State_Registered" xml:space="preserve">
+    <value>DockPad est enregistré comme navigateur. Pour intercepter les URLs, choisis-le comme navigateur par défaut dans les paramètres Windows (bouton ci-dessous).</value>
+  </data>
+  <data name="Browsers_SubjectAlone" xml:space="preserve">
+    <value>« {0} »</value>
+  </data>
+  <data name="Browsers_SubjectWithProfiles" xml:space="preserve">
+    <value>« {0} » et ses {1} {1:plural:profil|profils}</value>
+  </data>
+  <data name="Browsers_Tab_Browsers" xml:space="preserve">
+    <value>Navigateurs</value>
+  </data>
+  <data name="Browsers_Tab_Rules" xml:space="preserve">
+    <value>Règles de domaine</value>
+  </data>
+  <data name="Browsers_Title" xml:space="preserve">
+    <value>Navigateurs</value>
+  </data>
+  <data name="Browsers_UrlInterception" xml:space="preserve">
+    <value>Interception des URLs</value>
+  </data>
+  <data name="Browsers_Visible_Tip" xml:space="preserve">
+    <value>Décocher pour ne plus proposer cette entrée dans la popup</value>
+  </data>
+  <data name="Browsers_WindowsSettings" xml:space="preserve">
+    <value>Paramètres Windows…</value>
+  </data>
+  <data name="Browsers_WindowsSettings_Tip" xml:space="preserve">
+    <value>Choisir DockPad comme navigateur par défaut (Applications par défaut)</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+    <value>+ Ajouter</value>
+  </data>
+  <data name="Common_Apply" xml:space="preserve">
+    <value>✔ Appliquer</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="Common_Clear" xml:space="preserve">
+    <value>Effacer</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Fermer</value>
+  </data>
+  <data name="Common_Copied" xml:space="preserve">
+    <value>Copié ✓</value>
+  </data>
+  <data name="Common_Copy" xml:space="preserve">
+    <value>⧉ Copier</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="Common_Duplicate" xml:space="preserve">
+    <value>Dupliquer</value>
+  </data>
+  <data name="Common_Edit" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
+  <data name="Common_Elevate" xml:space="preserve">
+    <value>🛡 Élever</value>
+  </data>
+  <data name="Common_MoveDown" xml:space="preserve">
+    <value>Descendre</value>
+  </data>
+  <data name="Common_MoveUp" xml:space="preserve">
+    <value>Monter</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>Non</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Ready" xml:space="preserve">
+    <value>Prêt.</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>↻ Actualiser</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>Oui</value>
+  </data>
+  <data name="CtxMenu_Added" xml:space="preserve">
+    <value>Raccourci « {0} » ajouté avec succès.</value>
+  </data>
+  <data name="CtxMenu_AdminBanner" xml:space="preserve">
+    <value>Droits administrateur requis pour modifier les entrées. Cliquez sur « Élever » pour relancer en admin.</value>
+  </data>
+  <data name="CtxMenu_AlreadyExists" xml:space="preserve">
+    <value>Une entrée '{0}' existe déjà pour cette cible.
+Voulez-vous la remplacer ?</value>
+  </data>
+  <data name="CtxMenu_Col_AppliesTo" xml:space="preserve">
+    <value>S'applique à</value>
+  </data>
+  <data name="CtxMenu_Col_Command" xml:space="preserve">
+    <value>Commande</value>
+  </data>
+  <data name="CtxMenu_Col_DisplayName" xml:space="preserve">
+    <value>Nom affiché</value>
+  </data>
+  <data name="CtxMenu_Col_Icon" xml:space="preserve">
+    <value>Icône</value>
+  </data>
+  <data name="CtxMenu_Col_RegistryKey" xml:space="preserve">
+    <value>Clé de registre</value>
+  </data>
+  <data name="CtxMenu_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer le raccourci « {0} » ({1}) ?
+
+Cette action est irréversible.</value>
+  </data>
+  <data name="CtxMenu_DeleteError" xml:space="preserve">
+    <value>Erreur lors de la suppression :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Deleted" xml:space="preserve">
+    <value>Raccourci « {0} » supprimé.</value>
+  </data>
+  <data name="CtxMenu_Duplicated" xml:space="preserve">
+    <value>Raccourci « {0} » dupliqué avec succès.</value>
+  </data>
+  <data name="CtxMenu_ElevationCancelled" xml:space="preserve">
+    <value>Élévation annulée.</value>
+  </data>
+  <data name="CtxMenu_Empty" xml:space="preserve">
+    <value>Aucun raccourci trouvé.</value>
+  </data>
+  <data name="CtxMenu_Filter" xml:space="preserve">
+    <value>Afficher : </value>
+  </data>
+  <data name="CtxMenu_Filter_All" xml:space="preserve">
+    <value>Tout</value>
+  </data>
+  <data name="CtxMenu_Filter_Background" xml:space="preserve">
+    <value>Fond de dossier</value>
+  </data>
+  <data name="CtxMenu_Filter_Files" xml:space="preserve">
+    <value>Fichiers</value>
+  </data>
+  <data name="CtxMenu_Filter_Folders" xml:space="preserve">
+    <value>Dossiers</value>
+  </data>
+  <data name="CtxMenu_FoundTotal" xml:space="preserve">
+    <value>{0} {0:plural:raccourci|raccourcis} trouvé{0:plural:|s} au total.</value>
+  </data>
+  <data name="CtxMenu_Heading" xml:space="preserve">
+    <value>Gestionnaire de menu contextuel</value>
+  </data>
+  <data name="CtxMenu_LoadError" xml:space="preserve">
+    <value>Erreur de chargement : {0}</value>
+  </data>
+  <data name="CtxMenu_ReadRegistryError" xml:space="preserve">
+    <value>Impossible de lire le registre :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Refresh" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="CtxMenu_Subtitle" xml:space="preserve">
+    <value>Ajoutez, modifiez et supprimez des raccourcis dans le menu clic droit de l'Explorateur Windows.</value>
+  </data>
+  <data name="CtxMenu_Target_Drives" xml:space="preserve">
+    <value>Lecteurs</value>
+  </data>
+  <data name="CtxMenu_Title" xml:space="preserve">
+    <value>Gestionnaire de menu contextuel Windows</value>
+  </data>
+  <data name="CtxMenu_Title_ConfirmDelete" xml:space="preserve">
+    <value>Confirmer la suppression</value>
+  </data>
+  <data name="CtxMenu_Title_Conflict" xml:space="preserve">
+    <value>Conflit</value>
+  </data>
+  <data name="CtxMenu_UpdateError" xml:space="preserve">
+    <value>Erreur lors de la modification :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Updated" xml:space="preserve">
+    <value>Raccourci « {0} » mis à jour.</value>
+  </data>
+  <data name="CtxMenu_WriteRegistryError" xml:space="preserve">
+    <value>Impossible d'écrire dans le registre :
+{0}</value>
+  </data>
+  <data name="Dialog_Title_Confirm" xml:space="preserve">
+    <value>Confirmation</value>
+  </data>
+  <data name="Dialog_Title_Error" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="Dialog_Title_Info" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Dialog_Title_Warning" xml:space="preserve">
+    <value>Attention</value>
+  </data>
+  <data name="Entry_AppliesTo" xml:space="preserve">
+    <value>S'applique à</value>
+  </data>
+  <data name="Entry_Command" xml:space="preserve">
+    <value>Commande *</value>
+  </data>
+  <data name="Entry_Command_Tip" xml:space="preserve">
+    <value>Chemin de l'exécutable. Utilisez "%1" pour le fichier sélectionné.</value>
+  </data>
+  <data name="Entry_DisplayName" xml:space="preserve">
+    <value>Nom affiché *</value>
+  </data>
+  <data name="Entry_DisplayName_Tip" xml:space="preserve">
+    <value>Texte visible dans le menu clic droit</value>
+  </data>
+  <data name="Entry_Err_CommandRequired" xml:space="preserve">
+    <value>La commande est obligatoire.</value>
+  </data>
+  <data name="Entry_Err_KeyRequired" xml:space="preserve">
+    <value>La clé de registre est obligatoire.</value>
+  </data>
+  <data name="Entry_Err_NameRequired" xml:space="preserve">
+    <value>Le nom affiché est obligatoire.</value>
+  </data>
+  <data name="Entry_Icon" xml:space="preserve">
+    <value>Icône (optionnel)</value>
+  </data>
+  <data name="Entry_Icon_Hint" xml:space="preserve">
+    <value>Formats acceptés : .ico, .exe, .dll (index optionnel après virgule).</value>
+  </data>
+  <data name="Entry_Icon_Tip" xml:space="preserve">
+    <value>Chemin vers .ico, .exe, .dll (ex: C:\app.exe,0)</value>
+  </data>
+  <data name="Entry_Pick_Exe" xml:space="preserve">
+    <value>Choisir un exécutable</value>
+  </data>
+  <data name="Entry_Pick_Exe_Filter" xml:space="preserve">
+    <value>Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*</value>
+  </data>
+  <data name="Entry_Pick_Icon" xml:space="preserve">
+    <value>Choisir une icône</value>
+  </data>
+  <data name="Entry_Pick_Icon_Filter" xml:space="preserve">
+    <value>Icônes et exécutables (*.ico;*.exe;*.dll)|*.ico;*.exe;*.dll|Tous (*.*)|*.*</value>
+  </data>
+  <data name="Entry_RegistryKey" xml:space="preserve">
+    <value>Clé de registre *</value>
+  </data>
+  <data name="Entry_RegistryKey_Hint" xml:space="preserve">
+    <value>Identifiant interne unique, sans espaces ni caractères spéciaux.</value>
+  </data>
+  <data name="Entry_RegistryKey_Tip" xml:space="preserve">
+    <value>Identifiant unique (sans espaces, ex: MonApp)</value>
+  </data>
+  <data name="Entry_Target_Background" xml:space="preserve">
+    <value>Fond de dossier (clic droit dans un dossier vide)</value>
+  </data>
+  <data name="Entry_Target_Files" xml:space="preserve">
+    <value>Fichiers</value>
+  </data>
+  <data name="Entry_Target_Folders" xml:space="preserve">
+    <value>Dossiers</value>
+  </data>
+  <data name="Entry_Title_Edit" xml:space="preserve">
+    <value>Modifier le raccourci</value>
+  </data>
+  <data name="Entry_Title_New" xml:space="preserve">
+    <value>Nouveau raccourci</value>
+  </data>
+  <data name="Key_Delete" xml:space="preserve">
+    <value>Suppr</value>
+  </data>
+  <data name="Key_End" xml:space="preserve">
+    <value>Fin</value>
+  </data>
+  <data name="Key_Enter" xml:space="preserve">
+    <value>Entrée</value>
+  </data>
+  <data name="Key_Esc" xml:space="preserve">
+    <value>Échap</value>
+  </data>
+  <data name="Key_Home" xml:space="preserve">
+    <value>Début</value>
+  </data>
+  <data name="Key_Insert" xml:space="preserve">
+    <value>Inser</value>
+  </data>
+  <data name="Key_PageDown" xml:space="preserve">
+    <value>PgSuiv</value>
+  </data>
+  <data name="Key_PageUp" xml:space="preserve">
+    <value>PgPréc</value>
+  </data>
+  <data name="Key_Space" xml:space="preserve">
+    <value>Espace</value>
+  </data>
+  <data name="Key_Tab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="Language_Auto" xml:space="preserve">
+    <value>Automatique (Windows)</value>
+  </data>
+  <data name="Mcp_AllowDelete" xml:space="preserve">
+    <value>Autoriser Claude à supprimer (tuiles, pages, règles)</value>
+  </data>
+  <data name="Mcp_AllowDelete_Hint" xml:space="preserve">
+    <value>Décoché (défaut) : dockpad_shortcut_delete, dockpad_page_delete et dockpad_rule_delete sont refusés.</value>
+  </data>
+  <data name="Mcp_ClaudeDesktop" xml:space="preserve">
+    <value>Claude Desktop (claude_desktop_config.json)</value>
+  </data>
+  <data name="Mcp_Enable" xml:space="preserve">
+    <value>Activer le serveur MCP</value>
+  </data>
+  <data name="Mcp_Enable_Hint" xml:space="preserve">
+    <value>Décoché : toutes les requêtes de Claude sont refusées avec un message explicite.</value>
+  </data>
+  <data name="Mcp_LogCount" xml:space="preserve">
+    <value>{0} {0:plural:action|actions} MCP cette session</value>
+  </data>
+  <data name="Mcp_Register_AllProjects" xml:space="preserve">
+    <value>Pour tous les projets (portée utilisateur, -s user)</value>
+  </data>
+  <data name="Mcp_Register_ClaudeCode" xml:space="preserve">
+    <value>Enregistrement dans Claude Code</value>
+  </data>
+  <data name="Mcp_Register_Scope_Hint" xml:space="preserve">
+    <value>Décoché : enregistrement limité au projet courant (portée locale, défaut de claude mcp add).</value>
+  </data>
+  <data name="Mcp_Tab_Journal" xml:space="preserve">
+    <value>Journal</value>
+  </data>
+  <data name="Mcp_Tab_Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="Mcp_Title" xml:space="preserve">
+    <value>Serveur MCP</value>
+  </data>
+  <data name="Mcp_UpdatePath" xml:space="preserve">
+    <value>Mise à jour du chemin (après déploiement)</value>
+  </data>
+  <data name="Mcp_UpdatePath_Hint" xml:space="preserve">
+    <value>Si le serveur était enregistré sur un autre chemin : supprimer l'ancien enregistrement, puis ré-ajouter avec la commande ci-dessus.</value>
+  </data>
+  <data name="Picker_AlwaysForDomain" xml:space="preserve">
+    <value>Toujours pour ce domaine</value>
+  </data>
+  <data name="Picker_AlwaysForHost" xml:space="preserve">
+    <value>Toujours pour {0}</value>
+  </data>
+  <data name="Picker_AutoOpenIn" xml:space="preserve">
+    <value>Ouverture automatique dans {0} s</value>
+  </data>
+  <data name="Picker_BrowserNotFound" xml:space="preserve">
+    <value>Navigateur introuvable</value>
+  </data>
+  <data name="Picker_Copied" xml:space="preserve">
+    <value>Copié ✓</value>
+  </data>
+  <data name="Picker_Copy" xml:space="preserve">
+    <value>⧉ Copier</value>
+  </data>
+  <data name="Picker_LaunchError" xml:space="preserve">
+    <value>Impossible de lancer {0} :
+{1}
+
+{2}</value>
+  </data>
+  <data name="Picker_Title" xml:space="preserve">
+    <value>Ouvrir avec…</value>
+  </data>
+  <data name="Preset_ClaudeTerminal_Desc" xml:space="preserve">
+    <value>Ouvre un terminal dans ce dossier et lance Claude Code</value>
+  </data>
+  <data name="Preset_ClaudeTerminal_Name" xml:space="preserve">
+    <value>Ouvrir un terminal Claude</value>
+  </data>
+  <data name="Preset_GitHubDesktop_Desc" xml:space="preserve">
+    <value>Ouvre ce dossier dans GitHub Desktop</value>
+  </data>
+  <data name="Preset_GitHubDesktop_Name" xml:space="preserve">
+    <value>Ouvrir dans GitHub Desktop</value>
+  </data>
+  <data name="Preset_PowerShell_Desc" xml:space="preserve">
+    <value>Ouvre un onglet PowerShell dans ce dossier</value>
+  </data>
+  <data name="Preset_PowerShell_Name" xml:space="preserve">
+    <value>Ouvrir dans PowerShell</value>
+  </data>
+  <data name="Preset_Ssms_Desc" xml:space="preserve">
+    <value>Ouvre ce dossier dans SQL Server Management Studio</value>
+  </data>
+  <data name="Preset_Ssms_Name" xml:space="preserve">
+    <value>Ouvrir dans SQL Server Management Studio</value>
+  </data>
+  <data name="Preset_VSCode_Desc" xml:space="preserve">
+    <value>Ouvre ce dossier dans Visual Studio Code</value>
+  </data>
+  <data name="Preset_VSCode_Name" xml:space="preserve">
+    <value>Ouvrir dans Visual Studio Code</value>
+  </data>
+  <data name="Presets_Badge_UpToDate" xml:space="preserve">
+    <value>Déjà installé</value>
+  </data>
+  <data name="Presets_Badge_UpdateAvail" xml:space="preserve">
+    <value>Mise à jour disponible</value>
+  </data>
+  <data name="Presets_ContextMenu" xml:space="preserve">
+    <value>☰ Menu contextuel</value>
+  </data>
+  <data name="Presets_Errors" xml:space="preserve">
+    <value>Erreurs :
+{0}</value>
+  </data>
+  <data name="Presets_Install" xml:space="preserve">
+    <value>Installer / Mettre à jour</value>
+  </data>
+  <data name="Presets_NoneSelected" xml:space="preserve">
+    <value>Aucun raccourci sélectionné.</value>
+  </data>
+  <data name="Presets_Subtitle" xml:space="preserve">
+    <value>Sélectionnez les raccourcis à installer ou mettre à jour</value>
+  </data>
+  <data name="Presets_Title" xml:space="preserve">
+    <value>Raccourcis prédéfinis</value>
+  </data>
+  <data name="Probe_DemoData" xml:space="preserve">
+    <value>données de démonstration</value>
+  </data>
+  <data name="Probe_DetectionFailed" xml:space="preserve">
+    <value>détection impossible</value>
+  </data>
+  <data name="Probe_NoSessionData" xml:space="preserve">
+    <value>installé, aucune donnée de session</value>
+  </data>
+  <data name="Probe_NotInstalled" xml:space="preserve">
+    <value>non installé</value>
+  </data>
+  <data name="Quick_AddPage" xml:space="preserve">
+    <value>Ajouter une page</value>
+  </data>
+  <data name="Quick_BackupCreated" xml:space="preserve">
+    <value>Sauvegarde créée dans :
+{0}</value>
+  </data>
+  <data name="Quick_HideToTray" xml:space="preserve">
+    <value>Masquer dans la barre système</value>
+  </data>
+  <data name="Quick_HotkeyBadge_Tip" xml:space="preserve">
+    <value>Raccourci pour afficher DockPad</value>
+  </data>
+  <data name="Quick_Menu_Browsers" xml:space="preserve">
+    <value>Navigateurs</value>
+  </data>
+  <data name="Quick_Menu_Config" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="Quick_Menu_ContextMenu" xml:space="preserve">
+    <value>Menu contextuel</value>
+  </data>
+  <data name="Quick_Menu_Edit" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
+  <data name="Quick_Menu_Manage" xml:space="preserve">
+    <value>Gestion</value>
+  </data>
+  <data name="Quick_Menu_Mcp" xml:space="preserve">
+    <value>Serveur MCP</value>
+  </data>
+  <data name="Quick_Menu_OpenFolder" xml:space="preserve">
+    <value>Voir le dossier</value>
+  </data>
+  <data name="Quick_Menu_Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="Quick_Menu_Presets" xml:space="preserve">
+    <value>Raccourcis prédéfinis</value>
+  </data>
+  <data name="Quick_Menu_Quit" xml:space="preserve">
+    <value>Quitter l'application</value>
+  </data>
+  <data name="Quick_Menu_Refresh" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="Quick_Menu_Save" xml:space="preserve">
+    <value>Sauvegarder</value>
+  </data>
+  <data name="Quick_Menu_Settings" xml:space="preserve">
+    <value>Paramètres</value>
+  </data>
+  <data name="Quick_Menu_Tip" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="Quick_Menu_Usage" xml:space="preserve">
+    <value>Usage IA</value>
+  </data>
+  <data name="Quick_Minimize" xml:space="preserve">
+    <value>Réduire</value>
+  </data>
+  <data name="Quick_NoTerminal" xml:space="preserve">
+    <value>Aucun terminal trouvé (wt, pwsh, powershell, cmd).</value>
+  </data>
+  <data name="Quick_Page" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="Quick_Page_ChangeIcon" xml:space="preserve">
+    <value>🖼 Changer l'icône</value>
+  </data>
+  <data name="Quick_Page_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer la page {0} et ses {1} {1:plural:raccourci|raccourcis} ?</value>
+  </data>
+  <data name="Quick_Page_ConfirmDeleteEmpty" xml:space="preserve">
+    <value>Supprimer la page {0} ?</value>
+  </data>
+  <data name="Quick_Page_Delete" xml:space="preserve">
+    <value>🗑 Supprimer la page</value>
+  </data>
+  <data name="Quick_Page_Full" xml:space="preserve">
+    <value>La page est pleine</value>
+  </data>
+  <data name="Quick_Page_MoveLeft" xml:space="preserve">
+    <value>← Déplacer à gauche</value>
+  </data>
+  <data name="Quick_Page_MoveRight" xml:space="preserve">
+    <value>→ Déplacer à droite</value>
+  </data>
+  <data name="Quick_Page_PickIcon" xml:space="preserve">
+    <value>Choisir une icône pour la page</value>
+  </data>
+  <data name="Quick_Page_RemoveIcon" xml:space="preserve">
+    <value>🗑 Supprimer l'icône</value>
+  </data>
+  <data name="Quick_RunError" xml:space="preserve">
+    <value>Impossible d'exécuter :
+{0}</value>
+  </data>
+  <data name="Quick_TileLock_Locked" xml:space="preserve">
+    <value>Déverrouiller le déplacement des tuiles</value>
+  </data>
+  <data name="Quick_TileLock_Unlocked" xml:space="preserve">
+    <value>Terminer — le déplacement des tuiles est actif</value>
+  </data>
+  <data name="Quick_Tile_Add" xml:space="preserve">
+    <value>➕ Ajouter</value>
+  </data>
+  <data name="Quick_Tile_ChangeIcon" xml:space="preserve">
+    <value>🖼 Changer l'icône</value>
+  </data>
+  <data name="Quick_Tile_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer « {0} » ?</value>
+  </data>
+  <data name="Quick_Tile_Delete" xml:space="preserve">
+    <value>🗑 Supprimer</value>
+  </data>
+  <data name="Quick_Tile_Duplicate" xml:space="preserve">
+    <value>⧉ Dupliquer</value>
+  </data>
+  <data name="Quick_Tile_Edit" xml:space="preserve">
+    <value>✏ Modifier</value>
+  </data>
+  <data name="Quick_Tile_MoveToPage" xml:space="preserve">
+    <value>↗ Déplacer vers la page</value>
+  </data>
+  <data name="Quick_Tile_PickIcon" xml:space="preserve">
+    <value>Choisir une icône</value>
+  </data>
+  <data name="Settings_Claude_ArgsHint" xml:space="preserve">
+    <value>Ex : --enable-auto-mode</value>
+  </data>
+  <data name="Settings_Claude_ExtraArgs" xml:space="preserve">
+    <value>Arguments supplémentaires :</value>
+  </data>
+  <data name="Settings_Claude_Section" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="Settings_Hotkey_Current" xml:space="preserve">
+    <value>Raccourci actuel : {0}</value>
+  </data>
+  <data name="Settings_Hotkey_Key" xml:space="preserve">
+    <value>Touche :</value>
+  </data>
+  <data name="Settings_Hotkey_Modifiers" xml:space="preserve">
+    <value>Modificateurs :</value>
+  </data>
+  <data name="Settings_Hotkey_Section" xml:space="preserve">
+    <value>Raccourci clavier global</value>
+  </data>
+  <data name="Settings_Language_Section" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="Settings_Startup_Section" xml:space="preserve">
+    <value>Démarrage</value>
+  </data>
+  <data name="Settings_Startup_WithWindows" xml:space="preserve">
+    <value>Démarrer avec Windows</value>
+  </data>
+  <data name="Settings_Tiles_Help" xml:space="preserve">
+    <value>Modificateur + 1-9 / 0 / ↑ / ↓ exécute une tuile de la moitié gauche ou droite de la grille.</value>
+  </data>
+  <data name="Settings_Tiles_LeftHalf" xml:space="preserve">
+    <value>Moitié gauche :</value>
+  </data>
+  <data name="Settings_Tiles_RightHalf" xml:space="preserve">
+    <value>Moitié droite :</value>
+  </data>
+  <data name="Settings_Tiles_Section" xml:space="preserve">
+    <value>Raccourcis des tuiles</value>
+  </data>
+  <data name="Settings_Tiles_TriggerAuto" xml:space="preserve">
+    <value>Auto (selon le raccourci global)</value>
+  </data>
+  <data name="Settings_Tiles_WarnPartial" xml:space="preserve">
+    <value>Les deux moitiés doivent être configurées ensemble — sinon le mode Auto s'applique.</value>
+  </data>
+  <data name="Settings_Tiles_WarnSame" xml:space="preserve">
+    <value>Les deux moitiés doivent utiliser des modificateurs différents.</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Paramètres</value>
+  </data>
+  <data name="Shortcut_Command" xml:space="preserve">
+    <value>Commande *</value>
+  </data>
+  <data name="Shortcut_Err_CommandRequired" xml:space="preserve">
+    <value>La commande / le chemin est obligatoire.</value>
+  </data>
+  <data name="Shortcut_Err_ExeAndField" xml:space="preserve">
+    <value>L'exécutable et le {0} sont obligatoires.</value>
+  </data>
+  <data name="Shortcut_Err_NameRequired" xml:space="preserve">
+    <value>Le nom est obligatoire.</value>
+  </data>
+  <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
+    <value>Veuillez sélectionner un terminal.</value>
+  </data>
+  <data name="Shortcut_Exe" xml:space="preserve">
+    <value>Exécutable *</value>
+  </data>
+  <data name="Shortcut_Exe_Tip" xml:space="preserve">
+    <value>Chemin complet vers l'exécutable</value>
+  </data>
+  <data name="Shortcut_ExtraArgs" xml:space="preserve">
+    <value>Paramètres libres (optionnel)</value>
+  </data>
+  <data name="Shortcut_ExtraArgs_Tip" xml:space="preserve">
+    <value>Arguments supplémentaires insérés avant la commande à lancer</value>
+  </data>
+  <data name="Shortcut_FieldLabel_Process" xml:space="preserve">
+    <value>nom du processus</value>
+  </data>
+  <data name="Shortcut_FieldLabel_Title" xml:space="preserve">
+    <value>titre de fenêtre</value>
+  </data>
+  <data name="Shortcut_FolderPath" xml:space="preserve">
+    <value>Chemin du dossier *</value>
+  </data>
+  <data name="Shortcut_Header_Edit" xml:space="preserve">
+    <value>Modifier le raccourci</value>
+  </data>
+  <data name="Shortcut_Header_New" xml:space="preserve">
+    <value>Nouveau raccourci</value>
+  </data>
+  <data name="Shortcut_Icon" xml:space="preserve">
+    <value>Icône (optionnel)</value>
+  </data>
+  <data name="Shortcut_Name" xml:space="preserve">
+    <value>Nom *</value>
+  </data>
+  <data name="Shortcut_NewTab" xml:space="preserve">
+    <value>Ouvrir dans un nouvel onglet</value>
+  </data>
+  <data name="Shortcut_Params" xml:space="preserve">
+    <value>Paramètres (optionnel)</value>
+  </data>
+  <data name="Shortcut_Params_Tip_Name" xml:space="preserve">
+    <value>Arguments passés au lancement et recherchés dans la ligne de commande du processus existant</value>
+  </data>
+  <data name="Shortcut_Params_Tip_Title" xml:space="preserve">
+    <value>Arguments passés à l'exécutable au lancement si la fenêtre n'est pas trouvée</value>
+  </data>
+  <data name="Shortcut_PickExe_Filter" xml:space="preserve">
+    <value>Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*</value>
+  </data>
+  <data name="Shortcut_PickFolder" xml:space="preserve">
+    <value>Choisir un dossier</value>
+  </data>
+  <data name="Shortcut_PickIcon_Filter" xml:space="preserve">
+    <value>Images et exécutables|*.png;*.ico;*.bmp;*.jpg;*.jpeg;*.exe;*.dll|Tous les fichiers|*.*</value>
+  </data>
+  <data name="Shortcut_PickStartFolder" xml:space="preserve">
+    <value>Choisir le dossier de départ</value>
+  </data>
+  <data name="Shortcut_PickTerminal" xml:space="preserve">
+    <value>Choisir un terminal</value>
+  </data>
+  <data name="Shortcut_Preview" xml:space="preserve">
+    <value>Aperçu :</value>
+  </data>
+  <data name="Shortcut_ProcessName" xml:space="preserve">
+    <value>Nom du processus *</value>
+  </data>
+  <data name="Shortcut_ProcessName_Tip" xml:space="preserve">
+    <value>Nom du processus tel qu'il apparaît dans le gestionnaire des tâches (ex: devenv.exe)</value>
+  </data>
+  <data name="Shortcut_RunCommand" xml:space="preserve">
+    <value>Commande à lancer (optionnel)</value>
+  </data>
+  <data name="Shortcut_RunCommand_Tip" xml:space="preserve">
+    <value>Commande exécutée après l'ouverture du terminal (ex : claude, npm run dev)</value>
+  </data>
+  <data name="Shortcut_SearchMode" xml:space="preserve">
+    <value>Mode de recherche *</value>
+  </data>
+  <data name="Shortcut_SearchMode_ByName" xml:space="preserve">
+    <value>Par nom de processus</value>
+  </data>
+  <data name="Shortcut_SearchMode_ByTitle" xml:space="preserve">
+    <value>Par titre de fenêtre</value>
+  </data>
+  <data name="Shortcut_StartFolder" xml:space="preserve">
+    <value>Dossier de départ</value>
+  </data>
+  <data name="Shortcut_StartFolder_Tip" xml:space="preserve">
+    <value>Chemin du dossier à ouvrir. Laissez vide pour le répertoire par défaut.</value>
+  </data>
+  <data name="Shortcut_Terminal" xml:space="preserve">
+    <value>Terminal *</value>
+  </data>
+  <data name="Shortcut_Terminal_Tip" xml:space="preserve">
+    <value>Choisir un exécutable de terminal</value>
+  </data>
+  <data name="Shortcut_Title" xml:space="preserve">
+    <value>Raccourci rapide</value>
+  </data>
+  <data name="Shortcut_Type" xml:space="preserve">
+    <value>Type *</value>
+  </data>
+  <data name="Shortcut_Type_OpenFolder" xml:space="preserve">
+    <value>Ouvrir un dossier</value>
+  </data>
+  <data name="Shortcut_Type_OpenTerminal" xml:space="preserve">
+    <value>Ouvrir un terminal</value>
+  </data>
+  <data name="Shortcut_Type_OpenUrl" xml:space="preserve">
+    <value>Ouvrir dans le navigateur</value>
+  </data>
+  <data name="Shortcut_Type_RunCommand" xml:space="preserve">
+    <value>Lancer une commande</value>
+  </data>
+  <data name="Shortcut_Type_SwitchProcess" xml:space="preserve">
+    <value>Basculer vers un processus</value>
+  </data>
+  <data name="Shortcut_Url" xml:space="preserve">
+    <value>URL *</value>
+  </data>
+  <data name="Shortcut_WindowTitle" xml:space="preserve">
+    <value>Titre de la fenêtre *</value>
+  </data>
+  <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
+    <value>Texte recherché dans le titre des fenêtres ouvertes (ex: Calculatrice)</value>
+  </data>
+  <data name="Terminal_Cmd" xml:space="preserve">
+    <value>Invite de commandes (cmd)</value>
+  </data>
+  <data name="Type_Browser" xml:space="preserve">
+    <value>Navigateur</value>
+  </data>
+  <data name="Type_Command" xml:space="preserve">
+    <value>Commande</value>
+  </data>
+  <data name="Type_Folder" xml:space="preserve">
+    <value>Dossier</value>
+  </data>
+  <data name="Type_Process" xml:space="preserve">
+    <value>Processus</value>
+  </data>
+  <data name="Type_Terminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="Type_Url" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="UsageCfg_AlertThreshold" xml:space="preserve">
+    <value>Seuil d'alerte :</value>
+  </data>
+  <data name="UsageCfg_AlertThreshold_Tip" xml:space="preserve">
+    <value>Pourcentage restant sous lequel une jauge passe au rouge</value>
+  </data>
+  <data name="UsageCfg_Badge_Hidden" xml:space="preserve">
+    <value>masqué</value>
+  </data>
+  <data name="UsageCfg_Badge_NotDetected" xml:space="preserve">
+    <value>non détecté</value>
+  </data>
+  <data name="UsageCfg_Banner" xml:space="preserve">
+    <value>Bandeau</value>
+  </data>
+  <data name="UsageCfg_DefaultProvider" xml:space="preserve">
+    <value>Fournisseur affiché :</value>
+  </data>
+  <data name="UsageCfg_DefaultProvider_Tip" xml:space="preserve">
+    <value>Fournisseur affiché à l'ouverture de DockPad. Changer d'onglet reste possible, sans modifier ce réglage. Un fournisseur masqué reste sélectionnable : le réafficher rétablit le réglage.</value>
+  </data>
+  <data name="UsageCfg_DetectFailed" xml:space="preserve">
+    <value>La détection a échoué. Consultez les journaux pour le détail.</value>
+  </data>
+  <data name="UsageCfg_Empty" xml:space="preserve">
+    <value>Aucun fournisseur connu. Utilisez ↻ Redétecter.</value>
+  </data>
+  <data name="UsageCfg_FirstAvailable" xml:space="preserve">
+    <value>Premier disponible</value>
+  </data>
+  <data name="UsageCfg_HiddenSuffix" xml:space="preserve">
+    <value>{0} (masqué)</value>
+  </data>
+  <data name="UsageCfg_NoData" xml:space="preserve">
+    <value>aucune donnée détectée</value>
+  </data>
+  <data name="UsageCfg_NotDetected_Tip" xml:space="preserve">
+    <value>Conservé : son masquage et son ordre sont gardés pour le jour où l'outil réapparaît</value>
+  </data>
+  <data name="UsageCfg_Providers" xml:space="preserve">
+    <value>Fournisseurs</value>
+  </data>
+  <data name="UsageCfg_Redetect" xml:space="preserve">
+    <value>↻ Redétecter</value>
+  </data>
+  <data name="UsageCfg_Redetect_Tip" xml:space="preserve">
+    <value>Cherche les assistants installés. Jamais fait en tâche de fond.</value>
+  </data>
+  <data name="UsageCfg_ShowBanner" xml:space="preserve">
+    <value>Afficher le bandeau dans DockPad</value>
+  </data>
+  <data name="UsageCfg_ShowCost" xml:space="preserve">
+    <value>Afficher le coût estimé</value>
+  </data>
+  <data name="UsageCfg_ShowCost_Tip" xml:space="preserve">
+    <value>Estimation à partir des tarifs publics, dans la devise de la source — jamais convertie</value>
+  </data>
+  <data name="UsageCfg_Title" xml:space="preserve">
+    <value>Usage IA</value>
+  </data>
+  <data name="UsageCfg_Visible_Tip" xml:space="preserve">
+    <value>Décocher pour retirer ce fournisseur du bandeau, sans perdre son réglage</value>
+  </data>
+  <data name="Usage_CostNote_Claude" xml:space="preserve">
+    <value>Équivalent API du mois en cours, estimé aux tarifs publics. Un abonnement Max ou Pro ne facture pas au jeton.</value>
+  </data>
+  <data name="Usage_DayTimeFormat" xml:space="preserve">
+    <value>ddd HH\h</value>
+  </data>
+  <data name="Usage_Demo" xml:space="preserve">
+    <value>démo</value>
+  </data>
+  <data name="Usage_Gauge_Session" xml:space="preserve">
+    <value>session</value>
+  </data>
+  <data name="Usage_Gauge_Tooltip" xml:space="preserve">
+    <value>{0} % utilisés, {1} % restants</value>
+  </data>
+  <data name="Usage_Gauge_Week" xml:space="preserve">
+    <value>semaine</value>
+  </data>
+  <data name="Usage_Metric_Cost" xml:space="preserve">
+    <value>Coût est.</value>
+  </data>
+  <data name="Usage_Metric_Day" xml:space="preserve">
+    <value>Jour</value>
+  </data>
+  <data name="Usage_Metric_Model" xml:space="preserve">
+    <value>Modèle</value>
+  </data>
+  <data name="Usage_Metric_Month" xml:space="preserve">
+    <value>Mois</value>
+  </data>
+  <data name="Usage_Metric_Requests" xml:space="preserve">
+    <value>Requêtes</value>
+  </data>
+  <data name="Usage_Metric_Session" xml:space="preserve">
+    <value>Session</value>
+  </data>
+  <data name="Usage_OpenPage_Tooltip" xml:space="preserve">
+    <value>Ouvrir {0}</value>
+  </data>
+  <data name="Usage_Quota_Notice" xml:space="preserve">
+    <value>Quota indisponible — {0}</value>
+  </data>
+  <data name="Usage_Quota_NoticeNote" xml:space="preserve">
+    <value>{0}. Les jauges restent masquées ; les métriques de jetons, lues dans les transcripts locaux, sont exactes.</value>
+  </data>
+  <data name="Usage_Quota_RetryIn" xml:space="preserve">
+    <value>nouvelle tentative dans {0} min</value>
+  </data>
+  <data name="Usage_Quota_RetryNext" xml:space="preserve">
+    <value>nouvelle tentative au prochain rafraîchissement</value>
+  </data>
+  <data name="Usage_Reset_Tooltip" xml:space="preserve">
+    <value>Remise à zéro à {0}</value>
+  </data>
+  <data name="Usage_Suffix_Billion" xml:space="preserve">
+    <value> Md</value>
+  </data>
+  <data name="Usage_Suffix_Million" xml:space="preserve">
+    <value>M</value>
+  </data>
+  <data name="Usage_Suffix_Thousand" xml:space="preserve">
+    <value>k</value>
+  </data>
+  <data name="Usage_TimeFormat" xml:space="preserve">
+    <value>HH\hmm</value>
+  </data>
+</root>

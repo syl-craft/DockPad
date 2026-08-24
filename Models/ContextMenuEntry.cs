@@ -16,12 +16,16 @@ public class ContextMenuEntry
     public string IconPath { get; set; } = "";
     public ContextMenuTarget Target { get; set; } = ContextMenuTarget.Files;
 
+    /// <summary>
+    /// Libellé de la cible, traduit. Il est lu à chaque accès et non mis en cache : la propriété est
+    /// consultée à la construction des lignes de la liste, donc dans la langue du moment.
+    /// </summary>
     public string TargetLabel => Target switch
     {
-        ContextMenuTarget.Files => "Fichiers",
-        ContextMenuTarget.Folders => "Dossiers",
-        ContextMenuTarget.FolderBackground => "Fond de dossier",
-        ContextMenuTarget.Drives => "Lecteurs",
+        ContextMenuTarget.Files => Loc.T("CtxMenu_Filter_Files"),
+        ContextMenuTarget.Folders => Loc.T("CtxMenu_Filter_Folders"),
+        ContextMenuTarget.FolderBackground => Loc.T("CtxMenu_Filter_Background"),
+        ContextMenuTarget.Drives => Loc.T("CtxMenu_Target_Drives"),
         _ => ""
     };
 

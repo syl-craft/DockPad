@@ -13,18 +13,24 @@ public static class HotkeyService
     public const int WM_HOTKEY = 0x0312;
     public const int HotkeyId  = 9001;
 
+    /// <summary>
+    /// Touches proposées pour le raccourci global. <c>Name</c> est un <b>identifiant stable</b>, pas
+    /// un libellé : les dix premières se traduisent, via <see cref="Display"/>. Ce qui est stocké
+    /// dans le registre est le code virtuel, jamais le nom — changer de langue ne touche donc à aucun
+    /// raccourci enregistré.
+    /// </summary>
     public static readonly (string Name, uint VK)[] Keys =
     [
-        ("Espace",   0x20),
+        ("Space",    0x20),
         ("Tab",      0x09),
-        ("Entrée",   0x0D),
-        ("Échap",    0x1B),
-        ("Suppr",    0x2E),
-        ("Inser",    0x2D),
-        ("Début",    0x24),
-        ("Fin",      0x23),
-        ("PgPréc",   0x21),
-        ("PgSuiv",   0x22),
+        ("Enter",    0x0D),
+        ("Esc",      0x1B),
+        ("Delete",   0x2E),
+        ("Insert",   0x2D),
+        ("Home",     0x24),
+        ("End",      0x23),
+        ("PageUp",   0x21),
+        ("PageDown", 0x22),
         ("↑",        0x26),
         ("↓",        0x28),
         ("←",        0x25),
@@ -34,10 +40,22 @@ public static class HotkeyService
         .. Enumerable.Range(1, 12).Select(i => ($"F{i}", (uint)(0x6F + i))),
     ];
 
+    /// <summary>
+    /// Libellé affichable d'une touche. Seules les touches nommées ont une traduction ; les lettres,
+    /// les F1-F12, le pavé numérique et les flèches s'écrivent pareil partout et n'entrent pas dans
+    /// le magasin de chaînes — y mettre « A » serait du bruit.
+    /// </summary>
+    public static string Display(string name) => name switch
+    {
+        "Space" or "Tab" or "Enter" or "Esc" or "Delete" or "Insert"
+            or "Home" or "End" or "PageUp" or "PageDown" => Loc.T($"Key_{name}"),
+        _ => name,
+    };
+
     public static string KeyName(uint vk)
     {
         foreach (var (name, code) in Keys)
-            if (code == vk) return name;
+            if (code == vk) return Display(name);
         return $"0x{vk:X2}";
     }
 

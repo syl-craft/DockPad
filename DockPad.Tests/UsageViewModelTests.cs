@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DockPad.Models;
+using DockPad.Services.Localization;
 using DockPad.Services.Usage;
 
 namespace DockPad.Tests;
@@ -41,6 +42,10 @@ public class UsageViewModelTests
 
     private static UsageViewModel Build(UsageConfig config, params AiUsage?[] usages)
     {
+        // Les libellés attendus par ces tests sont les français : la langue est posée
+        // explicitement, sinon le résultat dépendrait de celle laissée par une autre classe.
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("fr"));
+
         var providers = usages.Select(u => (IUsageProvider)new StubProvider(u)).ToList();
         var service = new UsageService(providers);
         return new UsageViewModel(service, () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
@@ -373,6 +378,41 @@ public class UsageViewModelTests
         await vm.RefreshAsync();
 
         Assert.False(vm.HasQuotaNotice);
+    }
+
+    // --- Langue
+
+    [Fact]
+    public async Task Langue_BasculeePendantQueLeBandeauTourne_LesLibellesSuivent()
+    {
+        // La langue se change depuis les Options, avec la grille et son bandeau visibles derriere :
+        // sans abonnement, le bandeau gardait ses libelles et ses nombres jusqu'au rafraichissement
+        // suivant, soit jusqu'a une minute plus tard.
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+        vm.Start();
+        Assert.Equal("Jour", vm.Metrics[1].Label);
+
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("en"));
+
+        Assert.Equal("Day", vm.Metrics[1].Label);
+        Assert.Equal("session", vm.SessionGauge!.Label);
+        vm.Stop();
+    }
+
+    [Fact]
+    public async Task Langue_BasculeeApresStop_NeTouchePlusAuBandeau()
+    {
+        // Une fenetre rangee n'a rien a mettre a jour, et l'abonnement doit lacher : un evenement
+        // statique qui retient chaque ViewModel cree est une fuite, et les captures en creent
+        // plusieurs par processus.
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+        vm.Start();
+        vm.Stop();
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("en"));
+
+        Assert.Equal("Jour", vm.Metrics[1].Label);
     }
 
     // --- Attente

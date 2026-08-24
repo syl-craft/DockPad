@@ -272,7 +272,7 @@ public class ClaudeLimitsClientTests
         var (limits, failure) = await client.FetchAsync("jeton", CancellationToken.None);
 
         Assert.Null(limits);
-        Assert.Contains("forme de réponse inconnue", failure);
+        Assert.Contains("unknown response shape", failure);
         Assert.DoesNotContain("autre_forme", failure);   // jamais le corps dans le journal
     }
 
@@ -285,7 +285,7 @@ public class ClaudeLimitsClientTests
         var (limits, failure) = await client.FetchAsync("", CancellationToken.None);
 
         Assert.Null(limits);
-        Assert.Equal("jeton absent", failure);
+        Assert.Equal("access token missing", failure);
         Assert.Null(handler.LastRequest);
     }
 

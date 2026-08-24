@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using DockPad.Services.Usage;
 
+using DockPad.Services.Localization;
+
 namespace DockPad.Tests;
 
 public class DemoUsageProviderTests
@@ -101,6 +103,13 @@ public class ClaudeUsageProviderTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), $"claudeprov_{Guid.NewGuid():N}");
 
+    public ClaudeUsageProviderTests()
+    {
+        // Les notices attendues ci-dessous sont les françaises : la langue est posée explicitement,
+        // le texte de la notice étant traduit depuis l'internationalisation.
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("fr"));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
@@ -164,7 +173,9 @@ public class ClaudeUsageProviderTests : IDisposable
         var probe = new ClaudeUsageProvider(_home).Probe();
 
         Assert.True(probe.Available);
-        Assert.Contains("aucune donnée", probe.Detail);
+        // Le libellé est traduit : le comparer en dur ferait échouer le test selon la langue
+        // courante du processus, ce qui est précisément le défaut qu'on veut éviter.
+        Assert.Equal(Loc.T("Probe_NoSessionData"), probe.Detail);
         Assert.NotEqual("", probe.DataPath);
     }
 
@@ -451,7 +462,10 @@ public class ClaudeUsageProviderTests : IDisposable
         var usage = await new ClaudeUsageProvider(_home, Failing()).ReadAsync(CancellationToken.None);
 
         Assert.Contains("indisponible", usage!.QuotaNotice);
-        Assert.Contains("jeton", usage.QuotaNoticeNote);
+        // « token » et non « jeton » : la cause est un diagnostic, en anglais et jamais traduite.
+        // Chercher « jeton » matcherait « métriques de jetons » du gabarit, donc passerait quoi qu'il
+        // arrive à la cause.
+        Assert.Contains("access token missing or expired", usage.QuotaNoticeNote);
     }
 
     [Fact]
@@ -462,7 +476,7 @@ public class ClaudeUsageProviderTests : IDisposable
         var usage = await new ClaudeUsageProvider(_home, Failing()).ReadAsync(CancellationToken.None);
 
         Assert.Contains("indisponible", usage!.QuotaNotice);
-        Assert.Contains("credentials", usage.QuotaNoticeNote);
+        Assert.Contains("credentials file not found", usage.QuotaNoticeNote);
     }
 
     [Fact]
@@ -503,7 +517,7 @@ public class ClaudeUsageProviderTests : IDisposable
         var second = await provider.ReadAsync(CancellationToken.None);
 
         Assert.DoesNotContain("429", second!.QuotaNoticeNote);
-        Assert.Contains("forme de réponse", second.QuotaNoticeNote);
+        Assert.Contains("unknown response shape", second.QuotaNoticeNote);
     }
 
     [Fact]

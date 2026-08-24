@@ -122,7 +122,7 @@ public partial class UsageConfigDialog : Window
     private void BuildDefaultChoices()
     {
         CmbDefaultProvider.Items.Clear();
-        CmbDefaultProvider.Items.Add(new DefaultChoice { Id = "", Label = "Premier disponible" });
+        CmbDefaultProvider.Items.Add(new DefaultChoice { Id = "", Label = Loc.T("UsageCfg_FirstAvailable") });
 
         foreach (var entry in _config.Providers.OrderBy(p => p.Order))
         {
@@ -130,7 +130,7 @@ public partial class UsageConfigDialog : Window
             CmbDefaultProvider.Items.Add(new DefaultChoice
             {
                 Id = entry.Id,
-                Label = entry.Hidden ? $"{name} (masqué)" : name,
+                Label = entry.Hidden ? Loc.F("UsageCfg_HiddenSuffix", name) : name,
             });
         }
 
@@ -158,7 +158,7 @@ public partial class UsageConfigDialog : Window
     {
         if (probe?.Detail.Length > 0) return probe.Detail;
         if (entry.DataPath.Length > 0) return entry.DataPath;
-        return entry.Detected ? "" : "aucune donnée détectée";
+        return entry.Detected ? "" : Loc.T("UsageCfg_NoData");
     }
 
     /// <summary>Couleur des entrées dont le fournisseur n'est plus dans le registre.</summary>
@@ -223,7 +223,7 @@ public partial class UsageConfigDialog : Window
         catch (Exception ex)
         {
             LogService.Error(ex, "Redétection des fournisseurs IA");
-            AppDialog.Error("La détection a échoué. Consultez les journaux pour le détail.", owner: this);
+            AppDialog.Error(Loc.T("UsageCfg_DetectFailed"), owner: this);
         }
     }
 

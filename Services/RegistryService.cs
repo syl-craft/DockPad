@@ -121,15 +121,25 @@ public static class RegistryService
     // Lecture SANS expansion des variables d'environnement : PresetsDialog compare ces
     // valeurs brutes aux commandes générées par PresetService (qui contiennent
     // %LocalAppData% littéral) — une lecture expansée ne matcherait jamais.
-    public static (string Command, string Icon)? GetValues(ContextMenuTarget target, string registryKey)
+    /// <summary>
+    /// Valeurs installées pour une entrée, ou <c>null</c> si elle est absente ou désactivée.
+    /// </summary>
+    /// <remarks>
+    /// Le nom affiché fait partie du lot : c'est lui qui change quand DockPad change de langue, et
+    /// c'est ce qui permet de proposer la mise à jour d'un prédéfini traduit. La clé, elle, ne bouge
+    /// jamais — d'où l'absence de doublon dans le registre.
+    /// </remarks>
+    public static (string DisplayName, string Command, string Icon)? GetValues(
+        ContextMenuTarget target, string registryKey)
     {
         string basePath = ContextMenuEntry.GetRegistryPath(target);
         using var key = Registry.ClassesRoot.OpenSubKey($@"{basePath}\{registryKey}", writable: false);
         if (key == null || key.GetValue("LegacyDisable") != null) return null;
 
+        string displayName = key.GetValue(null)?.ToString() ?? "";
         string icon = key.GetValue("Icon", null, RegistryValueOptions.DoNotExpandEnvironmentNames)?.ToString() ?? "";
         using var cmdKey = key.OpenSubKey("command", writable: false);
         string command = cmdKey?.GetValue(null, null, RegistryValueOptions.DoNotExpandEnvironmentNames)?.ToString() ?? "";
-        return (command, icon);
+        return (displayName, command, icon);
     }
 }

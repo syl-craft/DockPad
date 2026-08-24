@@ -48,7 +48,7 @@ public sealed class CopilotUsageProvider : IUsageProvider
                     DisplayName = Name,
                     Glyph = PastilleGlyph,
                     AccentColor = PastilleAccent,
-                    Detail = installed ? "installé, aucune donnée de session" : "non installé",
+                    Detail = installed ? Loc.T("Probe_NoSessionData") : Loc.T("Probe_NotInstalled"),
                 };
             }
 
@@ -70,7 +70,7 @@ public sealed class CopilotUsageProvider : IUsageProvider
                 DisplayName = Name,
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
-                Detail = "détection impossible",
+                Detail = Loc.T("Probe_DetectionFailed"),
             };
         }
     }

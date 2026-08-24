@@ -88,7 +88,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
                     DisplayName = Name,
                     Glyph = PastilleGlyph,
                     AccentColor = PastilleAccent,
-                    Detail = "non installé",
+                    Detail = Loc.T("Probe_NotInstalled"),
                 };
             }
 
@@ -100,7 +100,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
                 DataPath = root,
-                Detail = count == 0 ? "installé, aucune donnée de session" : "",
+                Detail = count == 0 ? Loc.T("Probe_NoSessionData") : "",
             };
         }
         catch (Exception ex)
@@ -112,7 +112,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
                 DisplayName = Name,
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
-                Detail = "détection impossible",
+                Detail = Loc.T("Probe_DetectionFailed"),
             };
         }
     }
@@ -143,8 +143,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             UsageUrl = "https://claude.ai/new#settings/usage",
             Model = totals.Model,
             Cost = ClaudePricing.Format(totals.Cost),
-            CostNote = "Équivalent API du mois en cours, estimé aux tarifs publics. "
-                     + "Un abonnement Max ou Pro ne facture pas au jeton.",
+            CostNote = Loc.T("Usage_CostNote_Claude"),
             SessionTokens = totals.Session,
             DayTokens = totals.Day,
             MonthTokens = totals.Month,
@@ -189,7 +188,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             var path = ClaudeLimitsClient.CredentialsPath(_home);
             if (!File.Exists(path))
             {
-                NoteQuotaUnavailable("fichier de credentials introuvable");
+                NoteQuotaUnavailable("credentials file not found");
                 return FreshEnough(now);
             }
 
@@ -197,7 +196,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             var token = ClaudeLimitsClient.ReadAccessToken(File.ReadAllText(path), DateTime.UtcNow);
             if (token is null)
             {
-                NoteQuotaUnavailable("jeton d'accès absent ou expiré");
+                NoteQuotaUnavailable("access token missing or expired");
                 return FreshEnough(now);
             }
 
@@ -245,8 +244,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         _quotaFailure = cause;
         if (_loggedFailure == cause) return;
         _loggedFailure = cause;
-        LogService.Info($"Quota Claude indisponible ({cause}) — jauges masquées, "
-                      + "métriques de jetons conservées");
+        LogService.Info($"Quota Claude indisponible ({cause}) — jauges masquées, métriques conservées");
     }
 
     /// <summary>Le quota répond de nouveau : la notice tombe, et le retour est journalisé une fois.</summary>
@@ -272,11 +270,10 @@ public sealed class ClaudeUsageProvider : IUsageProvider
 
         var remaining = _lastAttempt + QuotaMinInterval - _clock();
         var retry = remaining > TimeSpan.Zero
-            ? $"nouvelle tentative dans {Math.Max(1, (int)Math.Ceiling(remaining.TotalMinutes))} min"
-            : "nouvelle tentative au prochain rafraîchissement";
+            ? Loc.F("Usage_Quota_RetryIn", Math.Max(1, (int)Math.Ceiling(remaining.TotalMinutes)))
+            : Loc.T("Usage_Quota_RetryNext");
 
-        return ($"Quota indisponible — {retry}",
-                $"{_quotaFailure}. Les jauges restent masquées ; les métriques de jetons, "
-                + "lues dans les transcripts locaux, sont exactes.");
+        return (Loc.F("Usage_Quota_Notice", retry),
+                Loc.F("Usage_Quota_NoticeNote", _quotaFailure));
     }
 }
