@@ -1,5 +1,39 @@
-# Changelog
-
+# Changelog
+
+## [1.11.0] — 2026-08-24
+
+### Nouveautés utilisateur
+
+#### Français et anglais
+- DockPad parle **français et anglais**. Le choix se fait dans ☰ → Paramètres → **Options**, tout en haut : `Automatique (Windows)`, `Français` ou `English`
+- **Bascule immédiate**, sans redémarrer : les fenêtres ouvertes se retraduisent sous les yeux, y compris la grille derrière et son bandeau
+- Par défaut, DockPad suit la **langue de Windows** et retombe sur l'anglais si elle n'est pas traduite
+- **Les nombres et les heures suivent aussi** : `12,4k` et `11h54` en français, `12.4k` et `11:54` en anglais. Les milliards s'écrivent `2,7 Md` ou `2.7B` selon la langue
+- **Les pluriels sont justes**, y compris là où les deux langues ne basculent pas au même endroit : « 0 règle » mais « 0 rules »
+- **Les libellés des prédéfinis sont traduits.** Les entrées déjà posées dans le menu clic droit de Windows gardent l'ancien libellé jusqu'à ce que tu cliques sur *Installer / Mettre à jour* dans la fenêtre Prédéfinis — elles y apparaissent maintenant comme « Mise à jour disponible »
+
+#### Verrou du déplacement des tuiles
+- Un bouton dans la toolbar, à gauche de **─** : **🔒** verrouillé, **✓** bleu quand le déplacement est ouvert. Un clic manqué de quelques pixels ne déplace plus la tuile qu'on voulait lancer
+- Le verrou **ne ferme qu'une porte** : le glissement d'une tuile vers une autre. Le clic simple lance l'action dans les deux états, et les gestes délibérés restent ouverts — dépôt d'un dossier depuis l'Explorateur, « ↗ Déplacer vers la page », réorganisation des pages
+- **Ranger la fenêtre repose le verrou** : on ne peut pas oublier de le refermer
+
+### Corrections
+- **Quota IA indisponible : la place des jauges dit pourquoi.** Elles disparaissaient sans un mot dès que l'API de quota refusait de répondre, et la raison n'existait que dans le fichier de log. Un texte l'annonce désormais, avec la cause technique au survol et le délai avant la prochaine tentative
+- Une lecture de quota **annulée** — masquer puis réafficher la fenêtre — ne consomme plus le créneau de cinq minutes : elle laissait sinon cinq minutes de jauges vides sans aucune trace
+- Le journal signale **chaque changement** de cause d'indisponibilité, et le retour à la normale, au lieu d'une seule fois par session
+- L'aperçu du raccourci clavier, la liste des touches et le badge de la fenêtre principale affichent tous les trois le même nom de touche
+
+### Notes
+- Les messages renvoyés au serveur MCP et ceux du journal restent en **français** : leurs lecteurs sont un modèle et le développeur, pas l'interface
+- Les listes de **Prédéfinis** et du **gestionnaire de menu contextuel** ne se retraduisent pas à chaud ; sans conséquence en pratique, la fenêtre Options étant modale
+- Les noms que tu as personnalisés — navigateurs, profils, fournisseurs — ne changent jamais de langue : ils t'appartiennent
+
+### Interne
+- 58 tests ajoutés (370 au total), dont **quatre gardes de cohérence** vérifiées par mutation : aucun texte littéral dans un XAML, aucun texte français d'interface en dur dans le C#, toute clé citée existe, aucune clé du magasin n'est orpheline
+- Magasin RESX (anglais neutre + satellite français) derrière un service `Loc` sans dépendance WPF, ce qui garde services et ViewModels testables sans interface. La bascule à chaud tient à une notification d'indexeur
+- `SmartFormat` (cœur seul) pour le pluriel CLDR et les conjonctions de listes
+- `tools/DialogShot` capture n'importe quelle fenêtre dans une langue donnée, hors process DockPad
+
 ## [1.10.0] — 2026-08-21
 
 ### Nouveautés utilisateur
@@ -36,8 +70,10 @@
 - Nouvel outil `tools/UsageShot` : capture le bandeau et sa fenêtre de réglages sur des fournisseurs de démonstration — aucune donnée de consommation réelle dans la documentation
 - Dépendance `Microsoft.Data.Sqlite` (base de Copilot CLI), alignée sur .NET 8 ; les binaires natifs des plateformes non Windows sont écartés de la publication
 
----
-
+---
+
+
+
 ## [1.9.0] — 2026-08-13
 
 ### Nouveautés utilisateur
