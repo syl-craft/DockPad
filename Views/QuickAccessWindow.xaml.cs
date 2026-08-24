@@ -97,11 +97,6 @@ public partial class QuickAccessWindow : Window
     public UsagePanel UsageBannerPanel => UsageBanner;
 
     /// <summary>
-    /// Le bandeau n'interroge les fournisseurs que quand la fenêtre est réellement sous les yeux.
-    /// DockPad passe l'essentiel de son temps masqué dans la barre système : lire du disque et
-    /// appeler le réseau pour une fenêtre invisible ou réduite ne sert à rien.
-    /// </summary>
-    /// <summary>
     /// La fenêtre est-elle sous les yeux de l'utilisateur ? Le bandeau se met à jour ou se met au
     /// repos, et le verrou des tuiles se repose quand la fenêtre est rangée.
     /// </summary>
@@ -124,7 +119,6 @@ public partial class QuickAccessWindow : Window
         ApplyTileLock();
     }
 
-    /// <summary>Reporte l'état du verrou sur le bouton de la toolbar.</summary>
     /// <summary>
     /// Retraduit ce que la fenêtre construit en code : les libellés liés par <c>{loc:T}</c> se
     /// mettent à jour seuls, pas les tuiles ni le badge de raccourci.
@@ -136,6 +130,7 @@ public partial class QuickAccessWindow : Window
         PopulateGrid();   // infobulles de tuiles et libellés de type
     }
 
+    /// <summary>Reporte l'état du verrou sur le bouton de la toolbar.</summary>
     private void ApplyTileLock()
     {
         TileLockButton.Content = _tileLock.Glyph;
@@ -835,8 +830,7 @@ public partial class QuickAccessWindow : Window
             {
                 try
                 {
-                    var (exe, args) = ParseCommand(cmd);
-                    Process.Start(new ProcessStartInfo(exe, args) { UseShellExecute = true });
+                    ShortcutLauncher.RunCommandLine(cmd);
                 }
                 catch (Exception ex)
                 {
@@ -862,68 +856,21 @@ public partial class QuickAccessWindow : Window
         ExecuteEntry(entry);
     }
 
+    /// <summary>
+    /// Lance une tuile. La décision de ce qui s'exécute appartient à <see cref="ShortcutLauncher"/> ;
+    /// il ne reste ici que ce qui est du ressort d'une fenêtre : montrer l'erreur.
+    /// </summary>
     private void ExecuteEntry(ShortcutEntry entry)
     {
         try
         {
-            switch (entry.Type)
-            {
-                case ShortcutType.OpenFolder:
-                    Process.Start(new ProcessStartInfo("explorer.exe", $"\"{entry.Command}\"")
-                        { UseShellExecute = true });
-                    break;
-                case ShortcutType.OpenUrl:
-                    Process.Start(new ProcessStartInfo(entry.Command) { UseShellExecute = true });
-                    break;
-                case ShortcutType.OpenTerminal:
-                    ExecuteTerminal(entry);
-                    break;
-                case ShortcutType.SwitchToProcess:
-                    if (entry.ProcessSwitch != null)
-                        ProcessSwitchService.SwitchOrLaunch(entry.ProcessSwitch);
-                    break;
-                case ShortcutType.RunCommand:
-                default:
-                    var (exe, args) = ParseCommand(entry.Command);
-                    Process.Start(new ProcessStartInfo(exe, args) { UseShellExecute = true });
-                    break;
-            }
+            ShortcutLauncher.Launch(entry);
         }
         catch (Exception ex)
         {
-            Services.LogService.Error(ex, $"Exécution du raccourci « {entry.Name} » ({entry.Type})");
+            LogService.Error(ex, $"Exécution du raccourci « {entry.Name} » ({entry.Type})");
             AppDialog.Error(Loc.F("Quick_RunError", ex.Message), owner: this);
         }
-    }
-
-    private static void ExecuteTerminal(ShortcutEntry entry)
-    {
-        if (entry.Terminal is { ExePath.Length: > 0 } cfg)
-        {
-            var args = TerminalDetectionService.BuildArgs(cfg);
-            Process.Start(new ProcessStartInfo(cfg.ExePath, args) { UseShellExecute = true });
-            return;
-        }
-
-        // Fallback legacy : entry.Command = chemin du dossier, auto-détection du terminal
-        string folder = entry.Command;
-        foreach (var term in new[] { "wt.exe", "pwsh.exe", "powershell.exe", "cmd.exe" })
-        {
-            try
-            {
-                string args = term switch
-                {
-                    "wt.exe"         => $"-w 0 new-tab --startingDirectory \"{folder}\"",
-                    "pwsh.exe"       => $"-NoExit -Command Set-Location \"{folder}\"",
-                    "powershell.exe" => $"-NoExit -Command Set-Location \"{folder}\"",
-                    _                => $"/k cd /d \"{folder}\"",
-                };
-                Process.Start(new ProcessStartInfo(term, args) { UseShellExecute = true });
-                return;
-            }
-            catch (Exception ex) { Services.LogService.Warn(ex, $"Terminal candidat indisponible : {term}"); }
-        }
-        throw new InvalidOperationException(Loc.T("Quick_NoTerminal"));
     }
 
     private static string TypeLabel(ShortcutType t) => t switch
@@ -1116,27 +1063,23 @@ public partial class QuickAccessWindow : Window
         PopulateGrid();
     }
 
+    /// <summary>Le presse-papiers de glissement porte-t-il un dépôt dont on sait faire une tuile ?</summary>
     private static bool IsExplorerDrop(DragEventArgs e)
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return false;
+
         var files = e.Data.GetData(DataFormats.FileDrop) as string[];
-        if (files?.Length > 0)
-            return Directory.Exists(files[0]) ||
-                   Path.GetExtension(files[0]).Equals(".url", StringComparison.OrdinalIgnoreCase);
-        return false;
+        return files?.Length > 0 && DroppedShortcut.IsAcceptable(files[0]);
     }
 
     private void CreateFolderShortcutFromDrop(string folderPath, int row, int col)
     {
-        string name = Path.GetFileName(folderPath);
-        if (string.IsNullOrEmpty(name)) name = folderPath.TrimEnd('\\', '/');
-
         var entry = new ShortcutEntry
         {
             Page            = _currentPage,
             Row             = row,
             Col             = col,
-            Name            = name,
+            Name            = DroppedShortcut.FolderName(folderPath),
             Type            = ShortcutType.OpenFolder,
             Command         = folderPath,
             IconProfilePath = EnsureDefaultFolderIcon(),
@@ -1147,35 +1090,19 @@ public partial class QuickAccessWindow : Window
 
     private void CreateUrlShortcutFromDrop(string urlFilePath, int row, int col)
     {
-        string? url = null;
-        string? title = null;
-        try
-        {
-            foreach (var line in File.ReadLines(urlFilePath))
-            {
-                if (line.StartsWith("URL=", StringComparison.OrdinalIgnoreCase))
-                    url = line[4..];
-                else if (line.StartsWith("Title=", StringComparison.OrdinalIgnoreCase))
-                    title = line[6..];
-            }
-        }
-        catch (Exception ex) { Services.LogService.Warn(ex, $"Lecture du fichier .url déposé : {urlFilePath}"); }
+        // La lecture du format .url vit dans DroppedShortcut : null = pas d'URL, donc rien à créer.
+        if (DroppedShortcut.FromUrlFile(urlFilePath) is not { } dropped) return;
 
-        if (string.IsNullOrEmpty(url)) return;
-        title ??= Path.GetFileNameWithoutExtension(urlFilePath);
-
-        var entry = new ShortcutEntry
+        SaveDroppedEntry(new ShortcutEntry
         {
             Page            = _currentPage,
             Row             = row,
             Col             = col,
-            Name            = title,
+            Name            = dropped.Name,
             Type            = ShortcutType.OpenUrl,
-            Command         = url,
+            Command         = dropped.Url,
             IconProfilePath = EnsureDefaultBrowserIcon(),
-        };
-
-        SaveDroppedEntry(entry, row, col);
+        }, row, col);
     }
 
     private void SaveDroppedEntry(ShortcutEntry entry, int row, int col)
@@ -1228,7 +1155,7 @@ public partial class QuickAccessWindow : Window
             var cmd = cmdKey?.GetValue(null) as string;
             if (string.IsNullOrEmpty(cmd)) return null;
 
-            var (exe, _) = ParseCommand(cmd);
+            var exe = ShortcutLauncher.SplitCommand(cmd).FileName;
             return File.Exists(exe) ? IconStoreService.CopyToProfile(exe) : null;
         }
         catch (Exception ex) { Services.LogService.Warn(ex, "Détection de l'icône du navigateur par défaut"); return null; }
@@ -1277,58 +1204,19 @@ public partial class QuickAccessWindow : Window
         ShortcutService.OpenInEditor();
     }
 
-    private static (string exe, string args) ParseCommand(string command)
-    {
-        command = command.Trim();
-        if (command.StartsWith('"'))
-        {
-            int end = command.IndexOf('"', 1);
-            if (end > 0)
-                return (command[1..end], command[(end + 1)..].Trim());
-        }
-        int space = command.IndexOf(' ');
-        return space > 0
-            ? (command[..space], command[(space + 1)..])
-            : (command, "");
-    }
     // ── Triggers dynamiques ───────────────────────────────────────────────────
 
+    /// <summary>
+    /// Relit les modificateurs des deux moitiés. La décision appartient à
+    /// <see cref="TileHintMap.ResolveTriggers"/> ; la fenêtre ne fait que lire les réglages.
+    /// </summary>
     private void UpdateTriggerMods()
     {
-        // Configuration explicite (Options) prioritaire
         var (first, second) = SettingsService.LoadTriggerMods();
-        var modFirst  = ParseTriggerMod(first);
-        var modSecond = ParseTriggerMod(second);
-        if (modFirst != null && modSecond != null && modFirst != modSecond)
-        {
-            _triggerFirst  = modFirst.Value;
-            _triggerSecond = modSecond.Value;
-            return;
-        }
-
-        // Auto : éviter le modificateur du raccourci global
         var (mods, _) = SettingsService.LoadHotkey();
-        if ((mods & HotkeyService.MOD_CONTROL) != 0)
-        {
-            // Hotkey Ctrl → triggers Shift / Alt
-            _triggerFirst  = ModifierKeys.Shift;
-            _triggerSecond = ModifierKeys.Alt;
-        }
-        else
-        {
-            // Hotkey Alt ou Shift → triggers Ctrl / Shift
-            _triggerFirst  = ModifierKeys.Control;
-            _triggerSecond = ModifierKeys.Shift;
-        }
-    }
 
-    private static ModifierKeys? ParseTriggerMod(string name) => name switch
-    {
-        "Ctrl"  => ModifierKeys.Control,
-        "Alt"   => ModifierKeys.Alt,
-        "Shift" => ModifierKeys.Shift,
-        _       => null
-    };
+        (_triggerFirst, _triggerSecond) = TileHintMap.ResolveTriggers(first, second, mods);
+    }
 
     // Vérifie si le modificateur est pressé seul (sans autre modificateur)
     private static bool IsAloneModifier(KeyEventArgs e, ModifierKeys mod) => mod switch
@@ -1355,17 +1243,6 @@ public partial class QuickAccessWindow : Window
     // Mapping : 1-9 en lecture (gauche→droite, haut→bas) dans une zone 3×3 (rows 0-2) ;
     // ligne du bas (row 3) : 0, ↑ (keyNum 10), ↓ (keyNum 11)
     // Ctrl → cols 0-2 (gauche), Shift → cols 3-5 (droite)
-    private static (int Row, int Col) HintKeyToCell(int keyNum, bool isCtrl)
-    {
-        int baseCol = isCtrl ? 0 : 3;
-        if (keyNum == 0)  return (3, baseCol);     // 0 → sous le 1
-        if (keyNum == 10) return (3, baseCol + 1); // ↑
-        if (keyNum == 11) return (3, baseCol + 2); // ↓
-        int row = (keyNum - 1) / 3;
-        int col = (keyNum - 1) % 3 + baseCol;
-        return (row, col);
-    }
-
     private void ShowHintOverlay(bool isCtrl)
     {
         HideHintOverlay();
@@ -1430,7 +1307,7 @@ public partial class QuickAccessWindow : Window
 
     private void ExecuteByHintKey(int keyNum, bool isCtrl)
     {
-        var (row, col) = HintKeyToCell(keyNum, isCtrl);
+        var (row, col) = TileHintMap.CellFor(keyNum, isCtrl);
         var entry = ShortcutService.Load()
             .FirstOrDefault(s => s.Page == _currentPage && s.Row == row && s.Col == col);
         if (entry != null)
@@ -1438,53 +1315,27 @@ public partial class QuickAccessWindow : Window
     }
 
     // Retourne 0-9 pour les chiffres, 10 pour ↑, 11 pour ↓, null sinon.
+    /// <summary>
+    /// Numéro de touche pour l'overlay. Le drapeau « touche étendue » se lit sur le message clavier
+    /// EN COURS via <c>ComponentDispatcher.CurrentKeyboardMessage</c> — WPF ne l'expose pas dans
+    /// <c>KeyEventArgs</c>, et un hook <c>WndProc</c> arrive trop tard. C'est la seule partie que la
+    /// vue doit garder : la table, elle, vit dans <see cref="TileHintMap"/>.
+    /// </summary>
     private static int? GetHintKey(Key key)
     {
-        // Pavé numérique : Shift « annule » temporairement NumLock (comportement Windows)
-        // et les chiffres arrivent en touches de navigation NON-étendues (End, Up, PgDn…).
-        // On les remappe en chiffres — idem quand NumLock est éteint. Les vraies touches
-        // de navigation, elles, sont étendues (bit 24 du lParam) et gardent leur rôle.
-        // Le flag est lu sur le message clavier EN COURS via CurrentKeyboardMessage —
-        // WPF ne l'expose pas dans KeyEventArgs, et un hook WndProc/ThreadPreprocessMessage
-        // arrive trop tard ou dans le mauvais ordre par rapport au traitement clavier WPF.
         bool extended = (ComponentDispatcher.CurrentKeyboardMessage.lParam.ToInt64() & 0x0100_0000) != 0;
-        if (!extended)
-        {
-            int? numpad = key switch
-            {
-                Key.Insert => 0, Key.End  => 1, Key.Down  => 2, Key.Next  => 3,
-                Key.Left   => 4, Key.Clear => 5, Key.Right => 6, Key.Home => 7,
-                Key.Up     => 8, Key.Prior => 9,
-                _ => null
-            };
-            if (numpad != null) return numpad;
-        }
-
-        if (key == Key.Up)   return 10; // ↑ → row 3, 2e case de la zone
-        if (key == Key.Down) return 11; // ↓ → row 3, 3e case de la zone
-
-        // VK_0=0x30...VK_9=0x39, VK_NUMPAD0=0x60...VK_NUMPAD9=0x69
-        int vk = KeyInterop.VirtualKeyFromKey(key);
-        if (vk is >= 0x30 and <= 0x39) return vk - 0x30;
-        if (vk is >= 0x60 and <= 0x69) return vk - 0x60;
-        return null;
+        return TileHintMap.KeyNumberFor(key, extended);
     }
 
     // ── Recherche ────────────────────────────────────────────────────────────
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        var query = SearchBox.Text.Trim();
-        if (string.IsNullOrEmpty(query))
-        {
-            SearchPopup.IsOpen = false;
-            return;
-        }
-
-        var results = ShortcutService.Load()
-            .Where(s => s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(s => s.Name)
-            .Select(s => new SearchResultItem(s, IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(s.IconProfilePath) ?? s.IconPath)))
+        // La regle de filtrage vit dans ShortcutSearch ; la vue ne fait que charger les icones et
+        // ouvrir le popup, ce qui la regarde.
+        var results = ShortcutSearch.Filter(ShortcutService.Load(), SearchBox.Text)
+            .Select(s => new SearchResultItem(
+                s, IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(s.IconProfilePath) ?? s.IconPath)))
             .ToList();
 
         SearchResults.ItemsSource = results;
