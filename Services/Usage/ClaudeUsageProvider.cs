@@ -88,7 +88,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
                     DisplayName = Name,
                     Glyph = PastilleGlyph,
                     AccentColor = PastilleAccent,
-                    Detail = "non installé",
+                    Detail = Loc.T("Probe_NotInstalled"),
                 };
             }
 
@@ -100,7 +100,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
                 DataPath = root,
-                Detail = count == 0 ? "installé, aucune donnée de session" : "",
+                Detail = count == 0 ? Loc.T("Probe_NoSessionData") : "",
             };
         }
         catch (Exception ex)
@@ -112,7 +112,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
                 DisplayName = Name,
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
-                Detail = "détection impossible",
+                Detail = Loc.T("Probe_DetectionFailed"),
             };
         }
     }

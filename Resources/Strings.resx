@@ -15,11 +15,23 @@
   <data name="Browsers_RuleCount" xml:space="preserve">
     <value>{0} {0:plural:rule|rules}</value>
   </data>
+  <data name="Common_Browse" xml:space="preserve">
+    <value>...</value>
+  </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="Common_Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
   <data name="Common_Close" xml:space="preserve">
     <value>Close</value>
+  </data>
+  <data name="Common_Copied" xml:space="preserve">
+    <value>Copied ✓</value>
+  </data>
+  <data name="Common_Copy" xml:space="preserve">
+    <value>⧉ Copy</value>
   </data>
   <data name="Common_Elevate" xml:space="preserve">
     <value>🛡 Elevate</value>
@@ -50,6 +62,75 @@
   </data>
   <data name="Dialog_Title_Warning" xml:space="preserve">
     <value>Warning</value>
+  </data>
+  <data name="Entry_AppliesTo" xml:space="preserve">
+    <value>Applies to</value>
+  </data>
+  <data name="Entry_Command" xml:space="preserve">
+    <value>Command *</value>
+  </data>
+  <data name="Entry_Command_Tip" xml:space="preserve">
+    <value>Path to the executable. Use "%1" for the selected file.</value>
+  </data>
+  <data name="Entry_DisplayName" xml:space="preserve">
+    <value>Display name *</value>
+  </data>
+  <data name="Entry_DisplayName_Tip" xml:space="preserve">
+    <value>Text shown in the right-click menu</value>
+  </data>
+  <data name="Entry_Err_CommandRequired" xml:space="preserve">
+    <value>The command is required.</value>
+  </data>
+  <data name="Entry_Err_KeyRequired" xml:space="preserve">
+    <value>The registry key is required.</value>
+  </data>
+  <data name="Entry_Err_NameRequired" xml:space="preserve">
+    <value>The display name is required.</value>
+  </data>
+  <data name="Entry_Icon" xml:space="preserve">
+    <value>Icon (optional)</value>
+  </data>
+  <data name="Entry_Icon_Hint" xml:space="preserve">
+    <value>Accepted formats: .ico, .exe, .dll (optional index after a comma).</value>
+  </data>
+  <data name="Entry_Icon_Tip" xml:space="preserve">
+    <value>Path to .ico, .exe, .dll (e.g. C:\app.exe,0)</value>
+  </data>
+  <data name="Entry_Pick_Exe" xml:space="preserve">
+    <value>Choose an executable</value>
+  </data>
+  <data name="Entry_Pick_Exe_Filter" xml:space="preserve">
+    <value>Executables (*.exe)|*.exe|All files (*.*)|*.*</value>
+  </data>
+  <data name="Entry_Pick_Icon" xml:space="preserve">
+    <value>Choose an icon</value>
+  </data>
+  <data name="Entry_Pick_Icon_Filter" xml:space="preserve">
+    <value>Icons and executables (*.ico;*.exe;*.dll)|*.ico;*.exe;*.dll|All (*.*)|*.*</value>
+  </data>
+  <data name="Entry_RegistryKey" xml:space="preserve">
+    <value>Registry key *</value>
+  </data>
+  <data name="Entry_RegistryKey_Hint" xml:space="preserve">
+    <value>Unique internal identifier, no spaces or special characters.</value>
+  </data>
+  <data name="Entry_RegistryKey_Tip" xml:space="preserve">
+    <value>Unique identifier (no spaces, e.g. MyApp)</value>
+  </data>
+  <data name="Entry_Target_Background" xml:space="preserve">
+    <value>Folder background (right-click in an empty folder)</value>
+  </data>
+  <data name="Entry_Target_Files" xml:space="preserve">
+    <value>Files</value>
+  </data>
+  <data name="Entry_Target_Folders" xml:space="preserve">
+    <value>Folders</value>
+  </data>
+  <data name="Entry_Title_Edit" xml:space="preserve">
+    <value>Edit shortcut</value>
+  </data>
+  <data name="Entry_Title_New" xml:space="preserve">
+    <value>New shortcut</value>
   </data>
   <data name="Key_Delete" xml:space="preserve">
     <value>Del</value>
@@ -83,6 +164,48 @@
   </data>
   <data name="Language_Auto" xml:space="preserve">
     <value>Automatic (Windows)</value>
+  </data>
+  <data name="Mcp_AllowDelete" xml:space="preserve">
+    <value>Allow Claude to delete (tiles, pages, rules)</value>
+  </data>
+  <data name="Mcp_AllowDelete_Hint" xml:space="preserve">
+    <value>Unchecked (default): dockpad_shortcut_delete, dockpad_page_delete and dockpad_rule_delete are refused.</value>
+  </data>
+  <data name="Mcp_ClaudeDesktop" xml:space="preserve">
+    <value>Claude Desktop (claude_desktop_config.json)</value>
+  </data>
+  <data name="Mcp_Enable" xml:space="preserve">
+    <value>Enable the MCP server</value>
+  </data>
+  <data name="Mcp_Enable_Hint" xml:space="preserve">
+    <value>Unchecked: every request from Claude is refused with an explicit message.</value>
+  </data>
+  <data name="Mcp_LogCount" xml:space="preserve">
+    <value>{0} MCP {0:plural:action|actions} this session</value>
+  </data>
+  <data name="Mcp_Register_AllProjects" xml:space="preserve">
+    <value>For every project (user scope, -s user)</value>
+  </data>
+  <data name="Mcp_Register_ClaudeCode" xml:space="preserve">
+    <value>Registering in Claude Code</value>
+  </data>
+  <data name="Mcp_Register_Scope_Hint" xml:space="preserve">
+    <value>Unchecked: registration limited to the current project (local scope, the default of claude mcp add).</value>
+  </data>
+  <data name="Mcp_Tab_Journal" xml:space="preserve">
+    <value>Journal</value>
+  </data>
+  <data name="Mcp_Tab_Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="Mcp_Title" xml:space="preserve">
+    <value>MCP server</value>
+  </data>
+  <data name="Mcp_UpdatePath" xml:space="preserve">
+    <value>Updating the path (after a deployment)</value>
+  </data>
+  <data name="Mcp_UpdatePath_Hint" xml:space="preserve">
+    <value>If the server was registered under another path: remove the old registration, then add it again with the command above.</value>
   </data>
   <data name="Picker_AlwaysForDomain" xml:space="preserve">
     <value>Always for this domain</value>
@@ -126,6 +249,18 @@
   </data>
   <data name="Presets_Title" xml:space="preserve">
     <value>Predefined shortcuts</value>
+  </data>
+  <data name="Probe_DemoData" xml:space="preserve">
+    <value>demonstration data</value>
+  </data>
+  <data name="Probe_DetectionFailed" xml:space="preserve">
+    <value>detection failed</value>
+  </data>
+  <data name="Probe_NoSessionData" xml:space="preserve">
+    <value>installed, no session data</value>
+  </data>
+  <data name="Probe_NotInstalled" xml:space="preserve">
+    <value>not installed</value>
   </data>
   <data name="Settings_Claude_ArgsHint" xml:space="preserve">
     <value>e.g. --enable-auto-mode</value>
@@ -180,6 +315,69 @@
   </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="UsageCfg_AlertThreshold" xml:space="preserve">
+    <value>Alert threshold:</value>
+  </data>
+  <data name="UsageCfg_AlertThreshold_Tip" xml:space="preserve">
+    <value>Remaining percentage below which a gauge turns red</value>
+  </data>
+  <data name="UsageCfg_Badge_Hidden" xml:space="preserve">
+    <value>hidden</value>
+  </data>
+  <data name="UsageCfg_Badge_NotDetected" xml:space="preserve">
+    <value>not detected</value>
+  </data>
+  <data name="UsageCfg_Banner" xml:space="preserve">
+    <value>Banner</value>
+  </data>
+  <data name="UsageCfg_DefaultProvider" xml:space="preserve">
+    <value>Provider shown:</value>
+  </data>
+  <data name="UsageCfg_DefaultProvider_Tip" xml:space="preserve">
+    <value>Provider shown when DockPad opens. Switching tabs stays possible without changing this setting. A hidden provider stays selectable: showing it again restores the setting.</value>
+  </data>
+  <data name="UsageCfg_DetectFailed" xml:space="preserve">
+    <value>Detection failed. See the logs for details.</value>
+  </data>
+  <data name="UsageCfg_Empty" xml:space="preserve">
+    <value>No known provider. Use ↻ Detect again.</value>
+  </data>
+  <data name="UsageCfg_FirstAvailable" xml:space="preserve">
+    <value>First available</value>
+  </data>
+  <data name="UsageCfg_HiddenSuffix" xml:space="preserve">
+    <value>{0} (hidden)</value>
+  </data>
+  <data name="UsageCfg_NoData" xml:space="preserve">
+    <value>no data detected</value>
+  </data>
+  <data name="UsageCfg_NotDetected_Tip" xml:space="preserve">
+    <value>Kept: its visibility and order are preserved for the day the tool comes back</value>
+  </data>
+  <data name="UsageCfg_Providers" xml:space="preserve">
+    <value>Providers</value>
+  </data>
+  <data name="UsageCfg_Redetect" xml:space="preserve">
+    <value>↻ Detect again</value>
+  </data>
+  <data name="UsageCfg_Redetect_Tip" xml:space="preserve">
+    <value>Looks for installed assistants. Never done in the background.</value>
+  </data>
+  <data name="UsageCfg_ShowBanner" xml:space="preserve">
+    <value>Show the banner in DockPad</value>
+  </data>
+  <data name="UsageCfg_ShowCost" xml:space="preserve">
+    <value>Show estimated cost</value>
+  </data>
+  <data name="UsageCfg_ShowCost_Tip" xml:space="preserve">
+    <value>Estimated from public rates, in the currency of the source — never converted</value>
+  </data>
+  <data name="UsageCfg_Title" xml:space="preserve">
+    <value>AI usage</value>
+  </data>
+  <data name="UsageCfg_Visible_Tip" xml:space="preserve">
+    <value>Uncheck to remove this provider from the banner, without losing its settings</value>
   </data>
   <data name="Usage_DayTimeFormat" xml:space="preserve">
     <value>ddd HH:mm</value>

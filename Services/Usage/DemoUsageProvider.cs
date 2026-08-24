@@ -59,7 +59,7 @@ public sealed class DemoUsageProvider : IUsageProvider
         Glyph = _glyph,
         AccentColor = _accent,
         DataPath = "",
-        Detail = "données de démonstration",
+        Detail = Loc.T("Probe_DemoData"),
         IsDemo = true,
         HiddenByDefault = true,
     };

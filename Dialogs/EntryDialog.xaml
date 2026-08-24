@@ -1,7 +1,8 @@
 <Window x:Class="DockPad.EntryDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Nouveau raccourci"
+        xmlns:loc="clr-namespace:DockPad.Services.Localization"
+        Title="{loc:T Entry_Title_New}"
         Width="520" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -49,26 +50,26 @@
         <!-- Contenu -->
         <StackPanel Grid.Row="1" Margin="24,20">
             <!-- Nom affiché -->
-            <Label Content="Nom affiché *"/>
+            <Label Content="{loc:T Entry_DisplayName}"/>
             <TextBox x:Name="TxtDisplayName" Margin="0,0,0,16"
-                     ToolTip="Texte visible dans le menu clic droit"/>
+                     ToolTip="{loc:T Entry_DisplayName_Tip}"/>
 
             <!-- Clé de registre -->
-            <Label Content="Clé de registre *"/>
+            <Label Content="{loc:T Entry_RegistryKey}"/>
             <TextBox x:Name="TxtRegistryKey" Margin="0,0,0,4"
-                     ToolTip="Identifiant unique (sans espaces, ex: MonApp)"/>
-            <TextBlock Text="Identifiant interne unique, sans espaces ni caractères spéciaux."
+                     ToolTip="{loc:T Entry_RegistryKey_Tip}"/>
+            <TextBlock Text="{loc:T Entry_RegistryKey_Hint}"
                        FontSize="11" Foreground="#888" Margin="0,0,0,16"/>
 
             <!-- Commande -->
-            <Label Content="Commande *"/>
+            <Label Content="{loc:T Entry_Command}"/>
             <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="TxtCommand" Grid.Column="0"
-                         ToolTip="Chemin de l&apos;exécutable. Utilisez &quot;%1&quot; pour le fichier sélectionné."/>
+                         ToolTip="{loc:T Entry_Command_Tip}"/>
                 <Button Grid.Column="1" Content="..." Width="36" Margin="6,0,0,0"
                         Style="{StaticResource SecondaryButton}"
                         Click="BrowseCommand_Click"/>
@@ -77,7 +78,7 @@
                        FontSize="11" Foreground="#888" Margin="0,0,0,16"/>
 
             <!-- Icône -->
-            <Label Content="Icône (optionnel)"/>
+            <Label Content="{loc:T Entry_Icon}"/>
             <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -85,7 +86,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="TxtIconPath" Grid.Column="0"
-                         ToolTip="Chemin vers .ico, .exe, .dll (ex: C:\app.exe,0)"/>
+                         ToolTip="{loc:T Entry_Icon_Tip}"/>
                 <Button Grid.Column="1" Content="..." Width="36" Margin="6,0,0,0"
                         Style="{StaticResource SecondaryButton}"
                         Click="BrowseIcon_Click"/>
@@ -95,16 +96,16 @@
                     <Image x:Name="ImgIconPreview" Stretch="Uniform" Margin="4"/>
                 </Border>
             </Grid>
-            <TextBlock Text="Formats acceptés : .ico, .exe, .dll (index optionnel après virgule)."
+            <TextBlock Text="{loc:T Entry_Icon_Hint}"
                        FontSize="11" Foreground="#888" Margin="0,0,0,16"/>
 
             <!-- Cible -->
-            <Label Content="S'applique à"/>
+            <Label Content="{loc:T Entry_AppliesTo}"/>
             <ComboBox x:Name="CmbTarget" Margin="0,0,0,16"
                       SelectionChanged="CmbTarget_SelectionChanged">
-                <ComboBoxItem Content="Fichiers" Tag="Files"/>
-                <ComboBoxItem Content="Dossiers" Tag="Folders"/>
-                <ComboBoxItem Content="Fond de dossier (clic droit dans un dossier vide)" Tag="FolderBackground"/>
+                <ComboBoxItem Content="{loc:T Entry_Target_Files}" Tag="Files"/>
+                <ComboBoxItem Content="{loc:T Entry_Target_Folders}" Tag="Folders"/>
+                <ComboBoxItem Content="{loc:T Entry_Target_Background}" Tag="FolderBackground"/>
             </ComboBox>
 
             <!-- Note fond de dossier -->
@@ -122,9 +123,9 @@
         <Border Grid.Row="2" Background="White" Padding="24,12"
                 BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Annuler" Style="{StaticResource SecondaryButton}"
+                <Button Content="{loc:T Common_Cancel}" Style="{StaticResource SecondaryButton}"
                         Margin="0,0,12,0" Click="Cancel_Click"/>
-                <Button Content="Enregistrer" Style="{StaticResource PrimaryButton}"
+                <Button Content="{loc:T Common_Save}" Style="{StaticResource PrimaryButton}"
                         Click="Save_Click"/>
             </StackPanel>
         </Border>

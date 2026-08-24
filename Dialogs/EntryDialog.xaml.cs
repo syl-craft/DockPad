@@ -33,7 +33,7 @@ public partial class EntryDialog : Window
         _originalKey = Entry.RegistryKey;
         _originalTarget = Entry.Target;
 
-        Title = _isEdit ? "Modifier le raccourci" : "Nouveau raccourci";
+        Title = _isEdit ? Loc.T("Entry_Title_Edit") : Loc.T("Entry_Title_New");
 
         TxtDisplayName.Text = Entry.DisplayName;
         TxtRegistryKey.Text = Entry.RegistryKey;
@@ -83,8 +83,8 @@ public partial class EntryDialog : Window
     {
         var dlg = new OpenFileDialog
         {
-            Title = "Choisir un exécutable",
-            Filter = "Exécutables (*.exe)|*.exe|Tous les fichiers (*.*)|*.*"
+            Title = Loc.T("Entry_Pick_Exe"),
+            Filter = Loc.T("Entry_Pick_Exe_Filter")
         };
         if (dlg.ShowDialog() == true)
             TxtCommand.Text = $"\"{dlg.FileName}\" \"%1\"";
@@ -94,8 +94,8 @@ public partial class EntryDialog : Window
     {
         var dlg = new OpenFileDialog
         {
-            Title = "Choisir une icône",
-            Filter = "Icônes et exécutables (*.ico;*.exe;*.dll)|*.ico;*.exe;*.dll|Tous (*.*)|*.*"
+            Title = Loc.T("Entry_Pick_Icon"),
+            Filter = Loc.T("Entry_Pick_Icon_Filter")
         };
         if (dlg.ShowDialog() == true)
             TxtIconPath.Text = dlg.FileName;
@@ -124,19 +124,19 @@ public partial class EntryDialog : Window
 
         if (string.IsNullOrWhiteSpace(displayName))
         {
-            AppDialog.Warning("Le nom affiché est obligatoire.", owner: this);
+            AppDialog.Warning(Loc.T("Entry_Err_NameRequired"), owner: this);
             TxtDisplayName.Focus();
             return;
         }
         if (string.IsNullOrWhiteSpace(regKey))
         {
-            AppDialog.Warning("La clé de registre est obligatoire.", owner: this);
+            AppDialog.Warning(Loc.T("Entry_Err_KeyRequired"), owner: this);
             TxtRegistryKey.Focus();
             return;
         }
         if (string.IsNullOrWhiteSpace(command))
         {
-            AppDialog.Warning("La commande est obligatoire.", owner: this);
+            AppDialog.Warning(Loc.T("Entry_Err_CommandRequired"), owner: this);
             TxtCommand.Focus();
             return;
         }

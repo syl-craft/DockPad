@@ -158,7 +158,7 @@ public partial class UsageConfigDialog : Window
     {
         if (probe?.Detail.Length > 0) return probe.Detail;
         if (entry.DataPath.Length > 0) return entry.DataPath;
-        return entry.Detected ? "" : "aucune donnée détectée";
+        return entry.Detected ? "" : Loc.T("UsageCfg_NoData");
     }
 
     /// <summary>Couleur des entrées dont le fournisseur n'est plus dans le registre.</summary>
@@ -223,7 +223,7 @@ public partial class UsageConfigDialog : Window
         catch (Exception ex)
         {
             LogService.Error(ex, "Redétection des fournisseurs IA");
-            AppDialog.Error("La détection a échoué. Consultez les journaux pour le détail.", owner: this);
+            AppDialog.Error(Loc.T("UsageCfg_DetectFailed"), owner: this);
         }
     }
 

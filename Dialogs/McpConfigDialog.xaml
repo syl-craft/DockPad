@@ -1,7 +1,8 @@
 <Window x:Class="DockPad.McpConfigDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Serveur MCP"
+        xmlns:loc="clr-namespace:DockPad.Services.Localization"
+        Title="{loc:T Mcp_Title}"
         Width="620" Height="680"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
@@ -27,7 +28,7 @@
 
         <!-- Header -->
         <Border Grid.Row="0" Background="#0078D4" Padding="20,14">
-            <TextBlock Text="Serveur MCP" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+            <TextBlock Text="{loc:T Mcp_Title}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
         <!-- Onglets -->
@@ -62,27 +63,27 @@
             </TabControl.Resources>
 
             <!-- ══ Onglet Options ══ -->
-            <TabItem Header="Options">
+            <TabItem Header="{loc:T Mcp_Tab_Options}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="8,14,8,12">
-                    <CheckBox x:Name="ChkEnabled" Content="Activer le serveur MCP"
+                    <CheckBox x:Name="ChkEnabled" Content="{loc:T Mcp_Enable}"
                               FontSize="13" Checked="Option_Changed" Unchecked="Option_Changed"/>
-                    <TextBlock Text="Décoché : toutes les requêtes de Claude sont refusées avec un message explicite."
+                    <TextBlock Text="{loc:T Mcp_Enable_Hint}"
                                Foreground="#888" FontSize="11" Margin="22,2,0,12" TextWrapping="Wrap"/>
 
-                    <CheckBox x:Name="ChkAllowDelete" Content="Autoriser Claude à supprimer (tuiles, pages, règles)"
+                    <CheckBox x:Name="ChkAllowDelete" Content="{loc:T Mcp_AllowDelete}"
                               FontSize="13" Checked="Option_Changed" Unchecked="Option_Changed"/>
-                    <TextBlock Text="Décoché (défaut) : dockpad_shortcut_delete, dockpad_page_delete et dockpad_rule_delete sont refusés."
+                    <TextBlock Text="{loc:T Mcp_AllowDelete_Hint}"
                                Foreground="#888" FontSize="11" Margin="22,2,0,16" TextWrapping="Wrap"/>
 
                     <Separator Margin="0,0,0,14"/>
 
-                    <TextBlock Text="Enregistrement dans Claude Code" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
-                    <CheckBox x:Name="ChkUserScope" Content="Pour tous les projets (portée utilisateur, -s user)"
+                    <TextBlock Text="{loc:T Mcp_Register_ClaudeCode}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
+                    <CheckBox x:Name="ChkUserScope" Content="{loc:T Mcp_Register_AllProjects}"
                               FontSize="12" IsChecked="True" Margin="0,0,0,6"
                               Checked="Scope_Changed" Unchecked="Scope_Changed"/>
-                    <TextBlock Text="Décoché : enregistrement limité au projet courant (portée locale, défaut de claude mcp add)."
+                    <TextBlock Text="{loc:T Mcp_Register_Scope_Hint}"
                                Foreground="#888" FontSize="11" Margin="22,-2,0,8" TextWrapping="Wrap"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -91,12 +92,12 @@
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="TxtClaudeCodeCmd" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
                                  FontSize="11" Padding="6,4" TextWrapping="Wrap"/>
-                        <Button x:Name="BtnCopyCmd" Grid.Column="1" Content="⧉ Copier" Margin="8,0,0,0"
+                        <Button x:Name="BtnCopyCmd" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
                                 Style="{StaticResource SecondaryButton}" Click="CopyCmd_Click"/>
                     </Grid>
 
-                    <TextBlock Text="Mise à jour du chemin (après déploiement)" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,2"/>
-                    <TextBlock Text="Si le serveur était enregistré sur un autre chemin : supprimer l'ancien enregistrement, puis ré-ajouter avec la commande ci-dessus."
+                    <TextBlock Text="{loc:T Mcp_UpdatePath}" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,2"/>
+                    <TextBlock Text="{loc:T Mcp_UpdatePath_Hint}"
                                Foreground="#888" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -105,11 +106,11 @@
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="TxtClaudeCodeRemove" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
                                  FontSize="11" Padding="6,4" Text="claude mcp remove dockpad"/>
-                        <Button x:Name="BtnCopyRemove" Grid.Column="1" Content="⧉ Copier" Margin="8,0,0,0"
+                        <Button x:Name="BtnCopyRemove" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
                                 Style="{StaticResource SecondaryButton}" Click="CopyRemove_Click"/>
                     </Grid>
 
-                    <TextBlock Text="Claude Desktop (claude_desktop_config.json)" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,6"/>
+                    <TextBlock Text="{loc:T Mcp_ClaudeDesktop}" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,6"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -118,7 +119,7 @@
                         <TextBox x:Name="TxtClaudeDesktopCfg" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
                                  FontSize="11" Padding="6,4" TextWrapping="Wrap" AcceptsReturn="True"
                                  VerticalScrollBarVisibility="Auto" MaxHeight="140"/>
-                        <Button x:Name="BtnCopyCfg" Grid.Column="1" Content="⧉ Copier" Margin="8,0,0,0"
+                        <Button x:Name="BtnCopyCfg" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
                                 VerticalAlignment="Top" Style="{StaticResource SecondaryButton}" Click="CopyCfg_Click"/>
                     </Grid>
                 </StackPanel>
@@ -126,7 +127,7 @@
             </TabItem>
 
             <!-- ══ Onglet Journal ══ -->
-            <TabItem Header="Journal">
+            <TabItem Header="{loc:T Mcp_Tab_Journal}">
                 <Grid Margin="8,14,8,12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -135,7 +136,7 @@
 
                     <Grid Grid.Row="0" Margin="0,0,0,8">
                         <TextBlock x:Name="TxtLogCount" FontSize="12" Foreground="#555" VerticalAlignment="Center"/>
-                        <Button Content="Effacer" HorizontalAlignment="Right" Padding="8,4"
+                        <Button Content="{loc:T Common_Clear}" HorizontalAlignment="Right" Padding="8,4"
                                 Style="{StaticResource SecondaryButton}" Click="ClearLog_Click"/>
                     </Grid>
 
@@ -173,7 +174,7 @@
         <Border Grid.Row="2" Style="{StaticResource DialogFooter}">
             <Grid>
                 <TextBlock x:Name="TxtVersion" Style="{StaticResource FooterVersion}"/>
-                <Button Content="Fermer" Style="{StaticResource SecondaryButton}"
+                <Button Content="{loc:T Common_Close}" Style="{StaticResource SecondaryButton}"
                         HorizontalAlignment="Right" Click="Close_Click"/>
             </Grid>
         </Border>

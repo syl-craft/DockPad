@@ -46,7 +46,7 @@ public sealed class GeminiUsageProvider : IUsageProvider
                     DisplayName = Name,
                     Glyph = PastilleGlyph,
                     AccentColor = PastilleAccent,
-                    Detail = "non installé",
+                    Detail = Loc.T("Probe_NotInstalled"),
                 };
             }
 
@@ -61,7 +61,7 @@ public sealed class GeminiUsageProvider : IUsageProvider
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
                 DataPath = root,
-                Detail = hasSession ? "" : "installé, aucune donnée de session",
+                Detail = hasSession ? "" : Loc.T("Probe_NoSessionData"),
             };
         }
         catch (Exception ex)
@@ -73,7 +73,7 @@ public sealed class GeminiUsageProvider : IUsageProvider
                 DisplayName = Name,
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
-                Detail = "détection impossible",
+                Detail = Loc.T("Probe_DetectionFailed"),
             };
         }
     }

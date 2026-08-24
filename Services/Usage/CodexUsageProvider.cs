@@ -47,7 +47,7 @@ public sealed class CodexUsageProvider : IUsageProvider
                     DisplayName = Name,
                     Glyph = PastilleGlyph,
                     AccentColor = PastilleAccent,
-                    Detail = "non installé",
+                    Detail = Loc.T("Probe_NotInstalled"),
                 };
             }
 
@@ -62,7 +62,7 @@ public sealed class CodexUsageProvider : IUsageProvider
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
                 DataPath = root,
-                Detail = hasRollout ? "" : "installé, aucune donnée de session",
+                Detail = hasRollout ? "" : Loc.T("Probe_NoSessionData"),
             };
         }
         catch (Exception ex)
@@ -74,7 +74,7 @@ public sealed class CodexUsageProvider : IUsageProvider
                 DisplayName = Name,
                 Glyph = PastilleGlyph,
                 AccentColor = PastilleAccent,
-                Detail = "détection impossible",
+                Detail = Loc.T("Probe_DetectionFailed"),
             };
         }
     }

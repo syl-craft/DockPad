@@ -49,3 +49,36 @@ public sealed class TExtension : MarkupExtension
         return binding.ProvideValue(serviceProvider);
     }
 }
+
+/// <summary>
+/// Feedback passager sur un bouton — « Copié ✓ » — sans perdre sa traduction.
+/// </summary>
+/// <remarks>
+/// Assigner <c>Content</c> pose une <b>valeur locale</b>, qui remplace la liaison <c>{loc:T}</c> :
+/// remettre ensuite l'ancien texte rendrait le bouton sourd aux changements de langue pour le reste
+/// de la session. On mémorise donc la liaison et on la repose, plutôt que de recopier une chaîne.
+/// </remarks>
+public static class ButtonFlash
+{
+    public static void Flash(System.Windows.Controls.Button button, string message,
+                             TimeSpan duration)
+    {
+        var binding = System.Windows.Data.BindingOperations.GetBinding(
+            button, System.Windows.Controls.ContentControl.ContentProperty);
+        var original = button.Content;
+
+        button.Content = message;
+
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = duration };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            if (binding is not null)
+                System.Windows.Data.BindingOperations.SetBinding(
+                    button, System.Windows.Controls.ContentControl.ContentProperty, binding);
+            else
+                button.Content = original;
+        };
+        timer.Start();
+    }
+}

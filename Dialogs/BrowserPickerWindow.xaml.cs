@@ -198,10 +198,7 @@ public partial class BrowserPickerWindow : Window
     {
         try { Clipboard.SetText(_url); } catch (Exception ex) { Services.LogService.Warn(ex, "Copie de l'URL dans le presse-papiers"); return; }
 
-        BtnCopy.Content = Loc.T("Picker_Copied");
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
-        timer.Tick += (_, _) => { BtnCopy.Content = Loc.T("Picker_Copy"); timer.Stop(); };
-        timer.Start();
+        ButtonFlash.Flash(BtnCopy, Loc.T("Picker_Copied"), TimeSpan.FromSeconds(1.5));
     }
 
     private void OpenBrowser(BrowserEntry browser)
