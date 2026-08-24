@@ -188,7 +188,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             var path = ClaudeLimitsClient.CredentialsPath(_home);
             if (!File.Exists(path))
             {
-                NoteQuotaUnavailable("fichier de credentials introuvable");
+                NoteQuotaUnavailable("credentials file not found");
                 return FreshEnough(now);
             }
 
@@ -196,7 +196,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             var token = ClaudeLimitsClient.ReadAccessToken(File.ReadAllText(path), DateTime.UtcNow);
             if (token is null)
             {
-                NoteQuotaUnavailable("jeton d'accès absent ou expiré");
+                NoteQuotaUnavailable("access token missing or expired");
                 return FreshEnough(now);
             }
 
@@ -244,8 +244,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         _quotaFailure = cause;
         if (_loggedFailure == cause) return;
         _loggedFailure = cause;
-        LogService.Info($"Quota Claude indisponible ({cause}) — jauges masquées, "
-                      + "métriques de jetons conservées");
+        LogService.Info($"Quota Claude indisponible ({cause}) — jauges masquées, métriques conservées");
     }
 
     /// <summary>Le quota répond de nouveau : la notice tombe, et le retour est journalisé une fois.</summary>

@@ -92,12 +92,12 @@ public partial class ShortcutDialog : Window
 
         if (isStandard)
         {
-            LblCommand.Content = tag switch
+            LblCommand.Content = Loc.T(tag switch
             {
-                "OpenFolder" => "Chemin du dossier *",
-                "OpenUrl"    => "URL *",
-                _            => "Commande *",
-            };
+                "OpenFolder" => "Shortcut_FolderPath",
+                "OpenUrl"    => "Shortcut_Url",
+                _            => "Shortcut_Command",
+            });
             BtnBrowse.Visibility = tag == "OpenUrl" ? Visibility.Collapsed : Visibility.Visible;
         }
         else if (isTerminal)

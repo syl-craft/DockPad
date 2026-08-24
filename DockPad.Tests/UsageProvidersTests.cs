@@ -462,7 +462,10 @@ public class ClaudeUsageProviderTests : IDisposable
         var usage = await new ClaudeUsageProvider(_home, Failing()).ReadAsync(CancellationToken.None);
 
         Assert.Contains("indisponible", usage!.QuotaNotice);
-        Assert.Contains("jeton", usage.QuotaNoticeNote);
+        // « token » et non « jeton » : la cause est un diagnostic, en anglais et jamais traduite.
+        // Chercher « jeton » matcherait « métriques de jetons » du gabarit, donc passerait quoi qu'il
+        // arrive à la cause.
+        Assert.Contains("access token missing or expired", usage.QuotaNoticeNote);
     }
 
     [Fact]
@@ -473,7 +476,7 @@ public class ClaudeUsageProviderTests : IDisposable
         var usage = await new ClaudeUsageProvider(_home, Failing()).ReadAsync(CancellationToken.None);
 
         Assert.Contains("indisponible", usage!.QuotaNotice);
-        Assert.Contains("credentials", usage.QuotaNoticeNote);
+        Assert.Contains("credentials file not found", usage.QuotaNoticeNote);
     }
 
     [Fact]
@@ -514,7 +517,7 @@ public class ClaudeUsageProviderTests : IDisposable
         var second = await provider.ReadAsync(CancellationToken.None);
 
         Assert.DoesNotContain("429", second!.QuotaNoticeNote);
-        Assert.Contains("forme de réponse", second.QuotaNoticeNote);
+        Assert.Contains("unknown response shape", second.QuotaNoticeNote);
     }
 
     [Fact]

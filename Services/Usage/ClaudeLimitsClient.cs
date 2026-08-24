@@ -130,7 +130,7 @@ public sealed class ClaudeLimitsClient
     /// </returns>
     public async Task<(ClaudeLimits? Limits, string Failure)> FetchAsync(string accessToken, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(accessToken)) return (null, "jeton absent");
+        if (string.IsNullOrEmpty(accessToken)) return (null, "access token missing");
 
         try
         {
@@ -147,7 +147,8 @@ public sealed class ClaudeLimitsClient
             var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
             var limits = ParseUsage(body);
             return limits is null
-                ? (null, $"forme de réponse inconnue ({body.Length} octets)")
+                // Diagnostic, donc en anglais et non traduit : voir la remarque de classe.
+                ? (null, $"unknown response shape ({body.Length} bytes)")
                 : (limits, "");
         }
         catch (OperationCanceledException)

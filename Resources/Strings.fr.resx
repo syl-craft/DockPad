@@ -55,6 +55,9 @@ Les règles de domaine associées seront supprimées aussi.</value>
   <data name="Browsers_Name" xml:space="preserve">
     <value>Nom :</value>
   </data>
+  <data name="Browsers_NewBrowser" xml:space="preserve">
+    <value>Nouveau navigateur</value>
+  </data>
   <data name="Browsers_ParentFallback" xml:space="preserve">
     <value>son navigateur</value>
   </data>
@@ -94,6 +97,9 @@ Les règles de domaine associées seront supprimées aussi.</value>
   </data>
   <data name="Browsers_Rules_Empty" xml:space="preserve">
     <value>Aucune règle — cochez « Toujours pour ce domaine » dans la popup pour en créer une.</value>
+  </data>
+  <data name="Browsers_Rules_FilterAll" xml:space="preserve">
+    <value>Tous les navigateurs</value>
   </data>
   <data name="Browsers_Rules_Intro" xml:space="preserve">
     <value>Ces domaines s'ouvrent directement dans le navigateur associé, sans popup. Les règles se créent via « Toujours pour ce domaine » dans la popup.</value>
@@ -462,11 +468,20 @@ Cette action est irréversible.</value>
   <data name="Picker_AutoOpenIn" xml:space="preserve">
     <value>Ouverture automatique dans {0} s</value>
   </data>
+  <data name="Picker_BrowserNotFound" xml:space="preserve">
+    <value>Navigateur introuvable</value>
+  </data>
   <data name="Picker_Copied" xml:space="preserve">
     <value>Copié ✓</value>
   </data>
   <data name="Picker_Copy" xml:space="preserve">
     <value>⧉ Copier</value>
+  </data>
+  <data name="Picker_LaunchError" xml:space="preserve">
+    <value>Impossible de lancer {0} :
+{1}
+
+{2}</value>
   </data>
   <data name="Picker_Title" xml:space="preserve">
     <value>Ouvrir avec…</value>
@@ -617,6 +632,9 @@ Cette action est irréversible.</value>
   <data name="Quick_Page_Delete" xml:space="preserve">
     <value>🗑 Supprimer la page</value>
   </data>
+  <data name="Quick_Page_Full" xml:space="preserve">
+    <value>La page est pleine</value>
+  </data>
   <data name="Quick_Page_MoveLeft" xml:space="preserve">
     <value>← Déplacer à gauche</value>
   </data>
@@ -750,6 +768,9 @@ Cette action est irréversible.</value>
   <data name="Shortcut_FieldLabel_Title" xml:space="preserve">
     <value>titre de fenêtre</value>
   </data>
+  <data name="Shortcut_FolderPath" xml:space="preserve">
+    <value>Chemin du dossier *</value>
+  </data>
   <data name="Shortcut_Header_Edit" xml:space="preserve">
     <value>Modifier le raccourci</value>
   </data>
@@ -846,11 +867,17 @@ Cette action est irréversible.</value>
   <data name="Shortcut_Type_SwitchProcess" xml:space="preserve">
     <value>Basculer vers un processus</value>
   </data>
+  <data name="Shortcut_Url" xml:space="preserve">
+    <value>URL *</value>
+  </data>
   <data name="Shortcut_WindowTitle" xml:space="preserve">
     <value>Titre de la fenêtre *</value>
   </data>
   <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
     <value>Texte recherché dans le titre des fenêtres ouvertes (ex: Calculatrice)</value>
+  </data>
+  <data name="Terminal_Cmd" xml:space="preserve">
+    <value>Invite de commandes (cmd)</value>
   </data>
   <data name="Type_Browser" xml:space="preserve">
     <value>Navigateur</value>

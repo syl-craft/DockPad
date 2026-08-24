@@ -157,8 +157,8 @@ public static class UrlRouterService
         catch (Exception ex)
         {
             LogService.Error(ex, $"Lancement du navigateur {browser.Name} ({browser.ExePath})");
-            AppDialog.Error($"Impossible de lancer {browser.Name} :\n{browser.ExePath}\n\n{ex.Message}",
-                            "Navigateur introuvable");
+            AppDialog.Error(Loc.F("Picker_LaunchError", browser.Name, browser.ExePath, ex.Message),
+                            Loc.T("Picker_BrowserNotFound"));
             return false;
         }
     }

@@ -381,6 +381,13 @@ Son `ListFormatter` porte la conjonction localisée : `{1:list:{}|, | and }` rem
 #### Ce qui n'est pas traduit, et pourquoi
 - **Le journal** (`LogService.*`) : un log qui change de langue selon le poste n'est plus grep-able,
   et son lecteur est le développeur
+- **Les causes d'indisponibilité du quota** — « HTTP 429 TooManyRequests », « access token missing or
+  expired », « unknown response shape (N bytes) » : diagnostics, donc **en anglais et jamais
+  traduits**, comme les noms de type d'exception qui les côtoient. Elles partent au journal, où une
+  langue stable est ce qui rend une trace comparable d'un poste à l'autre, et s'affichent en
+  infobulle derrière une phrase, elle, traduite
+- **Les messages d'exception** (`throw new …`) : mêmes raisons, et l'utilisateur ne les voit que
+  derrière une phrase déjà traduite qui porte le sens
 - **Les messages MCP** : leur lecteur est un modèle, pas un humain. L'onglet Journal de la fenêtre
   MCP affiche le message **brut** du service — il rapporte ce qui a été renvoyé à Claude, il ne doit
   pas le réécrire
@@ -414,9 +421,15 @@ qui séparent les deux langues, **parité des clés**, valeurs non vides, **plac
 entre langues, **parsabilité de tous les gabarits** — ce dernier ramène à la suite de tests le mode
 de panne qu'on introduit en mettant de la syntaxe dans les valeurs.
 
-Trois gardes de cohérence, toutes vérifiées par mutation :
+Quatre gardes de cohérence, toutes vérifiées par mutation :
 
 - **aucun texte littéral dans un XAML** (`XamlLiteralGuardTests`) ;
+- **aucun texte français d'interface en dur dans le C#** (`FrenchLiteralGuardTests`). Le critère est
+  la présence d'un **mot-outil français**, pas d'un accent : le balayage manuel de la migration
+  cherchait des accents et a laissé passer « Tous les navigateurs », « La page est pleine »,
+  « Nouveau navigateur » et « Chemin du dossier * » — quatre libellés qui n'en portent aucun, dont un
+  trouvé par l'utilisateur après la revue. Sont exclus : les appels à `LogService`, les messages
+  d'exception (diagnostics, et lus dans le journal) et les fichiers qui parlent au serveur MCP ;
 - **toute clé citée existe** — `Loc.T` rend `[Clé]` au lieu de lever, donc une faute de frappe ne se
   verrait que sur l'écran concerné ;
 - **aucune clé du magasin n'est orpheline** — la parité vérifie la symétrie des deux langues, pas

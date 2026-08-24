@@ -786,7 +786,7 @@ public partial class QuickAccessWindow : Window
             if (pageFull)
             {
                 item.IsEnabled = false;
-                item.ToolTip   = "La page est pleine";
+                item.ToolTip   = Loc.T("Quick_Page_Full");
             }
             else
             {

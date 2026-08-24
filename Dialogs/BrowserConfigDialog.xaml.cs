@@ -109,7 +109,7 @@ public partial class BrowserConfigDialog : Window
         // (Re)peuple le filtre navigateur en préservant la sélection courante.
         _refreshingRuleFilter = true;
         var selectedFilter = CmbRuleFilter.SelectedValue as string;
-        var options = new List<RuleFilterOption> { new(null, "Tous les navigateurs") };
+        var options = new List<RuleFilterOption> { new(null, Loc.T("Browsers_Rules_FilterAll")) };
         options.AddRange(BrowserOptions());
         CmbRuleFilter.ItemsSource = options;
         CmbRuleFilter.SelectedValue = selectedFilter is not null && options.Any(o => o.Id == selectedFilter)
@@ -313,7 +313,10 @@ public partial class BrowserConfigDialog : Window
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
-        var entry = new BrowserEntry { Name = "Nouveau navigateur" };
+        // Le nom par defaut est traduit a la creation, puis devient de la donnee utilisateur dans
+        // browsers.json : il ne suit pas les bascules de langue ensuite, comme tout nom
+        // personnalisable.
+        var entry = new BrowserEntry { Name = Loc.T("Browsers_NewBrowser") };
         entry.Order = _config.Browsers.Count == 0 ? 0 : _config.Browsers.Max(b => b.Order) + 1;
         _config.Browsers.Add(entry);
         Save();

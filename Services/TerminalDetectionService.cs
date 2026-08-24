@@ -34,7 +34,7 @@ public static class TerminalDetectionService
         // Invite de commandes
         var cmdPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
         if (File.Exists(cmdPath))
-            list.Add(new TerminalInfo { DisplayName = "Invite de commandes (cmd)", ExePath = cmdPath });
+            list.Add(new TerminalInfo { DisplayName = Loc.T("Terminal_Cmd"), ExePath = cmdPath });
 
         // Git Bash
         var gitBash = FirstExisting(

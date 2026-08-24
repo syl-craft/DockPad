@@ -55,6 +55,9 @@ The associated domain rules will be deleted as well.</value>
   <data name="Browsers_Name" xml:space="preserve">
     <value>Name:</value>
   </data>
+  <data name="Browsers_NewBrowser" xml:space="preserve">
+    <value>New browser</value>
+  </data>
   <data name="Browsers_ParentFallback" xml:space="preserve">
     <value>its browser</value>
   </data>
@@ -94,6 +97,9 @@ The associated domain rules will be deleted as well.</value>
   </data>
   <data name="Browsers_Rules_Empty" xml:space="preserve">
     <value>No rule — tick “Always for this domain” in the popup to create one.</value>
+  </data>
+  <data name="Browsers_Rules_FilterAll" xml:space="preserve">
+    <value>All browsers</value>
   </data>
   <data name="Browsers_Rules_Intro" xml:space="preserve">
     <value>These domains open directly in the associated browser, without the popup. Rules are created with “Always for this domain” in the popup.</value>
@@ -462,11 +468,20 @@ This cannot be undone.</value>
   <data name="Picker_AutoOpenIn" xml:space="preserve">
     <value>Opening automatically in {0} s</value>
   </data>
+  <data name="Picker_BrowserNotFound" xml:space="preserve">
+    <value>Browser not found</value>
+  </data>
   <data name="Picker_Copied" xml:space="preserve">
     <value>Copied ✓</value>
   </data>
   <data name="Picker_Copy" xml:space="preserve">
     <value>⧉ Copy</value>
+  </data>
+  <data name="Picker_LaunchError" xml:space="preserve">
+    <value>Cannot launch {0}:
+{1}
+
+{2}</value>
   </data>
   <data name="Picker_Title" xml:space="preserve">
     <value>Open with…</value>
@@ -617,6 +632,9 @@ This cannot be undone.</value>
   <data name="Quick_Page_Delete" xml:space="preserve">
     <value>🗑 Delete the page</value>
   </data>
+  <data name="Quick_Page_Full" xml:space="preserve">
+    <value>The page is full</value>
+  </data>
   <data name="Quick_Page_MoveLeft" xml:space="preserve">
     <value>← Move left</value>
   </data>
@@ -750,6 +768,9 @@ This cannot be undone.</value>
   <data name="Shortcut_FieldLabel_Title" xml:space="preserve">
     <value>window title</value>
   </data>
+  <data name="Shortcut_FolderPath" xml:space="preserve">
+    <value>Folder path *</value>
+  </data>
   <data name="Shortcut_Header_Edit" xml:space="preserve">
     <value>Edit the shortcut</value>
   </data>
@@ -846,11 +867,17 @@ This cannot be undone.</value>
   <data name="Shortcut_Type_SwitchProcess" xml:space="preserve">
     <value>Switch to a process</value>
   </data>
+  <data name="Shortcut_Url" xml:space="preserve">
+    <value>URL *</value>
+  </data>
   <data name="Shortcut_WindowTitle" xml:space="preserve">
     <value>Window title *</value>
   </data>
   <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
     <value>Text searched in the titles of open windows (e.g. Calculator)</value>
+  </data>
+  <data name="Terminal_Cmd" xml:space="preserve">
+    <value>Command Prompt (cmd)</value>
   </data>
   <data name="Type_Browser" xml:space="preserve">
     <value>Browser</value>
