@@ -122,7 +122,7 @@ public partial class UsageConfigDialog : Window
     private void BuildDefaultChoices()
     {
         CmbDefaultProvider.Items.Clear();
-        CmbDefaultProvider.Items.Add(new DefaultChoice { Id = "", Label = "Premier disponible" });
+        CmbDefaultProvider.Items.Add(new DefaultChoice { Id = "", Label = Loc.T("UsageCfg_FirstAvailable") });
 
         foreach (var entry in _config.Providers.OrderBy(p => p.Order))
         {
@@ -130,7 +130,7 @@ public partial class UsageConfigDialog : Window
             CmbDefaultProvider.Items.Add(new DefaultChoice
             {
                 Id = entry.Id,
-                Label = entry.Hidden ? $"{name} (masqué)" : name,
+                Label = entry.Hidden ? Loc.F("UsageCfg_HiddenSuffix", name) : name,
             });
         }
 

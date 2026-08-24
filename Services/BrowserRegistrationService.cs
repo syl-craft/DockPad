@@ -30,7 +30,10 @@ public static class BrowserRegistrationService
         using (var cap = Registry.CurrentUser.CreateSubKey(CapabilitiesPath))
         {
             cap.SetValue("ApplicationName", "DockPad");
-            cap.SetValue("ApplicationDescription", "Sélecteur de navigateur DockPad");
+            // Windows affiche cette description dans « Applications par défaut ». Elle est écrite dans
+            // la langue du moment de l'enregistrement ; se réenregistrer la met à jour, comme pour
+            // les libellés des prédéfinis.
+            cap.SetValue("ApplicationDescription", Loc.T("Browsers_AppDescription"));
             using var assoc = cap.CreateSubKey("URLAssociations");
             assoc.SetValue("http",  ProgId);
             assoc.SetValue("https", ProgId);

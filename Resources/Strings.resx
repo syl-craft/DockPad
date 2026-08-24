@@ -15,6 +15,9 @@
   <data name="Browsers_Add_Tip" xml:space="preserve">
     <value>Add a browser</value>
   </data>
+  <data name="Browsers_AppDescription" xml:space="preserve">
+    <value>DockPad browser selector</value>
+  </data>
   <data name="Browsers_Args" xml:space="preserve">
     <value>Arguments:</value>
   </data>
@@ -874,6 +877,9 @@ This cannot be undone.</value>
     <value>No known provider. Use ↻ Detect again.</value>
   </data>
   <data name="UsageCfg_FirstAvailable" xml:space="preserve">
+    <value>First available</value>
+  </data>
+  <data name="UsageCfg_FirstAvailableLabel" xml:space="preserve">
     <value>First available</value>
   </data>
   <data name="UsageCfg_HiddenSuffix" xml:space="preserve">

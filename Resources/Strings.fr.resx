@@ -15,6 +15,9 @@
   <data name="Browsers_Add_Tip" xml:space="preserve">
     <value>Ajouter un navigateur</value>
   </data>
+  <data name="Browsers_AppDescription" xml:space="preserve">
+    <value>Sélecteur de navigateur DockPad</value>
+  </data>
   <data name="Browsers_Args" xml:space="preserve">
     <value>Arguments :</value>
   </data>
@@ -874,6 +877,9 @@ Cette action est irréversible.</value>
     <value>Aucun fournisseur connu. Utilisez ↻ Redétecter.</value>
   </data>
   <data name="UsageCfg_FirstAvailable" xml:space="preserve">
+    <value>Premier disponible</value>
+  </data>
+  <data name="UsageCfg_FirstAvailableLabel" xml:space="preserve">
     <value>Premier disponible</value>
   </data>
   <data name="UsageCfg_HiddenSuffix" xml:space="preserve">

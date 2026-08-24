@@ -7,6 +7,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Grille de tuiles** multi-pages (4 × 6) avec raccourci clavier global configurable
 - **Types de raccourcis** : lancer une commande, ouvrir un dossier, URL, terminal, basculer vers un processus
 - **Drag & drop** depuis l'Explorateur Windows (dossier → OpenFolder, fichier .url → OpenUrl)
+- **Français et anglais**, avec bascule immédiate depuis les Options — aucun redémarrage, les fenêtres ouvertes se retraduisent. Par défaut DockPad suit la langue de Windows
 - **Verrou du déplacement des tuiles** : un bouton de la toolbar (🔒 → ✓) ouvre la réorganisation, pour qu'un clic manqué ne déplace pas la tuile qu'on voulait lancer. Ranger la fenêtre repose le verrou
 - **Barre de recherche** globale avec navigation clavier
 - **Overlay numérique** (Ctrl/Shift + 1–9) pour exécution rapide au clavier
@@ -18,6 +19,8 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Bandeau Usage IA** : consommation de jetons de Claude Code, Codex, Gemini et Copilot, sous la grille
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
+
+![DockPad en anglais](docs/screenshots/window-en.png)
 
 ## Sélecteur de navigateur
 
