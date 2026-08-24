@@ -154,7 +154,8 @@ tools/
     McpShot/                             Outil console : capture les onglets de McpConfigDialog en PNG (doc)
     BrowserShot/                         Outil console : capture la popup de choix et la fenêtre Navigateurs en PNG
     DialogShot/                          Outil console : capture les fenêtres, contrôle les liaisons (bindings),
-                                         le câblage de la grille (grid) et l'overlay clavier (overlay)
+                                         le câblage de la grille (grid), l'overlay clavier (overlay),
+                                         et chronomètre un peuplement (bench)
     UsageShot/                           Outil console : capture le bandeau Usage IA et sa fenêtre de réglages en PNG (doc)
 ```
 
@@ -857,6 +858,18 @@ Ce que la bascule change, et qui ne se voit ni à la compilation ni sur une capt
 choisies et vérifie ce que lisent réellement le clic, le glissement et le dépôt : chaque case porte
 une `TileCell`, sa position correspond à sa place dans la grille, et son menu existe puis se remplit.
 Les quatre ruptures ci-dessus ont été **reproduites par mutation** pour prouver que le contrôle mord.
+
+**`DialogShot.exe bench fr [folder|command]`** chronomètre un peuplement sur une page pleine, le
+geste que refont chaque changement de page et chaque changement de langue. Mesuré sur 20 passages :
+
+| Page pleine de… | Menus construits d'avance | Menus différés |
+|---|---|---|
+| tuiles de commande | 38,0 ms | 24,7 ms |
+| tuiles de dossier | 194,6 ms | 22,3 ms |
+
+Le surcoût des tuiles de dossier — une lecture du registre par tuile — **disparaît entièrement** :
+après, un dossier ne coûte pas plus cher qu'une commande. C'est le gain concret de l'étape, et la
+raison de préférer `ContextMenuOpening` à un menu construit avec la tuile.
 
 **`DialogShot.exe overlay fr <png>`** rend l'overlay clavier déployé — le seul état que les captures
 de fenêtres au repos ne montrent pas. Il appelle `ShowHintOverlay` par réflexion, sous un nom que

@@ -73,6 +73,13 @@ internal static class Program
             return;
         }
 
+        // Cout d'un peuplement de la grille : le geste que refait chaque changement de page.
+        if (target == "bench")
+        {
+            GridBench.Run(folders: args.Length < 3 || args[2] != "command");
+            return;
+        }
+
         // Overlay clavier deploye : la seule chose que les captures au repos ne montrent pas.
         if (target == "overlay")
         {
