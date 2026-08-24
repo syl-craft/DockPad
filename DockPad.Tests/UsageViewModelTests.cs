@@ -19,7 +19,7 @@ public class UsageViewModelTests
                                  long session = 12_400, long day = 86_000, long month = 1_200_000,
                                  int requests = 47, string cost = "$4", string model = "claude-opus-5",
                                  int? sessionUsed = 62, int? weekUsed = 44,
-                                 string usageUrl = "") => new()
+                                 string usageUrl = "", string quotaNotice = "") => new()
     {
         ProviderId = id,
         Name = name.Length > 0 ? name : id,
@@ -32,6 +32,8 @@ public class UsageViewModelTests
         DayTokens = day,
         MonthTokens = month,
         Requests = requests,
+        QuotaNotice = quotaNotice,
+        QuotaNoticeNote = quotaNotice.Length > 0 ? "HTTP 429 TooManyRequests" : "",
         Session = sessionUsed is null ? null : new UsageWindow { UsedPct = sessionUsed.Value },
         Week = weekUsed is null ? null : new UsageWindow { UsedPct = weekUsed.Value },
         IsDemo = demo,
@@ -335,6 +337,42 @@ public class UsageViewModelTests
         Assert.Equal("semaine", vm.WeekGauge!.Label);
         Assert.Contains("62 % utilisés", vm.SessionGauge.Tooltip);
         Assert.Contains("38 % restants", vm.SessionGauge.Tooltip);
+    }
+
+    [Fact]
+    public async Task Notice_QuotaIndisponible_RelayeeAvecSonInfobulle()
+    {
+        // Les jauges masquées prennent la place d'une explication : sans elle, le bandeau ne dit
+        // pas ce qu'il se passe et la raison ne vit que dans le fichier de log.
+        var vm = Build(ConfigFor(("a", false)),
+                       Usage("a", sessionUsed: null, weekUsed: null,
+                             quotaNotice: "Quota indisponible — nouvelle tentative dans 4 min"));
+        await vm.RefreshAsync();
+
+        Assert.True(vm.HasQuotaNotice);
+        Assert.Contains("nouvelle tentative", vm.QuotaNotice);
+        Assert.Contains("429", vm.QuotaNoticeTooltip);
+    }
+
+    [Fact]
+    public async Task Notice_FournisseurSansQuota_RienAAfficher()
+    {
+        // Codex, Gemini et Copilot n'exposent aucun quota : leurs jauges sont absentes par nature,
+        // pas en panne. Une notice y serait un faux problème.
+        var vm = Build(ConfigFor(("a", false)), Usage("a", sessionUsed: null, weekUsed: null));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.HasQuotaNotice);
+        Assert.Equal("", vm.QuotaNotice);
+    }
+
+    [Fact]
+    public async Task Notice_QuotaRevenu_LaNoticeDisparait()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a", sessionUsed: 62, weekUsed: 44));
+        await vm.RefreshAsync();
+
+        Assert.False(vm.HasQuotaNotice);
     }
 
     // --- Attente

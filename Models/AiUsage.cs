@@ -40,6 +40,21 @@ public sealed class AiUsage
     /// <summary>Appels du jour, après déduplication.</summary>
     public int Requests { get; init; }
 
+    /// <summary>
+    /// Pourquoi les jauges sont masquées, en une ligne affichable, ou vide s'il n'y a rien à
+    /// signaler. Portée par le fournisseur, comme <see cref="CostNote"/> : un quota absent par
+    /// nature — Codex, Gemini, Copilot n'en exposent aucun — n'est pas une panne et ne dit rien,
+    /// alors qu'un refus de l'endpoint de Claude doit se voir. Sans elle, la seule trace de
+    /// l'indisponibilité vit dans le fichier de log.
+    /// </summary>
+    public string QuotaNotice { get; init; } = "";
+
+    /// <summary>
+    /// Précision technique affichée au survol de la notice — un code de statut, un type
+    /// d'exception. Jamais le jeton ni le corps de la réponse.
+    /// </summary>
+    public string QuotaNoticeNote { get; init; } = "";
+
     /// <summary>Quota de session. <c>null</c> = quota inconnu → la jauge se masque.</summary>
     public UsageWindow? Session { get; init; }
     /// <summary>Quota hebdomadaire. <c>null</c> = quota inconnu → la jauge se masque.</summary>

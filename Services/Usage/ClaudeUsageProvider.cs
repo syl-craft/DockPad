@@ -20,8 +20,19 @@ public sealed class ClaudeUsageProvider : IUsageProvider
     private readonly ClaudeLimitsClient _limits;
     private readonly Func<DateTime> _clock;
 
-    /// <summary>Vrai dès que l'indisponibilité du quota a été signalée dans le journal.</summary>
-    private static bool _limitsFailureLogged;
+    /// <summary>
+    /// Dernière cause d'indisponibilité du quota, vide quand l'endpoint répond. Elle alimente la
+    /// notice affichée à la place des jauges.
+    /// </summary>
+    private string _quotaFailure = "";
+
+    /// <summary>
+    /// Cause déjà écrite dans le journal. Journaliser à chaque rafraîchissement noierait les vraies
+    /// anomalies, mais ne journaliser qu'une fois par session cachait la suivante : un 429 puis un
+    /// changement de forme de réponse ne laissaient qu'une seule trace, celle du premier. On
+    /// journalise donc chaque <b>changement</b> de cause, retour à la normale compris.
+    /// </summary>
+    private string _loggedFailure = "";
 
     /// <summary>
     /// Intervalle minimal entre deux appels au quota.
@@ -121,6 +132,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         totals ??= UsageAggregator.Empty;
 
         var limits = await ReadLimitsAsync(ct).ConfigureAwait(false);
+        var (notice, note) = QuotaNoticeFor(limits);
 
         return new AiUsage
         {
@@ -139,6 +151,8 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             Requests = totals.Requests,
             Session = limits?.Session,
             Week = limits?.Week,
+            QuotaNotice = notice,
+            QuotaNoticeNote = note,
         };
     }
 
@@ -164,16 +178,28 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         // C'est aussi ce qui évite de marteler l'endpoint après un 429.
         if (_lastAttempt != default && now - _lastAttempt < QuotaMinInterval) return FreshEnough(now);
 
+        // Le créneau est posé avant l'appel pour ne pas laisser deux lectures partir de front, mais
+        // il est rendu si l'appel est annulé : une annulation n'a rien tenté, et lui faire consommer
+        // cinq minutes donnait cinq minutes de jauges vides sans un mot, ni à l'écran ni au journal.
+        var previousAttempt = _lastAttempt;
         _lastAttempt = now;
 
         try
         {
             var path = ClaudeLimitsClient.CredentialsPath(_home);
-            if (!File.Exists(path)) return FreshEnough(now);
+            if (!File.Exists(path))
+            {
+                NoteQuotaUnavailable("fichier de credentials introuvable");
+                return FreshEnough(now);
+            }
 
             // Le jeton reste local à cette méthode : ni champ, ni journal, ni config.
             var token = ClaudeLimitsClient.ReadAccessToken(File.ReadAllText(path), DateTime.UtcNow);
-            if (token is null) return FreshEnough(now);
+            if (token is null)
+            {
+                NoteQuotaUnavailable("jeton d'accès absent ou expiré");
+                return FreshEnough(now);
+            }
 
             var (limits, failure) = await _limits.FetchAsync(token, ct).ConfigureAwait(false);
             if (limits is null)
@@ -184,12 +210,14 @@ public sealed class ClaudeUsageProvider : IUsageProvider
                 return FreshEnough(now);
             }
 
+            NoteQuotaRestored();
             _cachedLimits = limits;
             _cachedAt = now;
             return limits;
         }
         catch (OperationCanceledException)
         {
+            _lastAttempt = previousAttempt;
             throw;
         }
         catch (Exception ex)
@@ -208,14 +236,47 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         _cachedLimits is not null && now - _cachedAt < QuotaMaxAge ? _cachedLimits : null;
 
     /// <summary>
-    /// Signale l'indisponibilité du quota <b>une seule fois par session</b> : l'endpoint n'est pas
-    /// documenté, et un journal à chaque rafraîchissement noierait les vraies anomalies.
+    /// Retient la cause d'indisponibilité du quota, et la journalise si elle a changé depuis la
+    /// dernière fois. L'endpoint n'est pas documenté : la cause exacte est la première question
+    /// qu'on se pose, et un 401 ne se diagnostique pas comme un 429.
     /// </summary>
-    private static void NoteQuotaUnavailable(string cause)
+    private void NoteQuotaUnavailable(string cause)
     {
-        if (_limitsFailureLogged) return;
-        _limitsFailureLogged = true;
+        _quotaFailure = cause;
+        if (_loggedFailure == cause) return;
+        _loggedFailure = cause;
         LogService.Info($"Quota Claude indisponible ({cause}) — jauges masquées, "
                       + "métriques de jetons conservées");
+    }
+
+    /// <summary>Le quota répond de nouveau : la notice tombe, et le retour est journalisé une fois.</summary>
+    private void NoteQuotaRestored()
+    {
+        _quotaFailure = "";
+        if (_loggedFailure.Length == 0) return;
+        _loggedFailure = "";
+        LogService.Info("Quota Claude de nouveau disponible — jauges rétablies");
+    }
+
+    /// <summary>
+    /// Notice à afficher à la place des jauges, et sa précision technique.
+    /// </summary>
+    /// <remarks>
+    /// Rien à dire quand le quota est là, ni quand rien n'a échoué. Le délai annoncé est celui du
+    /// prochain appel réel : sans lui, l'absence de jauges se lit comme une panne définitive alors
+    /// que l'application réessaie toute seule.
+    /// </remarks>
+    private (string Notice, string Note) QuotaNoticeFor(ClaudeLimitsClient.ClaudeLimits? limits)
+    {
+        if (limits is not null || _quotaFailure.Length == 0) return ("", "");
+
+        var remaining = _lastAttempt + QuotaMinInterval - _clock();
+        var retry = remaining > TimeSpan.Zero
+            ? $"nouvelle tentative dans {Math.Max(1, (int)Math.Ceiling(remaining.TotalMinutes))} min"
+            : "nouvelle tentative au prochain rafraîchissement";
+
+        return ($"Quota indisponible — {retry}",
+                $"{_quotaFailure}. Les jauges restent masquées ; les métriques de jetons, "
+                + "lues dans les transcripts locaux, sont exactes.");
     }
 }

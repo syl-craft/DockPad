@@ -93,6 +93,19 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     public UsageGaugeItem? SessionGauge { get; private set; }
     public UsageGaugeItem? WeekGauge { get; private set; }
 
+    /// <summary>
+    /// Explication affichée à la place des jauges quand le quota est indisponible, vide s'il n'y a
+    /// rien à signaler. Le texte vient du fournisseur : lui seul sait pourquoi sa source se tait, et
+    /// un quota absent par nature — Codex, Gemini, Copilot — n'est pas une panne.
+    /// </summary>
+    public string QuotaNotice { get; private set; } = "";
+
+    /// <summary>Précision technique affichée au survol de la notice.</summary>
+    public string QuotaNoticeTooltip { get; private set; } = "";
+
+    /// <summary>Il y a une notice à montrer.</summary>
+    public bool HasQuotaNotice => QuotaNotice.Length > 0;
+
     /// <summary>Démarre le rafraîchissement périodique. À appeler quand la fenêtre s'affiche.</summary>
     public void Start()
     {
@@ -217,6 +230,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         ShowTabs = _snapshots.Count > 1;
         IsDemo = selected?.IsDemo ?? false;
         UsageUrl = selected?.UsageUrl ?? "";
+        QuotaNotice = selected?.QuotaNotice ?? "";
+        QuotaNoticeTooltip = selected?.QuotaNoticeNote ?? "";
 
         SoloName = selected?.Name ?? "";
         SoloGlyph = selected?.Glyph ?? "";
@@ -333,6 +348,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                      nameof(IsVisible), nameof(ShowTabs), nameof(SoloName), nameof(SoloGlyph),
                      nameof(SoloAccent), nameof(IsDemo), nameof(SessionGauge), nameof(WeekGauge),
                      nameof(UsageUrl), nameof(HasUsageUrl),
+                     nameof(QuotaNotice), nameof(QuotaNoticeTooltip), nameof(HasQuotaNotice),
                  })
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
