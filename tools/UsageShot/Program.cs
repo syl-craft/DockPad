@@ -332,59 +332,90 @@ internal static class Program
     /// Quelques cases restent vides à dessein — le « + » grisé fait partie de ce qu'il faut montrer.
     /// </para>
     /// </remarks>
+    /// <summary>Dossier des icônes de démonstration, surchargeable par variable d'environnement.</summary>
+    private static string DemoIcons =>
+        Environment.GetEnvironmentVariable("DOCKPAD_DEMO_ICONS") ?? @"C:\dev\Dock-icons";
+
+    /// <summary>
+    /// Icône du jeu de démonstration, ou chaîne vide si le dossier n'est pas là.
+    /// </summary>
+    /// <remarks>
+    /// Ces PNG vivent <b>hors du dépôt</b> et volontairement : ce sont des logos de produits, qu'on
+    /// ne redistribue pas dans un dépôt public. Sur une machine qui n'a pas le dossier, la tuile
+    /// s'affiche sans icône — la capture est moins jolie, elle n'est pas cassée.
+    /// </remarks>
+    private static string DemoIcon(string name)
+    {
+        var path = Path.Combine(DemoIcons, name + ".png");
+        return File.Exists(path) ? path : "";
+    }
+
     private static void WriteDemoGrid()
     {
         string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string sys = Environment.GetFolderPath(Environment.SpecialFolder.System);
         string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 
-        string code = FirstExisting(
-            Path.Combine(local, @"Programs\Microsoft VS Code\Code.exe"),
-            @"C:\Program Files\Microsoft VS Code\Code.exe");
-        string chrome = FirstExisting(
-            @"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe");
-        string edge = FirstExisting(
-            @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-            @"C:\Program Files\Microsoft\Edge\Application\msedge.exe");
         string terminal = FirstExisting(
             Path.Combine(local, @"Microsoft\WindowsApps\wt.exe"),
             Path.Combine(sys, "cmd.exe"));
         string posh = Path.Combine(sys, @"WindowsPowerShell\v1.0\powershell.exe");
+        string browser = FirstExisting(
+            @"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe");
+        string moba = FirstExisting(
+            @"C:\Program Files (x86)\Mobatek\MobaXterm\MobaXterm.exe",
+            @"C:\Program Files\Mobatek\MobaXterm\MobaXterm.exe");
         string folderIcon = Path.Combine(AppContext.BaseDirectory, "Assets", "folder.png");
+
+        // Le jeu d'icônes du projet, quand il est présent ; sinon l'icône de l'exe, sinon rien.
+        string claude = Or(DemoIcon("claude-code"), terminal);
+        string code = Or(DemoIcon("vscode"), FirstExisting(
+            Path.Combine(local, @"Programs\Microsoft VS Code\Code.exe"),
+            @"C:\Program Files\Microsoft VS Code\Code.exe"));
+        string fusion = DemoIcon("fusion360");
+        string bambu = DemoIcon("bambu-studio");
+        string devops = DemoIcon("azure-devops");
+        string prs = DemoIcon("pull-requests");
+        string board = DemoIcon("task-board");
+        string gmail = DemoIcon("gmail");
 
         var tiles = new List<ShortcutEntry>
         {
-            Tile(0, 0, 0, "Claude", ShortcutType.OpenTerminal, @"C:\dev\DockPad", terminal),
-            Tile(0, 0, 1, "VS Code", ShortcutType.RunCommand, code, code),
-            Tile(0, 0, 2, "PowerShell", ShortcutType.OpenTerminal, @"C:\dev", posh),
-            Tile(0, 0, 3, "Chrome", ShortcutType.RunCommand, chrome, chrome),
-            Tile(0, 0, 4, "Edge", ShortcutType.RunCommand, edge, edge),
-            Tile(0, 0, 5, "GitHub", ShortcutType.OpenUrl, "https://github.com", chrome),
+            // Outils de développement
+            Tile(0, 0, 0, "Claude Code", ShortcutType.OpenTerminal, @"C:\dev\DockPad", claude),
+            Tile(0, 0, 1, "VS Code", ShortcutType.RunCommand, @"code C:\dev\DockPad", code),
+            Tile(0, 0, 2, "MobaXterm", ShortcutType.RunCommand, moba, Or(moba, "")),
+            Tile(0, 0, 3, "PowerShell", ShortcutType.OpenTerminal, @"C:\dev", posh),
+            Tile(0, 0, 4, "Fusion 360", ShortcutType.RunCommand, "fusion360.exe", fusion),
+            Tile(0, 0, 5, "Bambu Studio", ShortcutType.RunCommand, "bambustudio.exe", bambu),
 
+            // Dossiers
             Tile(0, 1, 0, @"C:\dev", ShortcutType.OpenFolder, @"C:\dev", folderIcon),
-            Tile(0, 1, 1, "Projects", ShortcutType.OpenFolder, @"C:\dev\projects", folderIcon),
-            Tile(0, 1, 2, "Downloads", ShortcutType.OpenFolder, @"C:\Users\Demo\Downloads", folderIcon),
+            Tile(0, 1, 1, "Projets", ShortcutType.OpenFolder, @"C:\dev\projets", folderIcon),
+            Tile(0, 1, 2, "Impressions 3D", ShortcutType.OpenFolder, @"C:\dev\3d", folderIcon),
             Tile(0, 1, 3, "Documents", ShortcutType.OpenFolder, @"C:\Users\Demo\Documents", folderIcon),
-            Tile(0, 1, 5, "Anthropic", ShortcutType.OpenUrl, "https://claude.ai", edge),
-
-            Tile(0, 2, 0, "Task Manager", ShortcutType.SwitchToProcess, "Taskmgr.exe",
-                 Path.Combine(sys, "Taskmgr.exe")),
-            Tile(0, 2, 1, "Notepad", ShortcutType.RunCommand, Path.Combine(sys, "notepad.exe"),
-                 Path.Combine(sys, "notepad.exe")),
-            Tile(0, 2, 2, "Calculator", ShortcutType.SwitchToProcess, "CalculatorApp.exe",
-                 Path.Combine(sys, "calc.exe")),
-            Tile(0, 2, 3, "Explorer", ShortcutType.RunCommand, Path.Combine(win, "explorer.exe"),
+            Tile(0, 1, 5, "Explorateur", ShortcutType.RunCommand, Path.Combine(win, "explorer.exe"),
                  Path.Combine(win, "explorer.exe")),
-            Tile(0, 2, 5, "Control Panel", ShortcutType.RunCommand, Path.Combine(sys, "control.exe"),
-                 Path.Combine(sys, "control.exe")),
 
-            Tile(0, 3, 0, "Registry", ShortcutType.RunCommand, Path.Combine(win, "regedit.exe"),
-                 Path.Combine(win, "regedit.exe")),
-            Tile(0, 3, 1, "System info", ShortcutType.RunCommand, Path.Combine(sys, "msinfo32.exe"),
-                 Path.Combine(sys, "msinfo32.exe")),
-            Tile(0, 3, 3, "Remote desktop", ShortcutType.RunCommand, Path.Combine(sys, "mstsc.exe"),
-                 Path.Combine(sys, "mstsc.exe")),
+            // Web
+            Tile(0, 2, 0, "Azure DevOps", ShortcutType.OpenUrl, "https://dev.azure.com", devops),
+            Tile(0, 2, 1, "Pull requests", ShortcutType.OpenUrl, "https://github.com/pulls", prs),
+            Tile(0, 2, 2, "Tableau", ShortcutType.OpenUrl, "https://dev.azure.com/_boards", board),
+            Tile(0, 2, 3, "Gmail", ShortcutType.OpenUrl, "https://mail.google.com", gmail),
+            // Pas de logo dans le jeu d'icones pour ces deux-la : repli sur l'icone du navigateur,
+            // ce qui est exactement ce que fait DockPad pour une tuile OpenUrl sans icone propre.
+            // Deposer figma.png / agenda-google.png dans le dossier d'icones suffit a les habiller.
+            Tile(0, 2, 4, "Figma", ShortcutType.OpenUrl, "https://figma.com",
+                 Or(DemoIcon("figma"), browser)),
+            Tile(0, 2, 5, "Agenda", ShortcutType.OpenUrl, "https://calendar.google.com",
+                 Or(DemoIcon("agenda-google"), browser)),
+
+            // Système
+            Tile(0, 3, 0, "Gestionnaire", ShortcutType.SwitchToProcess, "Taskmgr.exe",
+                 Path.Combine(sys, "Taskmgr.exe")),
+            Tile(0, 3, 1, "Bloc-notes", ShortcutType.RunCommand, Path.Combine(sys, "notepad.exe"),
+                 Path.Combine(sys, "notepad.exe")),
         };
 
         ShortcutService.Save(tiles.Where(t => t.Command.Length > 0).ToList());
@@ -397,6 +428,10 @@ internal static class Program
             new PageConfig { Index = 2 },
         ]);
     }
+
+    /// <summary>Le premier des deux qui ne soit pas vide.</summary>
+    private static string Or(string preferred, string fallback) =>
+        preferred.Length > 0 ? preferred : fallback;
 
     private static ShortcutEntry Tile(int page, int row, int col, string name, ShortcutType type,
                                       string command, string icon) => new()
