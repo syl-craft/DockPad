@@ -349,39 +349,10 @@ public partial class ShortcutDialog : Window
 
     private void RefreshIconPreview()
     {
-        try
-        {
-            string path = TxtIconPath.Text.Trim().Split(',')[0].Trim('"');
-            if (!File.Exists(path)) { ImgIconPreview.Source = null; return; }
-
-            string ext = Path.GetExtension(path).ToLowerInvariant();
-            if (ext is ".ico" or ".png" or ".bmp" or ".jpg" or ".jpeg")
-            {
-                ImgIconPreview.Source = new BitmapImage(new Uri(path));
-                return;
-            }
-            if (ext is ".exe" or ".dll")
-            {
-                using var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
-                if (icon is null) { ImgIconPreview.Source = null; return; }
-                using var bmp = icon.ToBitmap();
-                var handle = bmp.GetHbitmap();
-                try
-                {
-                    ImgIconPreview.Source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                        handle, IntPtr.Zero, Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions());
-                }
-                finally { DeleteObject(handle); }
-                return;
-            }
-        }
-        catch (Exception ex) { Services.LogService.Warn(ex, "Aperçu de l'icône (ShortcutDialog)"); }
-        ImgIconPreview.Source = null;
+        // Une seule porte pour charger une icone : le verrou de fichier, le gel et le respect de
+        // l'index se corrigent a un seul endroit.
+        ImgIconPreview.Source = IconStoreService.LoadImage(TxtIconPath.Text);
     }
-
-    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr hObject);
 
     // ── Enregistrement ───────────────────────────────────────────────────────
 

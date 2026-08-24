@@ -26,6 +26,7 @@ public partial class AppDialog : Window
 
         var color = (Color)ColorConverter.ConvertFromString(hex);
         var brush = new SolidColorBrush(color);
+        brush.Freeze();   // posee sur deux elements et jamais modifiee ensuite
 
         AccentBar.Background  = brush;
         IconBadge.Background  = brush;

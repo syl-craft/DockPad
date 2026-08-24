@@ -1,5 +1,7 @@
 using System.IO;
 using System.Security.Cryptography;
+using System.Windows;
+using System.Windows.Media.Imaging;
 using DockPad.Models;
 
 namespace DockPad.Services;
@@ -102,6 +104,86 @@ public static class IconStoreService
     /// Découpe une référence d'icône au format registre "chemin[,index]" (ex: valeur DefaultIcon).
     /// Index positif = position dans le fichier, négatif = ID de ressource, absent = 0.
     /// </summary>
+    /// <summary>
+    /// Image affichable d'une référence d'icône — <c>chemin[,index]</c> — ou <c>null</c> si elle est
+    /// absente, illisible ou d'un format non géré.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Porte unique.</b> Cinq copies de cette fonction vivaient dans les vues, chacune avec sa
+    /// propre déclaration P/Invoke de <c>DeleteObject</c> : corriger un défaut de chargement
+    /// demandait cinq corrections, et la copie suivante repartait avec.
+    /// </para>
+    /// <para>
+    /// <b><c>OnLoad</c> et non le défaut.</b> <c>new BitmapImage(uri)</c> laisse
+    /// <c>BitmapCacheOption.OnDemand</c>, qui garde le fichier ouvert tant que l'image vit. Le store
+    /// réécrit et resynchronise des fichiers : le verrou finit par produire un « fichier utilisé par
+    /// un autre processus » chez l'utilisateur, jamais chez le développeur. <c>OnLoad</c> lit tout
+    /// puis referme.
+    /// </para>
+    /// <para>
+    /// <b>Gelée.</b> Une image <c>Freeze()</c> coûte moins cher et traverse les threads — sans quoi
+    /// une icône chargée depuis un <c>Task.Run</c> lèverait à l'affichage.
+    /// </para>
+    /// <para>
+    /// <b>L'index est respecté</b>, contrairement aux copies qu'elle remplace : elles coupaient sur
+    /// la virgule puis appelaient <c>ExtractAssociatedIcon</c>, qui rend toujours l'icône 0. Chrome
+    /// Canary (<c>chrome.exe,4</c>) s'affichait donc avec l'icône bleue de Chrome.
+    /// </para>
+    /// </remarks>
+    public static BitmapSource? LoadImage(string? iconRef)
+    {
+        if (string.IsNullOrWhiteSpace(iconRef)) return null;
+
+        var (path, index) = ParseIconRef(iconRef);
+        if (!File.Exists(path)) return null;
+
+        try
+        {
+            string ext = Path.GetExtension(path).ToLowerInvariant();
+
+            if (ext is ".exe" or ".dll")
+            {
+                using var icon = ExtractIcon(path, index);
+                if (icon is null) return null;
+                using var bmp = icon.ToBitmap();
+
+                var handle = bmp.GetHbitmap();
+                try
+                {
+                    var source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                        handle, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                    source.Freeze();
+                    return source;
+                }
+                finally { DeleteObject(handle); }
+            }
+
+            if (ext is not (".ico" or ".png" or ".bmp" or ".jpg" or ".jpeg")) return null;
+
+            // Les octets sont lus par nous, pas par WPF : File.ReadAllBytes referme aussitot, et
+            // un fichier illisible ne laisse donc rien d'ouvert. Avec UriSource, EndInit() qui leve
+            // sur une image corrompue abandonne l'objet AVEC son flux ouvert — le fichier reste
+            // verrouille jusqu'au finaliseur, ce qu'un test de suppression attrape immediatement.
+            using var stream = new MemoryStream(File.ReadAllBytes(path));
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;   // decode tout de suite : le flux peut partir
+            image.StreamSource = stream;
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, $"Chargement de l'icône : {iconRef}");
+            return null;
+        }
+    }
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
+
     public static (string Path, int Index) ParseIconRef(string iconRef)
     {
         iconRef = iconRef.Trim();

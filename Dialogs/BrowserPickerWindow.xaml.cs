@@ -74,7 +74,7 @@ public partial class BrowserPickerWindow : Window
             _items.Add(new PickerItem
             {
                 Entry = row.Entry,
-                Icon  = LoadIcon(IconStoreService.ResolveProfilePath(row.Entry.IconProfilePath)
+                Icon  = IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(row.Entry.IconProfilePath)
                                  ?? (string.IsNullOrEmpty(row.Entry.IconPath) ? row.Entry.ExePath : row.Entry.IconPath)),
                 Name  = row.Entry.Name,
                 IsChild  = row.IsChild,
@@ -226,34 +226,4 @@ public partial class BrowserPickerWindow : Window
     }
 
     // ── Icônes (même pattern que QuickAccessWindow.LoadIcon) ───────────────────
-
-    private static System.Windows.Media.ImageSource? LoadIcon(string? iconPath)
-    {
-        if (string.IsNullOrWhiteSpace(iconPath)) return null;
-        string path = iconPath.Split(',')[0].Trim('"').Trim();
-        if (!File.Exists(path)) return null;
-
-        try
-        {
-            string ext = Path.GetExtension(path).ToLowerInvariant();
-            if (ext is not (".exe" or ".dll"))
-                return new BitmapImage(new Uri(path));
-
-            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
-            if (icon is null) return null;
-            using var bmp = icon.ToBitmap();
-            var handle = bmp.GetHbitmap();
-            try
-            {
-                return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                    handle, IntPtr.Zero, Int32Rect.Empty,
-                    BitmapSizeOptions.FromEmptyOptions());
-            }
-            finally { DeleteObject(handle); }
-        }
-        catch (Exception ex) { Services.LogService.Warn(ex, "Chargement d'une icône de navigateur (picker)"); return null; }
-    }
-
-    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr hObject);
 }

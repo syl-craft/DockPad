@@ -83,7 +83,7 @@ public partial class BrowserConfigDialog : Window
         var rows = BrowserRowLayout.Grouped(_config);
         LstBrowsers.ItemsSource = rows.Select(r => new BrowserItem(
             r.Entry,
-            LoadIcon(IconStoreService.ResolveProfilePath(r.Entry.IconProfilePath)
+            IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(r.Entry.IconProfilePath)
                      ?? (string.IsNullOrEmpty(r.Entry.IconPath) ? r.Entry.ExePath : r.Entry.IconPath)),
             r.Entry.Name,
             Detail(r.Entry),
@@ -368,34 +368,4 @@ public partial class BrowserConfigDialog : Window
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
     // ── Icônes (même pattern que BrowserPickerWindow) ───────────────────────────
-
-    private static System.Windows.Media.ImageSource? LoadIcon(string? iconPath)
-    {
-        if (string.IsNullOrWhiteSpace(iconPath)) return null;
-        string path = iconPath.Split(',')[0].Trim('"').Trim();
-        if (!File.Exists(path)) return null;
-
-        try
-        {
-            string ext = Path.GetExtension(path).ToLowerInvariant();
-            if (ext is not (".exe" or ".dll"))
-                return new BitmapImage(new Uri(path));
-
-            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
-            if (icon is null) return null;
-            using var bmp = icon.ToBitmap();
-            var handle = bmp.GetHbitmap();
-            try
-            {
-                return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                    handle, IntPtr.Zero, Int32Rect.Empty,
-                    BitmapSizeOptions.FromEmptyOptions());
-            }
-            finally { DeleteObject(handle); }
-        }
-        catch (Exception ex) { Services.LogService.Warn(ex, "Chargement d'une icône de navigateur (config)"); return null; }
-    }
-
-    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr hObject);
 }

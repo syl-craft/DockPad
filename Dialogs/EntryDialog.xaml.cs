@@ -5,6 +5,8 @@ using Microsoft.Win32;
 using DockPad.Models;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
+using DockPad.Services;
+
 namespace DockPad;
 
 public partial class EntryDialog : Window
@@ -103,17 +105,9 @@ public partial class EntryDialog : Window
 
     private void RefreshIconPreview()
     {
-        try
-        {
-            string path = TxtIconPath.Text.Trim().Split(',')[0].Trim('"');
-            if (File.Exists(path) && path.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
-            {
-                ImgIconPreview.Source = new BitmapImage(new Uri(path));
-                return;
-            }
-        }
-        catch (Exception ex) { Services.LogService.Warn(ex, "Aperçu de l'icône (EntryDialog)"); }
-        ImgIconPreview.Source = null;
+        // Meme porte que partout ailleurs. Au passage l'apercu accepte enfin .exe, .dll et .png,
+        // que le champ documente pourtant : il ne montrait que les .ico.
+        ImgIconPreview.Source = IconStoreService.LoadImage(TxtIconPath.Text);
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)

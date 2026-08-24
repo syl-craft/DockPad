@@ -492,7 +492,7 @@ public partial class QuickAccessWindow : Window
             string iconDisp = !string.IsNullOrEmpty(config.IconPath) && File.Exists(config.IconPath)
                 ? config.IconPath
                 : IconStoreService.ResolveProfilePath(config.IconProfilePath) ?? "";
-            var src = LoadIcon(iconDisp);
+            var src = IconStoreService.LoadImage(iconDisp);
             content = src != null
                 ? (object)new Image { Source = src, Width = 18, Height = 18, Stretch = Stretch.Uniform }
                 : (page + 1).ToString();
@@ -613,7 +613,7 @@ public partial class QuickAccessWindow : Window
             Height = 36,
             Stretch = Stretch.Uniform,
             Margin = new Thickness(0, 0, 0, 6),
-            Source = LoadIcon(IconStoreService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath)
+            Source = IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath)
         };
 
         var label = new TextBlock
@@ -684,7 +684,7 @@ public partial class QuickAccessWindow : Window
             {
                 Text = "+",
                 FontSize = 22,
-                Foreground = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
+                Foreground = EmptyTileForeground,
             }
         };
         btn.AllowDrop = true;
@@ -764,7 +764,7 @@ public partial class QuickAccessWindow : Window
                 string iconDisp2 = !string.IsNullOrEmpty(config.IconPath) && File.Exists(config.IconPath)
                     ? config.IconPath
                     : IconStoreService.ResolveProfilePath(config.IconProfilePath) ?? "";
-                var src = LoadIcon(iconDisp2);
+                var src = IconStoreService.LoadImage(iconDisp2);
                 if (src != null)
                 {
                     var sp = new StackPanel { Orientation = Orientation.Horizontal };
@@ -823,7 +823,7 @@ public partial class QuickAccessWindow : Window
         {
             var item = new MenuItem { Header = e.DisplayName };
 
-            var icon = LoadIcon(e.IconPath);
+            var icon = IconStoreService.LoadImage(e.IconPath);
             if (icon != null)
                 item.Icon = new Image { Source = icon, Width = 16, Height = 16, Stretch = Stretch.Uniform };
 
@@ -938,8 +938,7 @@ public partial class QuickAccessWindow : Window
     private void TileHover_Enter(object sender, MouseEventArgs e)
     {
         if (sender is not Button { Tag: SolidColorBrush band } btn) return;
-        var c = band.Color;
-        btn.Background   = new SolidColorBrush(Color.FromArgb(60, c.R, c.G, c.B));
+        btn.Background   = HoverBrushes.TryGetValue(band, out var hover) ? hover : btn.Background;
         btn.BorderBrush  = band;
     }
 
@@ -950,11 +949,38 @@ public partial class QuickAccessWindow : Window
         btn.BorderBrush = DefaultBorder;
     }
 
-    private static readonly SolidColorBrush BandRunCommand      = new(Color.FromRgb(0xA8, 0xCC, 0xEA)); // bleu pastel
-    private static readonly SolidColorBrush BandOpenFolder      = new(Color.FromRgb(0xF5, 0xCC, 0x80)); // ambre pastel
-    private static readonly SolidColorBrush BandOpenUrl         = new(Color.FromRgb(0x92, 0xC6, 0x90)); // vert pastel
-    private static readonly SolidColorBrush BandOpenTerminal    = new(Color.FromRgb(0xC4, 0xAD, 0xE0)); // violet pastel
-    private static readonly SolidColorBrush BandSwitchToProcess = new(Color.FromRgb(0xF4, 0xA4, 0xA4)); // rouge pastel
+    // Gelées : une Freezable gelée est moins chère à l'usage, partageable entre threads, et ne
+    // peut plus être modifiée par accident depuis un autre point du code.
+    private static readonly SolidColorBrush BandRunCommand      = Frozen(0xA8, 0xCC, 0xEA); // bleu pastel
+    private static readonly SolidColorBrush BandOpenFolder      = Frozen(0xF5, 0xCC, 0x80); // ambre pastel
+    private static readonly SolidColorBrush BandOpenUrl         = Frozen(0x92, 0xC6, 0x90); // vert pastel
+    private static readonly SolidColorBrush BandOpenTerminal    = Frozen(0xC4, 0xAD, 0xE0); // violet pastel
+    private static readonly SolidColorBrush BandSwitchToProcess = Frozen(0xF4, 0xA4, 0xA4); // rouge pastel
+
+    /// <summary>Brosse pleine et gelée, à partir de composantes RVB.</summary>
+    private static SolidColorBrush Frozen(byte r, byte g, byte b) => Frozen(Color.FromRgb(r, g, b));
+
+    private static SolidColorBrush Frozen(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
+
+    /// <summary>
+    /// Fond de survol d'une tuile : la couleur de sa bande, très diluée.
+    /// </summary>
+    /// <remarks>
+    /// Précalculé par type plutôt que fabriqué à chaque survol : le gestionnaire allouait une brosse
+    /// non gelée à chaque passage de souris sur une tuile.
+    /// </remarks>
+    private static readonly Dictionary<SolidColorBrush, SolidColorBrush> HoverBrushes =
+        new[] { BandRunCommand, BandOpenFolder, BandOpenUrl, BandOpenTerminal, BandSwitchToProcess }
+            .ToDictionary(b => b, b => Frozen(Color.FromArgb(60, b.Color.R, b.Color.G, b.Color.B)));
+
+    private static readonly SolidColorBrush EmptyTileForeground = Frozen(0xCC, 0xCC, 0xCC);
+    private static readonly SolidColorBrush HintVeil  = Frozen(Color.FromArgb(0x55, 0x60, 0x60, 0x60));
+    private static readonly SolidColorBrush HintBadge = Frozen(Color.FromArgb(0xBB, 0x55, 0x55, 0x55));
 
     private static SolidColorBrush TypeBandBrush(ShortcutType t) => t switch
     {
@@ -993,7 +1019,7 @@ public partial class QuickAccessWindow : Window
         ShortcutService.Save(all);
 
         if (btn.Content is StackPanel sp && sp.Children[0] is Image img)
-            img.Source = LoadIcon(IconStoreService.ResolveProfilePath(profilePath) ?? dlg.FileName);
+            img.Source = IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(profilePath) ?? dlg.FileName);
     }
 
     private void TileDrag_MouseDown(object sender, MouseButtonEventArgs e)
@@ -1020,8 +1046,8 @@ public partial class QuickAccessWindow : Window
         _dragSource = null;
     }
 
-    private static readonly Brush DragOverBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD4));
-    private static readonly Brush DefaultBorder  = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
+    private static readonly Brush DragOverBrush = Frozen(0x00, 0x78, 0xD4);
+    private static readonly Brush DefaultBorder  = Frozen(0xE0, 0xE0, 0xE0);
 
     private void TileDrop_DragOver(object sender, DragEventArgs e)
     {
@@ -1258,41 +1284,6 @@ public partial class QuickAccessWindow : Window
             ? (command[..space], command[(space + 1)..])
             : (command, "");
     }
-
-    private static BitmapSource? LoadIcon(string iconPath)
-    {
-        if (string.IsNullOrWhiteSpace(iconPath)) return null;
-        try
-        {
-            string path = iconPath.Split(',')[0].Trim('"').Trim();
-            if (!File.Exists(path)) return null;
-
-            string ext = Path.GetExtension(path).ToLowerInvariant();
-            if (ext is ".ico" or ".png" or ".bmp" or ".jpg" or ".jpeg")
-                return new BitmapImage(new Uri(path));
-
-            if (ext is ".exe" or ".dll")
-            {
-                using var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
-                if (icon is null) return null;
-                using var bmp = icon.ToBitmap();
-                var handle = bmp.GetHbitmap();
-                try
-                {
-                    return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                        handle, IntPtr.Zero, Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions());
-                }
-                finally { DeleteObject(handle); }
-            }
-        }
-        catch (Exception ex) { Services.LogService.Warn(ex, $"Chargement de l'icône : {iconPath}"); }
-        return null;
-    }
-
-    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr hObject);
-
     // ── Triggers dynamiques ───────────────────────────────────────────────────
 
     private void UpdateTriggerMods()
@@ -1386,7 +1377,7 @@ public partial class QuickAccessWindow : Window
                 AddHintOverlayElement(row, col, new Border
                 {
                     Margin = new Thickness(5),
-                    Background = new SolidColorBrush(Color.FromArgb(0x55, 0x60, 0x60, 0x60)),
+                    Background = HintVeil,
                     IsHitTestVisible = false,
                     CornerRadius = new CornerRadius(6),
                     SnapsToDevicePixels = true, UseLayoutRounding = true,
@@ -1398,7 +1389,7 @@ public partial class QuickAccessWindow : Window
                     HorizontalAlignment = HorizontalAlignment.Left,
                     VerticalAlignment = VerticalAlignment.Top,
                     Margin = new Thickness(12, 12, 0, 0),
-                    Background = new SolidColorBrush(Color.FromArgb(0xBB, 0x55, 0x55, 0x55)),
+                    Background = HintBadge,
                     CornerRadius = new CornerRadius(4),
                     IsHitTestVisible = false,
                     SnapsToDevicePixels = true, UseLayoutRounding = true,
@@ -1486,7 +1477,7 @@ public partial class QuickAccessWindow : Window
         var results = ShortcutService.Load()
             .Where(s => s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
             .OrderBy(s => s.Name)
-            .Select(s => new SearchResultItem(s, LoadIcon(IconStoreService.ResolveProfilePath(s.IconProfilePath) ?? s.IconPath)))
+            .Select(s => new SearchResultItem(s, IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(s.IconProfilePath) ?? s.IconPath)))
             .ToList();
 
         SearchResults.ItemsSource = results;
@@ -1575,13 +1566,8 @@ public partial class QuickAccessWindow : Window
             _                         => Loc.T("Type_Command"),
         };
 
-        public SolidColorBrush TypeBrush => Entry.Type switch
-        {
-            ShortcutType.OpenFolder      => new SolidColorBrush(Color.FromRgb(0xF5, 0xCC, 0x80)),
-            ShortcutType.OpenUrl         => new SolidColorBrush(Color.FromRgb(0x92, 0xC6, 0x90)),
-            ShortcutType.OpenTerminal    => new SolidColorBrush(Color.FromRgb(0xC4, 0xAD, 0xE0)),
-            ShortcutType.SwitchToProcess => new SolidColorBrush(Color.FromRgb(0xF4, 0xA4, 0xA4)),
-            _                            => new SolidColorBrush(Color.FromRgb(0xA8, 0xCC, 0xEA)),
-        };
+        // Même table que les bandes de tuile, et non une copie : les deux doivent s'accorder, et
+        // une propriété calculée allouait ici une brosse à chaque évaluation de liaison.
+        public SolidColorBrush TypeBrush => TypeBandBrush(Entry.Type);
     }
 }
