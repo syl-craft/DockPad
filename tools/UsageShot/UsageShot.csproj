@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -16,5 +16,12 @@
          sans cette ressource ici, la cible « window » leve une IOException au chargement du XAML.
          Les cibles de BrowserShot n'en ont pas besoin, ce sont des dialogs sans icone. -->
     <Resource Include="..\..\app.ico" Link="app.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- L'icone dossier par defaut de DockPad est une ressource EMBARQUEE : elle n'existe pas comme
+         fichier a cote de l'exe. La grille de demonstration en a besoin sur disque pour ses tuiles
+         OpenFolder, exactement comme une vraie entree du store d'icones. -->
+    <Content Include="..\..\Assets\folder.png" Link="Assets\folder.png"
+             CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

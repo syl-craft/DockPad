@@ -67,6 +67,10 @@ internal static class Program
         if (target == "window-off") fixture.Enabled = false;
         UsageConfigService.Save(fixture);
 
+        // La fenêtre entière se juge avec une grille remplie : vide, elle ne montre ni les icônes,
+        // ni les bandes de couleur des types, ni la pagination.
+        if (target is "window" or "window-off" or "window-unlocked") WriteDemoGrid();
+
         var app = new App();
         app.InitializeComponent();
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -309,6 +313,107 @@ internal static class Program
             new DemoUsageProvider.DemoValues("gpt-4.1", 5_900, 40_000, 540_000, 88, "",
                 91, TimeSpan.FromHours(1), 88, TimeSpan.FromDays(4))),
     ];
+
+    /// <summary>
+    /// Grille de démonstration : des tuiles des cinq types, sur trois pages.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Les icônes sont extraites d'exécutables <b>réellement présents</b> sur la machine, choisis
+    /// dans une liste de candidats — même patron que <c>PresetService</c>. Rien n'est embarqué dans
+    /// le dépôt : aucune icône tierce à redistribuer, et une machine sans Chrome ni VS Code produit
+    /// la même capture, en moins garnie.
+    /// </para>
+    /// <para>
+    /// Les noms sont des noms de produit ou des chemins : ils ne se traduisent pas, la capture sert
+    /// donc aux deux langues.
+    /// </para>
+    /// <para>
+    /// Quelques cases restent vides à dessein — le « + » grisé fait partie de ce qu'il faut montrer.
+    /// </para>
+    /// </remarks>
+    private static void WriteDemoGrid()
+    {
+        string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string sys = Environment.GetFolderPath(Environment.SpecialFolder.System);
+        string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+        string code = FirstExisting(
+            Path.Combine(local, @"Programs\Microsoft VS Code\Code.exe"),
+            @"C:\Program Files\Microsoft VS Code\Code.exe");
+        string chrome = FirstExisting(
+            @"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe");
+        string edge = FirstExisting(
+            @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            @"C:\Program Files\Microsoft\Edge\Application\msedge.exe");
+        string terminal = FirstExisting(
+            Path.Combine(local, @"Microsoft\WindowsApps\wt.exe"),
+            Path.Combine(sys, "cmd.exe"));
+        string posh = Path.Combine(sys, @"WindowsPowerShell\v1.0\powershell.exe");
+        string folderIcon = Path.Combine(AppContext.BaseDirectory, "Assets", "folder.png");
+
+        var tiles = new List<ShortcutEntry>
+        {
+            Tile(0, 0, 0, "Claude", ShortcutType.OpenTerminal, @"C:\dev\DockPad", terminal),
+            Tile(0, 0, 1, "VS Code", ShortcutType.RunCommand, code, code),
+            Tile(0, 0, 2, "PowerShell", ShortcutType.OpenTerminal, @"C:\dev", posh),
+            Tile(0, 0, 3, "Chrome", ShortcutType.RunCommand, chrome, chrome),
+            Tile(0, 0, 4, "Edge", ShortcutType.RunCommand, edge, edge),
+            Tile(0, 0, 5, "GitHub", ShortcutType.OpenUrl, "https://github.com", chrome),
+
+            Tile(0, 1, 0, @"C:\dev", ShortcutType.OpenFolder, @"C:\dev", folderIcon),
+            Tile(0, 1, 1, "Projects", ShortcutType.OpenFolder, @"C:\dev\projects", folderIcon),
+            Tile(0, 1, 2, "Downloads", ShortcutType.OpenFolder, @"C:\Users\Demo\Downloads", folderIcon),
+            Tile(0, 1, 3, "Documents", ShortcutType.OpenFolder, @"C:\Users\Demo\Documents", folderIcon),
+            Tile(0, 1, 5, "Anthropic", ShortcutType.OpenUrl, "https://claude.ai", edge),
+
+            Tile(0, 2, 0, "Task Manager", ShortcutType.SwitchToProcess, "Taskmgr.exe",
+                 Path.Combine(sys, "Taskmgr.exe")),
+            Tile(0, 2, 1, "Notepad", ShortcutType.RunCommand, Path.Combine(sys, "notepad.exe"),
+                 Path.Combine(sys, "notepad.exe")),
+            Tile(0, 2, 2, "Calculator", ShortcutType.SwitchToProcess, "CalculatorApp.exe",
+                 Path.Combine(sys, "calc.exe")),
+            Tile(0, 2, 3, "Explorer", ShortcutType.RunCommand, Path.Combine(win, "explorer.exe"),
+                 Path.Combine(win, "explorer.exe")),
+            Tile(0, 2, 5, "Control Panel", ShortcutType.RunCommand, Path.Combine(sys, "control.exe"),
+                 Path.Combine(sys, "control.exe")),
+
+            Tile(0, 3, 0, "Registry", ShortcutType.RunCommand, Path.Combine(win, "regedit.exe"),
+                 Path.Combine(win, "regedit.exe")),
+            Tile(0, 3, 1, "System info", ShortcutType.RunCommand, Path.Combine(sys, "msinfo32.exe"),
+                 Path.Combine(sys, "msinfo32.exe")),
+            Tile(0, 3, 3, "Remote desktop", ShortcutType.RunCommand, Path.Combine(sys, "mstsc.exe"),
+                 Path.Combine(sys, "mstsc.exe")),
+        };
+
+        ShortcutService.Save(tiles.Where(t => t.Command.Length > 0).ToList());
+
+        // Trois pages : une seule ne montrerait pas la pagination, qui fait partie de la fenêtre.
+        PageConfigService.Save(
+        [
+            new PageConfig { Index = 0 },
+            new PageConfig { Index = 1 },
+            new PageConfig { Index = 2 },
+        ]);
+    }
+
+    private static ShortcutEntry Tile(int page, int row, int col, string name, ShortcutType type,
+                                      string command, string icon) => new()
+    {
+        Page = page, Row = row, Col = col, Name = name, Type = type,
+        Command = command, IconPath = icon,
+        Terminal = type == ShortcutType.OpenTerminal
+            ? new TerminalConfig { ExePath = icon, StartingDirectory = command }
+            : null,
+        ProcessSwitch = type == ShortcutType.SwitchToProcess
+            ? new ProcessSwitchConfig { ProcessName = command, Executable = icon }
+            : null,
+    };
+
+    /// <summary>Premier chemin existant, ou chaîne vide — la tuile est alors omise.</summary>
+    private static string FirstExisting(params string[] candidates) =>
+        candidates.FirstOrDefault(File.Exists) ?? "";
 
     /// <summary>
     /// Fixture de config : deux fournisseurs visibles seulement, plus des masqués et un non détecté.
