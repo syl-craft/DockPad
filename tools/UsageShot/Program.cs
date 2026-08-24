@@ -46,7 +46,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-idle|panel-loading|window|window-off|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-idle|panel-loading|panel-quota|window|window-off|config> <cheminPng>");
             return;
         }
 
@@ -74,9 +74,10 @@ internal static class Program
         // Le bandeau seul est rendu hors écran : une fenêtre à SizeToContent mesure avant que les
         // données arrivent et n'en reprend pas la hauteur, ce qui rognait la capture. Measure et
         // Arrange explicites donnent des dimensions déterministes.
-        if (target is "panel" or "panel-tabs" or "panel-idle" or "panel-loading")
+        if (target is "panel" or "panel-tabs" or "panel-idle" or "panel-loading" or "panel-quota")
         {
-            CapturePanel(outPath, loading: target == "panel-loading", idle: target == "panel-idle");
+            CapturePanel(outPath, loading: target == "panel-loading", idle: target == "panel-idle",
+                         quotaLost: target == "panel-quota");
             return;
         }
 
@@ -95,7 +96,7 @@ internal static class Program
 
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | window | window-off | config)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | panel-quota | window | window-off | config)");
         }
 
         // Show + Dispatcher.Run : ShowDialog retourne immédiatement ici (Application jamais Run).
@@ -142,7 +143,8 @@ internal static class Program
     }
 
     /// <summary>Rend le bandeau seul, sur le fond de la grille, sans passer par une fenêtre.</summary>
-    private static void CapturePanel(string outPath, bool loading = false, bool idle = false)
+    private static void CapturePanel(string outPath, bool loading = false, bool idle = false,
+                                     bool quotaLost = false)
     {
         // 698 = largeur réelle du bandeau dans la fenêtre : le bloc de tuiles (6 × 118) moins les
         // 10 px de marges horizontales d'une tuile, pour affleurer leurs bords visibles. Capturer
@@ -150,7 +152,7 @@ internal static class Program
         // jauges se serrent.
         const double width = 698;   // 900 de bandeau + 24 de marge de chaque côté
 
-        var panel = new UsagePanel { ViewModel = FixtureViewModel(loading, idle) };
+        var panel = new UsagePanel { ViewModel = FixtureViewModel(loading, idle, quotaLost) };
         var frame = new Border
         {
             Padding = new Thickness(24),
@@ -176,11 +178,42 @@ internal static class Program
     /// ViewModel alimenté par des fournisseurs de démonstration seulement. C'est la raison d'être de
     /// la liste injectable de <see cref="UsageService"/> : le registre de production reste intact.
     /// </summary>
-    private static UsageViewModel FixtureViewModel(bool loading = false, bool idle = false)
+    private static UsageViewModel FixtureViewModel(bool loading = false, bool idle = false,
+                                                   bool quotaLost = false)
     {
-        var providers = FixtureProviders(idle);
+        var providers = FixtureProviders(idle, quotaLost);
         if (loading) providers = providers.Select(p => (IUsageProvider)new SlowAfterFirstRead(p)).ToList();
         return new UsageViewModel(new UsageService(providers), UsageConfigService.Load);
+    }
+
+    /// <summary>
+    /// Fournisseur dont les jetons sont lus mais dont le quota est refusé par l'endpoint.
+    /// </summary>
+    /// <remarks>
+    /// C'est l'état vécu en usage réel : un <c>HTTP 429</c> et les deux jauges disparaissent. La
+    /// capture vérifie que leur place n'est plus un vide muet, et que la notice tient sur la ligne
+    /// à la largeur réelle du bandeau.
+    /// </remarks>
+    private sealed class QuotaLostProvider : IUsageProvider
+    {
+        public string Id => "claude";
+        public string Name => "Claude";
+
+        public AiProbe Probe() => new()
+        {
+            Available = true, DisplayName = "Claude", Glyph = "✳", AccentColor = "#D97757",
+        };
+
+        public Task<AiUsage?> ReadAsync(CancellationToken ct) => Task.FromResult<AiUsage?>(new AiUsage
+        {
+            ProviderId = "claude", Name = "Claude", Glyph = "✳", AccentColor = "#D97757",
+            UsageUrl = "https://claude.ai/new#settings/usage",
+            Model = "claude-opus-5", Cost = "$4",
+            SessionTokens = 12_400, DayTokens = 86_000, MonthTokens = 1_200_000, Requests = 47,
+            QuotaNotice = "Quota indisponible — nouvelle tentative dans 4 min",
+            QuotaNoticeNote = "HTTP 429 TooManyRequests. Les jauges restent masquées ; les "
+                            + "métriques de jetons, lues dans les transcripts locaux, sont exactes.",
+        });
     }
 
     /// <summary>
@@ -232,12 +265,14 @@ internal static class Program
     /// Quatre fournisseurs plausibles. Copilot ne rapporte pas de coût (forfait) et n'a pas de
     /// quota hebdomadaire connu : la capture montre ainsi les deux cas dégradés du bandeau.
     /// </summary>
-    private static List<IUsageProvider> FixtureProviders(bool idle = false) =>
+    private static List<IUsageProvider> FixtureProviders(bool idle = false, bool quotaLost = false) =>
     [
-        new DemoUsageProvider("claude", "Claude", "✳", "#D97757",
-            new DemoUsageProvider.DemoValues("claude-opus-5", 12_400, 86_000, 1_200_000, 47, "$4",
-                62, TimeSpan.FromHours(2) + TimeSpan.FromMinutes(40), 44, TimeSpan.FromDays(4),
-                UsageUrl: "https://claude.ai/new#settings/usage")),
+        quotaLost
+            ? new QuotaLostProvider()
+            : new DemoUsageProvider("claude", "Claude", "✳", "#D97757",
+                new DemoUsageProvider.DemoValues("claude-opus-5", 12_400, 86_000, 1_200_000, 47, "$4",
+                    62, TimeSpan.FromHours(2) + TimeSpan.FromMinutes(40), 44, TimeSpan.FromDays(4),
+                    UsageUrl: "https://claude.ai/new#settings/usage")),
 
         idle
             ? new IdleProvider("codex", "Codex", "C", "#10A37F")

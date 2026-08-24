@@ -377,6 +377,135 @@ public class ClaudeUsageProviderTests : IDisposable
         Assert.Equal(10, troisieme.DayTokens);   // les jetons, eux, restent
     }
 
+    /// <summary>Annule le premier appel, puis répond normalement.</summary>
+    private sealed class CancelFirstCallHandler(string body) : HttpMessageHandler
+    {
+        public int Calls { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            if (++Calls == 1) throw new OperationCanceledException();
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) });
+        }
+    }
+
+    [Fact]
+    public async Task ReadAsync_QuotaRefuse_LInstantanePorteUneNotice()
+    {
+        // Des jauges qui disparaissent sans un mot, c'est un bandeau qui ne dit pas ce qu'il se
+        // passe : la raison ne doit pas vivre seulement dans le fichier de log.
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        WriteCredentials();
+        var now = new DateTime(2026, 8, 21, 14, 0, 0);
+        var http = new HttpClient(new StubHandler(HttpStatusCode.TooManyRequests, ""));
+
+        var usage = await new ClaudeUsageProvider(_home, http, () => now).ReadAsync(CancellationToken.None);
+
+        Assert.Null(usage!.Session);
+        Assert.Contains("indisponible", usage.QuotaNotice);
+        Assert.Contains("429", usage.QuotaNoticeNote);
+    }
+
+    [Fact]
+    public async Task ReadAsync_QuotaDisponible_AucuneNotice()
+    {
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        WriteCredentials();
+        var http = new HttpClient(new StubHandler(HttpStatusCode.OK, QuotaBody));
+
+        var usage = await new ClaudeUsageProvider(_home, http).ReadAsync(CancellationToken.None);
+
+        Assert.Equal("", usage!.QuotaNotice);
+        Assert.Equal("", usage.QuotaNoticeNote);
+    }
+
+    [Fact]
+    public async Task ReadAsync_QuotaRefuse_LaNoticeAnnonceLaProchaineTentative()
+    {
+        // Le silence complet laisse croire à une panne définitive : l'utilisateur doit savoir que
+        // l'application va réessayer, et quand.
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        WriteCredentials();
+        var clock = new[] { new DateTime(2026, 8, 21, 14, 0, 0) };
+        var http = new HttpClient(new StubHandler(HttpStatusCode.TooManyRequests, ""));
+        var provider = new ClaudeUsageProvider(_home, http, () => clock[0]);
+
+        await provider.ReadAsync(CancellationToken.None);
+        clock[0] = clock[0].AddMinutes(1);
+        var usage = await provider.ReadAsync(CancellationToken.None);
+
+        Assert.Contains("4 min", usage!.QuotaNotice);
+    }
+
+    [Fact]
+    public async Task ReadAsync_JetonExpire_LaNoticeLeDit()
+    {
+        // Chemin muet : l'ancienne version sortait sans journal ni notice, et les jauges vides
+        // n'avaient aucune explication nulle part.
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        var expire = (long)(DateTime.UtcNow.AddHours(-1) - DateTime.UnixEpoch).TotalMilliseconds;
+        Directory.CreateDirectory(Path.Combine(_home, ".claude"));
+        File.WriteAllText(Path.Combine(_home, ".claude", ".credentials.json"),
+            "{\"claudeAiOauth\":{\"accessToken\":\"t\",\"expiresAt\":" + expire + "}}");
+
+        var usage = await new ClaudeUsageProvider(_home, Failing()).ReadAsync(CancellationToken.None);
+
+        Assert.Contains("indisponible", usage!.QuotaNotice);
+        Assert.Contains("jeton", usage.QuotaNoticeNote);
+    }
+
+    [Fact]
+    public async Task ReadAsync_CredentialsAbsents_LaNoticeLeDit()
+    {
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+
+        var usage = await new ClaudeUsageProvider(_home, Failing()).ReadAsync(CancellationToken.None);
+
+        Assert.Contains("indisponible", usage!.QuotaNotice);
+        Assert.Contains("credentials", usage.QuotaNoticeNote);
+    }
+
+    [Fact]
+    public async Task ReadAsync_LectureAnnulee_NeConsommePasLeCreneau()
+    {
+        // Le créneau de cinq minutes est posé avant l'appel : une annulation — masquer puis
+        // réafficher la fenêtre le fait — le brûlait sans rien tenter et sans rien journaliser,
+        // donc cinq minutes de jauges vides inexpliquées.
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        WriteCredentials();
+        var now = new DateTime(2026, 8, 21, 14, 0, 0);
+        var handler = new CancelFirstCallHandler(QuotaBody);
+        var provider = new ClaudeUsageProvider(_home, new HttpClient(handler), () => now);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => provider.ReadAsync(CancellationToken.None));
+        var usage = await provider.ReadAsync(CancellationToken.None);
+
+        Assert.Equal(2, handler.Calls);
+        Assert.Equal(62, usage!.Session!.UsedPct);
+    }
+
+    [Fact]
+    public async Task ReadAsync_CauseQuiChange_LaNoticeSuit()
+    {
+        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        WriteCredentials();
+        var clock = new[] { new DateTime(2026, 8, 21, 14, 0, 0) };
+        var handler = new SequenceHandler(
+            (HttpStatusCode.TooManyRequests, ""),
+            (HttpStatusCode.OK, "pas du json"));
+        var provider = new ClaudeUsageProvider(_home, new HttpClient(handler), () => clock[0]);
+
+        var premier = await provider.ReadAsync(CancellationToken.None);
+        Assert.Contains("429", premier!.QuotaNoticeNote);
+
+        clock[0] = clock[0].AddMinutes(6);
+        var second = await provider.ReadAsync(CancellationToken.None);
+
+        Assert.DoesNotContain("429", second!.QuotaNoticeNote);
+        Assert.Contains("forme de réponse", second.QuotaNoticeNote);
+    }
+
     [Fact]
     public void Registre_ContientClaudeEtDemo()
     {

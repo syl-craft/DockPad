@@ -58,7 +58,11 @@ Quatre assistants sont lus, chacun dans ses fichiers locaux, sans réseau :
 | **Gemini CLI** | `%USERPROFILE%\.gemini\tmp\<hash>\chats` | non | non |
 | **Copilot CLI** | `%USERPROFILE%\.copilot\session-store.db` | non | non |
 
-Seul Claude expose des pourcentages de quota : ils viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine. Pour les trois autres, il n'existe pas de limite lisible localement — leurs deux jauges restent donc masquées, et seules les métriques de jetons s'affichent. Si le quota Claude n'est pas joignable, ses jauges se masquent aussi et les jetons restent affichés.
+Seul Claude expose des pourcentages de quota : ils viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine. Pour les trois autres, il n'existe pas de limite lisible localement — leurs deux jauges restent donc masquées, et seules les métriques de jetons s'affichent.
+
+Si le quota Claude n'est pas joignable — l'API limite le débit, le jeton a expiré, la réponse change de forme — **les jauges cèdent la place à une explication** qui annonce la prochaine tentative, avec la cause technique au survol. Les jetons, eux, sont lus en local : ils restent exacts et affichés.
+
+![Quota indisponible](docs/screenshots/usage-panel-quota.png)
 
 Un assistant **installé mais que tu n'as pas utilisé sur la période** garde son onglet, à zéro : disparaître du bandeau veut dire « pas installé », et rien d'autre. Les valeurs qui n'auraient pas de sens s'affichent `—` plutôt que `0`.
 

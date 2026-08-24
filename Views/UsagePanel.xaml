@@ -274,6 +274,19 @@
                                 ContentTemplate="{StaticResource GaugeTemplate}"
                                 Margin="16,0,0,0"/>
 
+                <!-- Les deux jauges masquées laissent un vide, et un vide ne dit pas ce qu'il se
+                     passe : le quota de Claude peut être refusé (429, jeton expiré, endpoint qui
+                     change de forme) et la seule trace vivait dans le fichier de log. La notice
+                     prend leur place, avec la cause technique au survol. Vide pour les fournisseurs
+                     qui n'ont pas de quota du tout : là, l'absence est normale. -->
+                <TextBlock Grid.Column="1" Grid.ColumnSpan="2" Margin="16,0,0,0"
+                           VerticalAlignment="Center" FontSize="11" Foreground="#8A8A8A"
+                           FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding QuotaNotice, StringFormat=⚠ {0}}"
+                           ToolTip="{Binding QuotaNoticeTooltip}"
+                           Visibility="{Binding HasQuotaNotice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
                 <!-- La pastille du fournisseur, à droite de la ligne haute, ouvre sa page officielle.
                      Masquée quand le fournisseur n'a pas de page. -->
                 <Button Grid.Column="3" Click="OpenUsagePage_Click"
