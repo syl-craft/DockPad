@@ -560,6 +560,9 @@ Cette action est irréversible.</value>
     <value>Sauvegarde créée dans :
 {0}</value>
   </data>
+  <data name="Quick_ConfirmQuit" xml:space="preserve">
+    <value>Quitter DockPad ?</value>
+  </data>
   <data name="Quick_HideToTray" xml:space="preserve">
     <value>Masquer dans la barre système</value>
   </data>

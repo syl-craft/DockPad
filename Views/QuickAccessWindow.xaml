@@ -144,48 +144,54 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Menu (gauche) -->
-                <Button Grid.Column="0" Content="☰" Style="{StaticResource SecondaryButton}"
+                <Button x:Name="MenuButton" Grid.Column="0" Content="☰" Style="{StaticResource SecondaryButton}"
                             AutomationProperties.Name="{loc:T Quick_Menu_Tip}"
                         Padding="10,6" ToolTip="{loc:T Quick_Menu_Tip}" Click="Menu_Click">
                     <Button.ContextMenu>
+                        <!-- Un ContextMenu vit dans son propre arbre visuel : il n'herite PAS du
+                             DataContext de la fenetre, et ses liaisons de commande rendaient toutes
+                             null — dix entrees cliquables et sans effet, sans la moindre erreur de
+                             compilation. Une liaison sur PlacementTarget ne suffit pas : celui-ci
+                             reste nul tant que le menu n'est pas ouvert. Le contexte est donc pose
+                             une fois pour toutes a la construction de la fenetre. -->
                         <ContextMenu>
                             <MenuItem Header="{loc:T Quick_Menu_ContextMenu}" IsEnabled="False" FontWeight="SemiBold"/>
-                            <MenuItem Header="{loc:T Quick_Menu_Manage}" Click="OpenContextMenuManager_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Manage}" Command="{Binding Commands.OpenContextMenuManager}">
                                 <MenuItem.Icon><TextBlock Text="☰"/></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:T Quick_Menu_Presets}" Click="Presets_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Presets}" Command="{Binding Commands.OpenPresets}">
                                 <MenuItem.Icon><TextBlock Text="📋"/></MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
                             <MenuItem Header="{loc:T Quick_Menu_Settings}" IsEnabled="False" FontWeight="SemiBold"/>
-                            <MenuItem Header="{loc:T Quick_Menu_Options}" Click="Settings_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Options}" Command="{Binding Commands.OpenSettings}">
                                 <MenuItem.Icon><TextBlock Text="⚙"/></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:T Quick_Menu_Browsers}" Click="Browsers_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Browsers}" Command="{Binding Commands.OpenBrowsers}">
                                 <MenuItem.Icon><TextBlock Text="🌐"/></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:T Quick_Menu_Mcp}" Click="McpConfig_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Mcp}" Command="{Binding Commands.OpenMcpConfig}">
                                 <MenuItem.Icon><TextBlock Text="🔌"/></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:T Quick_Menu_Usage}" Click="UsageConfig_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Usage}" Command="{Binding Commands.OpenUsageConfig}">
                                 <MenuItem.Icon><TextBlock Text="📊"/></MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
                             <MenuItem Header="{loc:T Quick_Menu_Config}" IsEnabled="False" FontWeight="SemiBold"/>
-                            <MenuItem Header="{loc:T Quick_Menu_Refresh}" Click="Refresh_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Refresh}" Command="{Binding Commands.Refresh}">
                                 <MenuItem.Icon><TextBlock Text="↺"/></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:T Quick_Menu_Edit}" Click="EditConfig_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Edit}" Command="{Binding Commands.EditConfig}">
                                 <MenuItem.Icon><TextBlock Text="✎"/></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:T Quick_Menu_Save}" Click="BackupConfig_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Save}" Command="{Binding Commands.BackupConfig}">
                                 <MenuItem.Icon><TextBlock Text="💾"/></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:T Quick_Menu_OpenFolder}" Click="OpenConfigFolder_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_OpenFolder}" Command="{Binding Commands.OpenConfigFolder}">
                                 <MenuItem.Icon><TextBlock Text="📁"/></MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
-                            <MenuItem Header="{loc:T Quick_Menu_Quit}" Click="Quit_Click">
+                            <MenuItem Header="{loc:T Quick_Menu_Quit}" Command="{Binding Commands.Quit}">
                                 <MenuItem.Icon><TextBlock Text="✕"/></MenuItem.Icon>
                             </MenuItem>
                         </ContextMenu>
@@ -260,15 +266,15 @@
                             Style="{StaticResource SecondaryButton}"
                             FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
                             Padding="10,6" Margin="0,0,8,0" MinWidth="40"
-                            Click="ToggleTileLock_Click"/>
+                            Command="{Binding Commands.ToggleTileLock}"/>
                     <Button Content="─" Style="{StaticResource SecondaryButton}"
                             AutomationProperties.Name="{loc:T Quick_Minimize}"
                             Padding="10,6" Margin="0,0,8,0" ToolTip="{loc:T Quick_Minimize}"
-                            Click="Minimize_Click"/>
+                            Command="{Binding Commands.Minimize}"/>
                     <Button Content="⬇" Style="{StaticResource SecondaryButton}"
                             AutomationProperties.Name="{loc:T Quick_HideToTray}"
                             Padding="10,6" Margin="0,0,8,0" ToolTip="{loc:T Quick_HideToTray}"
-                            Click="HideToSystray_Click"/>
+                            Command="{Binding Commands.HideToTray}"/>
                 </StackPanel>
             </Grid>
         </Border>

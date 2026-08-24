@@ -36,7 +36,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp> <fr|en> <chemin.png>");
+            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|bindings> <fr|en> <chemin.png>");
             return;
         }
 
@@ -66,6 +66,13 @@ internal static class Program
         // WPF, dont dependent les StringFormat de liaison.
         App.ApplyWpfLanguage();
 
+        // Cible de verification, sans capture : monte les fenetres et ecoute la trace de liaison.
+        if (target == "bindings")
+        {
+            Environment.ExitCode = CheckBindings();
+            return;
+        }
+
         Window window = target switch
         {
             "settings" => new SettingsDialog(),
@@ -76,6 +83,59 @@ internal static class Program
         };
 
         Render(window, outPath, target, lang);
+    }
+
+    /// <summary>
+    /// Monte chaque fenetre et rend le nombre de liaisons cassees.
+    /// </summary>
+    /// <remarks>
+    /// Une liaison qui echoue ne leve pas : elle laisse un controle vide et une ligne dans la trace
+    /// de debogage. Un bouton dont la commande ne resout pas reste cliquable et ne fait rien — c'est
+    /// invisible a la compilation, et une capture d'ecran ne le montre pas non plus.
+    /// </remarks>
+    private static int CheckBindings()
+    {
+        var broken = new List<string>();
+
+        var windows = new (string Name, Func<Window> Build)[]
+        {
+            ("QuickAccessWindow", () => new DockPad.QuickAccessWindow()),
+            ("SettingsDialog", () => new SettingsDialog()),
+            ("ContextMenuManagerWindow", () => new ContextMenuManagerWindow()),
+            ("PresetsDialog", () => new PresetsDialog()),
+            ("McpConfigDialog", () => new McpConfigDialog()),
+            ("UsageConfigDialog", () => new UsageConfigDialog()),
+            ("BrowserConfigDialog", () => new BrowserConfigDialog()),
+        };
+
+        foreach (var (name, build) in windows)
+        {
+            try
+            {
+                var window = build();
+                var width = double.IsNaN(window.Width) ? 900 : window.Width;
+                BindingCheck.ForceLayout((FrameworkElement)window.Content, width);
+
+                var windowBroken = BindingCheck.BrokenCommands(window);
+                broken.AddRange(windowBroken.Select(b => $"{name} : {b}"));
+                Console.WriteLine($"  {name} — {(windowBroken.Count == 0 ? "ok" : windowBroken.Count + " cassee(s)")}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  ECHEC : {name} — {ex.GetType().Name} : {ex.Message}");
+                return 2;
+            }
+        }
+
+        if (broken.Count == 0)
+        {
+            Console.WriteLine("aucune liaison de commande cassee");
+            return 0;
+        }
+
+        Console.WriteLine($"{broken.Count} liaison(s) de commande en echec :");
+        foreach (var error in broken) Console.WriteLine("  " + error);
+        return 1;
     }
 
     private static void Render(Window window, string outPath, string target, string lang)

@@ -15,8 +15,14 @@ using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace DockPad;
 
-public partial class QuickAccessWindow : Window
+public partial class QuickAccessWindow : Window, IQuickAccessView
 {
+    /// <summary>
+    /// Ce que la fenêtre sait faire, en commandes. Le XAML s'y lie ; le code-behind ne garde que les
+    /// gestes qu'une fenêtre est seule à pouvoir faire — voir <see cref="QuickAccessCommands"/>.
+    /// </summary>
+    public QuickAccessCommands Commands { get; }
+
     private int _currentPage = 0;
 
     private IntPtr _hwnd;
@@ -37,6 +43,18 @@ public partial class QuickAccessWindow : Window
     public QuickAccessWindow()
     {
         InitializeComponent();
+
+        Commands = new QuickAccessCommands(this);
+        // La fenêtre est son propre contexte de liaison : « {Binding Commands.Refresh} » suffit
+        // alors, là où un RelativeSource sur chaque bouton serait illisible. Le bandeau garde le
+        // sien, qu'il pose lui-même.
+        DataContext = this;
+
+        // Le menu ☰ est un ContextMenu : il vit dans son propre arbre visuel et n'hérite donc de
+        // rien. Sans cette ligne, ses dix commandes se lient à un contexte vide et le menu entier
+        // devient cliquable et inerte, sans erreur de compilation ni exception.
+        if (MenuButton.ContextMenu is { } menu) menu.DataContext = this;
+
         PopulateGrid();
         UpdateHotkeyDisplay();
         UpdateTriggerMods();
@@ -142,12 +160,72 @@ public partial class QuickAccessWindow : Window
         // changement de style.
         TileLockButton.Style = (Style)FindResource(_tileLock.IsUnlocked ? "PrimaryButton" : "SecondaryButton");
     }
+    // ── IQuickAccessView : ce que les commandes demandent a la fenetre ────────────
+    //
+    // Ouvrir un dialogue veut dire un Owner, se reduire veut dire une fenetre : ces gestes ne
+    // peuvent pas quitter la vue. Tout le reste — quoi faire, dans quel ordre, avec quel message —
+    // vit dans QuickAccessCommands, ou il se teste.
 
-    private void ToggleTileLock_Click(object sender, RoutedEventArgs e)
+    public void ShowContextMenuManager() => new ContextMenuManagerWindow().Show();
+
+    public void ShowPresets() => new PresetsDialog { Owner = this }.ShowDialog();
+
+    public void ShowBrowsers() => new BrowserConfigDialog { Owner = this }.ShowDialog();
+
+    public void ShowMcpConfig() => new McpConfigDialog { Owner = this }.ShowDialog();
+
+    public void ShowUsageConfig()
+    {
+        new UsageConfigDialog { Owner = this }.ShowDialog();
+        // Les réglages sont écrits au fil des clics : le bandeau doit relire en sortant.
+        _ = UsageBanner.ViewModel?.RefreshAsync();
+    }
+
+    public void ShowSettings()
+    {
+        if (new SettingsDialog { Owner = this }.ShowDialog() != true) return;
+
+        // Le raccourci global a pu changer : le réenregistrer, et remettre l'affichage d'accord.
+        UnregisterHotkey();
+        RegisterHotkey();
+        UpdateHotkeyDisplay();
+        UpdateTriggerMods();
+    }
+
+    public void ToggleTileLock()
     {
         _tileLock.Toggle();
         ApplyTileLock();
     }
+
+    public void Minimize() => WindowState = WindowState.Minimized;
+
+    public void HideToTray()
+    {
+        ClearSearch();
+        Hide();
+    }
+
+    public void Quit()
+    {
+        if (!AppDialog.Confirm(Loc.T("Quick_ConfirmQuit"), owner: this)) return;
+
+        App.Exit();
+    }
+
+    /// <summary>
+    /// Ouvre un chemin avec l'application par défaut. Le dossier est créé au besoin : le profil peut
+    /// ne pas exister au tout premier lancement, et l'Explorateur afficherait une erreur.
+    /// </summary>
+    public void OpenPath(string path)
+    {
+        if (Path.GetExtension(path).Length == 0) Directory.CreateDirectory(path);
+        else Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+    }
+
+    public void ShowInfo(string message) => AppDialog.Info(message, owner: this);
 
     protected override void OnSourceInitialized(EventArgs e)
     {
@@ -336,50 +414,6 @@ public partial class QuickAccessWindow : Window
             menu.IsOpen = true;
         }
     }
-
-    private void OpenContextMenuManager_Click(object sender, RoutedEventArgs e)
-    {
-        var win = new ContextMenuManagerWindow();
-        win.Show();
-    }
-
-    private void Presets_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new PresetsDialog { Owner = this };
-        dialog.ShowDialog();
-    }
-
-    private void Settings_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new SettingsDialog { Owner = this };
-        if (dialog.ShowDialog() != true) return;
-
-        UnregisterHotkey();
-        RegisterHotkey();
-        UpdateHotkeyDisplay();
-        UpdateTriggerMods();
-    }
-
-    private void Browsers_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new BrowserConfigDialog { Owner = this };
-        dialog.ShowDialog();
-    }
-
-    private void McpConfig_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new McpConfigDialog { Owner = this };
-        dialog.ShowDialog();
-    }
-
-    private void UsageConfig_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new UsageConfigDialog { Owner = this };
-        dialog.ShowDialog();
-        // Les réglages sont écrits au fil des clics : le bandeau doit relire en sortant.
-        _ = UsageBanner.ViewModel?.RefreshAsync();
-    }
-
     private void UpdateHotkeyDisplay()
     {
         var (mods, vk) = SettingsService.LoadHotkey();
@@ -393,35 +427,6 @@ public partial class QuickAccessWindow : Window
 
         TxtHotkey.Text = string.Join(" + ", parts);
     }
-
-    private void OpenConfigFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var folder = Path.GetDirectoryName(ShortcutService.FilePath)!;
-        Directory.CreateDirectory(folder);
-        Process.Start(new ProcessStartInfo("explorer.exe", folder) { UseShellExecute = true });
-    }
-
-    private void BackupConfig_Click(object sender, RoutedEventArgs e)
-    {
-        var backupDir = Path.Combine(
-            Path.GetDirectoryName(ShortcutService.FilePath)!, ".backup");
-        Directory.CreateDirectory(backupDir);
-
-        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-        foreach (var src in new[] { ShortcutService.FilePath, PageConfigService.FilePath,
-                                    BrowserConfigService.FilePath, McpConfigService.FilePath,
-                                    UsageConfigService.FilePath })
-        {
-            if (!File.Exists(src)) continue;
-            var dest = Path.Combine(backupDir,
-                $"{Path.GetFileNameWithoutExtension(src)}_{timestamp}{Path.GetExtension(src)}");
-            File.Copy(src, dest);
-        }
-
-        AppDialog.Info(Loc.F("Quick_BackupCreated", backupDir), owner: this);
-    }
-
     private void PopulateGrid()
     {
         ShortcutsGrid.Children.Clear();
@@ -1180,30 +1185,6 @@ public partial class QuickAccessWindow : Window
 
         PopulateGrid();
     }
-
-    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshGrid();
-
-    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
-
-    private void HideToSystray_Click(object sender, RoutedEventArgs e)
-    {
-        ClearSearch();
-        Hide();
-    }
-
-    private void Quit_Click(object sender, RoutedEventArgs e)
-    {
-        if (!AppDialog.Confirm("Quitter DockPad ?", owner: this))
-            return;
-
-        App.Exit();
-    }
-
-    private void EditConfig_Click(object sender, RoutedEventArgs e)
-    {
-        ShortcutService.OpenInEditor();
-    }
-
     // ── Triggers dynamiques ───────────────────────────────────────────────────
 
     /// <summary>

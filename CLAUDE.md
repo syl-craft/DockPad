@@ -790,6 +790,29 @@ quarante-cinq clés dont trente ne serviraient qu'une fois, du bruit et pas de l
 > heure de reset du bandeau si l'heure a tourné entre deux exécutions, et une icône dont l'index
 > change. Tout le reste est une régression.
 
+## Commandes et liaisons
+
+Les actions de la fenêtre d'accès rapide sont des **commandes** (`Views/QuickAccessCommands.cs`), pas
+des gestionnaires `Click` : elles sont énumérées en un endroit et se testent avec une vue factice,
+via l'interface `IQuickAccessView`. Celle-ci ne porte que les gestes qu'une fenêtre est seule à
+pouvoir faire — ouvrir un dialogue avec un `Owner`, se réduire, afficher un message. Tout le reste —
+quoi faire, dans quel ordre, avec quel message — vit dans les commandes.
+
+> **Un `ContextMenu` n'hérite pas du `DataContext` de la fenêtre.** Il vit dans son propre arbre
+> visuel : ses liaisons rendent `null`, le menu reste cliquable et ne fait rien, **sans erreur de
+> compilation ni exception**. Une liaison sur `PlacementTarget.DataContext` ne suffit pas non plus —
+> celui-ci est nul tant que le menu n'est pas ouvert. Le contexte est donc posé une fois à la
+> construction : `menu.DataContext = this`.
+
+**`DialogShot.exe bindings fr x.png`** monte les sept fenêtres et signale toute liaison de commande
+qui ne résout pas (code de sortie 1). À lancer après toute modification de liaison — c'est ce qui a
+attrapé les dix entrées de menu mortes ci-dessus, qu'aucune capture d'écran n'aurait montrées.
+
+La première version de ce contrôle écoutait `PresentationTraceSources.DataBindingSource` : **elle ne
+voyait rien**, une liaison ne s'évaluant qu'à la mise en page, et les menus n'étant jamais mis en
+page. Une mutation volontaire l'a démasquée. La version retenue lit la liaison directement dans
+l'arbre **logique**, menus contextuels compris.
+
 ## Accessibilité
 
 Tout contrôle dont le contenu n'est qu'un glyphe porte un `AutomationProperties.Name` : `☰`, `─`,

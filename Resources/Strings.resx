@@ -560,6 +560,9 @@ This cannot be undone.</value>
     <value>Backup created in:
 {0}</value>
   </data>
+  <data name="Quick_ConfirmQuit" xml:space="preserve">
+    <value>Quit DockPad?</value>
+  </data>
   <data name="Quick_HideToTray" xml:space="preserve">
     <value>Hide in the system tray</value>
   </data>
