@@ -74,7 +74,7 @@ public partial class PresetsDialog : Window
         var toInstall = _presets.Where(p => p.IsSelected && p.CanSelect).ToList();
         if (toInstall.Count == 0)
         {
-            AppDialog.Info("Aucun raccourci sélectionné.", owner: this);
+            AppDialog.Info(Loc.T("Presets_NoneSelected"), owner: this);
             return;
         }
 

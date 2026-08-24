@@ -1,7 +1,8 @@
 <Window x:Class="DockPad.PresetsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Raccourcis prédéfinis"
+        xmlns:loc="clr-namespace:DockPad.Services.Localization"
+        Title="{loc:T Presets_Title}"
         Width="580" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -17,13 +18,13 @@
 
         <!-- Header -->
         <Border Grid.Row="0" Background="#0078D4" Padding="20,14">
-            <TextBlock Text="Raccourcis prédéfinis" FontSize="16"
+            <TextBlock Text="{loc:T Presets_Title}" FontSize="16"
                        FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
         <!-- Contenu -->
         <StackPanel Grid.Row="1" Margin="24,20">
-            <TextBlock Text="Sélectionnez les raccourcis à installer ou mettre à jour"
+            <TextBlock Text="{loc:T Presets_Subtitle}"
                        FontSize="13" Foreground="#555" Margin="0,0,0,16"/>
 
             <ItemsControl x:Name="ItemsPresets">
@@ -75,17 +76,17 @@
             <Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <TextBlock x:Name="TxtVersion" Style="{StaticResource FooterVersion}" Margin="0,0,14,0"/>
-                    <Button Content="☰ Menu contextuel" Style="{StaticResource SecondaryButton}"
+                    <Button Content="{loc:T Presets_ContextMenu}" Style="{StaticResource SecondaryButton}"
                             Margin="0,0,8,0" Click="OpenContextMenuManager_Click"/>
-                    <Button Content="↻ Actualiser" Style="{StaticResource SecondaryButton}"
+                    <Button Content="{loc:T Common_Refresh}" Style="{StaticResource SecondaryButton}"
                             Click="Refresh_Click"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Annuler" Style="{StaticResource SecondaryButton}"
+                    <Button Content="{loc:T Common_Cancel}" Style="{StaticResource SecondaryButton}"
                             Margin="0,0,12,0" Click="Cancel_Click"/>
-                    <Button x:Name="BtnInstall" Content="Installer / Mettre à jour"
+                    <Button x:Name="BtnInstall" Content="{loc:T Presets_Install}"
                             Style="{StaticResource PrimaryButton}" Click="Install_Click"/>
-                    <Button x:Name="BtnElevate" Content="🛡 Élever"
+                    <Button x:Name="BtnElevate" Content="{loc:T Common_Elevate}"
                             Style="{StaticResource PrimaryButton}" Visibility="Collapsed"
                             Click="Elevate_Click"/>
                 </StackPanel>

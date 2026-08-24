@@ -43,6 +43,13 @@ internal static class Program
         var app = new App();
         app.InitializeComponent();
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        // Langue de la capture : variable d'environnement plutot qu'un argument, pour ne pas
+        // deplacer les arguments existants des cibles.
+        var shotLang = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_LANG");
+        if (!string.IsNullOrWhiteSpace(shotLang))
+            DockPad.Services.Localization.Loc.SetCulture(
+                System.Globalization.CultureInfo.GetCultureInfo(shotLang));
+
 
         Window win;
         switch (target)

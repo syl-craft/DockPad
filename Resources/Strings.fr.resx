@@ -21,8 +21,35 @@
   <data name="Common_Close" xml:space="preserve">
     <value>Fermer</value>
   </data>
+  <data name="Common_Elevate" xml:space="preserve">
+    <value>🛡 Élever</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>Non</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>↻ Actualiser</value>
+  </data>
   <data name="Common_Save" xml:space="preserve">
     <value>Enregistrer</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>Oui</value>
+  </data>
+  <data name="Dialog_Title_Confirm" xml:space="preserve">
+    <value>Confirmation</value>
+  </data>
+  <data name="Dialog_Title_Error" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="Dialog_Title_Info" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Dialog_Title_Warning" xml:space="preserve">
+    <value>Attention</value>
   </data>
   <data name="Key_Delete" xml:space="preserve">
     <value>Suppr</value>
@@ -56,6 +83,49 @@
   </data>
   <data name="Language_Auto" xml:space="preserve">
     <value>Automatique (Windows)</value>
+  </data>
+  <data name="Picker_AlwaysForDomain" xml:space="preserve">
+    <value>Toujours pour ce domaine</value>
+  </data>
+  <data name="Picker_AlwaysForHost" xml:space="preserve">
+    <value>Toujours pour {0}</value>
+  </data>
+  <data name="Picker_AutoOpenIn" xml:space="preserve">
+    <value>Ouverture automatique dans {0} s</value>
+  </data>
+  <data name="Picker_Copied" xml:space="preserve">
+    <value>Copié ✓</value>
+  </data>
+  <data name="Picker_Copy" xml:space="preserve">
+    <value>⧉ Copier</value>
+  </data>
+  <data name="Picker_Title" xml:space="preserve">
+    <value>Ouvrir avec…</value>
+  </data>
+  <data name="Presets_Badge_UpToDate" xml:space="preserve">
+    <value>Déjà installé</value>
+  </data>
+  <data name="Presets_Badge_UpdateAvail" xml:space="preserve">
+    <value>Mise à jour disponible</value>
+  </data>
+  <data name="Presets_ContextMenu" xml:space="preserve">
+    <value>☰ Menu contextuel</value>
+  </data>
+  <data name="Presets_Errors" xml:space="preserve">
+    <value>Erreurs :
+{0}</value>
+  </data>
+  <data name="Presets_Install" xml:space="preserve">
+    <value>Installer / Mettre à jour</value>
+  </data>
+  <data name="Presets_NoneSelected" xml:space="preserve">
+    <value>Aucun raccourci sélectionné.</value>
+  </data>
+  <data name="Presets_Subtitle" xml:space="preserve">
+    <value>Sélectionnez les raccourcis à installer ou mettre à jour</value>
+  </data>
+  <data name="Presets_Title" xml:space="preserve">
+    <value>Raccourcis prédéfinis</value>
   </data>
   <data name="Settings_Claude_ArgsHint" xml:space="preserve">
     <value>Ex : --enable-auto-mode</value>
@@ -113,6 +183,9 @@
   </data>
   <data name="Usage_DayTimeFormat" xml:space="preserve">
     <value>ddd HH\h</value>
+  </data>
+  <data name="Usage_Demo" xml:space="preserve">
+    <value>démo</value>
   </data>
   <data name="Usage_TimeFormat" xml:space="preserve">
     <value>HH\hmm</value>

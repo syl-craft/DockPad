@@ -1,7 +1,5 @@
 using System.Runtime.InteropServices;
 
-using DockPad.Services.Localization;
-
 namespace DockPad.Services;
 
 public static class HotkeyService

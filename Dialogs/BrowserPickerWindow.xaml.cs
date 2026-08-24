@@ -63,7 +63,7 @@ public partial class BrowserPickerWindow : Window
         TxtUrl.Text = url;
 
         ChkAlways.IsEnabled = _host is not null;
-        if (_host is not null) ChkAlways.Content = $"Toujours pour {_host}";
+        if (_host is not null) ChkAlways.Content = Loc.F("Picker_AlwaysForHost", _host);
 
         // Navigateurs et leurs profils : les badges 1-9 ne numérotent que les lignes
         // choisissables (un titre de groupe n'en reçoit pas).
@@ -153,7 +153,7 @@ public partial class BrowserPickerWindow : Window
     {
         _choices[0].IsCountdown = true;
         _choices[0].Badge = $"{_autoOpenRemaining}s";
-        TxtCountdown.Text = $"Ouverture automatique dans {_autoOpenRemaining} s";
+        TxtCountdown.Text = Loc.F("Picker_AutoOpenIn", _autoOpenRemaining);
         TxtCountdown.Visibility = Visibility.Visible;
     }
 
@@ -198,9 +198,9 @@ public partial class BrowserPickerWindow : Window
     {
         try { Clipboard.SetText(_url); } catch (Exception ex) { Services.LogService.Warn(ex, "Copie de l'URL dans le presse-papiers"); return; }
 
-        BtnCopy.Content = "Copié ✓";
+        BtnCopy.Content = Loc.T("Picker_Copied");
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
-        timer.Tick += (_, _) => { BtnCopy.Content = "⧉ Copier"; timer.Stop(); };
+        timer.Tick += (_, _) => { BtnCopy.Content = Loc.T("Picker_Copy"); timer.Stop(); };
         timer.Start();
     }
 
