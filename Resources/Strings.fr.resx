@@ -465,6 +465,36 @@ Cette action est irréversible.</value>
   <data name="Picker_Title" xml:space="preserve">
     <value>Ouvrir avec…</value>
   </data>
+  <data name="Preset_ClaudeTerminal_Desc" xml:space="preserve">
+    <value>Ouvre un terminal dans ce dossier et lance Claude Code</value>
+  </data>
+  <data name="Preset_ClaudeTerminal_Name" xml:space="preserve">
+    <value>Ouvrir un terminal Claude</value>
+  </data>
+  <data name="Preset_GitHubDesktop_Desc" xml:space="preserve">
+    <value>Ouvre ce dossier dans GitHub Desktop</value>
+  </data>
+  <data name="Preset_GitHubDesktop_Name" xml:space="preserve">
+    <value>Ouvrir dans GitHub Desktop</value>
+  </data>
+  <data name="Preset_PowerShell_Desc" xml:space="preserve">
+    <value>Ouvre un onglet PowerShell dans ce dossier</value>
+  </data>
+  <data name="Preset_PowerShell_Name" xml:space="preserve">
+    <value>Ouvrir dans PowerShell</value>
+  </data>
+  <data name="Preset_Ssms_Desc" xml:space="preserve">
+    <value>Ouvre ce dossier dans SQL Server Management Studio</value>
+  </data>
+  <data name="Preset_Ssms_Name" xml:space="preserve">
+    <value>Ouvrir dans SQL Server Management Studio</value>
+  </data>
+  <data name="Preset_VSCode_Desc" xml:space="preserve">
+    <value>Ouvre ce dossier dans Visual Studio Code</value>
+  </data>
+  <data name="Preset_VSCode_Name" xml:space="preserve">
+    <value>Ouvrir dans Visual Studio Code</value>
+  </data>
   <data name="Presets_Badge_UpToDate" xml:space="preserve">
     <value>Déjà installé</value>
   </data>

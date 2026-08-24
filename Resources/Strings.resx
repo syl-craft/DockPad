@@ -465,6 +465,36 @@ This cannot be undone.</value>
   <data name="Picker_Title" xml:space="preserve">
     <value>Open with…</value>
   </data>
+  <data name="Preset_ClaudeTerminal_Desc" xml:space="preserve">
+    <value>Opens a terminal in this folder and starts Claude Code</value>
+  </data>
+  <data name="Preset_ClaudeTerminal_Name" xml:space="preserve">
+    <value>Open a Claude terminal</value>
+  </data>
+  <data name="Preset_GitHubDesktop_Desc" xml:space="preserve">
+    <value>Opens this folder in GitHub Desktop</value>
+  </data>
+  <data name="Preset_GitHubDesktop_Name" xml:space="preserve">
+    <value>Open in GitHub Desktop</value>
+  </data>
+  <data name="Preset_PowerShell_Desc" xml:space="preserve">
+    <value>Opens a PowerShell tab in this folder</value>
+  </data>
+  <data name="Preset_PowerShell_Name" xml:space="preserve">
+    <value>Open in PowerShell</value>
+  </data>
+  <data name="Preset_Ssms_Desc" xml:space="preserve">
+    <value>Opens this folder in SQL Server Management Studio</value>
+  </data>
+  <data name="Preset_Ssms_Name" xml:space="preserve">
+    <value>Open in SQL Server Management Studio</value>
+  </data>
+  <data name="Preset_VSCode_Desc" xml:space="preserve">
+    <value>Opens this folder in Visual Studio Code</value>
+  </data>
+  <data name="Preset_VSCode_Name" xml:space="preserve">
+    <value>Open in Visual Studio Code</value>
+  </data>
   <data name="Presets_Badge_UpToDate" xml:space="preserve">
     <value>Already installed</value>
   </data>

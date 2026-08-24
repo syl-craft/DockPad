@@ -47,23 +47,9 @@ public partial class PresetsDialog : Window
 
         foreach (var preset in _presets)
         {
-            var current = RegistryService.GetValues(preset.Target, preset.RegistryKey);
-
-            if (current == null)
-            {
-                preset.Status = PresetStatus.NotInstalled;
-                preset.IsSelected = true;
-            }
-            else if (current.Value.Command == preset.Command && current.Value.Icon == preset.IconPath)
-            {
-                preset.Status = PresetStatus.UpToDate;
-                preset.IsSelected = false;
-            }
-            else
-            {
-                preset.Status = PresetStatus.UpdateAvailable;
-                preset.IsSelected = true;
-            }
+            preset.Status = PresetService.CompareStatus(
+                RegistryService.GetValues(preset.Target, preset.RegistryKey), preset);
+            preset.IsSelected = preset.Status != PresetStatus.UpToDate;
         }
 
         ItemsPresets.ItemsSource = _presets;

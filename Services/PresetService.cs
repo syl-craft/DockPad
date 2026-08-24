@@ -57,13 +57,34 @@ public static class PresetService
 
         return new PresetEntry
         {
-            DisplayName = "Ouvrir un terminal Claude",
+            DisplayName = Loc.T("Preset_ClaudeTerminal_Name"),
             RegistryKey = "OpenClaudeTerminal",
             Command = command,
             IconPath = icon,
             Target = ContextMenuTarget.FolderBackground,
-            Description = "Ouvre un terminal dans ce dossier et lance Claude Code"
+            Description = Loc.T("Preset_ClaudeTerminal_Desc")
         };
+    }
+
+    /// <summary>
+    /// Statut d'un prédéfini face à ce que porte le registre.
+    /// </summary>
+    /// <remarks>
+    /// Le <b>nom affiché</b> entre dans la comparaison, au même titre que la commande et l'icône :
+    /// c'est ce qui change quand DockPad change de langue. Sans lui, une entrée installée dans
+    /// l'autre langue s'annonçait « déjà installée » et le bouton refusait de la réappliquer — la
+    /// traduction du menu contextuel de Windows était alors inatteignable depuis l'interface.
+    /// </remarks>
+    public static PresetStatus CompareStatus(
+        (string DisplayName, string Command, string Icon)? installed, PresetEntry preset)
+    {
+        if (installed is not { } current) return PresetStatus.NotInstalled;
+
+        return current.DisplayName == preset.DisplayName
+            && current.Command == preset.Command
+            && current.Icon == preset.IconPath
+                ? PresetStatus.UpToDate
+                : PresetStatus.UpdateAvailable;
     }
 
     private static PresetEntry BuildPowerShell()
@@ -94,12 +115,12 @@ public static class PresetService
 
         return new PresetEntry
         {
-            DisplayName = "Ouvrir dans PowerShell",
+            DisplayName = Loc.T("Preset_PowerShell_Name"),
             RegistryKey = "OpenWithPowerShell",
             Command = command,
             IconPath = icon,
             Target = ContextMenuTarget.FolderBackground,
-            Description = "Ouvre un onglet PowerShell dans ce dossier"
+            Description = Loc.T("Preset_PowerShell_Desc")
         };
     }
 
@@ -111,8 +132,8 @@ public static class PresetService
             @"C:\Program Files\Microsoft VS Code\Code.exe");
 
         return BuildFolderPreset(
-            "Ouvrir dans Visual Studio Code", "OpenWithVSCode",
-            "Ouvre ce dossier dans Visual Studio Code",
+            Loc.T("Preset_VSCode_Name"), "OpenWithVSCode",
+            Loc.T("Preset_VSCode_Desc"),
             exe, fallbackExe: "code");
     }
 
@@ -130,8 +151,8 @@ public static class PresetService
         string? exe = FindExe("Ssms.exe", ssmsCandidates);
 
         return BuildFolderPreset(
-            "Ouvrir dans SQL Server Management Studio", "OpenWithSSMS",
-            "Ouvre ce dossier dans SQL Server Management Studio",
+            Loc.T("Preset_Ssms_Name"), "OpenWithSSMS",
+            Loc.T("Preset_Ssms_Desc"),
             exe, fallbackExe: "ssms.exe");
     }
 
@@ -171,12 +192,12 @@ public static class PresetService
         // GitHub Desktop canonise ensuite le chemin (git rev-parse --show-toplevel).
         return new PresetEntry
         {
-            DisplayName = "Ouvrir dans GitHub Desktop",
+            DisplayName = Loc.T("Preset_GitHubDesktop_Name"),
             RegistryKey = "OpenWithGitHubDesktop",
             Command = @"""%LocalAppData%\GitHubDesktop\GitHubDesktop.exe"" --cli-open=""%V\.""",
             IconPath = @"%LocalAppData%\GitHubDesktop\GitHubDesktop.exe",
             Target = ContextMenuTarget.FolderBackground,
-            Description = "Ouvre ce dossier dans GitHub Desktop"
+            Description = Loc.T("Preset_GitHubDesktop_Desc")
         };
     }
 
