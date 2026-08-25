@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.1] — 2026-08-25
+
+### Corrections
+- **Sauvegarder la configuration deux fois dans la même seconde** ne lève plus d'erreur. Les copies portaient un horodatage à la seconde et se refusaient à s'écraser : le second clic échouait **en plein milieu**, après avoir copié `shortcuts.json` et avant les autres — une sauvegarde partielle, annoncée comme une erreur. Les copies suivantes prennent maintenant un suffixe (`_2`, `_3`…)
+
+### Performance
+- **Le changement de page est nettement plus rapide**, surtout sur une page chargée en tuiles de dossier : mesuré sur une page pleine, `194,6 ms → 22,3 ms`. Le menu contextuel de chaque tuile de dossier lisait le registre Windows à chaque affichage de la grille — donc aussi à chaque changement de langue. Il n'est construit que sur la tuile dont on ouvre le menu. Une page de tuiles de commande passe de `38,0 ms` à `24,7 ms`
+
+### Notes
+- Cette version est surtout un **remaniement interne** de la fenêtre d'accès rapide : la logique en est sortie vers des services testés, ses actions sont devenues des commandes, et la grille est décrite en XAML au lieu d'être fabriquée en code. **Rien ne devait changer à l'écran** — les dix fenêtres de l'application ont été comparées au pixel avant et après pour le vérifier
+- La suite de tests passe de 406 à **447 tests**, sur de la logique qui n'en avait aucune : lancement d'une tuile, correspondance touche → case de l'overlay, filtre de la recherche, dépôts depuis l'Explorateur, sauvegarde de configuration, et les quatorze actions du menu ☰
+
 ## [1.11.0] — 2026-08-24
 
 ### Nouveautés utilisateur
