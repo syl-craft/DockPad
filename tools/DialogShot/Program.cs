@@ -36,7 +36,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|bindings> <fr|en> <chemin.png>");
+            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|bindings|grid> <fr|en> <chemin.png>");
             return;
         }
 
@@ -70,6 +70,27 @@ internal static class Program
         if (target == "bindings")
         {
             Environment.ExitCode = CheckBindings();
+            return;
+        }
+
+        // Cout d'un peuplement de la grille : le geste que refait chaque changement de page.
+        if (target == "bench")
+        {
+            GridBench.Run(folders: args.Length < 3 || args[2] != "command");
+            return;
+        }
+
+        // Overlay clavier deploye : la seule chose que les captures au repos ne montrent pas.
+        if (target == "overlay")
+        {
+            OverlayShot.Render(args[2], firstHalf: true);
+            return;
+        }
+
+        // Cablage de la grille de tuiles : ce que lisent le clic, le glissement et le depot.
+        if (target == "grid")
+        {
+            Environment.ExitCode = GridCheck.Run();
             return;
         }
 

@@ -68,7 +68,9 @@ Services/
     BrowserProfileService.cs             Détection des profils Chromium (User Data\Local State) + fusion dans browsers.json
     BrowserRowLayout.cs                  Ordre d'affichage navigateurs + profils (groupes, en-têtes, ↑/↓, libellé « Chrome › Boulot »)
     BrowserRegistrationService.cs        Enregistrement per-user (HKCU) comme navigateur + lecture de l'état (non enregistré/enregistré/par défaut)
+    ConfigBackup.cs                       Copie horodatée des configs dans .backup\ (suffixe _2, _3… si collision)
     ConfigLock.cs                         Verrou global des load-modify-save de configs (UI et MCP sérialisés)
+    DroppedShortcut.cs                    Dépôt Explorateur : acceptable ou non, nom de dossier, lecture d'un .url
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
     IconStoreService.cs                  Store des icônes du profil (%APPDATA%\DockPad\icons\) — SHA1 dédup, extraction .exe/.dll → .png
     LogService.cs                        Logger central Serilog — %APPDATA%\DockPad\logs\, rolling quotidien, 14 fichiers, shared multi-process
@@ -81,11 +83,15 @@ Services/
     PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS, GitHub Desktop)
     ProcessSwitchService.cs              SwitchOrLaunch : cherche via WMI, SetForegroundWindow ou lance l'exe
     RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
+    RelayCommand.cs                       ICommand générique (ne s'abonne à RequerySuggested que si canExecute existe)
     ResourceStringResolver.cs            Résolution des @dll,-id via SHLoadIndirectString
     SettingsService.cs                   Lecture/écriture paramètres HKCU + autostart
     TileLockState.cs                      Verrou du déplacement des tuiles (état + glyphe + infobulle, sans WPF)
     ShortcutActionService.cs              Actions sur la grille de raccourcis, partagées UI ↔ MCP (cœurs purs + enveloppes verrou/IO)
+    ShortcutLauncher.cs                   Décide ce que lance une tuile (plan pur) puis l'exécute
+    ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
+    TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     UrlPipeService.cs                    Named pipe DockPad_UrlPipe — serveur (instance principale) / client (instance relais)
     UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
@@ -119,6 +125,8 @@ Mcp/
 
 Views/
     ContextMenuManagerWindow.xaml/.cs    Gestion des entrées de menu contextuel Windows
+    QuickAccessCommands.cs               Les actions de la fenêtre en commandes + interface IQuickAccessView
+    TileCell.cs                          Une case de la grille (occupée ou libre) + sélecteur de gabarit
     QuickAccessWindow.xaml/.cs           Grille de tuiles multi-pages (hotkey global)
     UsagePanel.xaml/.cs                  Bandeau Usage IA (aucun calcul, tout vient du ViewModel)
 
@@ -133,16 +141,21 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (327 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (447 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
+                                         + traduction (parité des clés, pluriels, culture par défaut)
+                                         + logique sortie de la fenêtre (lancement, overlay, recherche, dépôts, sauvegarde, commandes)
 
 tools/
     get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
     inject-startmenu-shortcuts.ps1       Script PowerShell : injecte des raccourcis SwitchToProcess dans shortcuts.json
     McpShot/                             Outil console : capture les onglets de McpConfigDialog en PNG (doc)
     BrowserShot/                         Outil console : capture la popup de choix et la fenêtre Navigateurs en PNG
+    DialogShot/                          Outil console : capture les fenêtres, contrôle les liaisons (bindings),
+                                         le câblage de la grille (grid), l'overlay clavier (overlay),
+                                         et chronomètre un peuplement (bench)
     UsageShot/                           Outil console : capture le bandeau Usage IA et sa fenêtre de réglages en PNG (doc)
 ```
 
@@ -812,6 +825,55 @@ La première version de ce contrôle écoutait `PresentationTraceSources.DataBin
 voyait rien**, une liaison ne s'évaluant qu'à la mise en page, et les menus n'étant jamais mis en
 page. Une mutation volontaire l'a démasquée. La version retenue lit la liaison directement dans
 l'arbre **logique**, menus contextuels compris.
+
+## Grille de tuiles déclarative
+
+Les vingt-quatre cases viennent d'un `ItemsControl` (`UniformGrid` 4 × 6) alimenté par des
+**cellules** (`Views/TileCell.cs`), avec un `DataTemplate` par état — occupée ou libre — choisis par
+`TileTemplateSelector`. `PopulateGrid` ne fabrique plus de boutons : il fournit des données. Les
+gestionnaires d'événements restent déclarés dans le gabarit, car le glisser-déposer et le survol ont
+besoin de leurs arguments d'événement, qu'une commande ne porte pas.
+
+Ce que la bascule change, et qui ne se voit ni à la compilation ni sur une capture :
+
+- **Le `DataContext` d'un bouton de gabarit est la cellule, pas le raccourci.** Les gestionnaires
+  lisent `CellOf(sender)` ; un test `is not ShortcutEntry` compile et rend le clic inerte
+- **Un bouton d'`ItemsControl` n'a plus de `Grid.Row`.** `Grid.GetRow` y rend 0 : tout dépôt
+  atterrissait en (0,0). La position vient de la cellule
+- **Le contenu du bouton est engendré.** On n'y cherche plus l'`Image` à la main pour rafraîchir une
+  icône : republier la cellule suffit
+- **Le menu contextuel doit exister dès la construction.** WPF ne lève `ContextMenuOpening` que sur
+  un élément qui en porte déjà un, et affiche celui capturé *avant* le gestionnaire : en assigner un
+  neuf depuis le gestionnaire ne montrerait rien. Un `<ContextMenu/>` vide est donc déclaré dans le
+  gabarit, et le gestionnaire le **remplit**. C'est ce qui permet de différer le travail : le menu
+  d'une tuile de dossier lit le registre, ce qui se faisait pour les vingt-quatre cases à chaque
+  peuplement de la grille — donc à chaque changement de page et de langue
+- **L'overlay clavier a sa propre grille superposée**, au lieu d'ajouter ses éléments dans celle des
+  tuiles : sa position ne dépend plus de la façon dont les tuiles sont construites
+- **La géométrie du bandeau se mesure sur une tuile réelle**, cherchée dans l'arbre visuel
+  (`FirstTile()`) : les enfants d'un `ItemsControl` sont engendrés, il n'y a plus de collection
+  `Children` où prendre le premier
+
+**`DialogShot.exe grid fr x.png`** monte la fenêtre sur une fixture de trois tuiles à des positions
+choisies et vérifie ce que lisent réellement le clic, le glissement et le dépôt : chaque case porte
+une `TileCell`, sa position correspond à sa place dans la grille, et son menu existe puis se remplit.
+Les quatre ruptures ci-dessus ont été **reproduites par mutation** pour prouver que le contrôle mord.
+
+**`DialogShot.exe bench fr [folder|command]`** chronomètre un peuplement sur une page pleine, le
+geste que refont chaque changement de page et chaque changement de langue. Mesuré sur 20 passages :
+
+| Page pleine de… | Menus construits d'avance | Menus différés |
+|---|---|---|
+| tuiles de commande | 38,0 ms | 24,7 ms |
+| tuiles de dossier | 194,6 ms | 22,3 ms |
+
+Le surcoût des tuiles de dossier — une lecture du registre par tuile — **disparaît entièrement** :
+après, un dossier ne coûte pas plus cher qu'une commande. C'est le gain concret de l'étape, et la
+raison de préférer `ContextMenuOpening` à un menu construit avec la tuile.
+
+**`DialogShot.exe overlay fr <png>`** rend l'overlay clavier déployé — le seul état que les captures
+de fenêtres au repos ne montrent pas. Il appelle `ShowHintOverlay` par réflexion, sous un nom que
+les deux versions portent, ce qui rend la capture comparable d'un côté et de l'autre du changement.
 
 ## Accessibilité
 
