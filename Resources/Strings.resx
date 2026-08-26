@@ -1032,4 +1032,13 @@ This cannot be undone.</value>
   <data name="Usage_TimeFormat" xml:space="preserve">
     <value>HH:mm</value>
   </data>
+  <data name="Settings_Network_Section" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="Settings_Network_AutoFavicon" xml:space="preserve">
+    <value>Download the site icon for web shortcuts</value>
+  </data>
+  <data name="Settings_Network_AutoFaviconHint" xml:space="preserve">
+    <value>Only the domain is sent to Google's favicon service — never the path or query string of the address. Unchecked, no request is made.</value>
+  </data>
 </root>

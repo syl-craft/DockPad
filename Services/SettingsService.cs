@@ -87,6 +87,22 @@ public static class SettingsService
         key.SetValue("Language", tag, RegistryValueKind.String);
     }
 
+    /// <summary>
+    /// Télécharger l'icône du site pour les tuiles web. Absent du registre = activé : c'est le
+    /// comportement demandé, et un réglage réseau qu'on n'a jamais vu ne peut pas avoir été refusé.
+    /// </summary>
+    public static bool LoadAutoFavicon()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RegPath);
+        return key?.GetValue("AutoFavicon") is not int v || v != 0;
+    }
+
+    public static void SaveAutoFavicon(bool enabled)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(RegPath);
+        key.SetValue("AutoFavicon", enabled ? 1 : 0, RegistryValueKind.DWord);
+    }
+
     public static string LoadClaudeArgs()
     {
         using var key = Registry.CurrentUser.OpenSubKey(RegPath);

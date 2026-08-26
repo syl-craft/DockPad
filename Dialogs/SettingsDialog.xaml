@@ -96,6 +96,15 @@
             <TextBox x:Name="TxtClaudeArgs" FontFamily="Consolas" FontSize="12"
                      Padding="6,5" BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1"
                      ToolTip="{loc:T Settings_Claude_ArgsHint}"/>
+
+            <Separator Margin="0,20,0,16"/>
+
+            <TextBlock Text="{loc:T Settings_Network_Section}" FontWeight="SemiBold"
+                       FontSize="13" Margin="0,0,0,14"/>
+            <CheckBox x:Name="ChkAutoFavicon" Content="{loc:T Settings_Network_AutoFavicon}"
+                      VerticalContentAlignment="Center"/>
+            <TextBlock Text="{loc:T Settings_Network_AutoFaviconHint}" Margin="0,8,0,0"
+                       Foreground="#888" FontSize="11" TextWrapping="Wrap"/>
         </StackPanel>
 
         <!-- Footer -->

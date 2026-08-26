@@ -43,6 +43,7 @@ public partial class SettingsDialog : Window
         CmbTriggerSecond.SelectionChanged += (_, _) => ValidateTriggers();
 
         ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
+        ChkAutoFavicon.IsChecked = SettingsService.LoadAutoFavicon();
         TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
         TxtAutoStartPath.Text = Environment.ProcessPath
             ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
@@ -193,6 +194,7 @@ public partial class SettingsDialog : Window
             CmbTriggerFirst.SelectedIndex  > 0 ? saved[CmbTriggerFirst.SelectedIndex]  : "",
             CmbTriggerSecond.SelectedIndex > 0 ? saved[CmbTriggerSecond.SelectedIndex] : "");
         SettingsService.SaveAutoStart(ChkAutoStart.IsChecked == true);
+        SettingsService.SaveAutoFavicon(ChkAutoFavicon.IsChecked == true);
         SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
         DialogResult = true;
     }

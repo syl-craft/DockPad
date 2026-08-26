@@ -71,6 +71,7 @@ Services/
     ConfigBackup.cs                       Copie horodatée des configs dans .backup\ (suffixe _2, _3… si collision)
     ConfigLock.cs                         Verrou global des load-modify-save de configs (UI et MCP sérialisés)
     DroppedShortcut.cs                    Dépôt Explorateur : acceptable ou non, nom de dossier, lecture d'un .url
+    FaviconService.cs                     Icône du site pour une tuile web (domaine seul, jamais l'URL complète)
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
     IconStoreService.cs                  Store des icônes du profil (%APPDATA%\DockPad\icons\) — SHA1 dédup, extraction .exe/.dll → .png
     LogService.cs                        Logger central Serilog — %APPDATA%\DockPad\logs\, rolling quotidien, 14 fichiers, shared multi-process
@@ -253,6 +254,16 @@ tools/
 - À la création/modification : si aucune icône spécifiée, l'icône de l'exe associé est utilisée automatiquement (RunCommand, SwitchToProcess, OpenTerminal)
 - **↻ Actualiser** : resynchronise le store pour toutes les entrées existantes
 
+### Icône automatique des tuiles web (FaviconService)
+- À l'enregistrement d'une tuile **`OpenUrl` sans icône**, DockPad va chercher l'icône du site et la range dans le store — même mécanique que l'icône d'un `.exe` pour les autres types, qui existait déjà
+- **Seul le domaine quitte la machine.** Le service interrogé (`https://www.google.com/s2/favicons?domain=…&sz=128`) prend un domaine ; ni le chemin ni la chaîne de requête ne lui sont donnés. Un identifiant de projet Asana ou un numéro de client dans une URL interne n'a rien à faire chez un tiers — **deux tests le vérifient**, dont un sur ce qui part réellement sur le réseau, et pas seulement sur la construction de l'URL
+- **Réglage** dans Options → *Réseau*, coché par défaut, `HKCU\Software\DockPad\Settings\AutoFavicon`. Décoché, `ShouldFetch` rend `false` et **aucune requête n'est émise**
+- **Le téléchargement a lieu avant le verrou**, jamais dedans : `ConfigLock.Gate` est le verrou global des configs, et l'y tenir le temps d'un appel réseau bloquerait l'interface et toute requête MCP concurrente. D'où `AddAsync`/`UpdateAsync`, dont `Add`/`Update` ne sont plus que les variantes bloquantes — réservées au serveur MCP, qui travaille sur un thread de pipe
+- **`ConfigureAwait(false)` partout** dans ce chemin : sans lui, la variante bloquante appelée depuis le thread d'interface se bloquerait elle-même en attendant une continuation qui ne peut plus s'exécuter
+- **Une icône fournie gagne toujours** : `ShouldFetch` rend `false` dès que `IconPath` est renseigné. Rien n'est jamais remplacé, et ↻ Actualiser ne va pas sur le réseau
+- **Ce chemin n'est jamais critique** : hors ligne, DNS cassé, proxy d'entreprise, 404, réponse vide → `null`, donc la tuile garde l'icône du navigateur, comme avant la fonctionnalité. Rien ne remonte à l'écran, une icône manquante n'est pas une panne
+- **Un fichier temporaire, pas le store directement** : la mise en store appartient à `IconStoreService.CopyToProfile`, seul à savoir dédupliquer. `TryFetchIntoStoreAsync` compose les deux et efface le temporaire — en un seul endroit, sinon c'est deux endroits où oublier de l'effacer
+
 ### Types de tuiles (ShortcutType)
 | Type | Description | Champ `command` | Bande |
 |------|-------------|-----------------|-------|
@@ -295,6 +306,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
+- **Réseau — Télécharger l'icône du site pour les raccourcis web** : voir *Icône automatique des tuiles web* ci-dessus
 - **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
 ### Sélecteur de navigateur

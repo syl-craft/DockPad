@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -644,7 +645,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         var changeIcon = new MenuItem { Header = Loc.T("Quick_Tile_ChangeIcon") };
         changeIcon.Click += (_, _) => ChangeIcon(entry);
         var edit = new MenuItem { Header = Loc.T("Quick_Tile_Edit") };
-        edit.Click += (_, _) => EditTile(entry);
+        edit.Click += async (_, _) => await EditTile(entry);
         var duplicate = new MenuItem { Header = Loc.T("Quick_Tile_Duplicate") };
         duplicate.Click += (_, _) => DuplicateTile(entry);
         var delete = new MenuItem { Header = Loc.T("Quick_Tile_Delete") };
@@ -672,11 +673,19 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         menu.Items.Clear();
 
         var add = new MenuItem { Header = Loc.T("Quick_Tile_Add") };
-        add.Click += (_, _) => AddTile(cell.Row, cell.Col);
+        add.Click += async (_, _) => await AddTile(cell.Row, cell.Col);
         menu.Items.Add(add);
     }
 
-    private void AddTile(int row, int col)
+    /// <summary>
+    /// Ajoute une tuile.
+    /// </summary>
+    /// <remarks>
+    /// Asynchrone parce qu'une tuile web sans icône déclenche un téléchargement : quelques
+    /// centaines de millisecondes d'ordinaire, cinq secondes au pire si le réseau ne répond pas.
+    /// Bloquer le thread d'interface pendant ce temps figerait la grille.
+    /// </remarks>
+    private async Task AddTile(int row, int col)
     {
         var dlg = new ShortcutDialog(row: row, col: col) { Owner = this };
         if (dlg.ShowDialog() != true) return;
@@ -688,17 +697,17 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             IconPath = string.IsNullOrEmpty(dlg.Entry.IconPath) ? null : dlg.Entry.IconPath,
             Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
         };
-        var r = ShortcutActionService.Add([item]);
+        var r = await ShortcutActionService.AddAsync([item]);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
-    private void EditTile(ShortcutEntry entry)
+    private async Task EditTile(ShortcutEntry entry)
     {
         var dlg = new ShortcutDialog(entry) { Owner = this };
         if (dlg.ShowDialog() != true) return;
 
-        var r = ShortcutActionService.Update(entry.Page, entry.Row, entry.Col, new ShortcutUpdate
+        var r = await ShortcutActionService.UpdateAsync(entry.Page, entry.Row, entry.Col, new ShortcutUpdate
         {
             Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
             IconPath = dlg.Entry.IconPath, Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
