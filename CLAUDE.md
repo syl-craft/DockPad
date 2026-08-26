@@ -59,6 +59,11 @@ Resources/
     Strings.resx                          Anglais, langue neutre
     Strings.fr.resx                       Français, satellite fr\DockPad.resources.dll
 
+Themes/
+    Light.xaml                            Palette claire — les valeurs d'origine de l'application
+    Dark.xaml                             Palette sombre — mêmes clés, chaque rôle traduit
+    Controls.xaml                         Contrôles standards de WPF (case à cocher, liste déroulante…)
+
 Services/
     AppInfo.cs                            Infos application (VersionText affiché dans les footers)
     AppPaths.cs                           Racine du profil (%APPDATA%\DockPad ou DOCKPAD_PROFILE_DIR) — utilisée par toutes les configs
@@ -93,6 +98,7 @@ Services/
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
+    ThemeService.cs                       Thème clair/sombre : décision pure + remplacement de la palette
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     UrlPipeService.cs                    Named pipe DockPad_UrlPipe — serveur (instance principale) / client (instance relais)
     UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
@@ -793,7 +799,10 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 
 ## Palette et couleurs (App.xaml)
 
-Les couleurs qui se répètent ou qui portent un sens vivent dans `App.xaml`, en brosses nommées
+> Depuis l'ajout du thème clair/sombre, la palette vit dans `Themes/Light.xaml` et
+> `Themes/Dark.xaml`, et le critère d'entrée a changé — voir **Thème clair / sombre**.
+
+Les couleurs qui se répètent ou qui portent un sens vivent dans la palette, en brosses nommées
 `Brush.<Role>` : `Brush.Accent`, `Brush.Border`, `Brush.Surface`, `Brush.Text`, `Brush.TextMuted`,
 `Brush.Danger`, `Brush.Demo`… Une couleur **unique et locale** — le brun d'un badge
 d'avertissement — reste sur place : extraire les quarante-cinq nuances du projet donnerait
@@ -886,6 +895,74 @@ raison de préférer `ContextMenuOpening` à un menu construit avec la tuile.
 **`DialogShot.exe overlay fr <png>`** rend l'overlay clavier déployé — le seul état que les captures
 de fenêtres au repos ne montrent pas. Il appelle `ShowHintOverlay` par réflexion, sous un nom que
 les deux versions portent, ce qui rend la capture comparable d'un côté et de l'autre du changement.
+
+## Thème clair / sombre
+
+Réglage dans ☰ → Paramètres → **Thème** : `Automatique (Windows)`, `Clair` ou `Sombre`. Stocké dans
+`HKCU\Software\DockPad\Settings\Theme`, `""` = automatique — **même convention que `Language` et
+`TriggerFirst`**, et une valeur inconnue se comporte comme le vide : un réglage écrit par une version
+plus récente, puis revenue en arrière, ne doit ni planter ni figer un thème. Application immédiate,
+comme la langue.
+
+- **Deux dictionnaires interchangeables** (`Themes/Light.xaml`, `Themes/Dark.xaml`) aux **mêmes
+  clés**. Basculer, c'est remplacer le dictionnaire fusionné en **position 0** — rien d'autre.
+  `Themes/Controls.xaml` occupe la position 1 et n'est jamais touché
+- **La décision est séparée de l'application** : `ThemeService.IsDark(setting, systemIsDark)` est une
+  fonction pure, testée sans WPF, comme `TileHintMap.ResolveTriggers`
+- **`DynamicResource` partout, plus `StaticResource`** : celui-ci fige la valeur au chargement et ne
+  verrait jamais le remplacement. C'est la seule raison de la conversion en masse des 193 références
+- **Un garde vérifie la parité des deux dictionnaires**, exactement comme celle des deux fichiers de
+  traduction : `DynamicResource` **ne lève pas** sur une clé absente, il rend une valeur nulle — donc
+  un fond transparent ou un texte invisible, qui ne se verrait que sur l'écran et le thème concernés
+- **Pack URI nommant l'assembly**, jamais un chemin relatif : celui-ci se résout dans l'assembly
+  **hôte**, qui n'est pas DockPad quand un outil de capture monte l'application. Même piège que
+  `app.ico`
+- **Les brosses lues en C# sont des propriétés, pas des champs** : un `static readonly` résout la
+  palette une fois pour toutes, et la tuile repeinte au départ de la souris serait restée blanche
+  après une bascule. Le coût d'un `FindResource` par sortie de souris est nul
+- **Le thème s'applique avant toute fenêtre**, au même endroit que la langue : les références étant
+  dynamiques, un remplacement tardif serait bien vu, mais le démarrage clignoterait en clair
+- **Ce qui reste blanc dans les deux thèmes** : `Foreground="White"` sur un bouton d'accent ou
+  d'erreur — c'est du texte posé *sur* une couleur, pas du texte sur un fond de fenêtre
+
+### Le critère d'entrée dans la palette a changé
+« Une couleur unique et locale reste sur place » valait quand il n'y avait qu'un thème. Ce qui compte
+désormais n'est plus la **répétition** mais la **participation au contraste** : un gris unique sur
+fond blanc devient illisible sur fond sombre, il doit donc être un jeton. La palette est passée de 17
+à 53 clés. Les gris voisins (`#222` `#444` `#555` `#666` `#777` `#888` `#999`) ne sont pas des
+doublons mais des rôles distincts — valeur de métrique, libellé, détail technique, chemin — gardés à
+leur valeur exacte pour que le thème clair ne bouge pas d'un pixel.
+
+### Deux contrôles doivent être retemplatés (`Themes/Controls.xaml`)
+**Mesure faite, pas supposée** : poser `Background`, `BorderBrush` et `Foreground` sur une `CheckBox`
+ou une `ComboBox` **ne les change pas** — leurs gabarits Aero2 dessinent leur propre habillage en
+dur. Constaté au pixel : `#EAEAEA` et `#B5B5B5` inchangés en thème sombre. Il faut donc les réécrire.
+
+- **Conséquence assumée : leur aspect change aussi en thème clair.** Elles passent de l'habillage
+  Windows à plat — ce qui est déjà le langage de toute l'application (boutons, onglets, menus,
+  tuiles), dont elles étaient les deux seules exceptions. Mesuré : 2,4 % à 9,3 % des pixels sur les
+  cinq fenêtres qui en portent ; la grille, l'overlay et le bandeau sont inchangés
+- **Un style local sans `BasedOn` n'hérite de rien** : les `<Style TargetType="TextBox">` des
+  dialogues auraient masqué le style implicite et perdu le fond thématisé. D'où
+  `BasedOn="{StaticResource {x:Type TextBox}}"` sur les quatre concernés
+- **Un style implicite `TargetType="Window"` ne s'applique pas à `SettingsDialog`** : WPF associe les
+  styles implicites au type **exact**, jamais à la classe de base
+- **`TemplateBinding` ne suit pas `SelectionBoxItemTemplate`**, que la `ComboBox` *calcule* et publie
+  après coup : le gabarit restait à `null` et le `ContentPresenter` retombait sur `ToString()` — la
+  liste affichait `LanguageChoice { Tag = , Label = … }` au lieu du libellé, **dans les deux
+  thèmes**. Il faut une liaison complète (`{Binding …, RelativeSource={RelativeSource
+  TemplatedParent}}`), qui, elle, suit les changements
+
+> **Une capture rendue sans le fond de sa fenêtre ment.** Les outils rendent l'*élément de contenu*,
+> qui n'a pas de fond à lui : la sortie est transparente derrière le texte, et composée sur noir par
+> la visionneuse, un titre **clair** se lit comme un titre **sombre**. Quatre diagnostics faux se sont
+> enchaînés là-dessus pendant la mise au point, chacun suivi d'un correctif inutile ; l'histogramme
+> des couleurs de la zone a tranché en une commande — le texte était à `#F0F0F0` depuis le début.
+> `DialogShot` et `UsageShot` peignent désormais `Window.Background` avant le contenu. **Devant un
+> doute sur une couleur, mesurer ; l'œil se trompe à cette échelle, et il s'est trompé cinq fois.**
+
+**Captures** : `DOCKPAD_SHOT_THEME=dark` sur les trois outils — variable d'environnement plutôt
+qu'argument, pour ne pas déplacer les arguments des cibles existantes, comme `DOCKPAD_SHOT_LANG`.
 
 ## Accessibilité
 

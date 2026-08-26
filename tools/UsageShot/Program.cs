@@ -531,6 +531,18 @@ internal static class Program
         var rtb = new RenderTargetBitmap(
             (int)Math.Ceiling(width * scale), (int)Math.Ceiling(height * scale),
             96.0 * scale, 96.0 * scale, PixelFormats.Pbgra32);
+        // Le fond de la fenetre avant son contenu : on rend l'element de contenu, qui n'a pas de
+        // fond a lui. Sans cela la capture sort transparente derriere le texte, et un titre clair
+        // compose sur noir se lit comme un titre sombre — piege verifie pendant la mise au point
+        // du theme sombre.
+        if (visual is DependencyObject node && Window.GetWindow(node)?.Background is { } backdrop)
+        {
+            var canvas = new DrawingVisual();
+            using (var dc = canvas.RenderOpen())
+                dc.DrawRectangle(backdrop, null, new Rect(0, 0, width, height));
+            rtb.Render(canvas);
+        }
+
         rtb.Render(visual);
 
         var encoder = new PngBitmapEncoder();

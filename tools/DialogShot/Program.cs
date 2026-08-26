@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
+using Brush = System.Windows.Media.Brush;
 using System.Windows.Media.Imaging;
 using DockPad;
 using DockPad.Services;
@@ -189,6 +190,18 @@ internal static class Program
         var bitmap = new RenderTargetBitmap(
             (int)Math.Ceiling(width * dpi.DpiScaleX), (int)Math.Ceiling(height * dpi.DpiScaleY),
             dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        // Le fond de la FENETRE avant son contenu : on rend l'element de contenu, qui n'a pas de
+        // fond a lui, si bien que la capture sortait transparente derriere le texte. Compose sur
+        // noir par la visionneuse, un titre clair y paraissait sombre — quatre faux diagnostics
+        // pendant la mise au point du theme sombre, tous dus a cette seule transparence.
+        if (Backdrop(root) is { } backdrop)
+        {
+            var canvas = new DrawingVisual();
+            using (var dc = canvas.RenderOpen())
+                dc.DrawRectangle(backdrop, null, new Rect(0, 0, width, height));
+            bitmap.Render(canvas);
+        }
+
         bitmap.Render(root);
 
         var encoder = new PngBitmapEncoder();
@@ -199,4 +212,8 @@ internal static class Program
 
         Console.WriteLine($"capturé : {outPath} ({target}, {lang}, {width}x{Math.Ceiling(height)})");
     }
+
+    /// <summary>Fond de la fenetre qui porte cet element, ou <c>null</c> s'il n'y en a pas.</summary>
+    private static Brush? Backdrop(DependencyObject element) =>
+        Window.GetWindow(element)?.Background;
 }

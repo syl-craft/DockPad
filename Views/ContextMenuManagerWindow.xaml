@@ -12,7 +12,7 @@
         FontFamily="Segoe UI">
 
     <Window.Resources>
-        <Style TargetType="ListView">
+        <Style TargetType="ListView" BasedOn="{StaticResource {x:Type ListView}}">
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
             <Setter Property="FontSize" Value="13"/>

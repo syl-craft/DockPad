@@ -9,6 +9,7 @@
                  c'est la seule entree qu'il a le droit de toucher. -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Light.xaml"/>
+                <ResourceDictionary Source="Themes/Controls.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>

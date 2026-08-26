@@ -10,7 +10,7 @@
         FontFamily="Segoe UI">
 
     <Window.Resources>
-        <Style TargetType="TextBox">
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -21,7 +21,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        <Style TargetType="ComboBox">
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}"/>
             <Setter Property="FontSize" Value="13"/>
@@ -32,7 +32,7 @@
             <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}"/>
             <Setter Property="Padding" Value="0,0,0,4"/>
         </Style>
-        <Style TargetType="CheckBox">
+        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}"/>
         </Style>
