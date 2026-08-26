@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
-        Background="{StaticResource Brush.Surface}"
+        Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
@@ -22,7 +22,7 @@
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -50,8 +50,8 @@
         </Style>
 
         <Style x:Key="EmptyTileButton" TargetType="Button" BasedOn="{StaticResource TileButton}">
-            <Setter Property="Background" Value="#FAFAFA"/>
-            <Setter Property="BorderBrush" Value="#EBEBEB"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.SurfaceAlt}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderFaint}"/>
             <Setter Property="Opacity" Value="0.4"/>
         </Style>
 
@@ -99,7 +99,7 @@
                 <Button.ContextMenu>
                     <ContextMenu/>
                 </Button.ContextMenu>
-                <TextBlock Text="+" FontSize="22" Foreground="{StaticResource Brush.BorderStrong}"/>
+                <TextBlock Text="+" FontSize="22" Foreground="{DynamicResource Brush.BorderStrong}"/>
             </Button>
         </DataTemplate>
 
@@ -113,10 +113,10 @@
             <Setter Property="Margin" Value="3,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderStrong}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#555555"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextLabel}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -128,8 +128,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{StaticResource Brush.AccentSoft}"/>
-                                <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}"/>
+                                <Setter Property="Background" Value="{DynamicResource Brush.AccentSoft}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -139,22 +139,22 @@
 
         <Style x:Key="PageButtonActive" TargetType="Button" BasedOn="{StaticResource PageButton}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
             <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Foreground" Value="{StaticResource Brush.Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style x:Key="SearchTextBox" TargetType="TextBox">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="6,0"/>
             <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="{StaticResource Brush.Text}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1"
+                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
                                 CornerRadius="4"
                                 SnapsToDevicePixels="True"
                                 UseLayoutRounding="True">
@@ -186,8 +186,8 @@
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
-        <Border Grid.Row="0" Background="White" Padding="12,8"
-                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Background="{DynamicResource Brush.SurfaceCard}" Padding="12,8"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -262,8 +262,8 @@
                            StaysOpen="True"
                            AllowsTransparency="True">
                         <Border MinWidth="{Binding ActualWidth, ElementName=SearchBox}"
-                                Background="White"
-                                BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1"
+                                Background="{DynamicResource Brush.SurfaceCard}"
+                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
                                 CornerRadius="0,0,4,4"
                                 SnapsToDevicePixels="True" UseLayoutRounding="True">
                             <Border.Effect>
@@ -295,7 +295,7 @@
                                                     Background="{Binding TypeBrush}"
                                                     SnapsToDevicePixels="True" UseLayoutRounding="True">
                                                 <TextBlock Text="{Binding TypeLabel}"
-                                                           FontSize="10" Foreground="#444"
+                                                           FontSize="10" Foreground="{DynamicResource Brush.TextSmall}"
                                                            VerticalAlignment="Center"/>
                                             </Border>
                                         </StackPanel>
@@ -366,18 +366,18 @@
                           HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
         <!-- Barre de pagination -->
-        <Border Grid.Row="3" Background="White" Padding="12,10"
-                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="3" Background="{DynamicResource Brush.SurfaceCard}" Padding="12,10"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0">
             <Grid>
                 <StackPanel x:Name="PaginationBar" Orientation="Horizontal" HorizontalAlignment="Center"/>
                 <TextBlock x:Name="TxtVersion" HorizontalAlignment="Left" VerticalAlignment="Center"
-                           FontFamily="Consolas" FontSize="11" Foreground="#AAAAAA"/>
+                           FontFamily="Consolas" FontSize="11" Foreground="{DynamicResource Brush.TextDisabled}"/>
                 <Border HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Background="{StaticResource Brush.Surface}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                        Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
                         CornerRadius="4" Padding="8,3"
                         SnapsToDevicePixels="True" UseLayoutRounding="True">
                     <TextBlock x:Name="TxtHotkey" FontFamily="Consolas" FontSize="11"
-                               Foreground="#666" ToolTip="{loc:T Quick_HotkeyBadge_Tip}"/>
+                               Foreground="{DynamicResource Brush.TextSubtle}" ToolTip="{loc:T Quick_HotkeyBadge_Tip}"/>
                 </Border>
             </Grid>
         </Border>

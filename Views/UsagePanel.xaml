@@ -8,8 +8,8 @@
 
         <!-- Badge « démo » : les chiffres inventés ne doivent pas se lire comme réels. -->
         <Style x:Key="DemoBadge" TargetType="Border">
-            <Setter Property="Background" Value="#F3F0FF"/>
-            <Setter Property="BorderBrush" Value="#DDD6FE"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.DemoSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.DemoBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="4,0"/>
@@ -25,7 +25,7 @@
             <Setter Property="MinWidth" Value="36"/>
             <Setter Property="Minimum" Value="0"/>
             <Setter Property="Maximum" Value="100"/>
-            <Setter Property="Background" Value="{StaticResource Brush.Separator}"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.Separator}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Template">
@@ -65,9 +65,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
-                        <Border Width="16" Height="16" CornerRadius="8" Background="{StaticResource Brush.BorderSoft}"
+                        <Border Width="16" Height="16" CornerRadius="8" Background="{DynamicResource Brush.BorderSoft}"
                                 SnapsToDevicePixels="True" UseLayoutRounding="True">
-                            <TextBlock x:Name="Glyph" Text="↻" Foreground="#707070"
+                            <TextBlock x:Name="Glyph" Text="↻" Foreground="{DynamicResource Brush.GlyphMuted}"
                                        FontFamily="Segoe UI Symbol, Segoe UI"
                                        FontSize="11" FontWeight="Bold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -121,7 +121,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#BDBDBD"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource Brush.BorderHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -148,7 +148,7 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" VerticalAlignment="Center"
-                           FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
+                           FontSize="11" Foreground="{DynamicResource Brush.TextMuted}"
                            ToolTip="{Binding Tooltip}"
                            ToolTipService.IsEnabled="{Binding Tooltip.Length}">
                     <Run Text="{Binding UsedPct, Mode=OneWay}"
@@ -165,7 +165,7 @@
                              Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"/>
 
                 <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0"
-                           FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
+                           FontSize="11" Foreground="{DynamicResource Brush.TextMuted}"
                            Text="{Binding Reset, StringFormat=↻ {0}}"
                            ToolTip="{Binding ResetTooltip}">
                     <TextBlock.Style>
@@ -183,7 +183,7 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <Border Background="White" BorderBrush="{StaticResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="12"
+    <Border Background="{DynamicResource Brush.SurfaceCard}" BorderBrush="{DynamicResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="12"
             Padding="12,8"
             SnapsToDevicePixels="True" UseLayoutRounding="True">
         <!-- Centré : la hauteur du bandeau est imposée (celle d'une tuile), le contenu est un peu
@@ -225,11 +225,11 @@
                                         <ContentControl Style="{StaticResource LoadingSpinner}"/>
                                     </Grid>
                                     <TextBlock Text="{Binding Name}" Margin="6,0,0,0" FontSize="12"
-                                               Foreground="#333" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center"
                                                FontWeight="{Binding Weight}"/>
                                     <Border Style="{StaticResource DemoBadge}"
                                             Visibility="{Binding IsDemo, Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="9" Foreground="{StaticResource Brush.Demo}"/>
+                                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="9" Foreground="{DynamicResource Brush.Demo}"/>
                                     </Border>
                                 </StackPanel>
                             </Button>
@@ -261,10 +261,10 @@
                         <ContentControl Style="{StaticResource LoadingSpinner}"/>
                     </Grid>
                     <TextBlock Text="{Binding SoloName}" Margin="6,0,0,0" FontSize="12"
-                               FontWeight="SemiBold" Foreground="#333" VerticalAlignment="Center"/>
+                               FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center"/>
                     <Border Style="{StaticResource DemoBadge}"
                             Visibility="{Binding IsDemo, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="9" Foreground="{StaticResource Brush.Demo}"/>
+                        <TextBlock Text="{loc:T Usage_Demo}" FontSize="9" Foreground="{DynamicResource Brush.Demo}"/>
                     </Border>
                 </StackPanel>
 
@@ -281,7 +281,7 @@
                      prend leur place, avec la cause technique au survol. Vide pour les fournisseurs
                      qui n'ont pas de quota du tout : là, l'absence est normale. -->
                 <TextBlock Grid.Column="1" Grid.ColumnSpan="2" Margin="16,0,0,0"
-                           VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource Brush.TextMuted}"
+                           VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}"
                            FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
                            TextTrimming="CharacterEllipsis"
                            Text="{Binding QuotaNotice, StringFormat=⚠ {0}}"
@@ -303,7 +303,7 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Chrome" Property="Background" Value="#F0F0F0"/>
+                                    <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource Brush.SurfaceHover}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -322,19 +322,19 @@
             </Grid>
 
             <!-- Métriques : une colonne par mesure, filet de séparation au-dessus -->
-            <Border BorderBrush="{StaticResource Brush.SurfaceHover}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,6,0,0">
+            <Border BorderBrush="{DynamicResource Brush.SurfaceHover}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,6,0,0">
                 <ItemsControl ItemsSource="{Binding Metrics}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border BorderBrush="#ECECEC" BorderThickness="1,0,0,0" Padding="10,0,0,0">
+                            <Border BorderBrush="{DynamicResource Brush.SurfaceMuted}" BorderThickness="1,0,0,0" Padding="10,0,0,0">
                                 <StackPanel>
                                     <TextBlock Text="{Binding Label}" FontSize="10"
-                                               Foreground="#A5A5A5" TextTrimming="CharacterEllipsis"/>
+                                               Foreground="{DynamicResource Brush.TextMetricLabel}" TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{Binding Value}" FontSize="13" FontWeight="Bold"
-                                               Foreground="#222" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource Brush.TextStrong}" TextTrimming="CharacterEllipsis"
                                                ToolTip="{Binding Tooltip}"
                                                ToolTipService.IsEnabled="{Binding Tooltip.Length}"/>
                                 </StackPanel>

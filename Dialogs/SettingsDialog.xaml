@@ -7,7 +7,7 @@
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="{StaticResource Brush.Surface}"
+        Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Grid>
         <Grid.RowDefinitions>
@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
+        <Border Grid.Row="0" Background="{DynamicResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T Settings_Title}" FontSize="16"
                        FontWeight="SemiBold" Foreground="White"/>
         </Border>
@@ -37,7 +37,7 @@
             <TextBlock Text="{loc:T Settings_Hotkey_Section}" FontWeight="SemiBold"
                        FontSize="13" Margin="0,0,0,14"/>
 
-            <TextBlock Text="{loc:T Settings_Hotkey_Modifiers}" Foreground="#555" Margin="0,0,0,8"/>
+            <TextBlock Text="{loc:T Settings_Hotkey_Modifiers}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                 <CheckBox x:Name="ChkCtrl"  Content="Ctrl"  Margin="0,0,16,0" VerticalContentAlignment="Center"/>
                 <CheckBox x:Name="ChkAlt"   Content="Alt"   Margin="0,0,16,0" VerticalContentAlignment="Center"/>
@@ -47,18 +47,18 @@
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                 <TextBlock Text="{loc:T Settings_Hotkey_Key}" VerticalAlignment="Center"
-                           Foreground="#555" Margin="0,0,12,0"/>
+                           Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,0"/>
                 <ComboBox x:Name="CmbKey" Width="120"/>
             </StackPanel>
 
-            <TextBlock x:Name="TxtPreview" Foreground="{StaticResource Brush.Accent}" FontSize="12"/>
+            <TextBlock x:Name="TxtPreview" Foreground="{DynamicResource Brush.Accent}" FontSize="12"/>
 
             <Separator Margin="0,20,0,16"/>
 
             <TextBlock Text="{loc:T Settings_Tiles_Section}" FontWeight="SemiBold"
                        FontSize="13" Margin="0,0,0,6"/>
             <TextBlock Text="{loc:T Settings_Tiles_Help}"
-                       Foreground="#888" FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                       Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"/>
             <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -69,13 +69,13 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Settings_Tiles_LeftHalf}" VerticalAlignment="Center"
-                           Foreground="#555" Margin="0,0,12,8"/>
+                           Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,8"/>
                 <ComboBox  Grid.Row="0" Grid.Column="1" x:Name="CmbTriggerFirst"  Width="200" Margin="0,0,0,8"/>
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Settings_Tiles_RightHalf}" VerticalAlignment="Center"
-                           Foreground="#555" Margin="0,0,12,0"/>
+                           Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,0"/>
                 <ComboBox  Grid.Row="1" Grid.Column="1" x:Name="CmbTriggerSecond" Width="200"/>
             </Grid>
-            <TextBlock x:Name="TxtTriggerWarn" Foreground="{StaticResource Brush.Danger}" FontSize="11"
+            <TextBlock x:Name="TxtTriggerWarn" Foreground="{DynamicResource Brush.Danger}" FontSize="11"
                        TextWrapping="Wrap" Visibility="Collapsed"/>
 
             <Separator Margin="0,20,0,16"/>
@@ -85,16 +85,16 @@
             <CheckBox x:Name="ChkAutoStart" Content="{loc:T Settings_Startup_WithWindows}"
                       VerticalContentAlignment="Center"/>
             <TextBlock x:Name="TxtAutoStartPath" Margin="0,8,0,0"
-                       Foreground="#888" FontSize="11" TextWrapping="Wrap"
+                       Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"
                        FontFamily="Consolas"/>
 
             <Separator Margin="0,20,0,16"/>
 
             <TextBlock Text="{loc:T Settings_Claude_Section}" FontWeight="SemiBold"
                        FontSize="13" Margin="0,0,0,14"/>
-            <TextBlock Text="{loc:T Settings_Claude_ExtraArgs}" Foreground="#555" Margin="0,0,0,8"/>
+            <TextBlock Text="{loc:T Settings_Claude_ExtraArgs}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
             <TextBox x:Name="TxtClaudeArgs" FontFamily="Consolas" FontSize="12"
-                     Padding="6,5" BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1"
+                     Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
                      ToolTip="{loc:T Settings_Claude_ArgsHint}"/>
 
             <Separator Margin="0,20,0,16"/>
@@ -104,7 +104,7 @@
             <CheckBox x:Name="ChkAutoFavicon" Content="{loc:T Settings_Network_AutoFavicon}"
                       VerticalContentAlignment="Center"/>
             <TextBlock Text="{loc:T Settings_Network_AutoFaviconHint}" Margin="0,8,0,0"
-                       Foreground="#888" FontSize="11" TextWrapping="Wrap"/>
+                       Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
         </StackPanel>
 
         <!-- Footer -->

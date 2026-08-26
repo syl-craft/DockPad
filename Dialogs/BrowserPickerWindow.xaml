@@ -11,7 +11,7 @@
         FontFamily="Segoe UI"
         PreviewKeyDown="Window_PreviewKeyDown">
 
-    <Border Background="White" CornerRadius="8" Margin="16"
+    <Border Background="{DynamicResource Brush.SurfaceCard}" CornerRadius="8" Margin="16"
             SnapsToDevicePixels="True" UseLayoutRounding="True">
         <Border.Effect>
             <DropShadowEffect BlurRadius="14" Opacity="0.30" ShadowDepth="4" Direction="270"/>
@@ -25,7 +25,7 @@
             </Grid.RowDefinitions>
 
             <!-- En-tête : URL sélectionnable + bouton copier -->
-            <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" CornerRadius="8,8,0,0" Padding="14,10"
+            <Border Grid.Row="0" Background="{DynamicResource Brush.Accent}" CornerRadius="8,8,0,0" Padding="14,10"
                     SnapsToDevicePixels="True" UseLayoutRounding="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -39,7 +39,7 @@
                         <TextBox x:Name="TxtUrl" IsReadOnly="True"
                                  TextWrapping="Wrap" MaxHeight="52"
                                  VerticalScrollBarVisibility="Auto"
-                                 Background="Transparent" Foreground="#DCEBFF"
+                                 Background="Transparent" Foreground="{DynamicResource Brush.AccentSelected}"
                                  BorderThickness="0" FontSize="11" FontFamily="Consolas"
                                  ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
                     </StackPanel>
@@ -69,10 +69,10 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#F0F6FC"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.AccentTintSoft}"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#E5F1FB"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.AccentTint}"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -103,7 +103,7 @@
 
                             <!-- Filet d'indentation des profils (largeur nulle si masqué) -->
                             <Border Grid.Column="0" Width="24" Margin="10,1,10,1"
-                                    BorderBrush="#D8D8D8" BorderThickness="1,0,0,0"
+                                    BorderBrush="{DynamicResource Brush.BorderList}" BorderThickness="1,0,0,0"
                                     SnapsToDevicePixels="True" UseLayoutRounding="True">
                                 <!-- Visibilité par le Style et non en attribut : une valeur locale
                                      bat les Setter des DataTrigger (le filet ne s'afficherait jamais). -->
@@ -148,7 +148,7 @@
                                             <DataTrigger Binding="{Binding IsHeader}" Value="True">
                                                 <Setter Property="FontSize"   Value="11"/>
                                                 <Setter Property="FontWeight" Value="SemiBold"/>
-                                                <Setter Property="Foreground" Value="#999"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource Brush.TextFaint}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -161,13 +161,13 @@
                                     SnapsToDevicePixels="True" UseLayoutRounding="True">
                                 <Border.Style>
                                     <Style TargetType="Border">
-                                        <Setter Property="Background" Value="#BB555555"/>
+                                        <Setter Property="Background" Value="{DynamicResource Brush.HintVeil}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Badge}" Value="">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding IsCountdown}" Value="True">
-                                                <Setter Property="Background" Value="{StaticResource Brush.Accent}"/>
+                                                <Setter Property="Background" Value="{DynamicResource Brush.Accent}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -185,9 +185,9 @@
             <Border Grid.Row="2" Padding="18,10,18,14">
                 <StackPanel>
                     <CheckBox x:Name="ChkAlways" Content="{loc:T Picker_AlwaysForDomain}"
-                              FontSize="12" Foreground="#555" VerticalContentAlignment="Center"/>
+                              FontSize="12" Foreground="{DynamicResource Brush.TextLabel}" VerticalContentAlignment="Center"/>
                     <TextBlock x:Name="TxtCountdown" Visibility="Collapsed"
-                               FontSize="11" Foreground="{StaticResource Brush.Accent}" Margin="0,8,0,0"/>
+                               FontSize="11" Foreground="{DynamicResource Brush.Accent}" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
         </Grid>

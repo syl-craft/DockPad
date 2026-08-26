@@ -7,7 +7,7 @@
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize" MinWidth="560" MinHeight="500"
-        Background="{StaticResource Brush.Surface}"
+        Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Window.Resources>
         <Style x:Key="MessageTextStyle" TargetType="TextBlock">
@@ -27,7 +27,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
+        <Border Grid.Row="0" Background="{DynamicResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T Mcp_Title}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
@@ -37,7 +37,7 @@
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="FontSize" Value="13"/>
-                    <Setter Property="Foreground" Value="#555"/>
+                    <Setter Property="Foreground" Value="{DynamicResource Brush.TextLabel}"/>
                     <Setter Property="Cursor" Value="Hand"/>
                     <Setter Property="Template">
                         <Setter.Value>
@@ -48,11 +48,11 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="Bd" Property="Background" Value="#EAEAEA"/>
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.RowHover}"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#0078D4"/>
-                                        <Setter Property="Foreground" Value="{StaticResource Brush.Accent}"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
@@ -70,12 +70,12 @@
                     <CheckBox x:Name="ChkEnabled" Content="{loc:T Mcp_Enable}"
                               FontSize="13" Checked="Option_Changed" Unchecked="Option_Changed"/>
                     <TextBlock Text="{loc:T Mcp_Enable_Hint}"
-                               Foreground="#888" FontSize="11" Margin="22,2,0,12" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,2,0,12" TextWrapping="Wrap"/>
 
                     <CheckBox x:Name="ChkAllowDelete" Content="{loc:T Mcp_AllowDelete}"
                               FontSize="13" Checked="Option_Changed" Unchecked="Option_Changed"/>
                     <TextBlock Text="{loc:T Mcp_AllowDelete_Hint}"
-                               Foreground="#888" FontSize="11" Margin="22,2,0,16" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,2,0,16" TextWrapping="Wrap"/>
 
                     <Separator Margin="0,0,0,14"/>
 
@@ -84,7 +84,7 @@
                               FontSize="12" IsChecked="True" Margin="0,0,0,6"
                               Checked="Scope_Changed" Unchecked="Scope_Changed"/>
                     <TextBlock Text="{loc:T Mcp_Register_Scope_Hint}"
-                               Foreground="#888" FontSize="11" Margin="22,-2,0,8" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,-2,0,8" TextWrapping="Wrap"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -98,7 +98,7 @@
 
                     <TextBlock Text="{loc:T Mcp_UpdatePath}" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,2"/>
                     <TextBlock Text="{loc:T Mcp_UpdatePath_Hint}"
-                               Foreground="#888" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -135,7 +135,7 @@
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="0,0,0,8">
-                        <TextBlock x:Name="TxtLogCount" FontSize="12" Foreground="#555" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtLogCount" FontSize="12" Foreground="{DynamicResource Brush.TextLabel}" VerticalAlignment="Center"/>
                         <Button Content="{loc:T Common_Clear}" HorizontalAlignment="Right" Padding="8,4"
                                 Style="{StaticResource SecondaryButton}" Click="ClearLog_Click"/>
                     </Grid>
@@ -151,14 +151,14 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="{Binding TimeText}" FontFamily="Consolas"
-                                               FontSize="11" Foreground="#888" Margin="0,0,8,0"/>
+                                               FontSize="11" Foreground="{DynamicResource Brush.TextHint}" Margin="0,0,8,0"/>
                                     <TextBlock Grid.Column="1" Text="{Binding StatusIcon}" FontSize="11" Margin="0,0,8,0"/>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock FontSize="12">
                                             <Run Text="{Binding Tool, Mode=OneWay}" FontWeight="SemiBold"/>
-                                            <Run Text="{Binding ParamsSummary, Mode=OneWay}" Foreground="#777"/>
+                                            <Run Text="{Binding ParamsSummary, Mode=OneWay}" Foreground="{DynamicResource Brush.TextDetail}"/>
                                         </TextBlock>
-                                        <TextBlock Text="{Binding Message}" FontSize="11" Foreground="#C0392B"
+                                        <TextBlock Text="{Binding Message}" FontSize="11" Foreground="{DynamicResource Brush.DangerAlt}"
                                                    TextWrapping="Wrap"
                                                    Style="{StaticResource MessageTextStyle}"/>
                                     </StackPanel>

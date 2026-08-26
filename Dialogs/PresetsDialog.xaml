@@ -6,7 +6,7 @@
         Width="580" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="{StaticResource Brush.Surface}"
+        Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
 
     <Grid>
@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
+        <Border Grid.Row="0" Background="{DynamicResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T Presets_Title}" FontSize="16"
                        FontWeight="SemiBold" Foreground="White"/>
         </Border>
@@ -25,14 +25,14 @@
         <!-- Contenu -->
         <StackPanel Grid.Row="1" Margin="24,20">
             <TextBlock Text="{loc:T Presets_Subtitle}"
-                       FontSize="13" Foreground="#555" Margin="0,0,0,16"/>
+                       FontSize="13" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,16"/>
 
             <ItemsControl x:Name="ItemsPresets">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Margin="0,0,0,10" Padding="14,12"
-                                BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="6"
-                                Background="White" Opacity="{Binding Opacity}"
+                                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6"
+                                Background="{DynamicResource Brush.SurfaceCard}" Opacity="{Binding Opacity}"
                                 SnapsToDevicePixels="True" UseLayoutRounding="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -48,11 +48,11 @@
 
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Text="{Binding DisplayName}"
-                                               FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text}"/>
+                                               FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text}"/>
                                     <TextBlock Text="{Binding Description}"
-                                               FontSize="12" Foreground="#666" Margin="0,3,0,0"/>
+                                               FontSize="12" Foreground="{DynamicResource Brush.TextSubtle}" Margin="0,3,0,0"/>
                                     <TextBlock Text="{Binding Command}" FontSize="11"
-                                               Foreground="#999" Margin="0,3,0,0"
+                                               Foreground="{DynamicResource Brush.TextFaint}" Margin="0,3,0,0"
                                                TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
 
