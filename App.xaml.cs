@@ -34,6 +34,11 @@ public partial class App : Application
             Services.Localization.Loc.Parse(Services.SettingsService.LoadLanguage()));
         ApplyWpfLanguage();
 
+        // Même raison que la langue : une fenêtre construite avant ce point aurait résolu la
+        // palette au chargement. Les références sont en DynamicResource, donc un remplacement
+        // ultérieur serait bien vu — mais le démarrage clignoterait en clair avant de basculer.
+        Services.ThemeService.ApplyFromSettings();
+
         // Filets de sécurité : une exception non gérée ne doit pas tuer l'app résidente
         // (systray + hotkey). Tracée dans %APPDATA%\DockPad\logs\ + dialog d'erreur.
         DispatcherUnhandledException += (_, args) =>

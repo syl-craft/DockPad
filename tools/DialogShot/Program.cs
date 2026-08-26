@@ -53,6 +53,13 @@ internal static class Program
         app.InitializeComponent();
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
+        // Theme de capture : une variable d'environnement plutot qu'un argument, pour ne pas
+        // deplacer les arguments des cibles existantes — comme DOCKPAD_SHOT_LANG.
+        DockPad.Services.ThemeService.Apply(
+            string.Equals(Environment.GetEnvironmentVariable("DOCKPAD_SHOT_THEME"),
+                          "dark", StringComparison.OrdinalIgnoreCase));
+
+
         // Loc.Parse rend null sur une etiquette inconnue, ce qui vaudrait « automatique » et
         // capturerait silencieusement la mauvaise langue : ici on prefere le dire.
         var culture = Loc.Parse(lang);

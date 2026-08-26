@@ -34,6 +34,13 @@
 
             <Separator Margin="0,20,0,16"/>
 
+            <TextBlock Text="{loc:T Settings_Theme_Section}" FontWeight="SemiBold"
+                       FontSize="13" Margin="0,0,0,14"/>
+            <ComboBox x:Name="CmbTheme" Width="240" HorizontalAlignment="Left"
+                      SelectionChanged="Theme_SelectionChanged"/>
+
+            <Separator Margin="0,20,0,16"/>
+
             <TextBlock Text="{loc:T Settings_Hotkey_Section}" FontWeight="SemiBold"
                        FontSize="13" Margin="0,0,0,14"/>
 

@@ -1041,4 +1041,16 @@ This cannot be undone.</value>
   <data name="Settings_Network_AutoFaviconHint" xml:space="preserve">
     <value>Only the domain is sent to Google's favicon service — never the path or query string of the address. Unchecked, no request is made.</value>
   </data>
+  <data name="Settings_Theme_Section" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Theme_Auto" xml:space="preserve">
+    <value>Automatic (Windows)</value>
+  </data>
+  <data name="Theme_Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Theme_Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
 </root>

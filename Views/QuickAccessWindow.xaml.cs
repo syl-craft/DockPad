@@ -869,7 +869,15 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         _                            => Loc.T("Type_Command"),
     };
 
-    private static readonly SolidColorBrush TileDefaultBackground = new(Colors.White);
+    /// <summary>
+    /// Fond d'une tuile au repos.
+    /// </summary>
+    /// <remarks>
+    /// Propriété et non champ : un <c>static readonly</c> résout la palette une fois pour toutes,
+    /// et la tuile repeinte au départ de la souris resterait blanche après un passage en thème
+    /// sombre. Le coût d'un <c>FindResource</c> par sortie de souris est nul.
+    /// </remarks>
+    private static Brush TileDefaultBackground => Palette("Brush.SurfaceCard");
 
     private void TileHover_Enter(object sender, MouseEventArgs e)
     {
@@ -985,8 +993,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     // Ces deux-la existent deja dans la palette d'App.xaml : les redeclarer en dur, c'etait deux
     // valeurs a changer au lieu d'une le jour ou l'accent bouge. Le type n'est charge qu'une fois
     // l'Application montee, FindResource est donc sur ici.
-    private static readonly Brush DragOverBrush = Palette("Brush.Accent");
-    private static readonly Brush DefaultBorder = Palette("Brush.Border");
+    // Mêmes raisons que TileDefaultBackground : lues à chaque usage pour suivre le thème.
+    private static Brush DragOverBrush => Palette("Brush.Accent");
+    private static Brush DefaultBorder => Palette("Brush.Border");
 
     private static Brush Palette(string key) => (Brush)Application.Current.FindResource(key);
 

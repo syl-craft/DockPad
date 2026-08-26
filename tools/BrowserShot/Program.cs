@@ -43,6 +43,13 @@ internal static class Program
         var app = new App();
         app.InitializeComponent();
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        // Theme de capture : une variable d'environnement plutot qu'un argument, pour ne pas
+        // deplacer les arguments des cibles existantes — comme DOCKPAD_SHOT_LANG.
+        DockPad.Services.ThemeService.Apply(
+            string.Equals(Environment.GetEnvironmentVariable("DOCKPAD_SHOT_THEME"),
+                          "dark", StringComparison.OrdinalIgnoreCase));
+
         // Langue de la capture : variable d'environnement plutot qu'un argument, pour ne pas
         // deplacer les arguments existants des cibles.
         var shotLang = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_LANG");

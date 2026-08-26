@@ -4,62 +4,12 @@
              xmlns:local="clr-namespace:DockPad">
     <Application.Resources>
         <ResourceDictionary>
-            <!-- ============================================================================
-                 Palette. Une couleur qui se repete ou qui porte un sens vit ici ; une couleur
-                 unique et locale reste sur place. Avant cette section, l'accent etait ecrit
-                 vingt-deux fois : le changer demandait vingt-deux modifications dans huit
-                 fichiers. Les brosses d'un ResourceDictionary sont gelees par WPF au chargement.
-                 ============================================================================ -->
-            <SolidColorBrush x:Key="Brush.Accent" Color="#0078D4"/>   <!-- bleu d'accent : boutons primaires, en-tetes, selection -->
-            <SolidColorBrush x:Key="Brush.AccentHover" Color="#106EBE"/>   <!-- accent au survol -->
-            <SolidColorBrush x:Key="Brush.AccentPressed" Color="#005A9E"/>   <!-- accent enfonce -->
-            <SolidColorBrush x:Key="Brush.AccentSoft" Color="#EEF6FC"/>   <!-- fond tres clair derive de l'accent -->
-            <SolidColorBrush x:Key="Brush.Surface" Color="#F3F3F3"/>   <!-- fond de fenetre et des boutons secondaires -->
-            <SolidColorBrush x:Key="Brush.SurfaceCard" Color="#FFFFFF"/>   <!-- fond d'une carte, d'une liste, d'une tuile -->
-            <SolidColorBrush x:Key="Brush.SurfaceHover" Color="#F0F0F0"/>   <!-- survol sur une surface claire -->
-            <SolidColorBrush x:Key="Brush.Border" Color="#E0E0E0"/>   <!-- bordure standard -->
-            <SolidColorBrush x:Key="Brush.BorderSoft" Color="#E4E4E4"/>   <!-- bordure attenuee (cartes du bandeau) -->
-            <SolidColorBrush x:Key="Brush.BorderStrong" Color="#CCCCCC"/>   <!-- bordure de champ de saisie, texte desactive -->
-            <SolidColorBrush x:Key="Brush.Text" Color="#1A1A1A"/>   <!-- texte principal -->
-            <SolidColorBrush x:Key="Brush.TextSecondary" Color="#333333"/>   <!-- texte secondaire -->
-            <SolidColorBrush x:Key="Brush.TextMuted" Color="#8A8A8A"/>   <!-- texte d'appoint : unites, chemins, aide -->
-            <SolidColorBrush x:Key="Brush.Danger" Color="#C42B1C"/>   <!-- erreur et suppression -->
-            <SolidColorBrush x:Key="Brush.DangerStrong" Color="#D13438"/>   <!-- accent d'un dialogue d'erreur -->
-            <SolidColorBrush x:Key="Brush.Demo" Color="#7C3AED"/>   <!-- violet du badge de demonstration -->
-            <SolidColorBrush x:Key="Brush.Separator" Color="#EEEEEE"/>   <!-- filets et separateurs -->
-            <SolidColorBrush x:Key="Brush.SeparatorStrong" Color="#DDDDDD"/>   <!-- filets marques -->
-            <SolidColorBrush x:Key="Brush.TextStrong" Color="#222222"/>   <!-- valeur d'une metrique -->
-            <SolidColorBrush x:Key="Brush.TextSmall" Color="#444444"/>   <!-- petit libelle -->
-            <SolidColorBrush x:Key="Brush.TextLabel" Color="#555555"/>   <!-- libelle de champ, texte d'aide -->
-            <SolidColorBrush x:Key="Brush.TextSubtle" Color="#666666"/>   <!-- texte secondaire discret -->
-            <SolidColorBrush x:Key="Brush.TextDetail" Color="#777777"/>   <!-- detail technique -->
-            <SolidColorBrush x:Key="Brush.TextHint" Color="#888888"/>   <!-- chemin, indication -->
-            <SolidColorBrush x:Key="Brush.TextFaint" Color="#999999"/>   <!-- texte tres attenue -->
-            <SolidColorBrush x:Key="Brush.TextMetricLabel" Color="#A5A5A5"/>   <!-- libelle d'une metrique du bandeau -->
-            <SolidColorBrush x:Key="Brush.TextDisabled" Color="#AAAAAA"/>   <!-- texte inactif -->
-            <SolidColorBrush x:Key="Brush.GlyphMuted" Color="#707070"/>   <!-- glyphe attenue -->
-            <SolidColorBrush x:Key="Brush.SurfaceAlt" Color="#FAFAFA"/>   <!-- surface alternee d'une liste -->
-            <SolidColorBrush x:Key="Brush.RowHover" Color="#EAEAEA"/>   <!-- ligne de liste au survol -->
-            <SolidColorBrush x:Key="Brush.SurfaceMuted" Color="#ECECEC"/>   <!-- surface eteinte -->
-            <SolidColorBrush x:Key="Brush.BorderFaint" Color="#EBEBEB"/>   <!-- bordure a peine visible -->
-            <SolidColorBrush x:Key="Brush.BorderSubtle" Color="#E8E8E8"/>   <!-- bordure discrete -->
-            <SolidColorBrush x:Key="Brush.BorderList" Color="#D8D8D8"/>   <!-- filet entre lignes d'une liste -->
-            <SolidColorBrush x:Key="Brush.BorderHover" Color="#BDBDBD"/>   <!-- bordure au survol -->
-            <SolidColorBrush x:Key="Brush.AccentTintSoft" Color="#F0F6FC"/>   <!-- fond d'accent tres pale -->
-            <SolidColorBrush x:Key="Brush.AccentTint" Color="#E5F1FB"/>   <!-- fond d'accent pale -->
-            <SolidColorBrush x:Key="Brush.AccentTintStrong" Color="#CCE4F7"/>   <!-- fond d'accent marque -->
-            <SolidColorBrush x:Key="Brush.AccentSelected" Color="#DCEBFF"/>   <!-- ligne selectionnee -->
-            <SolidColorBrush x:Key="Brush.AccentBorderSoft" Color="#B3D9F7"/>   <!-- bordure d'accent pale -->
-            <SolidColorBrush x:Key="Brush.WarnSurface" Color="#FFF4CE"/>   <!-- fond d'avertissement -->
-            <SolidColorBrush x:Key="Brush.WarnBorder" Color="#F0C519"/>   <!-- bordure d'avertissement -->
-            <SolidColorBrush x:Key="Brush.WarnAccent" Color="#FFB900"/>   <!-- accent d'avertissement -->
-            <SolidColorBrush x:Key="Brush.WarnText" Color="#5C4800"/>   <!-- texte sur fond d'avertissement -->
-            <SolidColorBrush x:Key="Brush.WarnTextAlt" Color="#5C3A00"/>   <!-- texte d'avertissement, variante -->
-            <SolidColorBrush x:Key="Brush.WarnTextStrong" Color="#B26A00"/>   <!-- texte d'avertissement marque -->
-            <SolidColorBrush x:Key="Brush.DemoSurface" Color="#F3F0FF"/>   <!-- fond du badge de demonstration -->
-            <SolidColorBrush x:Key="Brush.DemoBorder" Color="#DDD6FE"/>   <!-- bordure du badge de demonstration -->
-            <SolidColorBrush x:Key="Brush.DangerAlt" Color="#C0392B"/>   <!-- erreur, variante -->
-            <SolidColorBrush x:Key="Brush.HintVeil" Color="#BB555555"/>   <!-- voile de l'overlay clavier -->
+            <!-- Palette. Le dictionnaire fusionne en position 0 est remplace a chaud par
+                 ThemeService : c'est pour cela que les references sont en DynamicResource, et
+                 c'est la seule entree qu'il a le droit de toucher. -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Light.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
@@ -101,10 +51,10 @@
                 <Setter Property="Background" Value="{DynamicResource Brush.DangerStrong}"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#A80000"/>
+                        <Setter Property="Background" Value="{DynamicResource Brush.DangerHover}"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="#7A0000"/>
+                        <Setter Property="Background" Value="{DynamicResource Brush.DangerPressed}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -116,27 +66,27 @@
                         <Setter Property="Background" Value="{DynamicResource Brush.Border}"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="#C8C8C8"/>
+                        <Setter Property="Background" Value="{DynamicResource Brush.SurfacePressed}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
 
             <!-- Footer commun des fenêtres de config : version à gauche, boutons à droite -->
             <Style x:Key="DialogFooter" TargetType="Border">
-                <Setter Property="Background" Value="White"/>
+                <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
                 <Setter Property="Padding" Value="24,12"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
                 <Setter Property="BorderThickness" Value="0,1,0,0"/>
             </Style>
             <Style x:Key="FooterVersion" TargetType="TextBlock">
-                <Setter Property="Foreground" Value="#AAA"/>
+                <Setter Property="Foreground" Value="{DynamicResource Brush.TextDisabled}"/>
                 <Setter Property="FontSize" Value="11"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
             </Style>
 
             <!-- ContextMenu -->
             <Style TargetType="ContextMenu">
-                <Setter Property="Background" Value="White"/>
+                <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Padding" Value="0,4"/>
@@ -187,7 +137,7 @@
                                                           VerticalAlignment="Center"
                                                           RecognizesAccessKey="True"/>
                                         <Path x:Name="Arrow" Grid.Column="3"
-                                              Data="M 0 0 L 4 4 L 0 8 Z" Fill="#666"
+                                              Data="M 0 0 L 4 4 L 0 8 Z" Fill="{DynamicResource Brush.TextSubtle}"
                                               HorizontalAlignment="Center" VerticalAlignment="Center"
                                               Visibility="Collapsed"/>
                                     </Grid>
@@ -198,7 +148,7 @@
                                        IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
                                        Placement="Right" HorizontalOffset="-4"
                                        PopupAnimation="Fade">
-                                    <Border Background="White"
+                                    <Border Background="{DynamicResource Brush.SurfaceCard}"
                                             BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
                                             CornerRadius="6" Padding="0,4"
                                             SnapsToDevicePixels="True" UseLayoutRounding="True">
@@ -214,11 +164,11 @@
                                     <Setter TargetName="Arrow" Property="Visibility" Value="Visible"/>
                                 </Trigger>
                                 <Trigger Property="IsHighlighted" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="#EEF6FC"/>
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.AccentSoft}"/>
                                     <Setter TargetName="Bd" Property="CornerRadius" Value="4"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Foreground" Value="#999"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.TextFaint}"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                     <Setter Property="Padding" Value="10,6,10,2"/>
                                 </Trigger>
