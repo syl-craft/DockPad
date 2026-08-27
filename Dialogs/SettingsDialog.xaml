@@ -9,7 +9,7 @@
         ResizeMode="NoResize"
         Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
-    <Grid>
+    <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -25,24 +25,24 @@
         <!-- Content -->
         <StackPanel Grid.Row="1" Margin="24,20">
             <TextBlock Text="{loc:T Settings_Language_Section}" FontWeight="SemiBold"
-                       FontSize="13" Margin="0,0,0,14"/>
+                       FontSize="13" Margin="0,0,0,10"/>
             <!-- Application immediate : la fenetre se retraduit sous les yeux, ce qui est la
                  demonstration la plus directe que la bascule fonctionne. Les noms de langue ne sont
                  pas traduits — une langue s'ecrit dans sa propre langue. -->
             <ComboBox x:Name="CmbLanguage" Width="240" HorizontalAlignment="Left"
                       SelectionChanged="Language_SelectionChanged"/>
 
-            <Separator Margin="0,20,0,16"/>
+            <Separator Margin="0,12,0,10"/>
 
             <TextBlock Text="{loc:T Settings_Theme_Section}" FontWeight="SemiBold"
-                       FontSize="13" Margin="0,0,0,14"/>
+                       FontSize="13" Margin="0,0,0,10"/>
             <ComboBox x:Name="CmbTheme" Width="240" HorizontalAlignment="Left"
                       SelectionChanged="Theme_SelectionChanged"/>
 
-            <Separator Margin="0,20,0,16"/>
+            <Separator Margin="0,12,0,10"/>
 
             <TextBlock Text="{loc:T Settings_Hotkey_Section}" FontWeight="SemiBold"
-                       FontSize="13" Margin="0,0,0,14"/>
+                       FontSize="13" Margin="0,0,0,10"/>
 
             <TextBlock Text="{loc:T Settings_Hotkey_Modifiers}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
@@ -60,7 +60,7 @@
 
             <TextBlock x:Name="TxtPreview" Foreground="{DynamicResource Brush.Accent}" FontSize="12"/>
 
-            <Separator Margin="0,20,0,16"/>
+            <Separator Margin="0,12,0,10"/>
 
             <TextBlock Text="{loc:T Settings_Tiles_Section}" FontWeight="SemiBold"
                        FontSize="13" Margin="0,0,0,6"/>
@@ -85,29 +85,29 @@
             <TextBlock x:Name="TxtTriggerWarn" Foreground="{DynamicResource Brush.Danger}" FontSize="11"
                        TextWrapping="Wrap" Visibility="Collapsed"/>
 
-            <Separator Margin="0,20,0,16"/>
+            <Separator Margin="0,12,0,10"/>
 
             <TextBlock Text="{loc:T Settings_Startup_Section}" FontWeight="SemiBold"
-                       FontSize="13" Margin="0,0,0,14"/>
+                       FontSize="13" Margin="0,0,0,10"/>
             <CheckBox x:Name="ChkAutoStart" Content="{loc:T Settings_Startup_WithWindows}"
                       VerticalContentAlignment="Center"/>
             <TextBlock x:Name="TxtAutoStartPath" Margin="0,8,0,0"
                        Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"
                        FontFamily="Consolas"/>
 
-            <Separator Margin="0,20,0,16"/>
+            <Separator Margin="0,12,0,10"/>
 
             <TextBlock Text="{loc:T Settings_Claude_Section}" FontWeight="SemiBold"
-                       FontSize="13" Margin="0,0,0,14"/>
+                       FontSize="13" Margin="0,0,0,10"/>
             <TextBlock Text="{loc:T Settings_Claude_ExtraArgs}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
             <TextBox x:Name="TxtClaudeArgs" FontFamily="Consolas" FontSize="12"
                      Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
                      ToolTip="{loc:T Settings_Claude_ArgsHint}"/>
 
-            <Separator Margin="0,20,0,16"/>
+            <Separator Margin="0,12,0,10"/>
 
             <TextBlock Text="{loc:T Settings_Network_Section}" FontWeight="SemiBold"
-                       FontSize="13" Margin="0,0,0,14"/>
+                       FontSize="13" Margin="0,0,0,10"/>
             <CheckBox x:Name="ChkAutoFavicon" Content="{loc:T Settings_Network_AutoFavicon}"
                       VerticalContentAlignment="Center"/>
             <TextBlock Text="{loc:T Settings_Network_AutoFaviconHint}" Margin="0,8,0,0"

@@ -20,13 +20,26 @@
         <Setter Property="SelectionBrush" Value="{DynamicResource Brush.Accent}"/>
     </Style>
 
-
-
-
     <Style TargetType="ListBox">
         <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+    </Style>
+
+    <!-- Les items de liste sont des Control : leur style de THEME pose un Foreground noir, et un
+         setter de style bat une valeur heritee. L'heritage pose sur la racine de la fenetre
+         s'arrete donc net a chaque ligne de liste — d'ou du texte noir dans les cards en theme
+         sombre. Les seuls endroits ou l'heritage suffit sont ceux sans Control intermediaire. -->
+    <Style TargetType="ListBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+    </Style>
+
+    <Style TargetType="ListViewItem">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+    </Style>
+
+    <Style TargetType="ContentControl">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
     </Style>
 
     <Style TargetType="ListView">
@@ -41,11 +54,11 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
     </Style>
 
-    <!-- Pas de style implicite pour TextBlock : un setter de style bat l'HERITAGE, si bien
-         qu'il aurait fige la couleur du texte et neutralise le TextElement.Foreground pose sur la
-         racine de chaque fenetre. C'est cet heritage qui porte la couleur du texte courant. -->
-
-
+    <!-- PAS de style implicite pour TextBlock ni Label. Un ContentPresenter enveloppe une
+         chaine dans un TextBlock IMPLICITE : le style s'y appliquait et ecrasait le Foreground
+         que le bouton pose sur lui-meme — texte sombre sur le bleu d'accent en theme clair.
+         La couleur du texte courant passe donc par l'HERITAGE, pose sur la racine de chaque
+         fenetre (TextElement.Foreground), qui ne bat pas la valeur locale d'un bouton. -->
 
     <!-- ========================================================================
          Case a cocher et liste deroulante : ces deux-la doivent etre RETEMPLATEES.

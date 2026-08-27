@@ -12,7 +12,7 @@
         FontFamily="Segoe UI"
         ShowInTaskbar="False">
 
-    <Border Margin="16" CornerRadius="10" Background="{DynamicResource Brush.SurfaceCard}"
+    <Border TextElement.Foreground="{DynamicResource Brush.Text}" Margin="16" CornerRadius="10" Background="{DynamicResource Brush.SurfaceCard}"
             SnapsToDevicePixels="True" UseLayoutRounding="True">
         <Border.Effect>
             <DropShadowEffect BlurRadius="32" ShadowDepth="6" Opacity="0.18" Direction="270"/>

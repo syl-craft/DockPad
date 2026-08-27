@@ -183,7 +183,7 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <Border Background="{DynamicResource Brush.SurfaceCard}" BorderBrush="{DynamicResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="12"
+    <Border TextElement.Foreground="{DynamicResource Brush.Text}" Background="{DynamicResource Brush.SurfaceCard}" BorderBrush="{DynamicResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="12"
             Padding="12,8"
             SnapsToDevicePixels="True" UseLayoutRounding="True">
         <!-- Centré : la hauteur du bandeau est imposée (celle d'une tuile), le contenu est un peu

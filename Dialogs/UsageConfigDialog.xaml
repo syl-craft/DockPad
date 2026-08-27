@@ -9,7 +9,7 @@
         ResizeMode="CanResize" MinWidth="560" MinHeight="440"
         Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
-    <Grid>
+    <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>

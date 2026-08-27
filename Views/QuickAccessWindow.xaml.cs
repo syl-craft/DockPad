@@ -67,7 +67,19 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // après avoir changé la langue laissait la grille dans l'ancienne indéfiniment, puisque le
         // chemin d'annulation ne rafraîchit rien.
         Loc.LanguageChanged += OnLanguageChanged;
-        Closed += (_, _) => Loc.LanguageChanged -= OnLanguageChanged;
+
+        // Les gestionnaires de survol et de dépôt posent la couleur d'une tuile en VALEUR LOCALE
+        // (btn.Background = …), et une valeur locale bat définitivement le style et son
+        // DynamicResource : une tuile déjà survolée gardait l'ancienne couleur jusqu'au survol
+        // suivant. Republier les cellules reconstruit les boutons, donc efface ces valeurs.
+        ThemeService.ThemeChanged += OnThemeChanged;
+        // ThemeService est statique : sans désabonnement, il garderait une référence sur la fenêtre
+        // pour toute la vie du processus.
+        Closed += (_, _) =>
+        {
+            Loc.LanguageChanged -= OnLanguageChanged;
+            ThemeService.ThemeChanged -= OnThemeChanged;
+        };
 
         var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
@@ -143,6 +155,8 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// Retraduit ce que la fenêtre construit en code : les libellés liés par <c>{loc:T}</c> se
     /// mettent à jour seuls, pas les tuiles ni le badge de raccourci.
     /// </summary>
+    private void OnThemeChanged() => PopulateGrid();
+
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         UpdateHotkeyDisplay();

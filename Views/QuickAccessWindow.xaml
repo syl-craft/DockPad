@@ -168,7 +168,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
         <!--
             La ligne de la grille est Auto et la fenêtre prend la hauteur de son contenu
             (SizeToContent), clampée à la zone de travail : c'est le patron documenté pour un contenu
@@ -251,7 +251,11 @@
                 </Button>
 
                 <!-- Barre de recherche (centre) -->
-                <Grid Grid.Column="1" Margin="150,0" VerticalAlignment="Stretch" Background="AliceBlue">
+                <!-- Transparent : le fond de la barre d'outils passe a travers. C'etait AliceBlue, une
+                     couleur de mise au point restee en place — invisible en theme clair, la barre
+                     de recherche la recouvrant, mais elle reapparaissait dans les angles arrondis
+                     en theme sombre. -->
+                <Grid Grid.Column="1" Margin="150,0" VerticalAlignment="Stretch" Background="Transparent">
                     <TextBox x:Name="SearchBox" AutomationProperties.Name="{loc:T Quick_Search}"
                              Style="{StaticResource SearchTextBox}"
                              TextChanged="SearchBox_TextChanged"
