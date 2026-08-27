@@ -20,6 +20,7 @@ public partial class SettingsDialog : Window
 
     /// <summary>Une entrée de la liste des langues : ce qu'on stocke, et ce qu'on affiche.</summary>
     private sealed record LanguageChoice(string Tag, string Label);
+    private sealed record ThemeChoice(string Tag, string Label);
 
     /// <summary>
     /// Vrai pendant le remplissage des listes : les <c>SelectionChanged</c> qu'il déclenche ne
@@ -43,6 +44,7 @@ public partial class SettingsDialog : Window
         CmbTriggerSecond.SelectionChanged += (_, _) => ValidateTriggers();
 
         ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
+        ChkAutoFavicon.IsChecked = SettingsService.LoadAutoFavicon();
         TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
         TxtAutoStartPath.Text = Environment.ProcessPath
             ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
@@ -71,6 +73,7 @@ public partial class SettingsDialog : Window
         CmbKey.SelectionChanged += (_, _) => UpdatePreview();
 
         FillLanguages();
+        FillThemes();
 
         // La langue peut changer pendant que cette fenêtre est ouverte — c'est même le cas normal,
         // puisque c'est ici qu'on la change. Les libellés liés par {loc:T} se retraduisent seuls ;
@@ -82,6 +85,7 @@ public partial class SettingsDialog : Window
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         FillLanguages();
+        FillThemes();
 
         // Les noms de touches nommées sont traduits (« Espace » / « Space ») : la liste doit être
         // refaite, la sélection conservée.
@@ -127,6 +131,35 @@ public partial class SettingsDialog : Window
         CmbLanguage.DisplayMemberPath = nameof(LanguageChoice.Label);
         CmbLanguage.SelectedIndex = selected switch { "fr" => 1, "en" => 2, _ => 0 };
         _filling = false;
+    }
+
+    /// <summary>
+    /// Remplit la liste des thèmes. Les libellés sont traduits, donc refaits à chaque changement
+    /// de langue — comme ceux des modificateurs de touches.
+    /// </summary>
+    private void FillThemes()
+    {
+        var selected = ThemeService.LoadSetting();
+        _filling = true;
+        CmbTheme.ItemsSource = new[]
+        {
+            new ThemeChoice("",      Loc.T("Theme_Auto")),
+            new ThemeChoice("Light", Loc.T("Theme_Light")),
+            new ThemeChoice("Dark",  Loc.T("Theme_Dark")),
+        };
+        CmbTheme.DisplayMemberPath = nameof(ThemeChoice.Label);
+        CmbTheme.SelectedIndex = selected switch { "Light" => 1, "Dark" => 2, _ => 0 };
+        _filling = false;
+    }
+
+    private void Theme_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_filling || CmbTheme.SelectedItem is not ThemeChoice choice) return;
+
+        // Sauvegarde puis application immédiate, comme la langue : la fenêtre change de couleur
+        // sous les yeux, sans attendre le bouton Sauvegarder.
+        ThemeService.SaveSetting(choice.Tag);
+        ThemeService.Apply(ThemeService.IsDark(choice.Tag, ThemeService.SystemIsDark()));
     }
 
     private void Language_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -193,6 +226,7 @@ public partial class SettingsDialog : Window
             CmbTriggerFirst.SelectedIndex  > 0 ? saved[CmbTriggerFirst.SelectedIndex]  : "",
             CmbTriggerSecond.SelectedIndex > 0 ? saved[CmbTriggerSecond.SelectedIndex] : "");
         SettingsService.SaveAutoStart(ChkAutoStart.IsChecked == true);
+        SettingsService.SaveAutoFavicon(ChkAutoFavicon.IsChecked == true);
         SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
         DialogResult = true;
     }

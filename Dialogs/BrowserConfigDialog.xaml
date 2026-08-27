@@ -7,9 +7,9 @@
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize" MinWidth="640" MinHeight="600"
-        Background="{StaticResource Brush.Surface}"
+        Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
-    <Grid>
+    <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
+        <Border Grid.Row="0" Background="{DynamicResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T Browsers_Title}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
@@ -27,7 +27,7 @@
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="FontSize" Value="13"/>
-                    <Setter Property="Foreground" Value="#555"/>
+                    <Setter Property="Foreground" Value="{DynamicResource Brush.TextLabel}"/>
                     <Setter Property="Cursor" Value="Hand"/>
                     <Setter Property="Template">
                         <Setter.Value>
@@ -38,11 +38,11 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="Bd" Property="Background" Value="#EAEAEA"/>
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.RowHover}"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#0078D4"/>
-                                        <Setter Property="Foreground" Value="{StaticResource Brush.Accent}"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
@@ -66,7 +66,7 @@
                     <!-- Section enregistrement -->
                     <StackPanel Grid.Row="0">
                         <TextBlock Text="{loc:T Browsers_UrlInterception}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
-                        <TextBlock x:Name="TxtRegStatus" Foreground="#555" FontSize="12"
+                        <TextBlock x:Name="TxtRegStatus" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
                                    TextWrapping="Wrap" Margin="0,0,0,10"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <Button x:Name="BtnRegister" Content="{loc:T Browsers_Register}"
@@ -78,13 +78,13 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <TextBlock Text="{loc:T Browsers_AutoOpen}" Foreground="#555" FontSize="12"
+                            <TextBlock Text="{loc:T Browsers_AutoOpen}" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
                                        VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBox x:Name="TxtAutoOpen" Width="50" Padding="6,4" FontSize="12"
                                      HorizontalContentAlignment="Center"
                                      TextChanged="AutoOpen_TextChanged"/>
                             <TextBlock Text="{loc:T Browsers_AutoOpen_Hint}"
-                                       Foreground="#888" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                       Foreground="{DynamicResource Brush.TextHint}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -123,7 +123,7 @@
 
                                         <!-- Filet d'indentation des profils (largeur nulle si masqué) -->
                                         <Border Grid.Column="0" Width="14" Margin="2,1,8,1"
-                                                BorderBrush="#D8D8D8" BorderThickness="1,0,0,0"
+                                                BorderBrush="{DynamicResource Brush.BorderList}" BorderThickness="1,0,0,0"
                                                 SnapsToDevicePixels="True" UseLayoutRounding="True">
                                             <!-- Visibilité par le Style et non en attribut : une valeur
                                                  locale bat les Setter des DataTrigger. -->
@@ -146,11 +146,11 @@
                                         <Image Grid.Column="2" Source="{Binding Icon}" Width="20" Height="20"/>
                                         <StackPanel Grid.Column="3" Margin="8,0,0,0">
                                             <TextBlock Text="{Binding Name}" FontSize="12"/>
-                                            <TextBlock Text="{Binding Detail}" FontSize="10" Foreground="#999"
+                                            <TextBlock Text="{Binding Detail}" FontSize="10" Foreground="{DynamicResource Brush.TextFaint}"
                                                        TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                         <TextBlock Grid.Column="4" Text="{Binding HiddenLabel}" FontSize="10"
-                                                   Foreground="{StaticResource Brush.Danger}" VerticalAlignment="Center"/>
+                                                   Foreground="{DynamicResource Brush.Danger}" VerticalAlignment="Center"/>
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
@@ -166,8 +166,8 @@
 
                     <!-- Édition de l'entrée sélectionnée (désactivé sans sélection) -->
                     <Border x:Name="PnlEdit" Grid.Row="4" IsEnabled="False"
-                            Background="White" CornerRadius="6" Padding="12" Margin="0,10,0,0"
-                            BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                            Background="{DynamicResource Brush.SurfaceCard}" CornerRadius="6" Padding="12" Margin="0,10,0,0"
+                            BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
                             SnapsToDevicePixels="True" UseLayoutRounding="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -183,12 +183,12 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Browsers_Name}" Foreground="#555"
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Browsers_Name}" Foreground="{DynamicResource Brush.TextLabel}"
                                        VerticalAlignment="Center" Margin="0,0,10,8"/>
                             <TextBox  x:Name="TxtName" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
                                       Padding="6,4" Margin="0,0,0,8"/>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Browsers_Exe}" Foreground="#555"
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Browsers_Exe}" Foreground="{DynamicResource Brush.TextLabel}"
                                        VerticalAlignment="Center" Margin="0,0,10,8"/>
                             <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
                                       Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
@@ -197,14 +197,14 @@
                                       Padding="0" Margin="0,0,0,8"
                                       Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:T Browsers_Args}" Foreground="#555"
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:T Browsers_Args}" Foreground="{DynamicResource Brush.TextLabel}"
                                        VerticalAlignment="Center" Margin="0,0,10,8"/>
                             <TextBox  x:Name="TxtArgs" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                                       Padding="6,4" Margin="0,0,0,8" FontFamily="Consolas" FontSize="11"
                                       ToolTip="{loc:T Browsers_Args_Tip}"/>
 
                             <TextBlock x:Name="TxtProfileInfo" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
-                                       Visibility="Collapsed" Foreground="#888" FontSize="11"
+                                       Visibility="Collapsed" Foreground="{DynamicResource Brush.TextHint}" FontSize="11"
                                        TextWrapping="Wrap" Margin="0,0,0,8"/>
 
                             <Button   x:Name="BtnApply" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
@@ -227,7 +227,7 @@
 
                     <TextBlock Grid.Row="0"
                                Text="{loc:T Browsers_Rules_Intro}"
-                               Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                     <!-- Recherche + filtre -->
                     <Grid Grid.Row="1" Margin="0,0,0,10">
@@ -273,13 +273,13 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <TextBlock x:Name="TxtRulesEmpty" Grid.Row="2" Foreground="#999" FontSize="12"
+                    <TextBlock x:Name="TxtRulesEmpty" Grid.Row="2" Foreground="{DynamicResource Brush.TextFaint}" FontSize="12"
                                TextWrapping="Wrap" TextAlignment="Center" MaxWidth="380"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                Visibility="Collapsed"
                                Text="{loc:T Browsers_Rules_Empty}"/>
 
-                    <TextBlock x:Name="TxtRulesCount" Grid.Row="3" Foreground="#888" FontSize="11"
+                    <TextBlock x:Name="TxtRulesCount" Grid.Row="3" Foreground="{DynamicResource Brush.TextHint}" FontSize="11"
                                Margin="2,8,0,0"/>
                 </Grid>
             </TabItem>

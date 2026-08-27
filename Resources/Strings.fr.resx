@@ -1032,4 +1032,25 @@ Cette action est irréversible.</value>
   <data name="Usage_TimeFormat" xml:space="preserve">
     <value>HH\hmm</value>
   </data>
+  <data name="Settings_Network_Section" xml:space="preserve">
+    <value>Réseau</value>
+  </data>
+  <data name="Settings_Network_AutoFavicon" xml:space="preserve">
+    <value>Télécharger l'icône du site pour les raccourcis web</value>
+  </data>
+  <data name="Settings_Network_AutoFaviconHint" xml:space="preserve">
+    <value>Seul le domaine est envoyé au service de favicons de Google — jamais le chemin ni les paramètres de l'adresse. Décochée, aucune requête ne part.</value>
+  </data>
+  <data name="Settings_Theme_Section" xml:space="preserve">
+    <value>Thème</value>
+  </data>
+  <data name="Theme_Auto" xml:space="preserve">
+    <value>Automatique (Windows)</value>
+  </data>
+  <data name="Theme_Light" xml:space="preserve">
+    <value>Clair</value>
+  </data>
+  <data name="Theme_Dark" xml:space="preserve">
+    <value>Sombre</value>
+  </data>
 </root>

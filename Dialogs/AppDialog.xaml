@@ -12,7 +12,7 @@
         FontFamily="Segoe UI"
         ShowInTaskbar="False">
 
-    <Border Margin="16" CornerRadius="10" Background="White"
+    <Border TextElement.Foreground="{DynamicResource Brush.Text}" Margin="16" CornerRadius="10" Background="{DynamicResource Brush.SurfaceCard}"
             SnapsToDevicePixels="True" UseLayoutRounding="True">
         <Border.Effect>
             <DropShadowEffect BlurRadius="32" ShadowDepth="6" Opacity="0.18" Direction="270"/>
@@ -36,12 +36,12 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <TextBlock x:Name="TitleText" FontSize="15" FontWeight="SemiBold"
-                               Foreground="{StaticResource Brush.Text}" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Brush.Text}" VerticalAlignment="Center"
                                TextWrapping="Wrap" MaxWidth="290"/>
                 </StackPanel>
 
                 <!-- Message -->
-                <TextBlock x:Name="MessageText" FontSize="13" Foreground="#555555"
+                <TextBlock x:Name="MessageText" FontSize="13" Foreground="{DynamicResource Brush.TextLabel}"
                            TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,0"/>
 
                 <!-- Boutons -->

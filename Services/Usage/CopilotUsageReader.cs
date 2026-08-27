@@ -97,11 +97,34 @@ public static class CopilotUsageReader
     /// sous-ensemble. Les soustraire évite de compter le même prompt trois fois — le piège relevé
     /// dans l'implémentation de référence.
     /// </remarks>
+    /// <summary>
+    /// Horodatage d'une ligne, en heure locale. <c>null</c> si la valeur n'est pas une date.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b><c>AssumeUniversal</c> est la clé.</b> La colonne est du TEXT, et une date SQLite sans
+    /// marqueur de fuseau est de l'UTC — c'est ce que rend <c>CURRENT_TIMESTAMP</c>. Sans ce
+    /// drapeau, .NET interprète une chaîne nue comme de l'<b>heure locale</b> : sur un poste à
+    /// UTC+2, chaque ligne était datée de deux heures trop tard, et celles écrites en fin de
+    /// journée UTC basculaient au lendemain. Un décalage qui ne se voit qu'aux bornes — d'où un
+    /// test qui ne tombait qu'entre minuit et deux heures du matin.
+    /// </para>
+    /// <para>
+    /// Un décalage explicite dans la chaîne (<c>Z</c>, <c>+01:00</c>) reste prioritaire : le
+    /// drapeau ne s'applique qu'à défaut d'information.
+    /// </para>
+    /// </remarks>
+    public static DateTime? ParseTimestamp(string? raw) =>
+        DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
+                                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                                out var utc)
+            ? utc.LocalDateTime
+            : null;
+
     private static UsageAggregator.UsageEntry? ReadRow(SqliteDataReader row, string database)
     {
         var raw = row.IsDBNull(6) ? null : row.GetString(6);
-        if (!DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
-                                     DateTimeStyles.AdjustToUniversal, out var utc)) return null;
+        if (ParseTimestamp(raw) is not { } timestamp) return null;
 
         var input = Number(row, 2);
         var cacheRead = Number(row, 4);
@@ -112,7 +135,7 @@ public static class CopilotUsageReader
             // désigner plusieurs : sans le chemin dans la clé, la ligne 1 de chaque base se
             // confondrait avec l'autre.
             Key: $"copilot|{database}|{row.GetInt64(0)}",
-            Timestamp: utc.LocalDateTime,
+            Timestamp: timestamp,
             Model: row.IsDBNull(1) ? "" : row.GetString(1),
             Input: Math.Max(0, input - cacheRead - cacheWrite),
             Output: Number(row, 3),

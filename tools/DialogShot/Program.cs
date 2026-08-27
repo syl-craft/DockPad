@@ -2,6 +2,9 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
+using Brush = System.Windows.Media.Brush;
+using Application = System.Windows.Application;
+using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using System.Windows.Media.Imaging;
 using DockPad;
 using DockPad.Services;
@@ -36,7 +39,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|bindings|grid> <fr|en> <chemin.png>");
+            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|bindings|grid> <fr|en> <chemin.png>");
             return;
         }
 
@@ -52,6 +55,19 @@ internal static class Program
         var app = new App();
         app.InitializeComponent();
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        // Theme de capture : une variable d'environnement plutot qu'un argument, pour ne pas
+        // deplacer les arguments des cibles existantes — comme DOCKPAD_SHOT_LANG.
+        //
+        // « dark-switch » reproduit le geste de l'utilisateur : basculer depuis les Options, donc
+        // APRES que la fenetre existe. Ce n'est pas le meme chemin que « dark », qui applique le
+        // theme avant toute fenetre — et une couleur deja resolue ne suivrait pas.
+        var themeEnv = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_THEME") ?? "";
+        _switchAfterBuild = string.Equals(themeEnv, "dark-switch", StringComparison.OrdinalIgnoreCase);
+        if (!_switchAfterBuild)
+            DockPad.Services.ThemeService.Apply(
+                string.Equals(themeEnv, "dark", StringComparison.OrdinalIgnoreCase));
+
 
         // Loc.Parse rend null sur une etiquette inconnue, ce qui vaudrait « automatique » et
         // capturerait silencieusement la mauvaise langue : ici on prefere le dire.
@@ -100,6 +116,10 @@ internal static class Program
             "ctxmenu" => new ContextMenuManagerWindow(),
             "presets" => new PresetsDialog(),
             "mcp" => new McpConfigDialog(),
+            // Trois fenetres n'avaient aucune couverture de capture : celles d'ajout/modification
+            // d'une tuile et d'une entree de registre. Un defaut de couleur y serait passe inapercu.
+            "shortcut" => new ShortcutDialog(row: 0, col: 0),
+            "entry" => new EntryDialog(),
             _ => throw new ArgumentException($"fenêtre inconnue : {target}"),
         };
 
@@ -125,6 +145,8 @@ internal static class Program
             ("ContextMenuManagerWindow", () => new ContextMenuManagerWindow()),
             ("PresetsDialog", () => new PresetsDialog()),
             ("McpConfigDialog", () => new McpConfigDialog()),
+            ("ShortcutDialog", () => new ShortcutDialog(row: 0, col: 0)),
+            ("EntryDialog", () => new EntryDialog()),
             ("UsageConfigDialog", () => new UsageConfigDialog()),
             ("BrowserConfigDialog", () => new BrowserConfigDialog()),
         };
@@ -159,6 +181,9 @@ internal static class Program
         return 1;
     }
 
+    /// <summary>Basculer le theme APRES construction, comme le fait l'utilisateur.</summary>
+    private static bool _switchAfterBuild;
+
     private static void Render(Window window, string outPath, string target, string lang)
     {
         // La largeur vient de la fenêtre ; la hauteur de la mesure, ces fenêtres étant en
@@ -177,11 +202,38 @@ internal static class Program
             root.UpdateLayout();
         }
 
+        if (_switchAfterBuild)
+        {
+            var res = Application.Current.Resources;
+            Console.WriteLine($"  avant : Brush.Text = {(res["Brush.Text"] as SolidColorBrush)?.Color}, "
+                              + $"{res.MergedDictionaries.Count} dictionnaire(s)");
+            DockPad.Services.ThemeService.Apply(dark: true);
+            Console.WriteLine($"  apres : Brush.Text = {(res["Brush.Text"] as SolidColorBrush)?.Color}");
+            foreach (var d in res.MergedDictionaries)
+                Console.WriteLine($"     - {d.Source}");
+            root.Measure(new System.Windows.Size(width, double.PositiveInfinity));
+            height = root.DesiredSize.Height;
+            root.Arrange(new Rect(0, 0, width, height));
+            root.UpdateLayout();
+        }
+
         // PresentationSource.FromVisual est nul ici : l'échelle DPI vient de VisualTreeHelper.
         var dpi = VisualTreeHelper.GetDpi(root);
         var bitmap = new RenderTargetBitmap(
             (int)Math.Ceiling(width * dpi.DpiScaleX), (int)Math.Ceiling(height * dpi.DpiScaleY),
             dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        // Le fond de la FENETRE avant son contenu : on rend l'element de contenu, qui n'a pas de
+        // fond a lui, si bien que la capture sortait transparente derriere le texte. Compose sur
+        // noir par la visionneuse, un titre clair y paraissait sombre — quatre faux diagnostics
+        // pendant la mise au point du theme sombre, tous dus a cette seule transparence.
+        if (Backdrop(root) is { } backdrop)
+        {
+            var canvas = new DrawingVisual();
+            using (var dc = canvas.RenderOpen())
+                dc.DrawRectangle(backdrop, null, new Rect(0, 0, width, height));
+            bitmap.Render(canvas);
+        }
+
         bitmap.Render(root);
 
         var encoder = new PngBitmapEncoder();
@@ -192,4 +244,8 @@ internal static class Program
 
         Console.WriteLine($"capturé : {outPath} ({target}, {lang}, {width}x{Math.Ceiling(height)})");
     }
+
+    /// <summary>Fond de la fenetre qui porte cet element, ou <c>null</c> s'il n'y en a pas.</summary>
+    private static Brush? Backdrop(DependencyObject element) =>
+        Window.GetWindow(element)?.Background;
 }

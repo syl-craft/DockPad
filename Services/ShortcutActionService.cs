@@ -1,4 +1,6 @@
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using DockPad.Models;
 
 namespace DockPad.Services;
@@ -12,6 +14,9 @@ public static class ShortcutActionService
     public const int GridRows = 4;
     public const int GridCols = 6;
 
+    /// <summary>Partagé : un HttpClient par appel épuiserait les sockets.</summary>
+    private static readonly FaviconService Favicon = new();
+
     // ───────────── Enveloppes (verrou + fichiers) ─────────────
 
     public static ActionResult GetGrid(int? page = null)
@@ -20,8 +25,18 @@ public static class ShortcutActionService
             return GetGridCore(ShortcutService.Load(), PageConfigService.Load(), page);
     }
 
-    public static ActionResult Add(List<ShortcutAddItem> items)
+    /// <summary>
+    /// Ajoute un lot de tuiles, en allant chercher l'icône des tuiles web qui n'en ont pas.
+    /// </summary>
+    /// <remarks>
+    /// Le téléchargement a lieu <b>avant</b> le verrou, jamais dedans : <see cref="ConfigLock.Gate"/>
+    /// est le verrou global des configs, et l'y tenir le temps d'un appel réseau bloquerait
+    /// l'interface et toute requête MCP concurrente.
+    /// </remarks>
+    public static async Task<ActionResult> AddAsync(List<ShortcutAddItem> items)
     {
+        var favicons = await ResolveFaviconsAsync(items).ConfigureAwait(false);
+
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load();
@@ -29,16 +44,60 @@ public static class ShortcutActionService
             var result = AddCore(all, configs, items);
             if (!result.Ok) return result;
 
-            // Icônes : fournie → copie profil ; absente → icône de l'exe associé (comme les dialogs)
+            // Icônes : fournie → copie profil ; absente → favicon du site, puis icône de l'exe
+            // associé (comme les dialogs). AddCore ajoute dans l'ordre des items, d'où l'index.
+            int i = 0;
             foreach (var s in all.TakeLast(items.Count))
+            {
+                if (favicons.TryGetValue(i++, out var stored) && string.IsNullOrEmpty(s.IconPath))
+                    s.IconProfilePath = stored;
                 ApplyIcon(s);
+            }
             ShortcutService.Save(all);
             return result;
         }
     }
 
-    public static ActionResult Update(int page, int row, int col, ShortcutUpdate changes)
+    /// <summary>
+    /// Variante bloquante, pour les appelants sans contexte asynchrone — le serveur MCP, qui
+    /// travaille sur un thread de pipe. À ne pas appeler depuis le thread d'interface.
+    /// </summary>
+    public static ActionResult Add(List<ShortcutAddItem> items) =>
+        AddAsync(items).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Icône de site pour les items qui la méritent, indexée par leur position dans le lot.
+    /// </summary>
+    private static async Task<Dictionary<int, string>> ResolveFaviconsAsync(List<ShortcutAddItem> items)
     {
+        var found = new Dictionary<int, string>();
+        bool enabled = SettingsService.LoadAutoFavicon();
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            if (!FaviconService.ShouldFetch(enabled, item.Type, item.IconPath, item.Command)) continue;
+
+            if (await Favicon.TryFetchIntoStoreAsync(item.Command, CancellationToken.None)
+                    .ConfigureAwait(false) is { } stored)
+                found[i] = stored;
+        }
+        return found;
+    }
+
+    /// <summary>
+    /// Modifie une tuile, en allant chercher l'icône du site si elle devient une tuile web sans icône.
+    /// </summary>
+    /// <remarks>
+    /// L'état de la tuile est lu une première fois <b>hors du verrou</b> pour décider s'il faut
+    /// télécharger. Deux modifications simultanées de la même case peuvent donc faire télécharger
+    /// une icône qui ne servira pas — un fichier de plus dans le store dédupliqué, contre un appel
+    /// réseau sous le verrou global. Le compromis est vite vu.
+    /// </remarks>
+    public static async Task<ActionResult> UpdateAsync(int page, int row, int col, ShortcutUpdate changes)
+    {
+        string? favicon = await ResolveFaviconForUpdateAsync(page, row, col, changes).ConfigureAwait(false);
+
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load();
@@ -48,11 +107,36 @@ public static class ShortcutActionService
             {
                 var s = all.First(s => s.Page == page && s.Row == row && s.Col == col);
                 if (changes.IconPath != null) { s.IconPath = changes.IconPath; s.IconProfilePath = null; }
+                if (favicon != null && string.IsNullOrEmpty(s.IconPath)) s.IconProfilePath = favicon;
                 ApplyIcon(s);
             }
             ShortcutService.Save(all);
             return result;
         }
+    }
+
+    /// <summary>Variante bloquante — voir <see cref="Add"/>.</summary>
+    public static ActionResult Update(int page, int row, int col, ShortcutUpdate changes) =>
+        UpdateAsync(page, row, col, changes).GetAwaiter().GetResult();
+
+    private static async Task<string?> ResolveFaviconForUpdateAsync(
+        int page, int row, int col, ShortcutUpdate changes)
+    {
+        ShortcutEntry? existing;
+        lock (ConfigLock.Gate)
+            existing = ShortcutService.Load()
+                .FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
+
+        if (existing is null) return null;
+
+        // L'état tel qu'il sera après la modification : seuls les champs fournis changent.
+        var type = changes.Type ?? existing.Type;
+        var command = changes.Command ?? existing.Command;
+        var icon = changes.IconPath ?? existing.IconPath;
+
+        return FaviconService.ShouldFetch(SettingsService.LoadAutoFavicon(), type, icon, command)
+            ? await Favicon.TryFetchIntoStoreAsync(command, CancellationToken.None).ConfigureAwait(false)
+            : null;
     }
 
     public static ActionResult Move(int page, int row, int col, int toPage, int? toRow = null, int? toCol = null)

@@ -40,6 +40,7 @@ Models/
     PageConfig.cs                        Config par page (icône du bouton de pagination + IconProfilePath)
     PresetEntry.cs                       Modèle preset avec enum PresetStatus
     ProcessSwitchConfig.cs               Config SwitchToProcess (processName, executable, parameters)
+    AppSettings.cs                        Contenu de settings.json (langue, thème, raccourci, options)
     ShortcutAddItem.cs                    Item du lot dockpad_shortcut_add (position optionnelle)
     ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath, iconProfilePath)
     ShortcutUpdate.cs                     Champs modifiables par dockpad_shortcut_update (null = inchangé)
@@ -59,6 +60,11 @@ Resources/
     Strings.resx                          Anglais, langue neutre
     Strings.fr.resx                       Français, satellite fr\DockPad.resources.dll
 
+Themes/
+    Light.xaml                            Palette claire — les valeurs d'origine de l'application
+    Dark.xaml                             Palette sombre — mêmes clés, chaque rôle traduit
+    Controls.xaml                         Contrôles standards de WPF (case à cocher, liste déroulante…)
+
 Services/
     AppInfo.cs                            Infos application (VersionText affiché dans les footers)
     AppPaths.cs                           Racine du profil (%APPDATA%\DockPad ou DOCKPAD_PROFILE_DIR) — utilisée par toutes les configs
@@ -71,6 +77,7 @@ Services/
     ConfigBackup.cs                       Copie horodatée des configs dans .backup\ (suffixe _2, _3… si collision)
     ConfigLock.cs                         Verrou global des load-modify-save de configs (UI et MCP sérialisés)
     DroppedShortcut.cs                    Dépôt Explorateur : acceptable ou non, nom de dossier, lecture d'un .url
+    FaviconService.cs                     Icône du site pour une tuile web (domaine seul, jamais l'URL complète)
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
     IconStoreService.cs                  Store des icônes du profil (%APPDATA%\DockPad\icons\) — SHA1 dédup, extraction .exe/.dll → .png
     LogService.cs                        Logger central Serilog — %APPDATA%\DockPad\logs\, rolling quotidien, 14 fichiers, shared multi-process
@@ -92,6 +99,8 @@ Services/
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
+    AppSettingsService.cs                 Load/Save settings.json + reprise des options restées dans le registre
+    ThemeService.cs                       Thème clair/sombre : décision pure, suivi de Windows, barre de titre
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     UrlPipeService.cs                    Named pipe DockPad_UrlPipe — serveur (instance principale) / client (instance relais)
     UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
@@ -253,6 +262,16 @@ tools/
 - À la création/modification : si aucune icône spécifiée, l'icône de l'exe associé est utilisée automatiquement (RunCommand, SwitchToProcess, OpenTerminal)
 - **↻ Actualiser** : resynchronise le store pour toutes les entrées existantes
 
+### Icône automatique des tuiles web (FaviconService)
+- À l'enregistrement d'une tuile **`OpenUrl` sans icône**, DockPad va chercher l'icône du site et la range dans le store — même mécanique que l'icône d'un `.exe` pour les autres types, qui existait déjà
+- **Seul le domaine quitte la machine.** Le service interrogé (`https://www.google.com/s2/favicons?domain=…&sz=128`) prend un domaine ; ni le chemin ni la chaîne de requête ne lui sont donnés. Un identifiant de projet Asana ou un numéro de client dans une URL interne n'a rien à faire chez un tiers — **deux tests le vérifient**, dont un sur ce qui part réellement sur le réseau, et pas seulement sur la construction de l'URL
+- **Réglage** dans Options → *Réseau*, coché par défaut, `HKCU\Software\DockPad\Settings\AutoFavicon`. Décoché, `ShouldFetch` rend `false` et **aucune requête n'est émise**
+- **Le téléchargement a lieu avant le verrou**, jamais dedans : `ConfigLock.Gate` est le verrou global des configs, et l'y tenir le temps d'un appel réseau bloquerait l'interface et toute requête MCP concurrente. D'où `AddAsync`/`UpdateAsync`, dont `Add`/`Update` ne sont plus que les variantes bloquantes — réservées au serveur MCP, qui travaille sur un thread de pipe
+- **`ConfigureAwait(false)` partout** dans ce chemin : sans lui, la variante bloquante appelée depuis le thread d'interface se bloquerait elle-même en attendant une continuation qui ne peut plus s'exécuter
+- **Une icône fournie gagne toujours** : `ShouldFetch` rend `false` dès que `IconPath` est renseigné. Rien n'est jamais remplacé, et ↻ Actualiser ne va pas sur le réseau
+- **Ce chemin n'est jamais critique** : hors ligne, DNS cassé, proxy d'entreprise, 404, réponse vide → `null`, donc la tuile garde l'icône du navigateur, comme avant la fonctionnalité. Rien ne remonte à l'écran, une icône manquante n'est pas une panne
+- **Un fichier temporaire, pas le store directement** : la mise en store appartient à `IconStoreService.CopyToProfile`, seul à savoir dédupliquer. `TryFetchIntoStoreAsync` compose les deux et efface le temporaire — en un seul endroit, sinon c'est deux endroits où oublier de l'effacer
+
 ### Types de tuiles (ShortcutType)
 | Type | Description | Champ `command` | Bande |
 |------|-------------|-----------------|-------|
@@ -295,6 +314,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - **Démarrer avec Windows** : checkbox qui ajoute/supprime une entrée dans `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
+- **Réseau — Télécharger l'icône du site pour les raccourcis web** : voir *Icône automatique des tuiles web* ci-dessus
 - **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
 ### Sélecteur de navigateur
@@ -677,6 +697,45 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
 - Une entrée dont l'`id` est inconnu du registre est **conservée telle quelle** : un retour arrière de version ne perd ni masquage ni ordre
 - Stocké dans `%APPDATA%\DockPad\usage.json`, inclus dans la sauvegarde de configuration
 
+## Options de l'application (settings.json)
+
+Les options vivaient dans `HKCU\Software\DockPad\Settings`. Elles ont rejoint les autres configs du
+profil : `%APPDATA%\DockPad\settings.json`, lisible, sauvegardable, et qui **suit
+`DOCKPAD_PROFILE_DIR`** — ce que le registre ne permettait pas, donc un profil portable ne les
+emportait pas.
+
+```json
+{
+  "language": "en",
+  "theme": "Dark",
+  "triggerFirst": "Ctrl",
+  "triggerSecond": "Shift",
+  "claudeArgs": "--enable-auto-mode",
+  "autoFavicon": true,
+  "hotkeyModifiers": 1,
+  "hotkeyKey": 32
+}
+```
+
+- **Le démarrage automatique reste dans le registre**, et c'est la seule exception : la clé `Run` est
+  lue par Windows, pas par DockPad. Elle n'a pas d'équivalent en fichier
+- **Reprise automatique au premier démarrage** : fichier absent → les valeurs sont relues du registre,
+  écrites dans le fichier, et **le registre n'est pas effacé**. Un retour à une version antérieure
+  retrouve ses réglages. Le fichier fait autorité dès qu'il existe
+- **Le lecteur de registre est un paramètre** de `LoadFrom`/`FromRegistry` : la reprise se vérifie
+  sans toucher aux réglages de la machine, et sans dépendre de ce qu'elle contient au moment du test
+- **Chaque défaut vit dans le modèle**, pas au point de lecture : une clé absente doit donner le
+  comportement attendu. Le piège serait qu'un fichier sans `autoFavicon` le lise comme « décoché » —
+  `System.Text.Json` laisse l'initialiseur en place, et un test le fixe
+- **Une valeur de registre du mauvais type est ignorée**, pas fatale : un `Language` numérique ne doit
+  pas faire perdre les sept autres réglages
+- **Les options sont gardées en mémoire** : `LoadLanguage` et consorts sont appelés à chaque
+  construction de fenêtre et à chaque changement de langue. Ce fichier n'est écrit que par cette
+  application, un cache est donc sûr — `Invalidate()` existe pour les tests
+- `SettingsService` et `ThemeService.LoadSetting` sont devenus des **façades** : leur API n'a pas
+  changé, la vingtaine d'appelants n'a pas bougé
+- Inclus dans **💾 Sauvegarder la configuration**
+
 ## Fenêtres de config — pattern commun
 
 Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) suit le même patron — **jamais de hauteur fixe sans clamp** (une hauteur codée en dur finit clippée quand le contenu grandit, ou déborde d'un écran 768p) :
@@ -781,7 +840,10 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 
 ## Palette et couleurs (App.xaml)
 
-Les couleurs qui se répètent ou qui portent un sens vivent dans `App.xaml`, en brosses nommées
+> Depuis l'ajout du thème clair/sombre, la palette vit dans `Themes/Light.xaml` et
+> `Themes/Dark.xaml`, et le critère d'entrée a changé — voir **Thème clair / sombre**.
+
+Les couleurs qui se répètent ou qui portent un sens vivent dans la palette, en brosses nommées
 `Brush.<Role>` : `Brush.Accent`, `Brush.Border`, `Brush.Surface`, `Brush.Text`, `Brush.TextMuted`,
 `Brush.Danger`, `Brush.Demo`… Une couleur **unique et locale** — le brun d'un badge
 d'avertissement — reste sur place : extraire les quarante-cinq nuances du projet donnerait
@@ -874,6 +936,112 @@ raison de préférer `ContextMenuOpening` à un menu construit avec la tuile.
 **`DialogShot.exe overlay fr <png>`** rend l'overlay clavier déployé — le seul état que les captures
 de fenêtres au repos ne montrent pas. Il appelle `ShowHintOverlay` par réflexion, sous un nom que
 les deux versions portent, ce qui rend la capture comparable d'un côté et de l'autre du changement.
+
+## Thème clair / sombre
+
+Réglage dans ☰ → Paramètres → **Thème** : `Automatique (Windows)`, `Clair` ou `Sombre`. Stocké dans
+`HKCU\Software\DockPad\Settings\Theme`, `""` = automatique — **même convention que `Language` et
+`TriggerFirst`**, et une valeur inconnue se comporte comme le vide : un réglage écrit par une version
+plus récente, puis revenue en arrière, ne doit ni planter ni figer un thème. Application immédiate,
+comme la langue.
+
+- **Deux dictionnaires interchangeables** (`Themes/Light.xaml`, `Themes/Dark.xaml`) aux **mêmes
+  clés**. Basculer, c'est remplacer le dictionnaire fusionné en **position 0** — rien d'autre.
+  `Themes/Controls.xaml` occupe la position 1 et n'est jamais touché
+- **La décision est séparée de l'application** : `ThemeService.IsDark(setting, systemIsDark)` est une
+  fonction pure, testée sans WPF, comme `TileHintMap.ResolveTriggers`
+- **`DynamicResource` partout, plus `StaticResource`** : celui-ci fige la valeur au chargement et ne
+  verrait jamais le remplacement. C'est la seule raison de la conversion en masse des 193 références
+- **Un garde vérifie la parité des deux dictionnaires**, exactement comme celle des deux fichiers de
+  traduction : `DynamicResource` **ne lève pas** sur une clé absente, il rend une valeur nulle — donc
+  un fond transparent ou un texte invisible, qui ne se verrait que sur l'écran et le thème concernés
+- **Pack URI nommant l'assembly**, jamais un chemin relatif : celui-ci se résout dans l'assembly
+  **hôte**, qui n'est pas DockPad quand un outil de capture monte l'application. Même piège que
+  `app.ico`
+- **Les brosses lues en C# sont des propriétés, pas des champs** : un `static readonly` résout la
+  palette une fois pour toutes, et la tuile repeinte au départ de la souris serait restée blanche
+  après une bascule. Le coût d'un `FindResource` par sortie de souris est nul
+- **Le thème s'applique avant toute fenêtre**, au même endroit que la langue : les références étant
+  dynamiques, un remplacement tardif serait bien vu, mais le démarrage clignoterait en clair
+- **Ce qui reste blanc dans les deux thèmes** : `Foreground="White"` sur un bouton d'accent ou
+  d'erreur — c'est du texte posé *sur* une couleur, pas du texte sur un fond de fenêtre
+
+### Le critère d'entrée dans la palette a changé
+« Une couleur unique et locale reste sur place » valait quand il n'y avait qu'un thème. Ce qui compte
+désormais n'est plus la **répétition** mais la **participation au contraste** : un gris unique sur
+fond blanc devient illisible sur fond sombre, il doit donc être un jeton. La palette est passée de 17
+à 53 clés. Les gris voisins (`#222` `#444` `#555` `#666` `#777` `#888` `#999`) ne sont pas des
+doublons mais des rôles distincts — valeur de métrique, libellé, détail technique, chemin — gardés à
+leur valeur exacte pour que le thème clair ne bouge pas d'un pixel.
+
+### Deux contrôles doivent être retemplatés (`Themes/Controls.xaml`)
+**Mesure faite, pas supposée** : poser `Background`, `BorderBrush` et `Foreground` sur une `CheckBox`
+ou une `ComboBox` **ne les change pas** — leurs gabarits Aero2 dessinent leur propre habillage en
+dur. Constaté au pixel : `#EAEAEA` et `#B5B5B5` inchangés en thème sombre. Il faut donc les réécrire.
+
+- **Conséquence assumée : leur aspect change aussi en thème clair.** Elles passent de l'habillage
+  Windows à plat — ce qui est déjà le langage de toute l'application (boutons, onglets, menus,
+  tuiles), dont elles étaient les deux seules exceptions. Mesuré : 2,4 % à 9,3 % des pixels sur les
+  cinq fenêtres qui en portent ; la grille, l'overlay et le bandeau sont inchangés
+- **Un style local sans `BasedOn` n'hérite de rien** : les `<Style TargetType="TextBox">` des
+  dialogues auraient masqué le style implicite et perdu le fond thématisé. D'où
+  `BasedOn="{StaticResource {x:Type TextBox}}"` sur les quatre concernés
+- **Un style implicite `TargetType="Window"` ne s'applique pas à `SettingsDialog`** : WPF associe les
+  styles implicites au type **exact**, jamais à la classe de base
+- **`TemplateBinding` ne suit pas `SelectionBoxItemTemplate`**, que la `ComboBox` *calcule* et publie
+  après coup : le gabarit restait à `null` et le `ContentPresenter` retombait sur `ToString()` — la
+  liste affichait `LanguageChoice { Tag = , Label = … }` au lieu du libellé, **dans les deux
+  thèmes**. Il faut une liaison complète (`{Binding …, RelativeSource={RelativeSource
+  TemplatedParent}}`), qui, elle, suit les changements
+
+### Ce qu'un contrôle standard ignore
+`CheckBox`, `ComboBox` et `GridViewColumnHeader` **n'obéissent pas** à `Background` : leurs gabarits
+Aero2 dessinent leur propre habillage. Mesuré et non supposé — `#EAEAEA` et `#B5B5B5` inchangés en
+thème sombre après avoir posé les trois propriétés. Ils sont donc retemplatés.
+
+`ScrollBar` et `ToolTip` **n'apparaissent dans aucun XAML** : la première vit dans chaque
+`ScrollViewer`, la seconde est engendrée par chaque attribut `ToolTip=`. Sans style, elles restent
+claires — c'est le genre d'oubli qu'un inventaire des balises ne trouve pas.
+
+**`Brush.OnAccentMuted` a la même valeur dans les deux thèmes** (`#B3D9F7`), pour la même raison que
+`Foreground="White"` reste littéral : c'est du texte posé **sur** l'accent bleu, pas sur un fond de
+fenêtre. Le sous-titre du gestionnaire de menu contextuel utilisait `Brush.AccentBorderSoft`, pâle en
+clair et sombre en sombre — donc illisible sur le bleu une fois le thème sombre actif.
+
+### Suivre Windows à chaud
+`SystemEvents.UserPreferenceChanged`, catégorie `General`. Sans lui, « Automatique » ne se décidait
+qu'au démarrage.
+
+- **L'événement arrive sur un thread à lui**, pas celui de l'interface : appliquer le thème
+  directement lèverait une exception d'affinité. D'où le passage par le `Dispatcher`
+- **Un choix explicite ne bouge pas** : `FollowsSystem(setting)` filtre, sinon basculer Windows en
+  sombre écraserait le « Clair » de l'utilisateur. Fonction pure, testée aux six valeurs qui comptent
+- `SystemEvents` garde une référence **statique** sur l'abonné : désabonnement dans `OnExit`
+
+### Barre de titre
+WPF ne peint pas la barre de titre — elle appartient au gestionnaire de fenêtres et reste claire sur
+un contenu sombre. `DwmSetWindowAttribute` avec `DWMWA_USE_IMMERSIVE_DARK_MODE`, **deux numéros
+d'attribut essayés** (20, puis 19 sur les Windows 10 antérieurs à 20H1) ; un appel qui échoue rend un
+HRESULT non nul et ne casse rien. Posée sur le gestionnaire de classe `Window.Loaded` — le même que
+la langue, `Loaded` arrivant après `SourceInitialized`, donc le HWND existe — et réappliquée à toutes
+les fenêtres ouvertes à chaque bascule.
+
+> **La capture qui applique le thème avant de créer la fenêtre ne prouve rien.** L'utilisateur
+> bascule depuis les Options, donc **après** : c'est un autre chemin, et celui-là seul révèle une
+> couleur déjà résolue. `DOCKPAD_SHOT_THEME=dark-switch` reproduit ce geste dans `DialogShot`. Sans
+> cette cible, quatre allers-retours ont eu lieu où l'application montrait du texte noir que la
+> capture montrait clair.
+
+> **Une capture rendue sans le fond de sa fenêtre ment.** Les outils rendent l'*élément de contenu*,
+> qui n'a pas de fond à lui : la sortie est transparente derrière le texte, et composée sur noir par
+> la visionneuse, un titre **clair** se lit comme un titre **sombre**. Quatre diagnostics faux se sont
+> enchaînés là-dessus pendant la mise au point, chacun suivi d'un correctif inutile ; l'histogramme
+> des couleurs de la zone a tranché en une commande — le texte était à `#F0F0F0` depuis le début.
+> `DialogShot` et `UsageShot` peignent désormais `Window.Background` avant le contenu. **Devant un
+> doute sur une couleur, mesurer ; l'œil se trompe à cette échelle, et il s'est trompé cinq fois.**
+
+**Captures** : `DOCKPAD_SHOT_THEME=dark` sur les trois outils — variable d'environnement plutôt
+qu'argument, pour ne pas déplacer les arguments des cibles existantes, comme `DOCKPAD_SHOT_LANG`.
 
 ## Accessibilité
 

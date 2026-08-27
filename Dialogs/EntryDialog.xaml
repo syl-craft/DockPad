@@ -6,35 +6,35 @@
         Width="520" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="{StaticResource Brush.Surface}"
+        Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
 
     <Window.Resources>
-        <Style TargetType="TextBox">
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderStrong}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="13"/>
             <Style.Triggers>
                 <Trigger Property="IsFocused" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
-        <Style TargetType="ComboBox">
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderStrong}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
         <Style TargetType="Label">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}"/>
             <Setter Property="Padding" Value="0,0,0,4"/>
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -42,7 +42,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{StaticResource Brush.Accent}" Padding="20,14">
+        <Border Grid.Row="0" Background="{DynamicResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
                        FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
@@ -59,7 +59,7 @@
             <TextBox x:Name="TxtRegistryKey" Margin="0,0,0,4"
                      ToolTip="{loc:T Entry_RegistryKey_Tip}"/>
             <TextBlock Text="{loc:T Entry_RegistryKey_Hint}"
-                       FontSize="11" Foreground="#888" Margin="0,0,0,16"/>
+                       FontSize="11" Foreground="{DynamicResource Brush.TextHint}" Margin="0,0,0,16"/>
 
             <!-- Commande -->
             <Label Content="{loc:T Entry_Command}"/>
@@ -75,7 +75,7 @@
                         Click="BrowseCommand_Click"/>
             </Grid>
             <TextBlock Text='Utilisez &quot;%1&quot; pour passer le fichier/dossier sélectionné en argument.'
-                       FontSize="11" Foreground="#888" Margin="0,0,0,16"/>
+                       FontSize="11" Foreground="{DynamicResource Brush.TextHint}" Margin="0,0,0,16"/>
 
             <!-- Icône -->
             <Label Content="{loc:T Entry_Icon}"/>
@@ -91,13 +91,13 @@
                         Style="{StaticResource SecondaryButton}"
                         Click="BrowseIcon_Click"/>
                 <Border Grid.Column="2" Width="36" Height="36" Margin="6,0,0,0"
-                        BorderBrush="{StaticResource Brush.BorderStrong}" BorderThickness="1" CornerRadius="4"
+                        BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" CornerRadius="4"
                         SnapsToDevicePixels="True" UseLayoutRounding="True">
                     <Image x:Name="ImgIconPreview" Stretch="Uniform" Margin="4"/>
                 </Border>
             </Grid>
             <TextBlock Text="{loc:T Entry_Icon_Hint}"
-                       FontSize="11" Foreground="#888" Margin="0,0,0,16"/>
+                       FontSize="11" Foreground="{DynamicResource Brush.TextHint}" Margin="0,0,0,16"/>
 
             <!-- Cible -->
             <Label Content="{loc:T Entry_AppliesTo}"/>
@@ -110,18 +110,18 @@
 
             <!-- Note fond de dossier -->
             <Border x:Name="PanelBgNote" Visibility="Collapsed"
-                    Background="#FFF4CE" BorderBrush="#F0C519" BorderThickness="1"
+                    Background="{DynamicResource Brush.WarnSurface}" BorderBrush="{DynamicResource Brush.WarnBorder}" BorderThickness="1"
                     CornerRadius="4" Padding="12,8"
                     SnapsToDevicePixels="True" UseLayoutRounding="True">
-                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#5C4800">
+                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Brush.WarnText}">
                     Pour "Fond de dossier", la variable <Bold>%V</Bold> contient le chemin du dossier courant (et non %1).
                 </TextBlock>
             </Border>
         </StackPanel>
 
         <!-- Footer -->
-        <Border Grid.Row="2" Background="White" Padding="24,12"
-                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Background="{DynamicResource Brush.SurfaceCard}" Padding="24,12"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="{loc:T Common_Cancel}" Style="{StaticResource SecondaryButton}"
                         Margin="0,0,12,0" Click="Cancel_Click"/>

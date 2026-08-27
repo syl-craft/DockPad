@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -66,7 +67,19 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // après avoir changé la langue laissait la grille dans l'ancienne indéfiniment, puisque le
         // chemin d'annulation ne rafraîchit rien.
         Loc.LanguageChanged += OnLanguageChanged;
-        Closed += (_, _) => Loc.LanguageChanged -= OnLanguageChanged;
+
+        // Les gestionnaires de survol et de dépôt posent la couleur d'une tuile en VALEUR LOCALE
+        // (btn.Background = …), et une valeur locale bat définitivement le style et son
+        // DynamicResource : une tuile déjà survolée gardait l'ancienne couleur jusqu'au survol
+        // suivant. Republier les cellules reconstruit les boutons, donc efface ces valeurs.
+        ThemeService.ThemeChanged += OnThemeChanged;
+        // ThemeService est statique : sans désabonnement, il garderait une référence sur la fenêtre
+        // pour toute la vie du processus.
+        Closed += (_, _) =>
+        {
+            Loc.LanguageChanged -= OnLanguageChanged;
+            ThemeService.ThemeChanged -= OnThemeChanged;
+        };
 
         var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
@@ -142,6 +155,8 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// Retraduit ce que la fenêtre construit en code : les libellés liés par <c>{loc:T}</c> se
     /// mettent à jour seuls, pas les tuiles ni le badge de raccourci.
     /// </summary>
+    private void OnThemeChanged() => PopulateGrid();
+
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         UpdateHotkeyDisplay();
@@ -644,7 +659,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         var changeIcon = new MenuItem { Header = Loc.T("Quick_Tile_ChangeIcon") };
         changeIcon.Click += (_, _) => ChangeIcon(entry);
         var edit = new MenuItem { Header = Loc.T("Quick_Tile_Edit") };
-        edit.Click += (_, _) => EditTile(entry);
+        edit.Click += async (_, _) => await EditTile(entry);
         var duplicate = new MenuItem { Header = Loc.T("Quick_Tile_Duplicate") };
         duplicate.Click += (_, _) => DuplicateTile(entry);
         var delete = new MenuItem { Header = Loc.T("Quick_Tile_Delete") };
@@ -672,11 +687,19 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         menu.Items.Clear();
 
         var add = new MenuItem { Header = Loc.T("Quick_Tile_Add") };
-        add.Click += (_, _) => AddTile(cell.Row, cell.Col);
+        add.Click += async (_, _) => await AddTile(cell.Row, cell.Col);
         menu.Items.Add(add);
     }
 
-    private void AddTile(int row, int col)
+    /// <summary>
+    /// Ajoute une tuile.
+    /// </summary>
+    /// <remarks>
+    /// Asynchrone parce qu'une tuile web sans icône déclenche un téléchargement : quelques
+    /// centaines de millisecondes d'ordinaire, cinq secondes au pire si le réseau ne répond pas.
+    /// Bloquer le thread d'interface pendant ce temps figerait la grille.
+    /// </remarks>
+    private async Task AddTile(int row, int col)
     {
         var dlg = new ShortcutDialog(row: row, col: col) { Owner = this };
         if (dlg.ShowDialog() != true) return;
@@ -688,17 +711,17 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             IconPath = string.IsNullOrEmpty(dlg.Entry.IconPath) ? null : dlg.Entry.IconPath,
             Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
         };
-        var r = ShortcutActionService.Add([item]);
+        var r = await ShortcutActionService.AddAsync([item]);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
-    private void EditTile(ShortcutEntry entry)
+    private async Task EditTile(ShortcutEntry entry)
     {
         var dlg = new ShortcutDialog(entry) { Owner = this };
         if (dlg.ShowDialog() != true) return;
 
-        var r = ShortcutActionService.Update(entry.Page, entry.Row, entry.Col, new ShortcutUpdate
+        var r = await ShortcutActionService.UpdateAsync(entry.Page, entry.Row, entry.Col, new ShortcutUpdate
         {
             Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
             IconPath = dlg.Entry.IconPath, Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
@@ -860,7 +883,15 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         _                            => Loc.T("Type_Command"),
     };
 
-    private static readonly SolidColorBrush TileDefaultBackground = new(Colors.White);
+    /// <summary>
+    /// Fond d'une tuile au repos.
+    /// </summary>
+    /// <remarks>
+    /// Propriété et non champ : un <c>static readonly</c> résout la palette une fois pour toutes,
+    /// et la tuile repeinte au départ de la souris resterait blanche après un passage en thème
+    /// sombre. Le coût d'un <c>FindResource</c> par sortie de souris est nul.
+    /// </remarks>
+    private static Brush TileDefaultBackground => Palette("Brush.SurfaceCard");
 
     private void TileHover_Enter(object sender, MouseEventArgs e)
     {
@@ -976,8 +1007,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     // Ces deux-la existent deja dans la palette d'App.xaml : les redeclarer en dur, c'etait deux
     // valeurs a changer au lieu d'une le jour ou l'accent bouge. Le type n'est charge qu'une fois
     // l'Application montee, FindResource est donc sur ici.
-    private static readonly Brush DragOverBrush = Palette("Brush.Accent");
-    private static readonly Brush DefaultBorder = Palette("Brush.Border");
+    // Mêmes raisons que TileDefaultBackground : lues à chaque usage pour suivre le thème.
+    private static Brush DragOverBrush => Palette("Brush.Accent");
+    private static Brush DefaultBorder => Palette("Brush.Border");
 
     private static Brush Palette(string key) => (Brush)Application.Current.FindResource(key);
 

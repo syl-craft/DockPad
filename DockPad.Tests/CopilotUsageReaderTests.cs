@@ -232,6 +232,42 @@ public class CopilotUsageReaderTests : IDisposable
         Assert.Equal(Loc.T("Probe_NoSessionData"), probe.Detail);
     }
 
+    /// <summary>
+    /// Une date sans marqueur de fuseau est de l'UTC.
+    /// </summary>
+    /// <remarks>
+    /// C'est la convention de SQLite, celle de <c>CURRENT_TIMESTAMP</c>. Le lecteur l'a longtemps
+    /// interprétée comme de l'heure locale : chaque ligne était datée de deux heures trop tard sur
+    /// un poste à UTC+2, et celles écrites en fin de journée UTC basculaient au lendemain. Le seul
+    /// test qui le voyait ne tombait qu'entre minuit et deux heures du matin — d'où ce garde-ci,
+    /// qui ne dépend ni de l'heure ni du fuseau de la machine.
+    /// </remarks>
+    [Fact]
+    public void ParseTimestamp_SansFuseau_EstDeLUtc()
+    {
+        var expected = new DateTimeOffset(2026, 8, 26, 22, 4, 27, TimeSpan.Zero).LocalDateTime;
+
+        Assert.Equal(expected, CopilotUsageReader.ParseTimestamp("2026-08-26 22:04:27"));
+    }
+
+    [Theory]
+    [InlineData("2026-08-26T22:04:27Z")]
+    [InlineData("2026-08-26T23:04:27+01:00")]
+    [InlineData("2026-08-26T21:04:27-01:00")]
+    public void ParseTimestamp_AvecFuseau_LeRespecte(string raw)
+    {
+        var expected = new DateTimeOffset(2026, 8, 26, 22, 4, 27, TimeSpan.Zero).LocalDateTime;
+
+        Assert.Equal(expected, CopilotUsageReader.ParseTimestamp(raw));
+    }
+
+    [Theory]
+    [InlineData("pas une date")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void ParseTimestamp_ValeurInexploitable_RendNull(string? raw)
+        => Assert.Null(CopilotUsageReader.ParseTimestamp(raw));
+
     [Fact]
     public async Task ReadAsync_NiQuotaNiCout()
     {
