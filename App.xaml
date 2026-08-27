@@ -50,6 +50,8 @@
             </Style>
             <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
                 <Setter Property="Background" Value="{DynamicResource Brush.DangerStrong}"/>
+                <!-- Blanc dans les deux themes : c'est du texte pose SUR le rouge. -->
+                <Setter Property="Foreground" Value="White"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="{DynamicResource Brush.DangerHover}"/>

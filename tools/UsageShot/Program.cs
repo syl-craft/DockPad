@@ -77,9 +77,15 @@ internal static class Program
 
         // Theme de capture : une variable d'environnement plutot qu'un argument, pour ne pas
         // deplacer les arguments des cibles existantes — comme DOCKPAD_SHOT_LANG.
-        DockPad.Services.ThemeService.Apply(
-            string.Equals(Environment.GetEnvironmentVariable("DOCKPAD_SHOT_THEME"),
-                          "dark", StringComparison.OrdinalIgnoreCase));
+        //
+        // « dark-switch » bascule APRES construction, comme le fait l'utilisateur depuis les
+        // Options. C'est un autre chemin que « dark », et le seul qui revele une couleur deja
+        // resolue.
+        var themeEnv = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_THEME") ?? "";
+        _switchAfterBuild = string.Equals(themeEnv, "dark-switch", StringComparison.OrdinalIgnoreCase);
+        if (!_switchAfterBuild)
+            DockPad.Services.ThemeService.Apply(
+                string.Equals(themeEnv, "dark", StringComparison.OrdinalIgnoreCase));
 
         // Langue de la capture : variable d'environnement plutot qu'un argument, pour ne pas
         // deplacer les arguments existants des cibles.
@@ -525,8 +531,22 @@ internal static class Program
 
     /// <summary>Rend un élément en PNG. Le DPI vient de VisualTreeHelper : PresentationSource
     /// est nul dans ce contexte hébergé.</summary>
+    /// <summary>Basculer le theme APRES construction, comme le fait l'utilisateur.</summary>
+    private static bool _switchAfterBuild;
+
     private static void Save(Visual visual, double width, double height, string outPath, string target)
     {
+        if (_switchAfterBuild)
+        {
+            DockPad.Services.ThemeService.Apply(dark: true);
+            if (visual is FrameworkElement element)
+            {
+                element.Measure(new Size(width, height));
+                element.Arrange(new Rect(0, 0, width, height));
+                element.UpdateLayout();
+            }
+        }
+
         double scale = VisualTreeHelper.GetDpi(visual).DpiScaleX;
         var rtb = new RenderTargetBitmap(
             (int)Math.Ceiling(width * scale), (int)Math.Ceiling(height * scale),

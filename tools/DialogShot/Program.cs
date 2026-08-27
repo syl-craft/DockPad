@@ -39,7 +39,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|bindings|grid> <fr|en> <chemin.png>");
+            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|bindings|grid> <fr|en> <chemin.png>");
             return;
         }
 
@@ -116,6 +116,10 @@ internal static class Program
             "ctxmenu" => new ContextMenuManagerWindow(),
             "presets" => new PresetsDialog(),
             "mcp" => new McpConfigDialog(),
+            // Trois fenetres n'avaient aucune couverture de capture : celles d'ajout/modification
+            // d'une tuile et d'une entree de registre. Un defaut de couleur y serait passe inapercu.
+            "shortcut" => new ShortcutDialog(row: 0, col: 0),
+            "entry" => new EntryDialog(),
             _ => throw new ArgumentException($"fenêtre inconnue : {target}"),
         };
 
@@ -141,6 +145,8 @@ internal static class Program
             ("ContextMenuManagerWindow", () => new ContextMenuManagerWindow()),
             ("PresetsDialog", () => new PresetsDialog()),
             ("McpConfigDialog", () => new McpConfigDialog()),
+            ("ShortcutDialog", () => new ShortcutDialog(row: 0, col: 0)),
+            ("EntryDialog", () => new EntryDialog()),
             ("UsageConfigDialog", () => new UsageConfigDialog()),
             ("BrowserConfigDialog", () => new BrowserConfigDialog()),
         };

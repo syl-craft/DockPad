@@ -105,6 +105,7 @@
 
         <!-- Un onglet de fournisseur. Bouton plat : cliquable, sans chrome de bouton. -->
         <Style x:Key="ProviderTab" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Margin" Value="0,0,4,0"/>
             <Setter Property="Cursor" Value="Hand"/>

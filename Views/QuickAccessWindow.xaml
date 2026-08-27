@@ -22,6 +22,10 @@
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
+            <!-- Sans ce Foreground, le nom de la tuile est NOIR en theme sombre : un Button est un
+                 Control, son style de theme pose un Foreground noir, et un setter de style bat
+                 l'heritage. C'est la meme cause que pour les lignes de liste. -->
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
