@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.12.0] — 2026-08-27
+
+### Nouveautés utilisateur
+
+#### Thème clair et sombre
+- DockPad a un **thème sombre**. Le choix se fait dans ☰ → Paramètres → **Thème** : `Automatique (Windows)`, `Clair` ou `Sombre`
+- **Automatique suit Windows en direct** : basculer Windows en sombre change DockPad sur le champ, sans redémarrer. Un choix explicite, lui, ne bouge plus — c'est le tien
+- La **barre de titre** des fenêtres devient sombre elle aussi ; Windows ne la peint pas tout seul
+- Bascule immédiate, toutes fenêtres ouvertes comprises
+
+#### Icône automatique des tuiles web
+- À l'enregistrement d'une tuile **web sans icône**, DockPad va chercher celle du site — même geste que l'icône d'un `.exe` pour les autres types, qui existait déjà
+- **Seul le domaine quitte ta machine.** Ni le chemin ni les paramètres de l'adresse ne sont envoyés : un identifiant de projet ou un numéro de client dans une URL interne reste chez toi
+- Réglable dans ☰ → Paramètres → **Réseau**, coché par défaut. Décoché, aucune requête ne part
+- Hors ligne, site injoignable, proxy d'entreprise : la tuile garde l'icône du navigateur, comme avant. Une icône manquante n'est pas une erreur et ne s'affiche pas comme telle
+
+#### Les options rejoignent le dossier de configuration
+- Langue, thème, raccourci clavier, modificateurs des tuiles et arguments Claude vivaient dans le registre Windows. Ils sont maintenant dans `%APPDATA%\DockPad\settings.json`, avec les autres configs — donc **inclus dans 💾 Sauvegarder la configuration**, et emportés par un profil portable (`DOCKPAD_PROFILE_DIR`), ce que le registre ne permettait pas
+- **La reprise est automatique et ne perd rien** : au premier démarrage, tes réglages sont relus du registre et écrits dans le fichier. **Le registre n'est pas effacé** — revenir à une version antérieure les retrouve
+- Le **démarrage avec Windows** y reste, et c'est la seule exception : cette clé est lue par Windows, pas par DockPad
+
+### Corrections
+- **Consommation Copilot décalée de deux heures.** Les horodatages de sa base sont en UTC sans le dire, et étaient lus comme de l'heure locale : sur un poste à UTC+2, les appels de fin de journée basculaient au lendemain. Le seul test qui le voyait ne pouvait échouer qu'entre minuit et 2 h du matin
+
+### Notes
+- **Les cases à cocher et les listes déroulantes changent d'aspect, aussi en thème clair.** Elles passent de l'habillage Windows au plat, qui est déjà celui de tout le reste de l'application — boutons, onglets, menus, tuiles — dont elles étaient les deux seules exceptions. C'était le prix pour qu'elles suivent le thème : leur habillage d'origine ignore les couleurs qu'on leur donne
+- Le reste du thème clair est **inchangé au pixel près**, vérifié fenêtre par fenêtre
+
 ## [1.11.1] — 2026-08-25
 
 ### Corrections
