@@ -58,6 +58,7 @@ public static class ConfigBackup
     /// <summary>Les cinq configurations du profil, dans l'ordre où elles apparaissent à l'écran.</summary>
     public static string[] ProfileFiles() =>
     [
+        AppSettingsService.FilePath,
         ShortcutService.FilePath,
         PageConfigService.FilePath,
         BrowserConfigService.FilePath,

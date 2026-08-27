@@ -17,7 +17,7 @@
             <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
-        <Style TargetType="GridViewColumnHeader">
+        <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
             <Setter Property="Background" Value="{DynamicResource Brush.Separator}"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Brush.SeparatorStrong}"/>
@@ -53,7 +53,7 @@
                 <TextBlock Text="{loc:T CtxMenu_Heading}" FontSize="18"
                            FontWeight="SemiBold" Foreground="White"/>
                 <TextBlock Text="{loc:T CtxMenu_Subtitle}"
-                           FontSize="12" Foreground="{DynamicResource Brush.AccentBorderSoft}" Margin="0,4,0,0"/>
+                           FontSize="12" Foreground="{DynamicResource Brush.OnAccentMuted}" Margin="0,4,0,0"/>
             </StackPanel>
         </Border>
 

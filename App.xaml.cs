@@ -39,6 +39,11 @@ public partial class App : Application
         // ultérieur serait bien vu — mais le démarrage clignoterait en clair avant de basculer.
         Services.ThemeService.ApplyFromSettings();
 
+        // « Automatique » doit suivre Windows en cours de route, pas seulement au démarrage.
+        // Le désabonnement a lieu dans OnExit : App masque l'événement Exit par une méthode
+        // statique du même nom.
+        Services.ThemeService.StartFollowingSystem();
+
         // Filets de sécurité : une exception non gérée ne doit pas tuer l'app résidente
         // (systray + hotkey). Tracée dans %APPDATA%\DockPad\logs\ + dialog d'erreur.
         DispatcherUnhandledException += (_, args) =>
@@ -135,6 +140,8 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // SystemEvents garde une référence statique sur l'abonné.
+        Services.ThemeService.StopFollowingSystem();
         _trayIcon?.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
@@ -207,7 +214,13 @@ public partial class App : Application
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
             new RoutedEventHandler((sender, _) =>
             {
-                if (sender is Window window) window.Language = CurrentXmlLanguage();
+                if (sender is not Window window) return;
+
+                window.Language = CurrentXmlLanguage();
+                // Même point d'accroche pour la barre de titre : WPF ne la peint pas, elle
+                // appartient au gestionnaire de fenêtres et resterait claire sur un contenu sombre.
+                // Loaded arrive après SourceInitialized, le HWND existe donc.
+                Services.ThemeService.ApplyTitleBar(window);
             }));
 
         // Les fenêtres déjà ouvertes au moment de la bascule : le gestionnaire ci-dessus ne les

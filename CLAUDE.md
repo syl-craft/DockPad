@@ -40,6 +40,7 @@ Models/
     PageConfig.cs                        Config par page (icône du bouton de pagination + IconProfilePath)
     PresetEntry.cs                       Modèle preset avec enum PresetStatus
     ProcessSwitchConfig.cs               Config SwitchToProcess (processName, executable, parameters)
+    AppSettings.cs                        Contenu de settings.json (langue, thème, raccourci, options)
     ShortcutAddItem.cs                    Item du lot dockpad_shortcut_add (position optionnelle)
     ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath, iconProfilePath)
     ShortcutUpdate.cs                     Champs modifiables par dockpad_shortcut_update (null = inchangé)
@@ -98,7 +99,8 @@ Services/
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
-    ThemeService.cs                       Thème clair/sombre : décision pure + remplacement de la palette
+    AppSettingsService.cs                 Load/Save settings.json + reprise des options restées dans le registre
+    ThemeService.cs                       Thème clair/sombre : décision pure, suivi de Windows, barre de titre
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     UrlPipeService.cs                    Named pipe DockPad_UrlPipe — serveur (instance principale) / client (instance relais)
     UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
@@ -695,6 +697,45 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
 - Une entrée dont l'`id` est inconnu du registre est **conservée telle quelle** : un retour arrière de version ne perd ni masquage ni ordre
 - Stocké dans `%APPDATA%\DockPad\usage.json`, inclus dans la sauvegarde de configuration
 
+## Options de l'application (settings.json)
+
+Les options vivaient dans `HKCU\Software\DockPad\Settings`. Elles ont rejoint les autres configs du
+profil : `%APPDATA%\DockPad\settings.json`, lisible, sauvegardable, et qui **suit
+`DOCKPAD_PROFILE_DIR`** — ce que le registre ne permettait pas, donc un profil portable ne les
+emportait pas.
+
+```json
+{
+  "language": "en",
+  "theme": "Dark",
+  "triggerFirst": "Ctrl",
+  "triggerSecond": "Shift",
+  "claudeArgs": "--enable-auto-mode",
+  "autoFavicon": true,
+  "hotkeyModifiers": 1,
+  "hotkeyKey": 32
+}
+```
+
+- **Le démarrage automatique reste dans le registre**, et c'est la seule exception : la clé `Run` est
+  lue par Windows, pas par DockPad. Elle n'a pas d'équivalent en fichier
+- **Reprise automatique au premier démarrage** : fichier absent → les valeurs sont relues du registre,
+  écrites dans le fichier, et **le registre n'est pas effacé**. Un retour à une version antérieure
+  retrouve ses réglages. Le fichier fait autorité dès qu'il existe
+- **Le lecteur de registre est un paramètre** de `LoadFrom`/`FromRegistry` : la reprise se vérifie
+  sans toucher aux réglages de la machine, et sans dépendre de ce qu'elle contient au moment du test
+- **Chaque défaut vit dans le modèle**, pas au point de lecture : une clé absente doit donner le
+  comportement attendu. Le piège serait qu'un fichier sans `autoFavicon` le lise comme « décoché » —
+  `System.Text.Json` laisse l'initialiseur en place, et un test le fixe
+- **Une valeur de registre du mauvais type est ignorée**, pas fatale : un `Language` numérique ne doit
+  pas faire perdre les sept autres réglages
+- **Les options sont gardées en mémoire** : `LoadLanguage` et consorts sont appelés à chaque
+  construction de fenêtre et à chaque changement de langue. Ce fichier n'est écrit que par cette
+  application, un cache est donc sûr — `Invalidate()` existe pour les tests
+- `SettingsService` et `ThemeService.LoadSetting` sont devenus des **façades** : leur API n'a pas
+  changé, la vingtaine d'appelants n'a pas bougé
+- Inclus dans **💾 Sauvegarder la configuration**
+
 ## Fenêtres de config — pattern commun
 
 Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) suit le même patron — **jamais de hauteur fixe sans clamp** (une hauteur codée en dur finit clippée quand le contenu grandit, ou déborde d'un écran 768p) :
@@ -952,6 +993,44 @@ dur. Constaté au pixel : `#EAEAEA` et `#B5B5B5` inchangés en thème sombre. Il
   liste affichait `LanguageChoice { Tag = , Label = … }` au lieu du libellé, **dans les deux
   thèmes**. Il faut une liaison complète (`{Binding …, RelativeSource={RelativeSource
   TemplatedParent}}`), qui, elle, suit les changements
+
+### Ce qu'un contrôle standard ignore
+`CheckBox`, `ComboBox` et `GridViewColumnHeader` **n'obéissent pas** à `Background` : leurs gabarits
+Aero2 dessinent leur propre habillage. Mesuré et non supposé — `#EAEAEA` et `#B5B5B5` inchangés en
+thème sombre après avoir posé les trois propriétés. Ils sont donc retemplatés.
+
+`ScrollBar` et `ToolTip` **n'apparaissent dans aucun XAML** : la première vit dans chaque
+`ScrollViewer`, la seconde est engendrée par chaque attribut `ToolTip=`. Sans style, elles restent
+claires — c'est le genre d'oubli qu'un inventaire des balises ne trouve pas.
+
+**`Brush.OnAccentMuted` a la même valeur dans les deux thèmes** (`#B3D9F7`), pour la même raison que
+`Foreground="White"` reste littéral : c'est du texte posé **sur** l'accent bleu, pas sur un fond de
+fenêtre. Le sous-titre du gestionnaire de menu contextuel utilisait `Brush.AccentBorderSoft`, pâle en
+clair et sombre en sombre — donc illisible sur le bleu une fois le thème sombre actif.
+
+### Suivre Windows à chaud
+`SystemEvents.UserPreferenceChanged`, catégorie `General`. Sans lui, « Automatique » ne se décidait
+qu'au démarrage.
+
+- **L'événement arrive sur un thread à lui**, pas celui de l'interface : appliquer le thème
+  directement lèverait une exception d'affinité. D'où le passage par le `Dispatcher`
+- **Un choix explicite ne bouge pas** : `FollowsSystem(setting)` filtre, sinon basculer Windows en
+  sombre écraserait le « Clair » de l'utilisateur. Fonction pure, testée aux six valeurs qui comptent
+- `SystemEvents` garde une référence **statique** sur l'abonné : désabonnement dans `OnExit`
+
+### Barre de titre
+WPF ne peint pas la barre de titre — elle appartient au gestionnaire de fenêtres et reste claire sur
+un contenu sombre. `DwmSetWindowAttribute` avec `DWMWA_USE_IMMERSIVE_DARK_MODE`, **deux numéros
+d'attribut essayés** (20, puis 19 sur les Windows 10 antérieurs à 20H1) ; un appel qui échoue rend un
+HRESULT non nul et ne casse rien. Posée sur le gestionnaire de classe `Window.Loaded` — le même que
+la langue, `Loaded` arrivant après `SourceInitialized`, donc le HWND existe — et réappliquée à toutes
+les fenêtres ouvertes à chaque bascule.
+
+> **La capture qui applique le thème avant de créer la fenêtre ne prouve rien.** L'utilisateur
+> bascule depuis les Options, donc **après** : c'est un autre chemin, et celui-là seul révèle une
+> couleur déjà résolue. `DOCKPAD_SHOT_THEME=dark-switch` reproduit ce geste dans `DialogShot`. Sans
+> cette cible, quatre allers-retours ont eu lieu où l'application montrait du texte noir que la
+> capture montrait clair.
 
 > **Une capture rendue sans le fond de sa fenêtre ment.** Les outils rendent l'*élément de contenu*,
 > qui n'a pas de fond à lui : la sortie est transparente derrière le texte, et composée sur noir par

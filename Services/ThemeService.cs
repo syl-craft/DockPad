@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using Microsoft.Win32;
 
 namespace DockPad.Services;
@@ -21,8 +23,6 @@ namespace DockPad.Services;
 /// </remarks>
 public static class ThemeService
 {
-    private const string RegPath = @"Software\DockPad\Settings";
-
     /// <summary>Clé où Windows range son propre choix pour les applications.</summary>
     private const string SystemThemeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
 
@@ -70,17 +70,101 @@ public static class ThemeService
         }
     }
 
-    /// <summary>Réglage stocké, vide pour « suivre Windows ».</summary>
-    public static string LoadSetting()
+    /// <summary>
+    /// Réglage stocké, vide pour « suivre Windows ».
+    /// </summary>
+    /// <remarks>
+    /// Dans <c>settings.json</c> avec les autres options. Le thème de <b>Windows</b>, lui, se lit
+    /// bien dans le registre — c'est Windows qui l'y écrit, voir <see cref="SystemIsDark"/>.
+    /// </remarks>
+    public static string LoadSetting() => AppSettingsService.Current.Theme;
+
+    public static void SaveSetting(string setting) =>
+        AppSettingsService.Update(s => s.Theme = setting);
+
+
+    /// <summary>
+    /// Le reglage laisse-t-il Windows decider ?
+    /// </summary>
+    /// <remarks>
+    /// Decision pure, extraite pour la meme raison que <see cref="IsDark"/> : un choix explicite
+    /// doit rester insensible a un changement de theme de Windows, et c'est le genre de regle qui
+    /// se verifie sans monter WPF.
+    /// </remarks>
+    public static bool FollowsSystem(string? setting) =>
+        IsDark(setting, systemIsDark: true) != IsDark(setting, systemIsDark: false);
+
+    /// <summary>
+    /// Ecoute les changements de theme de Windows.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Sans cela, « Automatique » ne se decidait qu'au demarrage : basculer Windows en sombre
+    /// laissait DockPad en clair jusqu'au prochain lancement.
+    /// </para>
+    /// <para>
+    /// <b>L'evenement arrive sur un thread a lui</b>, pas sur celui de l'interface : appliquer le
+    /// theme directement leverait une exception d'affinite de thread. D'ou le passage par le
+    /// Dispatcher.
+    /// </para>
+    /// </remarks>
+    public static void StartFollowingSystem()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RegPath);
-        return key?.GetValue("Theme") as string ?? "";
+        SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
 
-    public static void SaveSetting(string setting)
+    public static void StopFollowingSystem()
     {
-        using var key = Registry.CurrentUser.CreateSubKey(RegPath);
-        key.SetValue("Theme", setting, RegistryValueKind.String);
+        SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+    }
+
+    private static void OnUserPreferenceChanged(object? sender, UserPreferenceChangedEventArgs e)
+    {
+        // La categorie General couvre le passage clair/sombre de Windows.
+        if (e.Category != UserPreferenceCategory.General) return;
+        if (!FollowsSystem(LoadSetting())) return;
+
+        var dark = SystemIsDark();
+        if (dark == CurrentIsDark) return;
+
+        Application.Current?.Dispatcher.Invoke(() => Apply(dark));
+    }
+
+    // ───────────── Barre de titre ─────────────
+
+    private const int DwmUseImmersiveDarkMode = 20;
+
+    /// <summary>Ancienne valeur de l'attribut, sur les Windows 10 anterieurs a 20H1.</summary>
+    private const int DwmUseImmersiveDarkModeLegacy = 19;
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    /// <summary>
+    /// Met la barre de titre d'une fenetre au theme courant.
+    /// </summary>
+    /// <remarks>
+    /// WPF ne peint pas la barre de titre : elle appartient au gestionnaire de fenetres, et reste
+    /// donc claire meme quand tout le contenu est sombre. Les deux numeros d'attribut sont essayes
+    /// parce que Windows 10 a change le sien en 20H1 ; un appel qui echoue rend un HRESULT non nul
+    /// et ne casse rien. La fenetre principale n'a pas de chrome, mais les dialogues en ont une.
+    /// </remarks>
+    public static void ApplyTitleBar(Window window)
+    {
+        if (PresentationSource.FromVisual(window) is not HwndSource source) return;
+
+        int value = CurrentIsDark ? 1 : 0;
+        if (DwmSetWindowAttribute(source.Handle, DwmUseImmersiveDarkMode, ref value, sizeof(int)) != 0)
+            DwmSetWindowAttribute(source.Handle, DwmUseImmersiveDarkModeLegacy, ref value, sizeof(int));
+    }
+
+    /// <summary>Met a jour la barre de titre de toutes les fenetres ouvertes.</summary>
+    private static void ApplyTitleBarToAll()
+    {
+        if (Application.Current is not { } app) return;
+
+        foreach (Window window in app.Windows)
+            ApplyTitleBar(window);
     }
 
     /// <summary>Applique le thème que dit le réglage courant.</summary>
@@ -107,11 +191,15 @@ public static class ThemeService
             UriKind.Absolute);
         var palette = new ResourceDictionary { Source = source };
 
+        // Vérifié : l'affectation par l'indexeur suffit, les fenêtres déjà construites suivent —
+        // les références étant en DynamicResource. Mesuré par la cible « dark-switch » de
+        // DialogShot, qui bascule APRÈS construction comme le fait l'utilisateur.
         var merged = app.Resources.MergedDictionaries;
         if (merged.Count == 0) merged.Add(palette);
         else merged[0] = palette;
 
         CurrentIsDark = dark;
+        ApplyTitleBarToAll();
         ThemeChanged?.Invoke();
     }
 }

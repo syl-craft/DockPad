@@ -3,6 +3,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Brush = System.Windows.Media.Brush;
+using Application = System.Windows.Application;
+using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using System.Windows.Media.Imaging;
 using DockPad;
 using DockPad.Services;
@@ -56,9 +58,15 @@ internal static class Program
 
         // Theme de capture : une variable d'environnement plutot qu'un argument, pour ne pas
         // deplacer les arguments des cibles existantes — comme DOCKPAD_SHOT_LANG.
-        DockPad.Services.ThemeService.Apply(
-            string.Equals(Environment.GetEnvironmentVariable("DOCKPAD_SHOT_THEME"),
-                          "dark", StringComparison.OrdinalIgnoreCase));
+        //
+        // « dark-switch » reproduit le geste de l'utilisateur : basculer depuis les Options, donc
+        // APRES que la fenetre existe. Ce n'est pas le meme chemin que « dark », qui applique le
+        // theme avant toute fenetre — et une couleur deja resolue ne suivrait pas.
+        var themeEnv = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_THEME") ?? "";
+        _switchAfterBuild = string.Equals(themeEnv, "dark-switch", StringComparison.OrdinalIgnoreCase);
+        if (!_switchAfterBuild)
+            DockPad.Services.ThemeService.Apply(
+                string.Equals(themeEnv, "dark", StringComparison.OrdinalIgnoreCase));
 
 
         // Loc.Parse rend null sur une etiquette inconnue, ce qui vaudrait « automatique » et
@@ -167,6 +175,9 @@ internal static class Program
         return 1;
     }
 
+    /// <summary>Basculer le theme APRES construction, comme le fait l'utilisateur.</summary>
+    private static bool _switchAfterBuild;
+
     private static void Render(Window window, string outPath, string target, string lang)
     {
         // La largeur vient de la fenêtre ; la hauteur de la mesure, ces fenêtres étant en
@@ -179,6 +190,21 @@ internal static class Program
         double height = 0;
         for (var pass = 0; pass < 2; pass++)
         {
+            root.Measure(new System.Windows.Size(width, double.PositiveInfinity));
+            height = root.DesiredSize.Height;
+            root.Arrange(new Rect(0, 0, width, height));
+            root.UpdateLayout();
+        }
+
+        if (_switchAfterBuild)
+        {
+            var res = Application.Current.Resources;
+            Console.WriteLine($"  avant : Brush.Text = {(res["Brush.Text"] as SolidColorBrush)?.Color}, "
+                              + $"{res.MergedDictionaries.Count} dictionnaire(s)");
+            DockPad.Services.ThemeService.Apply(dark: true);
+            Console.WriteLine($"  apres : Brush.Text = {(res["Brush.Text"] as SolidColorBrush)?.Color}");
+            foreach (var d in res.MergedDictionaries)
+                Console.WriteLine($"     - {d.Source}");
             root.Measure(new System.Windows.Size(width, double.PositiveInfinity));
             height = root.DesiredSize.Height;
             root.Arrange(new Rect(0, 0, width, height));

@@ -52,6 +52,23 @@ public class ThemeTests
     public void IsDark_InsensibleALaCasse(string setting)
         => Assert.True(ThemeService.IsDark(setting, systemIsDark: false));
 
+    /// <summary>
+    /// Un choix explicite doit rester insensible à un changement de thème de Windows.
+    /// </summary>
+    /// <remarks>
+    /// C'est ce qui décide si l'écoute de <c>UserPreferenceChanged</c> doit réagir : sans ce
+    /// filtre, basculer Windows en sombre écraserait le choix « Clair » de l'utilisateur.
+    /// </remarks>
+    [Theory]
+    [InlineData("", true)]
+    [InlineData("   ", true)]
+    [InlineData("valeur inconnue", true)]
+    [InlineData("Light", false)]
+    [InlineData("Dark", false)]
+    [InlineData("dark", false)]
+    public void FollowsSystem_VraiSeulementSansChoixExplicite(string setting, bool expected)
+        => Assert.Equal(expected, ThemeService.FollowsSystem(setting));
+
     // ---------------------------------------------------------------- parité des dictionnaires
 
     /// <summary>

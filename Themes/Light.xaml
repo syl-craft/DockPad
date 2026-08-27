@@ -60,4 +60,5 @@
     <SolidColorBrush x:Key="Brush.DangerHover" Color="#A80000"/>   <!-- bouton de suppression au survol -->
     <SolidColorBrush x:Key="Brush.DangerPressed" Color="#7A0000"/>   <!-- bouton de suppression enfonce -->
     <SolidColorBrush x:Key="Brush.SurfacePressed" Color="#C8C8C8"/>   <!-- bouton secondaire enfonce -->
+    <SolidColorBrush x:Key="Brush.OnAccentMuted" Color="#B3D9F7"/>   <!-- texte attenue POSE SUR l'accent : pale dans les deux themes -->
 </ResourceDictionary>
