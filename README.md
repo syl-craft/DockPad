@@ -7,6 +7,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Grille de tuiles** multi-pages (4 × 6) avec raccourci clavier global configurable
 - **Types de raccourcis** : lancer une commande, ouvrir un dossier, URL, terminal, basculer vers un processus
 - **Drag & drop** depuis l'Explorateur Windows (dossier → OpenFolder, fichier .url → OpenUrl)
+- **Thème clair et sombre**, lié à Windows ou choisi — bascule immédiate, barre de titre comprise
 - **Français et anglais**, avec bascule immédiate depuis les Options — aucun redémarrage, les fenêtres ouvertes se retraduisent. Par défaut DockPad suit la langue de Windows
 - **Verrou du déplacement des tuiles** : un bouton de la toolbar (🔒 → ✓) ouvre la réorganisation, pour qu'un clic manqué ne déplace pas la tuile qu'on voulait lancer. Ranger la fenêtre repose le verrou
 - **Barre de recherche** globale avec navigation clavier
@@ -20,7 +21,43 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
 
-![DockPad en anglais](docs/screenshots/window-en.png)
+![La fenêtre d'accès rapide](docs/screenshots/window-fr.png)
+
+## Thème clair et sombre
+
+☰ → Paramètres → **Thème** : `Automatique (Windows)`, `Clair` ou `Sombre`.
+
+| Clair | Sombre |
+|---|---|
+| ![La fenêtre en thème clair](docs/screenshots/window-fr.png) | ![La fenêtre en thème sombre](docs/screenshots/window-dark.png) |
+
+- **`Automatique` suit Windows en direct** : basculer Windows en sombre change DockPad sur le champ, sans redémarrer. Un choix explicite, lui, ne bouge plus
+- **La barre de titre suit aussi** — Windows ne la peint pas de lui-même
+- La bascule s'applique aux **fenêtres déjà ouvertes**
+
+Le bandeau Usage IA et les fenêtres de configuration suivent le thème, listes et champs compris :
+
+| Bandeau Usage IA | Fenêtre Navigateurs |
+|---|---|
+| ![Le bandeau Usage IA en thème sombre](docs/screenshots/usage-panel-dark.png) | ![La fenêtre Navigateurs en thème sombre](docs/screenshots/browser-config-dark.png) |
+
+> Les cases à cocher et les listes déroulantes ont changé d'aspect **dans les deux thèmes** : elles
+> sont passées de l'habillage Windows au plat, déjà celui du reste de l'application. C'était le prix
+> pour qu'elles suivent le thème — leur habillage d'origine ignore les couleurs qu'on leur donne.
+
+## Français et anglais
+
+☰ → Paramètres → **Langue** : `Automatique (Windows)`, `Français` ou `English`. Par défaut DockPad
+suit la langue de Windows, et retombe sur l'anglais si elle n'est pas traduite.
+
+| Français | English |
+|---|---|
+| ![DockPad en français](docs/screenshots/window-fr.png) | ![DockPad en anglais](docs/screenshots/window-en.png) |
+
+- **Bascule immédiate**, sans redémarrer : les fenêtres ouvertes se retraduisent sous les yeux, la grille derrière et son bandeau compris
+- **Les nombres et les heures suivent** : `12,4k` et `11h54` en français, `12.4k` et `11:54` en anglais
+- **Les pluriels sont justes**, y compris là où les deux langues ne basculent pas au même endroit : « 0 règle » mais « 0 rules »
+- **Les libellés du menu clic droit de Windows** sont traduits ; les entrées déjà posées se mettent à jour depuis la fenêtre **Prédéfinis**
 
 ## Sélecteur de navigateur
 
