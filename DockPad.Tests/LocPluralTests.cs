@@ -45,7 +45,9 @@ public class LocPluralTests
         // Ce test le ramène à la suite de tests : une accolade non fermée échoue ici, pas à l'écran.
         var fautives = new List<string>();
 
-        foreach (var langue in new[] { "en", "fr" })
+        // qps-Ploc incluse : ses valeurs sont engendrees par substitution de glyphes, et c'est
+        // exactement le genre de traitement qui peut abimer une accolade sans qu'on le voie.
+        foreach (var langue in new[] { "en", "fr", "qps-Ploc" })
         {
             foreach (var (key, value) in Loc.AllEntries(CultureInfo.GetCultureInfo(langue)))
             {

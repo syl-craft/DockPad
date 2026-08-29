@@ -54,6 +54,17 @@ public sealed class Loc : INotifyPropertyChanged
     /// </remarks>
     private static readonly CultureInfo SystemCulture = CultureInfo.CurrentUICulture;
 
+    /// <summary>
+    /// Pseudo-locale de la langue « 1337 ».
+    /// </summary>
+    /// <remarks>
+    /// <c>qps-Ploc</c> est la pseudo-locale que Windows prévoit pour ce genre d'usage, et la
+    /// <b>seule</b> étiquette qui donne une culture distincte : essayées, <c>fr-x-1337</c> retombe
+    /// silencieusement sur <c>fr</c> et <c>x-leet</c> sur la culture invariante — deux langues qu'on
+    /// ne pourrait plus distinguer de leur original.
+    /// </remarks>
+    public static readonly CultureInfo Pseudo = CultureInfo.GetCultureInfo("qps-Ploc");
+
     private static readonly ResourceManager Resources =
         new("DockPad.Resources.Strings", typeof(Loc).Assembly);
 
@@ -70,6 +81,20 @@ public sealed class Loc : INotifyPropertyChanged
 
     /// <summary>Culture d'affichage courante. Jamais nulle : « automatique » est déjà résolu.</summary>
     public static CultureInfo Current { get; private set; } = Resolve(null);
+
+    /// <summary>
+    /// Culture des <b>règles</b> : pluriels, listes, nombres et heures.
+    /// </summary>
+    /// <remarks>
+    /// Elle se sépare de <see cref="Current"/> pour la pseudo-langue seulement. Le texte « 1337 »
+    /// est du <b>français aux glyphes substitués</b> : sa grammaire est donc française, et
+    /// SmartFormat n'a de toute façon aucune règle de pluriel pour <c>qps</c> — son formateur étant
+    /// réglé sur « lever plutôt que passer inaperçu », les quarante-deux gabarits auraient échoué.
+    /// </remarks>
+    public static CultureInfo Formatting =>
+        Current.TwoLetterISOLanguageName == Pseudo.TwoLetterISOLanguageName
+            ? CultureInfo.GetCultureInfo("fr")
+            : Current;
 
     /// <summary>Levé après un changement de langue, pour les rares vues sans liaison.</summary>
     public static event EventHandler? LanguageChanged;
@@ -100,7 +125,7 @@ public sealed class Loc : INotifyPropertyChanged
         {
             // La culture est passée explicitement : Formatter.Format() sans culture prendrait celle
             // du thread, qui peut différer pendant une bascule.
-            return Formatter.Format(Current, template, args);
+            return Formatter.Format(Formatting, template, args);
         }
         catch (Exception)
         {
@@ -123,7 +148,7 @@ public sealed class Loc : INotifyPropertyChanged
         try
         {
             var culture = CultureInfo.GetCultureInfo(tag.Trim());
-            return culture.TwoLetterISOLanguageName is "fr" or "en" ? culture : null;
+            return culture.TwoLetterISOLanguageName is "fr" or "en" or "qps" ? culture : null;
         }
         catch (CultureNotFoundException)
         {
@@ -144,10 +169,13 @@ public sealed class Loc : INotifyPropertyChanged
     {
         Current = Resolve(culture);
 
+        // UICulture choisit le FICHIER de ressources, Culture choisit les RÈGLES. Les deux ne
+        // coïncident pas pour la pseudo-langue : ses textes sont dans qps-Ploc, sa grammaire est
+        // française.
         CultureInfo.CurrentUICulture = Current;
-        CultureInfo.CurrentCulture = Current;
+        CultureInfo.CurrentCulture = Formatting;
         CultureInfo.DefaultThreadCurrentUICulture = Current;
-        CultureInfo.DefaultThreadCurrentCulture = Current;
+        CultureInfo.DefaultThreadCurrentCulture = Formatting;
 
         Instance.PropertyChanged?.Invoke(Instance, new PropertyChangedEventArgs(IndexerName));
         LanguageChanged?.Invoke(null, EventArgs.Empty);
@@ -183,7 +211,10 @@ public sealed class Loc : INotifyPropertyChanged
     private static CultureInfo Resolve(CultureInfo? culture)
     {
         var candidate = culture ?? SystemCulture;
-        return candidate.TwoLetterISOLanguageName is "fr" or "en" ? candidate : Neutral;
+        // « qps » est la pseudo-langue : elle a son satellite, elle est donc une langue du magasin
+        // au même titre que les deux autres. Windows ne la rendra jamais comme langue système, le
+        // repli automatique n'est donc pas concerné.
+        return candidate.TwoLetterISOLanguageName is "fr" or "en" or "qps" ? candidate : Neutral;
     }
 
     private static SmartFormatter BuildFormatter()

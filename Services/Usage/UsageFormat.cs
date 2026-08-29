@@ -21,7 +21,7 @@ public static class UsageFormat
     /// pas changer selon les paramètres régionaux de la machine (« 12,4k » ici, « 12.4k » ailleurs).
     /// </summary>
     // La culture d'affichage, pas une culture fixe : « 12,4k » en français, « 12.4k » en anglais.
-    private static CultureInfo Display => Loc.Current;
+    private static CultureInfo Display => Loc.Formatting;
 
     /// <summary>
     /// Couleur d'une jauge. Le seuil porte sur le <b>restant</b> — c'est ce que l'utilisateur règle

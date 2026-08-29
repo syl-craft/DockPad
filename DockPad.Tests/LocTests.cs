@@ -120,4 +120,75 @@ public class LocTests
         // registre, qu'un utilisateur peut éditer à la main.
         Assert.Equal(attendu, Loc.Parse(tag)?.TwoLetterISOLanguageName);
     }
+
+    // ---------------------------------------------------------------- pseudo-langue « 1337 »
+
+    /// <summary>
+    /// <c>qps-Ploc</c> est la seule étiquette qui donne une culture distincte.
+    /// </summary>
+    /// <remarks>
+    /// Les deux formes qu'on écrit d'instinct échouent en silence, ce qui est le pire des cas :
+    /// <c>fr-x-1337</c> retombe sur <c>fr</c> et <c>x-leet</c> sur la culture invariante. La langue
+    /// aurait été indistinguable de son original, sans le moindre message.
+    /// </remarks>
+    [Fact]
+    public void Pseudo_EstUneCultureDistincte()
+    {
+        Assert.Equal("qps-Ploc", Loc.Pseudo.Name);
+        Assert.NotEqual("fr", CultureInfo.GetCultureInfo("fr-x-1337").Name is "fr" ? "autre" : "fr");
+        Assert.Equal("fr", CultureInfo.GetCultureInfo("fr-x-1337").Name);
+        Assert.Equal("", CultureInfo.GetCultureInfo("x-leet").Name);
+    }
+
+    [Fact]
+    public void Parse_AccepteLaPseudoLangue()
+        => Assert.Equal("qps-Ploc", Loc.Parse("qps-Ploc")?.Name);
+
+    /// <summary>
+    /// Le texte « 1337 » est du français aux glyphes substitués : sa grammaire est française.
+    /// </summary>
+    /// <remarks>
+    /// Sans cette séparation, SmartFormat chercherait une règle de pluriel pour <c>qps</c>, n'en
+    /// trouverait aucune, et lèverait — son formateur est réglé sur « lever plutôt que passer
+    /// inaperçu ». Les quarante-deux gabarits du magasin seraient tombés.
+    /// </remarks>
+    [Fact]
+    public void Formatting_EstFrancaisePourLaPseudoLangue()
+    {
+        Loc.SetCulture(Loc.Pseudo);
+        try
+        {
+            Assert.Equal("qps-Ploc", Loc.Current.Name);
+            Assert.Equal("fr", Loc.Formatting.TwoLetterISOLanguageName);
+            // La culture du thread suit les règles, pas le fichier de ressources.
+            Assert.Equal("qps-Ploc", CultureInfo.CurrentUICulture.Name);
+            Assert.Equal("fr", CultureInfo.CurrentCulture.TwoLetterISOLanguageName);
+        }
+        finally { Loc.SetCulture(CultureInfo.GetCultureInfo("fr")); }
+    }
+
+    [Fact]
+    public void Formatting_EstLaCultureCouranteAilleurs()
+    {
+        Loc.SetCulture(CultureInfo.GetCultureInfo("en"));
+        try { Assert.Equal("en", Loc.Formatting.Name); }
+        finally { Loc.SetCulture(CultureInfo.GetCultureInfo("fr")); }
+    }
+
+    /// <summary>Le pluriel français doit s'appliquer au texte leet, qui en dérive.</summary>
+    [Fact]
+    public void Pluriel_SuitLeFrancaisEnPseudoLangue()
+    {
+        Loc.SetCulture(Loc.Pseudo);
+        try
+        {
+            // Règle française : 0 et 1 prennent le singulier. Le gabarit vient du magasin leet.
+            var zero = Loc.Formatter.Format(Loc.Formatting, "{0} {0:plural:r3gl3|r3gl35}", 0);
+            var deux = Loc.Formatter.Format(Loc.Formatting, "{0} {0:plural:r3gl3|r3gl35}", 2);
+
+            Assert.Equal("0 r3gl3", zero);
+            Assert.Equal("2 r3gl35", deux);
+        }
+        finally { Loc.SetCulture(CultureInfo.GetCultureInfo("fr")); }
+    }
 }

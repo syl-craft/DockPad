@@ -127,9 +127,17 @@ public partial class SettingsDialog : Window
             new LanguageChoice("",   Loc.T("Language_Auto")),
             new LanguageChoice("fr", "Français"),
             new LanguageChoice("en", "English"),
+            // Une langue s'écrit dans sa propre langue — celle-ci ne fait pas exception.
+            new LanguageChoice("qps-Ploc", "1337"),
         };
         CmbLanguage.DisplayMemberPath = nameof(LanguageChoice.Label);
-        CmbLanguage.SelectedIndex = selected switch { "fr" => 1, "en" => 2, _ => 0 };
+        CmbLanguage.SelectedIndex = selected switch
+        {
+            "fr" => 1,
+            "en" => 2,
+            "qps-Ploc" => 3,
+            _ => 0,
+        };
         _filling = false;
     }
 

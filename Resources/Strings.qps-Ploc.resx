@@ -1,0 +1,1056 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Browsers_Add_Tip" xml:space="preserve">
+    <value>4j0ut3r un n4v1g4t3ur</value>
+  </data>
+  <data name="Browsers_AppDescription" xml:space="preserve">
+    <value>53l3ct3ur d3 n4v1g4t3ur D0ckP4d</value>
+  </data>
+  <data name="Browsers_Args" xml:space="preserve">
+    <value>4rgum3nt5 :</value>
+  </data>
+  <data name="Browsers_Args_Tip" xml:space="preserve">
+    <value>3x : --pr0f1l3-d1r3ct0ry="Pr0f1l3 1", --1nc0gn1t0, -1npr1v4t3. %1 = URL.</value>
+  </data>
+  <data name="Browsers_AutoOpen" xml:space="preserve">
+    <value>0uv3rtur3 4ut0m4t1qu3 :</value>
+  </data>
+  <data name="Browsers_AutoOpen_Hint" xml:space="preserve">
+    <value>53c0nd35 4v4nt d'0uvr1r 4v3c l3 n4v1g4t3ur n°1 (0 = d354ct1v3)</value>
+  </data>
+  <data name="Browsers_Badge_Hidden" xml:space="preserve">
+    <value>m45qu3</value>
+  </data>
+  <data name="Browsers_ConfirmDelete" xml:space="preserve">
+    <value>5uppr1m3r {0} ?
+L35 r3gl35 d3 d0m41n3 4550c1335 53r0nt 5uppr1m335 4u551.</value>
+  </data>
+  <data name="Browsers_DetectedAdded" xml:space="preserve">
+    <value>{1:list:{}|, | et } 4j0ut3{0:plural:|s}.</value>
+  </data>
+  <data name="Browsers_DetectedBrowsers" xml:space="preserve">
+    <value>{0} {0:plural:navigateur|navigateurs}</value>
+  </data>
+  <data name="Browsers_DetectedNothing" xml:space="preserve">
+    <value>4ucun n0uv34u n4v1g4t3ur n1 pr0f1l d3t3ct3.</value>
+  </data>
+  <data name="Browsers_DetectedProfiles" xml:space="preserve">
+    <value>{0} {0:plural:profil|profils}</value>
+  </data>
+  <data name="Browsers_Exe" xml:space="preserve">
+    <value>3x3cut4bl3 :</value>
+  </data>
+  <data name="Browsers_Name" xml:space="preserve">
+    <value>N0m :</value>
+  </data>
+  <data name="Browsers_NewBrowser" xml:space="preserve">
+    <value>N0uv34u n4v1g4t3ur</value>
+  </data>
+  <data name="Browsers_ParentFallback" xml:space="preserve">
+    <value>50n n4v1g4t3ur</value>
+  </data>
+  <data name="Browsers_Pick_Exe_Filter" xml:space="preserve">
+    <value>3x3cut4bl35 (*.3x3)|*.3x3</value>
+  </data>
+  <data name="Browsers_PopupList" xml:space="preserve">
+    <value>N4v1g4t3ur5 d3 l4 p0pup</value>
+  </data>
+  <data name="Browsers_ProfileHint" xml:space="preserve">
+    <value>Pr0f1l « {0} » d3 {1} — l4nc3 4v3c --pr0f1l3-d1r3ct0ry="{0}". L3 ch3m1n d3 l'3x3cut4bl3 5u1t c3lu1 du n4v1g4t3ur.</value>
+  </data>
+  <data name="Browsers_Redetect" xml:space="preserve">
+    <value>↻ R3d3t3ct3r</value>
+  </data>
+  <data name="Browsers_Redetect_Tip" xml:space="preserve">
+    <value>4j0ut3 l35 n4v1g4t3ur5 n0uv3ll3m3nt 1n5t4ll35 3t l3ur5 pr0f1l5 (n'3cr453 r13n)</value>
+  </data>
+  <data name="Browsers_Register" xml:space="preserve">
+    <value>5'3nr3g15tr3r c0mm3 n4v1g4t3ur</value>
+  </data>
+  <data name="Browsers_RegisterError" xml:space="preserve">
+    <value>1mp0551bl3 d'3nr3g15tr3r D0ckP4d c0mm3 n4v1g4t3ur :
+{0}</value>
+  </data>
+  <data name="Browsers_RuleCount" xml:space="preserve">
+    <value>{0} {0:plural:règle|règles}</value>
+  </data>
+  <data name="Browsers_RuleCountFiltered" xml:space="preserve">
+    <value>{1} / {0} {0:plural:règle|règles}</value>
+  </data>
+  <data name="Browsers_Rules_Browser_Tip" xml:space="preserve">
+    <value>N4v1g4t3ur qu1 0uvr1r4 c3 d0m41n3</value>
+  </data>
+  <data name="Browsers_Rules_Delete_Tip" xml:space="preserve">
+    <value>5uppr1m3r l4 r3gl3</value>
+  </data>
+  <data name="Browsers_Rules_Empty" xml:space="preserve">
+    <value>4ucun3 r3gl3 — c0ch3z « T0uj0ur5 p0ur c3 d0m41n3 » d4n5 l4 p0pup p0ur 3n cr33r un3.</value>
+  </data>
+  <data name="Browsers_Rules_FilterAll" xml:space="preserve">
+    <value>T0u5 l35 n4v1g4t3ur5</value>
+  </data>
+  <data name="Browsers_Rules_Intro" xml:space="preserve">
+    <value>C35 d0m41n35 5'0uvr3nt d1r3ct3m3nt d4n5 l3 n4v1g4t3ur 4550c13, 54n5 p0pup. L35 r3gl35 53 cr33nt v14 « T0uj0ur5 p0ur c3 d0m41n3 » d4n5 l4 p0pup.</value>
+  </data>
+  <data name="Browsers_Rules_Search_Tip" xml:space="preserve">
+    <value>R3ch3rch3r d4n5 l35 n0m5 d3 d0m41n3</value>
+  </data>
+  <data name="Browsers_State_Default" xml:space="preserve">
+    <value>✔ D0ckP4d 35t l3 n4v1g4t3ur p4r d3f4ut : l35 URL5 cl1qu335 4ff1ch3nt l4 p0pup d3 ch01x.</value>
+  </data>
+  <data name="Browsers_State_NotRegistered" xml:space="preserve">
+    <value>D0ckP4d n'35t p45 3nr3g15tr3 c0mm3 n4v1g4t3ur. 3nr3g15tr3-l3 pu15 ch01515-l3 c0mm3 n4v1g4t3ur p4r d3f4ut d4n5 l35 p4r4m3tr35 W1nd0w5.</value>
+  </data>
+  <data name="Browsers_State_Registered" xml:space="preserve">
+    <value>D0ckP4d 35t 3nr3g15tr3 c0mm3 n4v1g4t3ur. P0ur 1nt3rc3pt3r l35 URL5, ch01515-l3 c0mm3 n4v1g4t3ur p4r d3f4ut d4n5 l35 p4r4m3tr35 W1nd0w5 (b0ut0n c1-d3550u5).</value>
+  </data>
+  <data name="Browsers_SubjectAlone" xml:space="preserve">
+    <value>« {0} »</value>
+  </data>
+  <data name="Browsers_SubjectWithProfiles" xml:space="preserve">
+    <value>« {0} » 3t 535 {1} {1:plural:profil|profils}</value>
+  </data>
+  <data name="Browsers_Tab_Browsers" xml:space="preserve">
+    <value>N4v1g4t3ur5</value>
+  </data>
+  <data name="Browsers_Tab_Rules" xml:space="preserve">
+    <value>R3gl35 d3 d0m41n3</value>
+  </data>
+  <data name="Browsers_Title" xml:space="preserve">
+    <value>N4v1g4t3ur5</value>
+  </data>
+  <data name="Browsers_UrlInterception" xml:space="preserve">
+    <value>1nt3rc3pt10n d35 URL5</value>
+  </data>
+  <data name="Browsers_Visible_Tip" xml:space="preserve">
+    <value>D3c0ch3r p0ur n3 plu5 pr0p053r c3tt3 3ntr33 d4n5 l4 p0pup</value>
+  </data>
+  <data name="Browsers_WindowsSettings" xml:space="preserve">
+    <value>P4r4m3tr35 W1nd0w5…</value>
+  </data>
+  <data name="Browsers_WindowsSettings_Tip" xml:space="preserve">
+    <value>Ch0151r D0ckP4d c0mm3 n4v1g4t3ur p4r d3f4ut (4ppl1c4t10n5 p4r d3f4ut)</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+    <value>+ 4j0ut3r</value>
+  </data>
+  <data name="Common_Apply" xml:space="preserve">
+    <value>✔ 4ppl1qu3r</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>4nnul3r</value>
+  </data>
+  <data name="Common_Clear" xml:space="preserve">
+    <value>3ff4c3r</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>F3rm3r</value>
+  </data>
+  <data name="Common_Copied" xml:space="preserve">
+    <value>C0p13 ✓</value>
+  </data>
+  <data name="Common_Copy" xml:space="preserve">
+    <value>⧉ C0p13r</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>5uppr1m3r</value>
+  </data>
+  <data name="Common_Duplicate" xml:space="preserve">
+    <value>Dupl1qu3r</value>
+  </data>
+  <data name="Common_Edit" xml:space="preserve">
+    <value>M0d1f13r</value>
+  </data>
+  <data name="Common_Elevate" xml:space="preserve">
+    <value>🛡 3l3v3r</value>
+  </data>
+  <data name="Common_MoveDown" xml:space="preserve">
+    <value>D35c3ndr3</value>
+  </data>
+  <data name="Common_MoveUp" xml:space="preserve">
+    <value>M0nt3r</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>N0n</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>0K</value>
+  </data>
+  <data name="Common_Ready" xml:space="preserve">
+    <value>Pr3t.</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>↻ 4ctu4l153r</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>3nr3g15tr3r</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>0u1</value>
+  </data>
+  <data name="CtxMenu_Added" xml:space="preserve">
+    <value>R4cc0urc1 « {0} » 4j0ut3 4v3c 5ucc35.</value>
+  </data>
+  <data name="CtxMenu_AdminBanner" xml:space="preserve">
+    <value>Dr01t5 4dm1n15tr4t3ur r3qu15 p0ur m0d1f13r l35 3ntr335. Cl1qu3z 5ur « 3l3v3r » p0ur r3l4nc3r 3n 4dm1n.</value>
+  </data>
+  <data name="CtxMenu_AlreadyExists" xml:space="preserve">
+    <value>Un3 3ntr33 '{0}' 3x15t3 d3j4 p0ur c3tt3 c1bl3.
+V0ul3z-v0u5 l4 r3mpl4c3r ?</value>
+  </data>
+  <data name="CtxMenu_Col_AppliesTo" xml:space="preserve">
+    <value>5'4ppl1qu3 4</value>
+  </data>
+  <data name="CtxMenu_Col_Command" xml:space="preserve">
+    <value>C0mm4nd3</value>
+  </data>
+  <data name="CtxMenu_Col_DisplayName" xml:space="preserve">
+    <value>N0m 4ff1ch3</value>
+  </data>
+  <data name="CtxMenu_Col_Icon" xml:space="preserve">
+    <value>1c0n3</value>
+  </data>
+  <data name="CtxMenu_Col_RegistryKey" xml:space="preserve">
+    <value>Cl3 d3 r3g15tr3</value>
+  </data>
+  <data name="CtxMenu_ConfirmDelete" xml:space="preserve">
+    <value>5uppr1m3r l3 r4cc0urc1 « {0} » ({1}) ?
+
+C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
+  </data>
+  <data name="CtxMenu_DeleteError" xml:space="preserve">
+    <value>3rr3ur l0r5 d3 l4 5uppr35510n :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Deleted" xml:space="preserve">
+    <value>R4cc0urc1 « {0} » 5uppr1m3.</value>
+  </data>
+  <data name="CtxMenu_Duplicated" xml:space="preserve">
+    <value>R4cc0urc1 « {0} » dupl1qu3 4v3c 5ucc35.</value>
+  </data>
+  <data name="CtxMenu_ElevationCancelled" xml:space="preserve">
+    <value>3l3v4t10n 4nnul33.</value>
+  </data>
+  <data name="CtxMenu_Empty" xml:space="preserve">
+    <value>4ucun r4cc0urc1 tr0uv3.</value>
+  </data>
+  <data name="CtxMenu_Filter" xml:space="preserve">
+    <value>4ff1ch3r : </value>
+  </data>
+  <data name="CtxMenu_Filter_All" xml:space="preserve">
+    <value>T0ut</value>
+  </data>
+  <data name="CtxMenu_Filter_Background" xml:space="preserve">
+    <value>F0nd d3 d05513r</value>
+  </data>
+  <data name="CtxMenu_Filter_Files" xml:space="preserve">
+    <value>F1ch13r5</value>
+  </data>
+  <data name="CtxMenu_Filter_Folders" xml:space="preserve">
+    <value>D05513r5</value>
+  </data>
+  <data name="CtxMenu_FoundTotal" xml:space="preserve">
+    <value>{0} {0:plural:raccourci|raccourcis} tr0uv3{0:plural:|s} 4u t0t4l.</value>
+  </data>
+  <data name="CtxMenu_Heading" xml:space="preserve">
+    <value>G35t10nn41r3 d3 m3nu c0nt3xtu3l</value>
+  </data>
+  <data name="CtxMenu_LoadError" xml:space="preserve">
+    <value>3rr3ur d3 ch4rg3m3nt : {0}</value>
+  </data>
+  <data name="CtxMenu_ReadRegistryError" xml:space="preserve">
+    <value>1mp0551bl3 d3 l1r3 l3 r3g15tr3 :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Refresh" xml:space="preserve">
+    <value>4ctu4l153r</value>
+  </data>
+  <data name="CtxMenu_Subtitle" xml:space="preserve">
+    <value>4j0ut3z, m0d1f13z 3t 5uppr1m3z d35 r4cc0urc15 d4n5 l3 m3nu cl1c dr01t d3 l'3xpl0r4t3ur W1nd0w5.</value>
+  </data>
+  <data name="CtxMenu_Target_Drives" xml:space="preserve">
+    <value>L3ct3ur5</value>
+  </data>
+  <data name="CtxMenu_Title" xml:space="preserve">
+    <value>G35t10nn41r3 d3 m3nu c0nt3xtu3l W1nd0w5</value>
+  </data>
+  <data name="CtxMenu_Title_ConfirmDelete" xml:space="preserve">
+    <value>C0nf1rm3r l4 5uppr35510n</value>
+  </data>
+  <data name="CtxMenu_Title_Conflict" xml:space="preserve">
+    <value>C0nfl1t</value>
+  </data>
+  <data name="CtxMenu_UpdateError" xml:space="preserve">
+    <value>3rr3ur l0r5 d3 l4 m0d1f1c4t10n :
+{0}</value>
+  </data>
+  <data name="CtxMenu_Updated" xml:space="preserve">
+    <value>R4cc0urc1 « {0} » m15 4 j0ur.</value>
+  </data>
+  <data name="CtxMenu_WriteRegistryError" xml:space="preserve">
+    <value>1mp0551bl3 d'3cr1r3 d4n5 l3 r3g15tr3 :
+{0}</value>
+  </data>
+  <data name="Dialog_Title_Confirm" xml:space="preserve">
+    <value>C0nf1rm4t10n</value>
+  </data>
+  <data name="Dialog_Title_Error" xml:space="preserve">
+    <value>3rr3ur</value>
+  </data>
+  <data name="Dialog_Title_Info" xml:space="preserve">
+    <value>1nf0rm4t10n</value>
+  </data>
+  <data name="Dialog_Title_Warning" xml:space="preserve">
+    <value>4tt3nt10n</value>
+  </data>
+  <data name="Entry_AppliesTo" xml:space="preserve">
+    <value>5'4ppl1qu3 4</value>
+  </data>
+  <data name="Entry_Command" xml:space="preserve">
+    <value>C0mm4nd3 *</value>
+  </data>
+  <data name="Entry_Command_Tip" xml:space="preserve">
+    <value>Ch3m1n d3 l'3x3cut4bl3. Ut1l153z "%1" p0ur l3 f1ch13r 53l3ct10nn3.</value>
+  </data>
+  <data name="Entry_DisplayName" xml:space="preserve">
+    <value>N0m 4ff1ch3 *</value>
+  </data>
+  <data name="Entry_DisplayName_Tip" xml:space="preserve">
+    <value>T3xt3 v151bl3 d4n5 l3 m3nu cl1c dr01t</value>
+  </data>
+  <data name="Entry_Err_CommandRequired" xml:space="preserve">
+    <value>L4 c0mm4nd3 35t 0bl1g4t01r3.</value>
+  </data>
+  <data name="Entry_Err_KeyRequired" xml:space="preserve">
+    <value>L4 cl3 d3 r3g15tr3 35t 0bl1g4t01r3.</value>
+  </data>
+  <data name="Entry_Err_NameRequired" xml:space="preserve">
+    <value>L3 n0m 4ff1ch3 35t 0bl1g4t01r3.</value>
+  </data>
+  <data name="Entry_Icon" xml:space="preserve">
+    <value>1c0n3 (0pt10nn3l)</value>
+  </data>
+  <data name="Entry_Icon_Hint" xml:space="preserve">
+    <value>F0rm4t5 4cc3pt35 : .1c0, .3x3, .dll (1nd3x 0pt10nn3l 4pr35 v1rgul3).</value>
+  </data>
+  <data name="Entry_Icon_Tip" xml:space="preserve">
+    <value>Ch3m1n v3r5 .1c0, .3x3, .dll (3x: C:\4pp.3x3,0)</value>
+  </data>
+  <data name="Entry_Pick_Exe" xml:space="preserve">
+    <value>Ch0151r un 3x3cut4bl3</value>
+  </data>
+  <data name="Entry_Pick_Exe_Filter" xml:space="preserve">
+    <value>3x3cut4bl35 (*.3x3)|*.3x3|T0u5 l35 f1ch13r5 (*.*)|*.*</value>
+  </data>
+  <data name="Entry_Pick_Icon" xml:space="preserve">
+    <value>Ch0151r un3 1c0n3</value>
+  </data>
+  <data name="Entry_Pick_Icon_Filter" xml:space="preserve">
+    <value>1c0n35 3t 3x3cut4bl35 (*.1c0;*.3x3;*.dll)|*.1c0;*.3x3;*.dll|T0u5 (*.*)|*.*</value>
+  </data>
+  <data name="Entry_RegistryKey" xml:space="preserve">
+    <value>Cl3 d3 r3g15tr3 *</value>
+  </data>
+  <data name="Entry_RegistryKey_Hint" xml:space="preserve">
+    <value>1d3nt1f14nt 1nt3rn3 un1qu3, 54n5 35p4c35 n1 c4r4ct3r35 5p3c14ux.</value>
+  </data>
+  <data name="Entry_RegistryKey_Tip" xml:space="preserve">
+    <value>1d3nt1f14nt un1qu3 (54n5 35p4c35, 3x: M0n4pp)</value>
+  </data>
+  <data name="Entry_Target_Background" xml:space="preserve">
+    <value>F0nd d3 d05513r (cl1c dr01t d4n5 un d05513r v1d3)</value>
+  </data>
+  <data name="Entry_Target_Files" xml:space="preserve">
+    <value>F1ch13r5</value>
+  </data>
+  <data name="Entry_Target_Folders" xml:space="preserve">
+    <value>D05513r5</value>
+  </data>
+  <data name="Entry_Title_Edit" xml:space="preserve">
+    <value>M0d1f13r l3 r4cc0urc1</value>
+  </data>
+  <data name="Entry_Title_New" xml:space="preserve">
+    <value>N0uv34u r4cc0urc1</value>
+  </data>
+  <data name="Key_Delete" xml:space="preserve">
+    <value>5uppr</value>
+  </data>
+  <data name="Key_End" xml:space="preserve">
+    <value>F1n</value>
+  </data>
+  <data name="Key_Enter" xml:space="preserve">
+    <value>3ntr33</value>
+  </data>
+  <data name="Key_Esc" xml:space="preserve">
+    <value>3ch4p</value>
+  </data>
+  <data name="Key_Home" xml:space="preserve">
+    <value>D3but</value>
+  </data>
+  <data name="Key_Insert" xml:space="preserve">
+    <value>1n53r</value>
+  </data>
+  <data name="Key_PageDown" xml:space="preserve">
+    <value>Pg5u1v</value>
+  </data>
+  <data name="Key_PageUp" xml:space="preserve">
+    <value>PgPr3c</value>
+  </data>
+  <data name="Key_Space" xml:space="preserve">
+    <value>35p4c3</value>
+  </data>
+  <data name="Key_Tab" xml:space="preserve">
+    <value>T4b</value>
+  </data>
+  <data name="Language_Auto" xml:space="preserve">
+    <value>4ut0m4t1qu3 (W1nd0w5)</value>
+  </data>
+  <data name="Mcp_AllowDelete" xml:space="preserve">
+    <value>4ut0r153r Cl4ud3 4 5uppr1m3r (tu1l35, p4g35, r3gl35)</value>
+  </data>
+  <data name="Mcp_AllowDelete_Hint" xml:space="preserve">
+    <value>D3c0ch3 (d3f4ut) : d0ckp4d_5h0rtcut_d3l3t3, d0ckp4d_p4g3_d3l3t3 3t d0ckp4d_rul3_d3l3t3 50nt r3fu535.</value>
+  </data>
+  <data name="Mcp_ClaudeDesktop" xml:space="preserve">
+    <value>Cl4ud3 D35kt0p (cl4ud3_d35kt0p_c0nf1g.j50n)</value>
+  </data>
+  <data name="Mcp_Enable" xml:space="preserve">
+    <value>4ct1v3r l3 53rv3ur MCP</value>
+  </data>
+  <data name="Mcp_Enable_Hint" xml:space="preserve">
+    <value>D3c0ch3 : t0ut35 l35 r3qu3t35 d3 Cl4ud3 50nt r3fu5335 4v3c un m3554g3 3xpl1c1t3.</value>
+  </data>
+  <data name="Mcp_LogCount" xml:space="preserve">
+    <value>{0} {0:plural:action|actions} MCP c3tt3 535510n</value>
+  </data>
+  <data name="Mcp_Register_AllProjects" xml:space="preserve">
+    <value>P0ur t0u5 l35 pr0j3t5 (p0rt33 ut1l154t3ur, -5 u53r)</value>
+  </data>
+  <data name="Mcp_Register_ClaudeCode" xml:space="preserve">
+    <value>3nr3g15tr3m3nt d4n5 Cl4ud3 C0d3</value>
+  </data>
+  <data name="Mcp_Register_Scope_Hint" xml:space="preserve">
+    <value>D3c0ch3 : 3nr3g15tr3m3nt l1m1t3 4u pr0j3t c0ur4nt (p0rt33 l0c4l3, d3f4ut d3 cl4ud3 mcp 4dd).</value>
+  </data>
+  <data name="Mcp_Tab_Journal" xml:space="preserve">
+    <value>J0urn4l</value>
+  </data>
+  <data name="Mcp_Tab_Options" xml:space="preserve">
+    <value>0pt10n5</value>
+  </data>
+  <data name="Mcp_Title" xml:space="preserve">
+    <value>53rv3ur MCP</value>
+  </data>
+  <data name="Mcp_UpdatePath" xml:space="preserve">
+    <value>M153 4 j0ur du ch3m1n (4pr35 d3pl013m3nt)</value>
+  </data>
+  <data name="Mcp_UpdatePath_Hint" xml:space="preserve">
+    <value>51 l3 53rv3ur 3t41t 3nr3g15tr3 5ur un 4utr3 ch3m1n : 5uppr1m3r l'4nc13n 3nr3g15tr3m3nt, pu15 r3-4j0ut3r 4v3c l4 c0mm4nd3 c1-d355u5.</value>
+  </data>
+  <data name="Picker_AlwaysForDomain" xml:space="preserve">
+    <value>T0uj0ur5 p0ur c3 d0m41n3</value>
+  </data>
+  <data name="Picker_AlwaysForHost" xml:space="preserve">
+    <value>T0uj0ur5 p0ur {0}</value>
+  </data>
+  <data name="Picker_AutoOpenIn" xml:space="preserve">
+    <value>0uv3rtur3 4ut0m4t1qu3 d4n5 {0} 5</value>
+  </data>
+  <data name="Picker_BrowserNotFound" xml:space="preserve">
+    <value>N4v1g4t3ur 1ntr0uv4bl3</value>
+  </data>
+  <data name="Picker_Copied" xml:space="preserve">
+    <value>C0p13 ✓</value>
+  </data>
+  <data name="Picker_Copy" xml:space="preserve">
+    <value>⧉ C0p13r</value>
+  </data>
+  <data name="Picker_LaunchError" xml:space="preserve">
+    <value>1mp0551bl3 d3 l4nc3r {0} :
+{1}
+
+{2}</value>
+  </data>
+  <data name="Picker_Title" xml:space="preserve">
+    <value>0uvr1r 4v3c…</value>
+  </data>
+  <data name="Preset_ClaudeTerminal_Desc" xml:space="preserve">
+    <value>0uvr3 un t3rm1n4l d4n5 c3 d05513r 3t l4nc3 Cl4ud3 C0d3</value>
+  </data>
+  <data name="Preset_ClaudeTerminal_Name" xml:space="preserve">
+    <value>0uvr1r un t3rm1n4l Cl4ud3</value>
+  </data>
+  <data name="Preset_GitHubDesktop_Desc" xml:space="preserve">
+    <value>0uvr3 c3 d05513r d4n5 G1tHub D35kt0p</value>
+  </data>
+  <data name="Preset_GitHubDesktop_Name" xml:space="preserve">
+    <value>0uvr1r d4n5 G1tHub D35kt0p</value>
+  </data>
+  <data name="Preset_PowerShell_Desc" xml:space="preserve">
+    <value>0uvr3 un 0ngl3t P0w3r5h3ll d4n5 c3 d05513r</value>
+  </data>
+  <data name="Preset_PowerShell_Name" xml:space="preserve">
+    <value>0uvr1r d4n5 P0w3r5h3ll</value>
+  </data>
+  <data name="Preset_Ssms_Desc" xml:space="preserve">
+    <value>0uvr3 c3 d05513r d4n5 5QL 53rv3r M4n4g3m3nt 5tud10</value>
+  </data>
+  <data name="Preset_Ssms_Name" xml:space="preserve">
+    <value>0uvr1r d4n5 5QL 53rv3r M4n4g3m3nt 5tud10</value>
+  </data>
+  <data name="Preset_VSCode_Desc" xml:space="preserve">
+    <value>0uvr3 c3 d05513r d4n5 V15u4l 5tud10 C0d3</value>
+  </data>
+  <data name="Preset_VSCode_Name" xml:space="preserve">
+    <value>0uvr1r d4n5 V15u4l 5tud10 C0d3</value>
+  </data>
+  <data name="Presets_Badge_UpToDate" xml:space="preserve">
+    <value>D3j4 1n5t4ll3</value>
+  </data>
+  <data name="Presets_Badge_UpdateAvail" xml:space="preserve">
+    <value>M153 4 j0ur d15p0n1bl3</value>
+  </data>
+  <data name="Presets_ContextMenu" xml:space="preserve">
+    <value>☰ M3nu c0nt3xtu3l</value>
+  </data>
+  <data name="Presets_Errors" xml:space="preserve">
+    <value>3rr3ur5 :
+{0}</value>
+  </data>
+  <data name="Presets_Install" xml:space="preserve">
+    <value>1n5t4ll3r / M3ttr3 4 j0ur</value>
+  </data>
+  <data name="Presets_NoneSelected" xml:space="preserve">
+    <value>4ucun r4cc0urc1 53l3ct10nn3.</value>
+  </data>
+  <data name="Presets_Subtitle" xml:space="preserve">
+    <value>53l3ct10nn3z l35 r4cc0urc15 4 1n5t4ll3r 0u m3ttr3 4 j0ur</value>
+  </data>
+  <data name="Presets_Title" xml:space="preserve">
+    <value>R4cc0urc15 pr3d3f1n15</value>
+  </data>
+  <data name="Probe_DemoData" xml:space="preserve">
+    <value>d0nn335 d3 d3m0n5tr4t10n</value>
+  </data>
+  <data name="Probe_DetectionFailed" xml:space="preserve">
+    <value>d3t3ct10n 1mp0551bl3</value>
+  </data>
+  <data name="Probe_NoSessionData" xml:space="preserve">
+    <value>1n5t4ll3, 4ucun3 d0nn33 d3 535510n</value>
+  </data>
+  <data name="Probe_NotInstalled" xml:space="preserve">
+    <value>n0n 1n5t4ll3</value>
+  </data>
+  <data name="Quick_AddPage" xml:space="preserve">
+    <value>4j0ut3r un3 p4g3</value>
+  </data>
+  <data name="Quick_BackupCreated" xml:space="preserve">
+    <value>54uv3g4rd3 cr333 d4n5 :
+{0}</value>
+  </data>
+  <data name="Quick_ConfirmQuit" xml:space="preserve">
+    <value>Qu1tt3r D0ckP4d ?</value>
+  </data>
+  <data name="Quick_HideToTray" xml:space="preserve">
+    <value>M45qu3r d4n5 l4 b4rr3 5y5t3m3</value>
+  </data>
+  <data name="Quick_HotkeyBadge_Tip" xml:space="preserve">
+    <value>R4cc0urc1 p0ur 4ff1ch3r D0ckP4d</value>
+  </data>
+  <data name="Quick_Menu_Browsers" xml:space="preserve">
+    <value>N4v1g4t3ur5</value>
+  </data>
+  <data name="Quick_Menu_Config" xml:space="preserve">
+    <value>C0nf1gur4t10n</value>
+  </data>
+  <data name="Quick_Menu_ContextMenu" xml:space="preserve">
+    <value>M3nu c0nt3xtu3l</value>
+  </data>
+  <data name="Quick_Menu_Edit" xml:space="preserve">
+    <value>M0d1f13r</value>
+  </data>
+  <data name="Quick_Menu_Manage" xml:space="preserve">
+    <value>G35t10n</value>
+  </data>
+  <data name="Quick_Menu_Mcp" xml:space="preserve">
+    <value>53rv3ur MCP</value>
+  </data>
+  <data name="Quick_Menu_OpenFolder" xml:space="preserve">
+    <value>V01r l3 d05513r</value>
+  </data>
+  <data name="Quick_Menu_Options" xml:space="preserve">
+    <value>0pt10n5</value>
+  </data>
+  <data name="Quick_Menu_Presets" xml:space="preserve">
+    <value>R4cc0urc15 pr3d3f1n15</value>
+  </data>
+  <data name="Quick_Menu_Quit" xml:space="preserve">
+    <value>Qu1tt3r l'4ppl1c4t10n</value>
+  </data>
+  <data name="Quick_Menu_Refresh" xml:space="preserve">
+    <value>4ctu4l153r</value>
+  </data>
+  <data name="Quick_Menu_Save" xml:space="preserve">
+    <value>54uv3g4rd3r</value>
+  </data>
+  <data name="Quick_Menu_Settings" xml:space="preserve">
+    <value>P4r4m3tr35</value>
+  </data>
+  <data name="Quick_Menu_Tip" xml:space="preserve">
+    <value>M3nu</value>
+  </data>
+  <data name="Quick_Menu_Usage" xml:space="preserve">
+    <value>U54g3 14</value>
+  </data>
+  <data name="Quick_Minimize" xml:space="preserve">
+    <value>R3du1r3</value>
+  </data>
+  <data name="Quick_NoTerminal" xml:space="preserve">
+    <value>4ucun t3rm1n4l tr0uv3 (wt, pw5h, p0w3r5h3ll, cmd).</value>
+  </data>
+  <data name="Quick_Page" xml:space="preserve">
+    <value>P4g3 {0}</value>
+  </data>
+  <data name="Quick_Page_ChangeIcon" xml:space="preserve">
+    <value>🖼 Ch4ng3r l'1c0n3</value>
+  </data>
+  <data name="Quick_Page_ConfirmDelete" xml:space="preserve">
+    <value>5uppr1m3r l4 p4g3 {0} 3t 535 {1} {1:plural:raccourci|raccourcis} ?</value>
+  </data>
+  <data name="Quick_Page_ConfirmDeleteEmpty" xml:space="preserve">
+    <value>5uppr1m3r l4 p4g3 {0} ?</value>
+  </data>
+  <data name="Quick_Page_Delete" xml:space="preserve">
+    <value>🗑 5uppr1m3r l4 p4g3</value>
+  </data>
+  <data name="Quick_Page_Full" xml:space="preserve">
+    <value>L4 p4g3 35t pl31n3</value>
+  </data>
+  <data name="Quick_Page_MoveLeft" xml:space="preserve">
+    <value>← D3pl4c3r 4 g4uch3</value>
+  </data>
+  <data name="Quick_Page_MoveRight" xml:space="preserve">
+    <value>→ D3pl4c3r 4 dr01t3</value>
+  </data>
+  <data name="Quick_Page_PickIcon" xml:space="preserve">
+    <value>Ch0151r un3 1c0n3 p0ur l4 p4g3</value>
+  </data>
+  <data name="Quick_Page_RemoveIcon" xml:space="preserve">
+    <value>🗑 5uppr1m3r l'1c0n3</value>
+  </data>
+  <data name="Quick_RunError" xml:space="preserve">
+    <value>1mp0551bl3 d'3x3cut3r :
+{0}</value>
+  </data>
+  <data name="Quick_Search" xml:space="preserve">
+    <value>R3ch3rch3r d4n5 l35 r4cc0urc15</value>
+  </data>
+  <data name="Quick_TileLock_Locked" xml:space="preserve">
+    <value>D3v3rr0u1ll3r l3 d3pl4c3m3nt d35 tu1l35</value>
+  </data>
+  <data name="Quick_TileLock_Unlocked" xml:space="preserve">
+    <value>T3rm1n3r — l3 d3pl4c3m3nt d35 tu1l35 35t 4ct1f</value>
+  </data>
+  <data name="Quick_Tile_Add" xml:space="preserve">
+    <value>➕ 4j0ut3r</value>
+  </data>
+  <data name="Quick_Tile_ChangeIcon" xml:space="preserve">
+    <value>🖼 Ch4ng3r l'1c0n3</value>
+  </data>
+  <data name="Quick_Tile_ConfirmDelete" xml:space="preserve">
+    <value>5uppr1m3r « {0} » ?</value>
+  </data>
+  <data name="Quick_Tile_Delete" xml:space="preserve">
+    <value>🗑 5uppr1m3r</value>
+  </data>
+  <data name="Quick_Tile_Duplicate" xml:space="preserve">
+    <value>⧉ Dupl1qu3r</value>
+  </data>
+  <data name="Quick_Tile_Edit" xml:space="preserve">
+    <value>✏ M0d1f13r</value>
+  </data>
+  <data name="Quick_Tile_MoveToPage" xml:space="preserve">
+    <value>↗ D3pl4c3r v3r5 l4 p4g3</value>
+  </data>
+  <data name="Quick_Tile_PickIcon" xml:space="preserve">
+    <value>Ch0151r un3 1c0n3</value>
+  </data>
+  <data name="Settings_Claude_ArgsHint" xml:space="preserve">
+    <value>3x : --3n4bl3-4ut0-m0d3</value>
+  </data>
+  <data name="Settings_Claude_ExtraArgs" xml:space="preserve">
+    <value>4rgum3nt5 5uppl3m3nt41r35 :</value>
+  </data>
+  <data name="Settings_Claude_Section" xml:space="preserve">
+    <value>Cl4ud3 C0d3</value>
+  </data>
+  <data name="Settings_Hotkey_Current" xml:space="preserve">
+    <value>R4cc0urc1 4ctu3l : {0}</value>
+  </data>
+  <data name="Settings_Hotkey_Key" xml:space="preserve">
+    <value>T0uch3 :</value>
+  </data>
+  <data name="Settings_Hotkey_Modifiers" xml:space="preserve">
+    <value>M0d1f1c4t3ur5 :</value>
+  </data>
+  <data name="Settings_Hotkey_Section" xml:space="preserve">
+    <value>R4cc0urc1 cl4v13r gl0b4l</value>
+  </data>
+  <data name="Settings_Language_Section" xml:space="preserve">
+    <value>L4ngu3</value>
+  </data>
+  <data name="Settings_Startup_Section" xml:space="preserve">
+    <value>D3m4rr4g3</value>
+  </data>
+  <data name="Settings_Startup_WithWindows" xml:space="preserve">
+    <value>D3m4rr3r 4v3c W1nd0w5</value>
+  </data>
+  <data name="Settings_Tiles_Help" xml:space="preserve">
+    <value>M0d1f1c4t3ur + 1-9 / 0 / ↑ / ↓ 3x3cut3 un3 tu1l3 d3 l4 m01t13 g4uch3 0u dr01t3 d3 l4 gr1ll3.</value>
+  </data>
+  <data name="Settings_Tiles_LeftHalf" xml:space="preserve">
+    <value>M01t13 g4uch3 :</value>
+  </data>
+  <data name="Settings_Tiles_RightHalf" xml:space="preserve">
+    <value>M01t13 dr01t3 :</value>
+  </data>
+  <data name="Settings_Tiles_Section" xml:space="preserve">
+    <value>R4cc0urc15 d35 tu1l35</value>
+  </data>
+  <data name="Settings_Tiles_TriggerAuto" xml:space="preserve">
+    <value>4ut0 (53l0n l3 r4cc0urc1 gl0b4l)</value>
+  </data>
+  <data name="Settings_Tiles_WarnPartial" xml:space="preserve">
+    <value>L35 d3ux m01t135 d01v3nt 3tr3 c0nf1gur335 3n53mbl3 — 51n0n l3 m0d3 4ut0 5'4ppl1qu3.</value>
+  </data>
+  <data name="Settings_Tiles_WarnSame" xml:space="preserve">
+    <value>L35 d3ux m01t135 d01v3nt ut1l153r d35 m0d1f1c4t3ur5 d1ff3r3nt5.</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>P4r4m3tr35</value>
+  </data>
+  <data name="Shortcut_Command" xml:space="preserve">
+    <value>C0mm4nd3 *</value>
+  </data>
+  <data name="Shortcut_Err_CommandRequired" xml:space="preserve">
+    <value>L4 c0mm4nd3 / l3 ch3m1n 35t 0bl1g4t01r3.</value>
+  </data>
+  <data name="Shortcut_Err_ExeAndField" xml:space="preserve">
+    <value>L'3x3cut4bl3 3t l3 {0} 50nt 0bl1g4t01r35.</value>
+  </data>
+  <data name="Shortcut_Err_NameRequired" xml:space="preserve">
+    <value>L3 n0m 35t 0bl1g4t01r3.</value>
+  </data>
+  <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
+    <value>V3u1ll3z 53l3ct10nn3r un t3rm1n4l.</value>
+  </data>
+  <data name="Shortcut_Exe" xml:space="preserve">
+    <value>3x3cut4bl3 *</value>
+  </data>
+  <data name="Shortcut_Exe_Tip" xml:space="preserve">
+    <value>Ch3m1n c0mpl3t v3r5 l'3x3cut4bl3</value>
+  </data>
+  <data name="Shortcut_ExtraArgs" xml:space="preserve">
+    <value>P4r4m3tr35 l1br35 (0pt10nn3l)</value>
+  </data>
+  <data name="Shortcut_ExtraArgs_Tip" xml:space="preserve">
+    <value>4rgum3nt5 5uppl3m3nt41r35 1n53r35 4v4nt l4 c0mm4nd3 4 l4nc3r</value>
+  </data>
+  <data name="Shortcut_FieldLabel_Process" xml:space="preserve">
+    <value>n0m du pr0c355u5</value>
+  </data>
+  <data name="Shortcut_FieldLabel_Title" xml:space="preserve">
+    <value>t1tr3 d3 f3n3tr3</value>
+  </data>
+  <data name="Shortcut_FolderPath" xml:space="preserve">
+    <value>Ch3m1n du d05513r *</value>
+  </data>
+  <data name="Shortcut_Header_Edit" xml:space="preserve">
+    <value>M0d1f13r l3 r4cc0urc1</value>
+  </data>
+  <data name="Shortcut_Header_New" xml:space="preserve">
+    <value>N0uv34u r4cc0urc1</value>
+  </data>
+  <data name="Shortcut_Icon" xml:space="preserve">
+    <value>1c0n3 (0pt10nn3l)</value>
+  </data>
+  <data name="Shortcut_Name" xml:space="preserve">
+    <value>N0m *</value>
+  </data>
+  <data name="Shortcut_NewTab" xml:space="preserve">
+    <value>0uvr1r d4n5 un n0uv3l 0ngl3t</value>
+  </data>
+  <data name="Shortcut_Params" xml:space="preserve">
+    <value>P4r4m3tr35 (0pt10nn3l)</value>
+  </data>
+  <data name="Shortcut_Params_Tip_Name" xml:space="preserve">
+    <value>4rgum3nt5 p45535 4u l4nc3m3nt 3t r3ch3rch35 d4n5 l4 l1gn3 d3 c0mm4nd3 du pr0c355u5 3x15t4nt</value>
+  </data>
+  <data name="Shortcut_Params_Tip_Title" xml:space="preserve">
+    <value>4rgum3nt5 p45535 4 l'3x3cut4bl3 4u l4nc3m3nt 51 l4 f3n3tr3 n'35t p45 tr0uv33</value>
+  </data>
+  <data name="Shortcut_PickExe_Filter" xml:space="preserve">
+    <value>3x3cut4bl35 (*.3x3)|*.3x3|T0u5 l35 f1ch13r5 (*.*)|*.*</value>
+  </data>
+  <data name="Shortcut_PickFolder" xml:space="preserve">
+    <value>Ch0151r un d05513r</value>
+  </data>
+  <data name="Shortcut_PickIcon_Filter" xml:space="preserve">
+    <value>1m4g35 3t 3x3cut4bl35|*.png;*.1c0;*.bmp;*.jpg;*.jp3g;*.3x3;*.dll|T0u5 l35 f1ch13r5|*.*</value>
+  </data>
+  <data name="Shortcut_PickStartFolder" xml:space="preserve">
+    <value>Ch0151r l3 d05513r d3 d3p4rt</value>
+  </data>
+  <data name="Shortcut_PickTerminal" xml:space="preserve">
+    <value>Ch0151r un t3rm1n4l</value>
+  </data>
+  <data name="Shortcut_Preview" xml:space="preserve">
+    <value>4p3rçu :</value>
+  </data>
+  <data name="Shortcut_ProcessName" xml:space="preserve">
+    <value>N0m du pr0c355u5 *</value>
+  </data>
+  <data name="Shortcut_ProcessName_Tip" xml:space="preserve">
+    <value>N0m du pr0c355u5 t3l qu'1l 4pp4r41t d4n5 l3 g35t10nn41r3 d35 t4ch35 (3x: d3v3nv.3x3)</value>
+  </data>
+  <data name="Shortcut_RunCommand" xml:space="preserve">
+    <value>C0mm4nd3 4 l4nc3r (0pt10nn3l)</value>
+  </data>
+  <data name="Shortcut_RunCommand_Tip" xml:space="preserve">
+    <value>C0mm4nd3 3x3cut33 4pr35 l'0uv3rtur3 du t3rm1n4l (3x : cl4ud3, npm run d3v)</value>
+  </data>
+  <data name="Shortcut_SearchMode" xml:space="preserve">
+    <value>M0d3 d3 r3ch3rch3 *</value>
+  </data>
+  <data name="Shortcut_SearchMode_ByName" xml:space="preserve">
+    <value>P4r n0m d3 pr0c355u5</value>
+  </data>
+  <data name="Shortcut_SearchMode_ByTitle" xml:space="preserve">
+    <value>P4r t1tr3 d3 f3n3tr3</value>
+  </data>
+  <data name="Shortcut_StartFolder" xml:space="preserve">
+    <value>D05513r d3 d3p4rt</value>
+  </data>
+  <data name="Shortcut_StartFolder_Tip" xml:space="preserve">
+    <value>Ch3m1n du d05513r 4 0uvr1r. L41553z v1d3 p0ur l3 r3p3rt01r3 p4r d3f4ut.</value>
+  </data>
+  <data name="Shortcut_Terminal" xml:space="preserve">
+    <value>T3rm1n4l *</value>
+  </data>
+  <data name="Shortcut_Terminal_Tip" xml:space="preserve">
+    <value>Ch0151r un 3x3cut4bl3 d3 t3rm1n4l</value>
+  </data>
+  <data name="Shortcut_Title" xml:space="preserve">
+    <value>R4cc0urc1 r4p1d3</value>
+  </data>
+  <data name="Shortcut_Type" xml:space="preserve">
+    <value>Typ3 *</value>
+  </data>
+  <data name="Shortcut_Type_OpenFolder" xml:space="preserve">
+    <value>0uvr1r un d05513r</value>
+  </data>
+  <data name="Shortcut_Type_OpenTerminal" xml:space="preserve">
+    <value>0uvr1r un t3rm1n4l</value>
+  </data>
+  <data name="Shortcut_Type_OpenUrl" xml:space="preserve">
+    <value>0uvr1r d4n5 l3 n4v1g4t3ur</value>
+  </data>
+  <data name="Shortcut_Type_RunCommand" xml:space="preserve">
+    <value>L4nc3r un3 c0mm4nd3</value>
+  </data>
+  <data name="Shortcut_Type_SwitchProcess" xml:space="preserve">
+    <value>B45cul3r v3r5 un pr0c355u5</value>
+  </data>
+  <data name="Shortcut_Url" xml:space="preserve">
+    <value>URL *</value>
+  </data>
+  <data name="Shortcut_WindowTitle" xml:space="preserve">
+    <value>T1tr3 d3 l4 f3n3tr3 *</value>
+  </data>
+  <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
+    <value>T3xt3 r3ch3rch3 d4n5 l3 t1tr3 d35 f3n3tr35 0uv3rt35 (3x: C4lcul4tr1c3)</value>
+  </data>
+  <data name="Terminal_Cmd" xml:space="preserve">
+    <value>1nv1t3 d3 c0mm4nd35 (cmd)</value>
+  </data>
+  <data name="Type_Browser" xml:space="preserve">
+    <value>N4v1g4t3ur</value>
+  </data>
+  <data name="Type_Command" xml:space="preserve">
+    <value>C0mm4nd3</value>
+  </data>
+  <data name="Type_Folder" xml:space="preserve">
+    <value>D05513r</value>
+  </data>
+  <data name="Type_Process" xml:space="preserve">
+    <value>Pr0c355u5</value>
+  </data>
+  <data name="Type_Terminal" xml:space="preserve">
+    <value>T3rm1n4l</value>
+  </data>
+  <data name="Type_Url" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="UsageCfg_AlertThreshold" xml:space="preserve">
+    <value>53u1l d'4l3rt3 :</value>
+  </data>
+  <data name="UsageCfg_AlertThreshold_Tip" xml:space="preserve">
+    <value>P0urc3nt4g3 r35t4nt 50u5 l3qu3l un3 j4ug3 p4553 4u r0ug3</value>
+  </data>
+  <data name="UsageCfg_Badge_Hidden" xml:space="preserve">
+    <value>m45qu3</value>
+  </data>
+  <data name="UsageCfg_Badge_NotDetected" xml:space="preserve">
+    <value>n0n d3t3ct3</value>
+  </data>
+  <data name="UsageCfg_Banner" xml:space="preserve">
+    <value>B4nd34u</value>
+  </data>
+  <data name="UsageCfg_DefaultProvider" xml:space="preserve">
+    <value>F0urn1553ur 4ff1ch3 :</value>
+  </data>
+  <data name="UsageCfg_DefaultProvider_Tip" xml:space="preserve">
+    <value>F0urn1553ur 4ff1ch3 4 l'0uv3rtur3 d3 D0ckP4d. Ch4ng3r d'0ngl3t r35t3 p0551bl3, 54n5 m0d1f13r c3 r3gl4g3. Un f0urn1553ur m45qu3 r35t3 53l3ct10nn4bl3 : l3 r34ff1ch3r r3t4bl1t l3 r3gl4g3.</value>
+  </data>
+  <data name="UsageCfg_DetectFailed" xml:space="preserve">
+    <value>L4 d3t3ct10n 4 3ch0u3. C0n5ult3z l35 j0urn4ux p0ur l3 d3t41l.</value>
+  </data>
+  <data name="UsageCfg_Empty" xml:space="preserve">
+    <value>4ucun f0urn1553ur c0nnu. Ut1l153z ↻ R3d3t3ct3r.</value>
+  </data>
+  <data name="UsageCfg_FirstAvailable" xml:space="preserve">
+    <value>Pr3m13r d15p0n1bl3</value>
+  </data>
+  <data name="UsageCfg_HiddenSuffix" xml:space="preserve">
+    <value>{0} (m45qu3)</value>
+  </data>
+  <data name="UsageCfg_NoData" xml:space="preserve">
+    <value>4ucun3 d0nn33 d3t3ct33</value>
+  </data>
+  <data name="UsageCfg_NotDetected_Tip" xml:space="preserve">
+    <value>C0n53rv3 : 50n m45qu4g3 3t 50n 0rdr3 50nt g4rd35 p0ur l3 j0ur 0ù l'0ut1l r34pp4r41t</value>
+  </data>
+  <data name="UsageCfg_Providers" xml:space="preserve">
+    <value>F0urn1553ur5</value>
+  </data>
+  <data name="UsageCfg_Redetect" xml:space="preserve">
+    <value>↻ R3d3t3ct3r</value>
+  </data>
+  <data name="UsageCfg_Redetect_Tip" xml:space="preserve">
+    <value>Ch3rch3 l35 45515t4nt5 1n5t4ll35. J4m415 f41t 3n t4ch3 d3 f0nd.</value>
+  </data>
+  <data name="UsageCfg_ShowBanner" xml:space="preserve">
+    <value>4ff1ch3r l3 b4nd34u d4n5 D0ckP4d</value>
+  </data>
+  <data name="UsageCfg_ShowCost" xml:space="preserve">
+    <value>4ff1ch3r l3 c0ût 35t1m3</value>
+  </data>
+  <data name="UsageCfg_ShowCost_Tip" xml:space="preserve">
+    <value>35t1m4t10n 4 p4rt1r d35 t4r1f5 publ1c5, d4n5 l4 d3v153 d3 l4 50urc3 — j4m415 c0nv3rt13</value>
+  </data>
+  <data name="UsageCfg_Title" xml:space="preserve">
+    <value>U54g3 14</value>
+  </data>
+  <data name="UsageCfg_Visible_Tip" xml:space="preserve">
+    <value>D3c0ch3r p0ur r3t1r3r c3 f0urn1553ur du b4nd34u, 54n5 p3rdr3 50n r3gl4g3</value>
+  </data>
+  <data name="Usage_CostNote_Claude" xml:space="preserve">
+    <value>3qu1v4l3nt 4P1 du m015 3n c0ur5, 35t1m3 4ux t4r1f5 publ1c5. Un 4b0nn3m3nt M4x 0u Pr0 n3 f4ctur3 p45 4u j3t0n.</value>
+  </data>
+  <data name="Usage_DayTimeFormat" xml:space="preserve">
+    <value>ddd HH\h</value>
+  </data>
+  <data name="Usage_Demo" xml:space="preserve">
+    <value>d3m0</value>
+  </data>
+  <data name="Usage_Gauge_Session" xml:space="preserve">
+    <value>535510n</value>
+  </data>
+  <data name="Usage_Gauge_Tooltip" xml:space="preserve">
+    <value>{0} % ut1l1535, {1} % r35t4nt5</value>
+  </data>
+  <data name="Usage_Gauge_Week" xml:space="preserve">
+    <value>53m41n3</value>
+  </data>
+  <data name="Usage_Metric_Cost" xml:space="preserve">
+    <value>C0ût 35t.</value>
+  </data>
+  <data name="Usage_Metric_Day" xml:space="preserve">
+    <value>J0ur</value>
+  </data>
+  <data name="Usage_Metric_Model" xml:space="preserve">
+    <value>M0d3l3</value>
+  </data>
+  <data name="Usage_Metric_Month" xml:space="preserve">
+    <value>M015</value>
+  </data>
+  <data name="Usage_Metric_Requests" xml:space="preserve">
+    <value>R3qu3t35</value>
+  </data>
+  <data name="Usage_Metric_Session" xml:space="preserve">
+    <value>535510n</value>
+  </data>
+  <data name="Usage_OpenPage_Tooltip" xml:space="preserve">
+    <value>0uvr1r {0}</value>
+  </data>
+  <data name="Usage_Quota_Notice" xml:space="preserve">
+    <value>Qu0t4 1nd15p0n1bl3 — {0}</value>
+  </data>
+  <data name="Usage_Quota_NoticeNote" xml:space="preserve">
+    <value>{0}. L35 j4ug35 r35t3nt m45qu335 ; l35 m3tr1qu35 d3 j3t0n5, lu35 d4n5 l35 tr4n5cr1pt5 l0c4ux, 50nt 3x4ct35.</value>
+  </data>
+  <data name="Usage_Quota_RetryIn" xml:space="preserve">
+    <value>n0uv3ll3 t3nt4t1v3 d4n5 {0} m1n</value>
+  </data>
+  <data name="Usage_Quota_RetryNext" xml:space="preserve">
+    <value>n0uv3ll3 t3nt4t1v3 4u pr0ch41n r4fr41ch1553m3nt</value>
+  </data>
+  <data name="Usage_Reset_Tooltip" xml:space="preserve">
+    <value>R3m153 4 z3r0 4 {0}</value>
+  </data>
+  <data name="Usage_Suffix_Billion" xml:space="preserve">
+    <value> Md</value>
+  </data>
+  <data name="Usage_Suffix_Million" xml:space="preserve">
+    <value>M</value>
+  </data>
+  <data name="Usage_Suffix_Thousand" xml:space="preserve">
+    <value>k</value>
+  </data>
+  <data name="Usage_TimeFormat" xml:space="preserve">
+    <value>HH\hmm</value>
+  </data>
+  <data name="Settings_Network_Section" xml:space="preserve">
+    <value>R3534u</value>
+  </data>
+  <data name="Settings_Network_AutoFavicon" xml:space="preserve">
+    <value>T3l3ch4rg3r l'1c0n3 du 51t3 p0ur l35 r4cc0urc15 w3b</value>
+  </data>
+  <data name="Settings_Network_AutoFaviconHint" xml:space="preserve">
+    <value>53ul l3 d0m41n3 35t 3nv0y3 4u 53rv1c3 d3 f4v1c0n5 d3 G00gl3 — j4m415 l3 ch3m1n n1 l35 p4r4m3tr35 d3 l'4dr3553. D3c0ch33, 4ucun3 r3qu3t3 n3 p4rt.</value>
+  </data>
+  <data name="Settings_Theme_Section" xml:space="preserve">
+    <value>Th3m3</value>
+  </data>
+  <data name="Theme_Auto" xml:space="preserve">
+    <value>4ut0m4t1qu3 (W1nd0w5)</value>
+  </data>
+  <data name="Theme_Light" xml:space="preserve">
+    <value>Cl41r</value>
+  </data>
+  <data name="Theme_Dark" xml:space="preserve">
+    <value>50mbr3</value>
+  </data>
+</root>

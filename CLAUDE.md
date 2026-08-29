@@ -58,6 +58,7 @@ Services/Localization/
 
 Resources/
     Strings.resx                          Anglais, langue neutre
+    Strings.qps-Ploc.resx                 « 1337 » — GÉNÉRÉ, ne pas éditer à la main
     Strings.fr.resx                       Français, satellite fr\DockPad.resources.dll
 
 Themes/
@@ -158,6 +159,7 @@ DockPad.Tests/                           Projet xUnit (447 tests) : ActionResult
                                          + logique sortie de la fenêtre (lancement, overlay, recherche, dépôts, sauvegarde, commandes)
 
 tools/
+    generate-leet-resx.ps1               Script PowerShell : engendre Strings.qps-Ploc.resx depuis le français
     get-startmenu-apps.ps1               Script PowerShell : résout les AppID Start Menu en chemins .exe
     inject-startmenu-shortcuts.ps1       Script PowerShell : injecte des raccourcis SwitchToProcess dans shortcuts.json
     McpShot/                             Outil console : capture les onglets de McpConfigDialog en PNG (doc)
@@ -344,8 +346,9 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 
 ### Internationalisation (français / anglais)
 
-Les chaînes vivent dans deux RESX : `Resources/Strings.resx` en **anglais neutre** et
-`Resources/Strings.fr.resx` en satellite. L'anglais est le neutre parce que le repli de
+Les chaînes vivent dans trois RESX : `Resources/Strings.resx` en **anglais neutre**,
+`Resources/Strings.fr.resx` en satellite, et `Resources/Strings.qps-Ploc.resx` — la pseudo-langue
+« 1337 », engendrée depuis le français, décrite plus bas. L'anglais est le neutre parce que le repli de
 `ResourceManager` remonte à la langue neutre — c'est ce que verra un poste japonais, il doit donc
 être une vraie langue et pas un dépotoir de clés.
 
@@ -393,6 +396,33 @@ Les chaînes vivent dans deux RESX : `Resources/Strings.resx` en **anglais neutr
 - **Les libellés construits en code ne se retraduisent pas seuls** : les listes de `SettingsDialog`
   (modificateurs, touches) et ses avertissements sont refaits sur `Loc.LanguageChanged`, sélection
   conservée
+
+#### La pseudo-langue « 1337 »
+
+Une troisième langue, `qps-Ploc`, **engendrée** depuis le français par substitution de glyphes
+(`Raccourcis prédéfinis` → `R4cc0urc15 pr3d3f1n15`). `tools/generate-leet-resx.ps1` la régénère.
+
+- **Engendrée, jamais écrite à la main.** C'est ce qui la rend gratuite : les 342 clés suivent le
+  français sans effort, et une clé ajoutée ne peut pas être oubliée ici. Une langue de plus écrite à
+  la main, ce serait 342 chaînes à rédiger **puis à maintenir pour toujours**
+- **Les gardes de traduction sont le test du générateur.** Parité des clés, valeurs non vides,
+  placeholders identiques, gabarits parsables : la substitution qui abîmerait une accolade échoue
+  dans la suite de tests, pas à l'écran. D'où le passage des gardes d'une paire `{en, fr}` à une
+  liste — ajouter une quatrième langue ne demandera rien de plus
+- **La règle qui n'est pas négociable** : rien de ce qui est entre accolades n'est touché. C'est là
+  que vivent les placeholders et les gabarits de pluriel
+- **`qps-Ploc` est la seule étiquette qui marche.** Vérifié : `fr-x-1337` retombe silencieusement sur
+  `fr` et `x-leet` sur la culture invariante — la langue aurait été indistinguable de son original,
+  sans le moindre message. C'est la pseudo-locale que Windows prévoit pour cet usage
+- **La culture d'affichage et la culture des règles se séparent** (`Loc.Current` / `Loc.Formatting`).
+  Le texte « 1337 » est du français aux glyphes substitués : sa grammaire est française. Sans cette
+  séparation SmartFormat chercherait une règle de pluriel pour `qps`, n'en trouverait aucune, et
+  **lèverait** — son formateur est réglé sur « lever plutôt que passer inaperçu ». `CurrentUICulture`
+  choisit donc le fichier, `CurrentCulture` choisit les règles, et les deux ne coïncident plus
+- **Aucun allongement du texte.** La pseudo-localisation classique rallonge les chaînes pour révéler
+  les troncatures ; on ne le fait pas, ce serait inutilisable pour le plaisir. Elle révèle quand même
+  **les chaînes restées en dur** : elles apparaissent en clair au milieu du leet. Les noms de tuiles
+  aussi, ce sont des données de l'utilisateur — c'est normal
 
 #### Pluriel et listes (SmartFormat)
 RESX n'a aucun moteur de pluriel et le BCL .NET n'expose pas les catégories CLDR. `SmartFormat`
