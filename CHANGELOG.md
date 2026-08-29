@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.13.0] — 2026-08-29
+
+### Nouveautés utilisateur
+
+#### Une troisième langue : « 1337 »
+- ☰ → Paramètres → **Langue** → `1337`. Du français aux glyphes substitués : *Raccourcis prédéfinis* devient *R4cc0urc15 pr3d3f1n15*
+- Bascule immédiate comme les deux autres, et les nombres, heures et pluriels restent ceux du français — c'est du français, seulement écrit autrement
+- **Elle révèle les oublis** : tout ce qui ne s'affiche pas en leet est soit une de vos données (le nom d'une tuile), soit une chaîne restée en dur dans le code
+
+### Notes
+- La langue « 1337 » n'est pas écrite à la main mais **engendrée** depuis le français, et se régénère d'une commande. Une chaîne ajoutée à l'application ne peut donc pas y être oubliée
+- Les gardes de traduction — parité des clés, placeholders identiques, gabarits valides — s'appliquent aux trois langues
+
 ## [1.12.0] — 2026-08-27
 
 ### Nouveautés utilisateur

@@ -8,7 +8,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Types de raccourcis** : lancer une commande, ouvrir un dossier, URL, terminal, basculer vers un processus
 - **Drag & drop** depuis l'Explorateur Windows (dossier → OpenFolder, fichier .url → OpenUrl)
 - **Thème clair et sombre**, lié à Windows ou choisi — bascule immédiate, barre de titre comprise
-- **Français et anglais**, avec bascule immédiate depuis les Options — aucun redémarrage, les fenêtres ouvertes se retraduisent. Par défaut DockPad suit la langue de Windows
+- **Français, anglais et « 1337 »**, avec bascule immédiate depuis les Options — aucun redémarrage, les fenêtres ouvertes se retraduisent. Par défaut DockPad suit la langue de Windows
 - **Verrou du déplacement des tuiles** : un bouton de la toolbar (🔒 → ✓) ouvre la réorganisation, pour qu'un clic manqué ne déplace pas la tuile qu'on voulait lancer. Ranger la fenêtre repose le verrou
 - **Barre de recherche** globale avec navigation clavier
 - **Overlay numérique** (Ctrl/Shift + 1–9) pour exécution rapide au clavier
@@ -45,9 +45,9 @@ Le bandeau Usage IA et les fenêtres de configuration suivent le thème, listes 
 > sont passées de l'habillage Windows au plat, déjà celui du reste de l'application. C'était le prix
 > pour qu'elles suivent le thème — leur habillage d'origine ignore les couleurs qu'on leur donne.
 
-## Français et anglais
+## Français, anglais… et 1337
 
-☰ → Paramètres → **Langue** : `Automatique (Windows)`, `Français` ou `English`. Par défaut DockPad
+☰ → Paramètres → **Langue** : `Automatique (Windows)`, `Français`, `English` ou `1337`. Par défaut DockPad
 suit la langue de Windows, et retombe sur l'anglais si elle n'est pas traduite.
 
 | Français | English |
@@ -58,6 +58,15 @@ suit la langue de Windows, et retombe sur l'anglais si elle n'est pas traduite.
 - **Les nombres et les heures suivent** : `12,4k` et `11h54` en français, `12.4k` et `11:54` en anglais
 - **Les pluriels sont justes**, y compris là où les deux langues ne basculent pas au même endroit : « 0 règle » mais « 0 rules »
 - **Les libellés du menu clic droit de Windows** sont traduits ; les entrées déjà posées se mettent à jour depuis la fenêtre **Prédéfinis**
+
+Et une troisième langue, pour le plaisir :
+
+![DockPad en 1337](docs/screenshots/window-leet.png)
+
+Elle n'est pas écrite à la main : elle est **engendrée** depuis le français par substitution de
+glyphes, et se régénère d'une commande quand une chaîne est ajoutée. Elle rend un service au
+passage — **tout ce qui n'y apparaît pas en leet est soit une donnée, soit une chaîne restée en dur
+dans le code**. Les noms de tuiles, eux, restent lisibles : ce sont les vôtres.
 
 ## Sélecteur de navigateur
 
