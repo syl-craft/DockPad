@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using System.Threading;
 using System.Windows;
 using System.Windows.Markup;
@@ -114,6 +114,14 @@ public partial class App : Application
                 return;
             }
 
+            // Second lancement SANS argument : l'utilisateur redemande l'application. On sortait
+            // en silence, ce qui est invisible tant que la premiere instance a une fenetre — mais
+            // une instance demarree par un clic sur un lien n'en a AUCUNE. Double-cliquer
+            // l'executable ne faisait alors plus rien du tout, et rien ne l'expliquait : ni
+            // fenetre, ni message, ni ligne au journal.
+            if (url is null && injectPath is null && !ShowPipe.TrySend(ShowRequest))
+                Services.LogService.Warn(new InvalidOperationException("show pipe unreachable"), "Une instance tient le mutex sans ecouter le tube d'affichage");
+
             Current.Shutdown();
             return;
         }
@@ -143,6 +151,10 @@ public partial class App : Application
         InjectPipe.StartServer(path =>
             Dispatcher.BeginInvoke(() => Secrets.SecretInjection.Handle(path)));
 
+        // La demande d'affichage passe par le meme geste que le raccourci global : un seul point,
+        // et le bandeau se rafraichit comme il doit.
+        ShowPipe.StartServer(_ => Dispatcher.BeginInvoke(() => _mainWindow.BringToFront()));
+
         Services.McpDispatcher.OnMutation = () => Dispatcher.BeginInvoke(() => _mainWindow.RefreshGrid());
         Services.McpPipeService.StartServer(req => Services.McpDispatcher.Handle(req));
 
@@ -155,6 +167,19 @@ public partial class App : Application
 
     /// <summary>Pipe du clic droit « Injecter les secrets… », jumeau de celui des URL.</summary>
     private static readonly Services.LinePipeService InjectPipe = new("DockPad_InjectPipe");
+
+    /// <summary>
+    /// Pipe du <b>second lancement</b> : « montre-toi ». Troisième jumeau.
+    /// </summary>
+    /// <remarks>
+    /// <b>Un tube de plus plutôt qu'un préfixe dans un tube existant.</b> Les trois flux n'ont rien
+    /// à voir, et un protocole partagé se paie au premier ajout — celui où l'on découvre qu'un des
+    /// consommateurs doit distinguer un cas de plus.
+    /// </remarks>
+    private static readonly Services.LinePipeService ShowPipe = new("DockPad_ShowPipe");
+
+    /// <summary>La seule charge utile que ce tube transporte.</summary>
+    private const string ShowRequest = "show";
 
     private static string? ParseArg(string[] args, string name)
     {

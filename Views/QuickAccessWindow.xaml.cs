@@ -425,6 +425,33 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         HotkeyService.UnregisterHotKey(_hwnd, HotkeyService.HotkeyId);
     }
 
+    /// <summary>
+    /// Met la fenêtre sous les yeux de l'utilisateur, d'où que vienne la demande.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Deux chemins y mènent : le <b>raccourci global</b>, et un <b>second lancement</b> de
+    /// l'exécutable relayé par le tube. Un seul point, parce que ce sont exactement les mêmes cinq
+    /// gestes — et parce qu'un troisième appelant ajouté plus tard doit hériter des quatre pièges
+    /// ci-dessous sans avoir à les redécouvrir.
+    /// </para>
+    /// <para>
+    /// <b>Le rafraîchissement est explicite.</b> Si la fenêtre était déjà visible, ni
+    /// <c>WindowState</c> ni <c>Show()</c> ne changent quoi que ce soit, donc ni
+    /// <c>StateChanged</c> ni <c>IsVisibleChanged</c> ne se déclenchent — le bandeau resterait tel
+    /// quel, sans lecture ni sablier, alors que passer au premier plan est justement le moment où
+    /// l'on veut des chiffres à jour.
+    /// </para>
+    /// </remarks>
+    public void BringToFront()
+    {
+        WindowState = WindowState.Normal;
+        Show();
+        Activate();
+        SyncWindowActivity();
+        Dispatcher.BeginInvoke(() => SearchBox.Focus());
+    }
+
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         // WM_KEYDOWN / WM_SYSKEYDOWN : mémorise le flag "touche étendue" (bit 24 du lParam).
@@ -432,15 +459,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // (Shift+chiffre ou NumLock off) ne le sont pas — WPF ne l'expose pas dans KeyEventArgs.
         if (msg == HotkeyService.WM_HOTKEY && wParam.ToInt32() == HotkeyService.HotkeyId)
         {
-            WindowState = WindowState.Normal;
-            Show();
-            Activate();
-            // Rafraîchir explicitement : si la fenêtre était déjà visible, ni WindowState ni Show()
-            // ne changent quoi que ce soit, donc ni StateChanged ni IsVisibleChanged ne se
-            // déclenchent — le bandeau restait tel quel, sans lecture ni sablier, alors que mettre
-            // la fenêtre au premier plan est justement le moment où on veut des chiffres à jour.
-            SyncWindowActivity();
-            Dispatcher.BeginInvoke(() => SearchBox.Focus());
+            BringToFront();
             handled = true;
         }
         return IntPtr.Zero;

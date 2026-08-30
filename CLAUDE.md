@@ -218,6 +218,16 @@ tools/
 - **Clic gauche** sur l'icône → réaffiche la fenêtre
 - **Clic droit** sur l'icône → menu contextuel avec "Fermer" pour quitter vraiment
 - **Instance unique** : un `Mutex` nommé empêche le lancement de plusieurs instances simultanées
+- **Un second lancement sans argument remonte la fenêtre existante** au lieu de sortir en silence.
+  C'était invisible tant que la première instance avait une fenêtre — mais une instance démarrée par
+  un clic sur un lien (`--url`) n'en a **aucune** : double-cliquer l'exécutable ne faisait alors plus
+  rien du tout, ni fenêtre, ni message, ni ligne au journal. La demande passe par un troisième tube,
+  `DockPad_ShowPipe`, jumeau de ceux des URL et des secrets — **un tube de plus plutôt qu'un préfixe
+  dans un tube existant**, les trois flux n'ayant rien à voir. Elle aboutit à
+  `QuickAccessWindow.BringToFront()`, le même point que le raccourci global : un seul endroit où
+  vivent les cinq gestes, dont le rafraîchissement explicite du bandeau. Vérifié par comparaison —
+  en 1.18.0 la fenêtre réduite reste réduite après un second lancement, avec le correctif elle
+  remonte
 
 ### Logging (LogService)
 - Serilog → `%APPDATA%\DockPad\logs\dockpad-YYYYMMDD.log`, rolling quotidien, 14 fichiers gardés, `shared: true` (l'instance relais URL écrit dans le même fichier)
