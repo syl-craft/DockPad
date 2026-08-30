@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.1] — 2026-08-30
+
+### Corrections
+- **Un fichier de secret tenu par un antivirus ne fait plus échouer l'injection.** Un antivirus, un indexeur ou un client de synchronisation tiennent brièvement un fichier qu'ils viennent de voir écrit ; DockPad retente pendant deux secondes au lieu d'abandonner. Le dossier `secrets/` vivant souvent dans un dossier synchronisé, le cas se produit
+- Quand l'écriture échoue vraiment, le message le dit : il annonçait « la CLI Bitwarden a refusé la demande » alors que la CLI avait répondu et que c'est le disque qui résistait
+
+### Notes
+- Le code interne se répartit désormais entre `DockPad` et une bibliothèque `DockPad.Core` (langues, thème, journal, chemins, réglages). **Aucun changement visible** : vérifié par comparaison pixel de douze fenêtres, thème sombre compris, à zéro écart. C'est la première étape vers une application dédiée à l'injection de secrets, distribuable seule
+
 ## [1.14.0] — 2026-08-30
 
 ### Nouveautés utilisateur
