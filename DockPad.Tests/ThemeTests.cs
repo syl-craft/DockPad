@@ -145,7 +145,9 @@ public class ThemeTests
     private static readonly XNamespace X = "http://schemas.microsoft.com/winfx/2006/xaml";
 
     private static IEnumerable<XElement> Brushes(string file) =>
-        XDocument.Load(Path.Combine(RepoRoot(), "Themes", file))
+        // Les dictionnaires vivent dans DockPad.Core depuis l'extraction de la bibliotheque : ils
+        // sont partages par les applications, la palette n'appartient a aucune en particulier.
+        XDocument.Load(Path.Combine(RepoRoot(), "DockPad.Core", "Themes", file))
                  .Root!.Elements()
                  .Where(e => e.Name.LocalName == "SolidColorBrush");
 

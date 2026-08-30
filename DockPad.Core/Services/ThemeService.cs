@@ -187,7 +187,7 @@ public static class ThemeService
         // l'assembly HÔTE, qui n'est pas DockPad quand un outil de capture monte l'application.
         // Même piège que app.ico, référencée par pack URI pour la même raison.
         var source = new Uri(
-            $"pack://application:,,,/DockPad;component/Themes/{(dark ? "Dark" : "Light")}.xaml",
+            $"pack://application:,,,/DockPad.Core;component/Themes/{(dark ? "Dark" : "Light")}.xaml",
             UriKind.Absolute);
         var palette = new ResourceDictionary { Source = source };
 
