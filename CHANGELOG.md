@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.17.0] — 2026-08-30
+
+### Nouveautés utilisateur
+- **Une annotation `x-bw` peut désigner un modèle plutôt qu'une valeur** : `template: templates/ntfy-config/server.yml` fait rendre ce fichier avec les valeurs du coffre, et écrire le résultat sous le nom de `file:`. Le modèle reste versionné à sa place, `secrets/` ne contient plus que du produit
+- **Un seul écran de compte-rendu**, quel que soit le nombre de sorties. En mode « les deux », un succès complet montrait les fichiers et ne disait jamais que le rendu était dans le presse-papier : la moitié de l'information disparaissait
+- **Un écran de choix** quand un fichier porte les deux formats : deux cases, cochées, posées **avant** le mot de passe maître. Un fichier qui ne porte qu'un format n'y passe pas
+- **Les listes du compte-rendu se sélectionnent** — clés absentes, fichiers écrits, fichiers périmés. C'est ce qu'on veut recopier pour aller créer la clé dans le coffre
+
+### Notes
+- Le rendu d'un modèle est **tout ou rien, par fichier** : un seul marqueur non résolu et ce fichier n'est pas écrit. Le presse-papier, lui, laisse le marqueur littéral — on l'y voit ; un fichier part sur le NAS sans être relu
+- Le chemin d'un `template:` est **contraint au dossier du compose**. C'est la seule annotation qui désigne quoi lire, et elle vient d'un fichier
+- Seul un compte-rendu **complet** se referme au décompte. Un compte-rendu incomplet attend une décision
+
 ## [1.16.0] — 2026-08-30
 
 ### Nouveautés utilisateur
