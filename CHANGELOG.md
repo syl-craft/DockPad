@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.19.1] — 2026-08-30
+
+### Notes
+- Le code qui parle au coffre passe derrière une frontière nommée (`ISecretSource`), en préparation d'une éventuelle seconde source de secrets. **Aucun changement visible** : vérifié par comparaison pixel de la fenêtre d'injection — 68 pixels d'écart sur 234 000, tous dans le numéro de version affiché en pied
+
 ## [1.19.0] — 2026-08-30
 
 ### Nouveautés utilisateur
