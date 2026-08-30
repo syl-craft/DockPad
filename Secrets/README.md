@@ -183,7 +183,7 @@ sortie sont des diagnostics et vont au journal.
 
 ```powershell
 winget install Bitwarden.CLI                                  # jamais par npm
-bw config server https://vaultwarden.beagle-draco.ts.net
+bw config server https://vaultwarden.<ton-tailnet>.ts.net   # ou l'URL de ton instance
 bw login                                                      # mot de passe maître + TOTP
 ```
 
