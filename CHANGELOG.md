@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.15.0] — 2026-08-30
+
+### Nouveautés utilisateur
+- **Un antislash devant un marqueur de secret le laisse tranquille** : `\{{ bw:item:champ }}` s'écrit tel quel dans le résultat, sans son antislash, et n'est jamais cherché dans le coffre. Un fichier qui *documente* la syntaxe — un `CLAUDE.md`, un README — passait jusqu'ici pour un fichier à secrets ; il répond désormais « rien à produire », ce qui est la bonne réponse. La garantie tout-ou-rien est intacte : un marqueur **non** échappé qui ne se résout pas fait toujours tout échouer
+
+### Corrections
+- **Le texte des Options redevient lisible en thème sombre.** « Langue », « Thème » et les libellés voisins s'affichaient en noir sur fond sombre depuis le correctif des titres de section de la version précédente
+- **Un fichier de secret tenu par un antivirus ne fait plus échouer l'injection au hasard.** La reprise avait été resserrée d'un cran de trop et ne couvrait plus l'erreur que Windows remonte réellement dans ce cas
+
+### Notes
+- La barre de recherche note désormais dans le journal ce qui se passe quand on valide par la touche Entrée. C'est une sonde temporaire, posée pour identifier un défaut intermittent signalé — « je tape, j'appuie sur Entrée, ça ne lance rien, de temps en temps » — qui ne laissait aucune trace. Elle sera retirée une fois la cause connue
+
 ## [1.14.2] — 2026-08-30
 
 ### Notes
