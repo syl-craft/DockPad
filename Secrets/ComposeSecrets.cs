@@ -10,7 +10,17 @@ namespace DockPad.Secrets;
 /// ici ; et il diffère de <paramref name="Key"/> du préfixe <c>vw-</c>, les confondre produirait un
 /// fichier que Compose ne trouverait pas.
 /// </param>
-public sealed record ComposeSecret(string Key, string FileName, SecretMarker Marker);
+/// <param name="Marker">
+/// Où trouver la valeur dans le coffre, quand la valeur <b>est</b> le secret. Nul si le secret est
+/// un <paramref name="Template"/>.
+/// </param>
+/// <param name="Template">
+/// Chemin <b>relatif au dossier du compose</b> d'un modèle à rendre. Nul si le secret est une
+/// valeur du coffre. Les deux sont exclusifs : ce sont deux sources pour un même fichier, et
+/// deviner serait pire que refuser.
+/// </param>
+public sealed record ComposeSecret(
+    string Key, string FileName, SecretMarker? Marker, string? Template = null);
 
 /// <summary>Ce qu'un document a livré : des secrets annotés, des annotations fautives, ou rien.</summary>
 /// <param name="Failures">Annotations incomplètes — elles <b>prouvent</b> qu'on est sur un compose à générer.</param>
@@ -75,8 +85,21 @@ public static class ComposeSecrets
             var key = Scalar(nameNode) ?? "";
             var item = Scalar(Child(annotation, "item"));
             var field = Scalar(Child(annotation, "field"));
+            var template = Scalar(Child(annotation, "template"));
 
-            if (string.IsNullOrWhiteSpace(item) || string.IsNullOrWhiteSpace(field))
+            var hasValue = !string.IsNullOrWhiteSpace(item) && !string.IsNullOrWhiteSpace(field);
+            var hasTemplate = !string.IsNullOrWhiteSpace(template);
+
+            // Deux sources pour un meme fichier : refus, jamais un choix implicite. Meme
+            // raisonnement que les deux modes d'un fichier — sauf qu'ici on ne PEUT pas faire les
+            // deux, il n'y a qu'un fichier a produire.
+            if (hasValue && hasTemplate)
+            {
+                failures.Add(Loc.F("Inject_Error_SecretBothSources", key));
+                continue;
+            }
+
+            if (!hasValue && !hasTemplate)
             {
                 failures.Add(Loc.F("Inject_Error_SecretIncomplete", key));
                 continue;
@@ -91,7 +114,9 @@ public static class ComposeSecrets
                 continue;
             }
 
-            entries.Add(new ComposeSecret(key, BaseName(file), new SecretMarker(item, field)));
+            entries.Add(hasTemplate
+                ? new ComposeSecret(key, BaseName(file), null, template)
+                : new ComposeSecret(key, BaseName(file), new SecretMarker(item!, field!)));
         }
 
         return new ComposeScan(entries, failures, null);

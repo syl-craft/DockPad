@@ -1066,15 +1066,12 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
     <value>53cr3t « {0} » : l'4nn0t4t10n x-bw n'4 p45 d3 f1l3: — 4ucun n0m d3 f1ch13r 4 pr0du1r3.</value>
   </data>
   <data name="Inject_Error_SecretIncomplete" xml:space="preserve">
-    <value>53cr3t « {0} » : l'4nn0t4t10n x-bw n'4 p45 d'1t3m 0u d3 ch4mp.</value>
+    <value>53cr3t « {0} » : l’4nn0t4t10n x-bw n’4 n1 ch4mp du c0ffr3 n1 m0d3l3.</value>
   </data>
   <data name="Inject_Error_YamlUnreadable" xml:space="preserve">
     <value>C3 f1ch13r n'35t p45 du Y4ML l151bl3 ({0}).</value>
   </data>
-  <data name="Inject_Files_Success" xml:space="preserve">
-    <value>{0} {0:plural:fichier écrit|fichiers écrits}, {1} {1:plural:item lu|items lus}</value>
-  </data>
-  <data name="Inject_Files_Folder" xml:space="preserve">
+<data name="Inject_Files_Folder" xml:space="preserve">
     <value>3cr1t5 d4n5</value>
   </data>
   <data name="Inject_OpenFolder" xml:space="preserve">
@@ -1143,10 +1140,7 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_Unlock_Button" xml:space="preserve">
     <value>D3v3rr0u1ll3r</value>
   </data>
-  <data name="Inject_Success" xml:space="preserve">
-    <value>{0} {0:plural:marqueur résolu|marqueurs résolus}, {1} {1:plural:item lu|items lus}</value>
-  </data>
-  <data name="Inject_Success_Clipboard" xml:space="preserve">
+<data name="Inject_Success_Clipboard" xml:space="preserve">
     <value>Pr3553-p4p13r r3mpl1</value>
   </data>
   <data name="Inject_Countdown" xml:space="preserve">
@@ -1240,27 +1234,57 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
     <value>5ur t0u5 l35 f1ch13r5, y c0mpr15 c3ux 54n5 3xt3n510n. 5ur W1nd0w5 11 3ll3 53 tr0uv3 50u5 « 4ff1ch3r plu5 d'0pt10n5 », 0u d1r3ct3m3nt 4v3c M4j + cl1c dr01t.</value>
   </data>
   <data name="Inject_Partial_Title" xml:space="preserve">
-    <value>Rendu incomplet</value>
+    <value>R3ndu 1nc0mpl3t</value>
   </data>
-  <data name="Inject_Partial_Summary" xml:space="preserve">
-    <value>{0} {0:plural:marqueur résolu|marqueurs résolus}, {1} {1:plural:fichier écrit|fichiers écrits} — mais il manque des valeurs.</value>
+<data name="Inject_Partial_Missing" xml:space="preserve">
+    <value>Cl35 4b53nt35 du c0ffr3</value>
   </data>
-  <data name="Inject_Partial_SummaryFiles" xml:space="preserve">
-    <value>{0} {0:plural:fichier écrit|fichiers écrits} — mais il manque des valeurs.</value>
-  </data>
-  <data name="Inject_Partial_Missing" xml:space="preserve">
-    <value>Clés absentes du coffre</value>
-  </data>
-  <data name="Inject_Partial_Written" xml:space="preserve">
-    <value>Fichiers écrits</value>
-  </data>
-  <data name="Inject_Partial_Stale" xml:space="preserve">
-    <value>Ces fichiers existent déjà mais leur clé a disparu du coffre. Ils n'ont pas été touchés : leur valeur précédente est conservée.</value>
+<data name="Inject_Partial_Stale" xml:space="preserve">
+    <value>C35 f1ch13r5 3x15t3nt d3j4 m415 l3ur cl3 4 d15p4ru du c0ffr3. 1l5 n'0nt p45 3t3 t0uch35 : l3ur v4l3ur pr3c3d3nt3 35t c0n53rv33.</value>
   </data>
   <data name="Inject_Partial_Delete" xml:space="preserve">
-    <value>Supprimer ces fichiers</value>
+    <value>5uppr1m3r c35 f1ch13r5</value>
   </data>
   <data name="Inject_Missing_Replacer" xml:space="preserve">
-    <value>Un marqueur REMPLACER subsiste dans le fichier.</value>
+    <value>Un m4rqu3ur R3MPL4C3R 5ub515t3 d4n5 l3 f1ch13r.</value>
+  </data>
+  <data name="Inject_Error_SecretBothSources" xml:space="preserve">
+    <value>53cr3t « {0} » : l’4nn0t4t10n x-bw p0rt3 4 l4 f015 un ch4mp du c0ffr3 3t un m0d3l3. G4rd3 l’un 0u l’4utr3 : c3 50nt d3ux 50urc35 p0ur un m3m3 f1ch13r.</value>
+  </data>
+  <data name="Inject_Error_TemplateOutside" xml:space="preserve">
+    <value>53cr3t « {0} » : l3 ch3m1n du m0d3l3 50rt du d05513r du c0mp053 ({1}). Un m0d3l3 d01t r35t3r 50u5 c3 d05513r.</value>
+  </data>
+  <data name="Inject_Error_TemplateMissing" xml:space="preserve">
+    <value>53cr3t « {0} » : m0d3l3 1ntr0uv4bl3 ({1}).</value>
+  </data>
+  <data name="Inject_Error_TemplateTooBig" xml:space="preserve">
+    <value>53cr3t « {0} » : l3 m0d3l3 35t tr0p v0lum1n3ux ({1}).</value>
+  </data>
+  <data name="Inject_Error_TemplateUnreadable" xml:space="preserve">
+    <value>53cr3t « {0} » : l3 m0d3l3 n’4 p45 pu 3tr3 lu ({1}).</value>
+  </data>
+  <data name="Inject_Result_Title" xml:space="preserve">
+    <value>R3ndu t3rm1n3</value>
+  </data>
+  <data name="Inject_Result_Markers" xml:space="preserve">
+    <value>{0} {0:plural:marqueur résolu|marqueurs résolus}</value>
+  </data>
+  <data name="Inject_Result_Files" xml:space="preserve">
+    <value>{0} {0:plural:fichier écrit|fichiers écrits}</value>
+  </data>
+  <data name="Inject_Choice_Prompt" xml:space="preserve">
+    <value>C3 f1ch13r p0rt3 l35 d3ux f0rm4t5. Qu3 f4ut-1l pr0du1r3 ?</value>
+  </data>
+  <data name="Inject_Choice_Files" xml:space="preserve">
+    <value>3cr1r3 l35 f1ch13r5 d3 53cr3t5 4 c0t3 du c0mp053</value>
+  </data>
+  <data name="Inject_Choice_Clipboard" xml:space="preserve">
+    <value>C0p13r l3 f1ch13r r3ndu d4n5 l3 pr3553-p4p13r</value>
+  </data>
+  <data name="Inject_Choice_Hint" xml:space="preserve">
+    <value>R13n d3 c0ch3 : 1l n’y 4ur41t r13n 4 pr0du1r3.</value>
+  </data>
+  <data name="Inject_Choice_Continue" xml:space="preserve">
+    <value>C0nt1nu3r</value>
   </data>
 </root>

@@ -159,7 +159,7 @@ Secrets/                                 PERIMETRE D'AUDIT — tout ce qui voit 
     BwItem.cs                            Item de coffre tel que la CLI le rend
     SecretMarker.cs                      Un marqueur {{ bw:item:champ }}, et ce que le coffre repond
     SecretPlan.cs                        PUR — quel mode le fichier demande : presse-papier, fichiers, ou les deux
-    SecretBundle.cs                      PUR — resout les annotations au mieux : ce qu'on ecrit, ce qui manque, ce qui est perime
+    SecretBundle.cs                      PUR — resout les annotations au mieux + SecretTemplatePath, ou un template: a le droit de pointer
     ComposeSecrets.cs                    PUR — lit les annotations x-bw du bloc secrets: (YamlDotNet)
     SecretFileWriter.cs                  Le SEUL fichier du dossier autorise a ecrire sur le disque
     SecretRenderResult.cs                Un rendu, ou une liste d'echecs — jamais les deux
@@ -744,6 +744,49 @@ DockPad les lit. Le fichier produit porte le **nom de base de `file:`** — `ts-
 du secret `vw-ts-authkey` : `file:` vise le NAS, seul son nom de base est exploitable, et confondre
 les deux casserait le déploiement en silence.
 
+**Deux formes, exclusives** — les deux ensemble sont un refus, il n'y a qu'un fichier à produire :
+
+```yaml
+  ntfy-ts-authkey:
+    file: /share/.../secrets/ts-authkey
+    x-bw:
+      item: ntfy-infra          # la valeur du coffre EST le contenu
+      field: ntfy-ts-authkey
+
+  ntfy-config:
+    file: /share/.../secrets/server.yml
+    x-bw:
+      template: templates/ntfy-config/server.yml   # un modèle local est rendu
+```
+
+##### `template:` — un modèle rendu, et deux règles qui ne sont pas des détails
+
+Le cas vient d'un fichier de **structure** dont seules quelques valeurs sont sensibles : `ntfy` ne
+connaît aucune convention `MACHIN_FILE`, sa seule porte est un YAML de configuration. Sans
+`template:`, ce fichier était à la fois le modèle versionné **et** le nom du fichier déployé, donc
+le rendre en place aurait remplacé le modèle par des jetons en clair — dans un fichier **suivi par
+git**. Le modèle vit désormais sous `templates/`, `secrets/` ne contient plus que du produit, et son
+`.gitignore` redevient vrai sans exception.
+
+- **Le rendu d'un modèle est tout-ou-rien, par fichier**, et c'est une asymétrie assumée avec le
+  presse-papier. Là, un marqueur non résolu reste littéral parce qu'on le **voit** dans ce qu'on
+  colle ; ici le fichier part sur le NAS sans que personne ne le relise — un `{{ bw:… }}` déposé tel
+  quel deviendrait un hachage bcrypt invalide, et le service refuserait le compte sans dire
+  pourquoi. Un seul marqueur manquant, et **ce fichier-là** n'est pas écrit ; les autres le sont
+- **`template:` est la seule annotation qui désigne *quoi lire*, et elle vient d'un fichier.**
+  `SecretTemplatePath` contraint le chemin au sous-arbre du dossier du compose : sans elle, un
+  `template: ../../../.ssh/id_rsa` ferait lire une clé privée et l'écrirait, rendue, dans
+  `secrets/`. On compare les chemins **résolus**, jamais la chaîne — chercher `..` dedans se
+  contourne par des séparateurs mélangés ou un chemin court 8.3. Vérifié par mutation
+- **Les modèles sont lus avant d'ouvrir le coffre** : introuvable, hors du dossier, trop gros → refus
+  nommant le chemin. Inutile de réclamer un mot de passe maître pour s'en apercevoir après
+- **Un modèle sans aucun marqueur est valide** — c'est un fichier de structure recopié tel quel.
+  Contrairement au presse-papier, où l'absence de marqueur signale qu'on a visé le mauvais fichier,
+  ici c'est le compose qui a **désigné** ce modèle : l'intention est explicite
+- **Fins de ligne normalisées en LF** à l'écriture d'un modèle : il vient d'un dépôt git qui a pu
+  l'extraire en CRLF, la destination est un conteneur Linux. Une **valeur** du coffre, elle, n'est
+  jamais normalisée : c'est un secret, on l'écrit telle qu'elle est
+
 - **Un vrai parseur (`YamlDotNet`), pas un balayage textuel.** Le compose de référence porte un
   `entrypoint` de quatre-vingt-dix lignes en scalaire bloc avec des `$$` — et surtout il **documente
   `x-bw` dans un commentaire** : une détection textuelle basculerait en mode fichiers sur un document
@@ -942,10 +985,33 @@ préfixe dans la charge utile, les deux flux n'ayant rien à voir.
 > le presse-papier **avant** que l'utilisateur ait pu coller. La sortie est donc **différée jusqu'au
 > désarmement du verrou**.
 
-Fenêtre à quatre états : `Vérification → Déverrouillage → Travail → Compte-rendu`. Succès : le
-décompte s'affiche et la fenêtre se ferme à zéro — zéro clic dans le cas nominal. Échec : elle reste,
-avec la liste. Un déverrouillage refusé revient sur la saisie plutôt que sur un écran d'échec qu'il
-faudrait fermer pour réessayer.
+Fenêtre à cinq états : `Vérification → [Choix] → Déverrouillage → Travail → Compte-rendu`. Un
+déverrouillage refusé revient sur la saisie plutôt que sur un écran d'échec qu'il faudrait fermer
+pour réessayer.
+
+**Le choix n'apparaît que si le fichier porte les deux formats**, et il arrive **avant** le mot de
+passe : réclamer le mot de passe maître puis demander quoi en faire, c'est faire payer avant de
+savoir ce qu'on achète. Deux cases, cochées — ne rien décocher redonne exactement le comportement
+d'avant, l'écran ne coûte donc qu'un clic à qui veut tout ; tout décocher éteint le bouton plutôt
+que d'ouvrir le coffre pour rien. Un fichier qui ne porte **qu'un** format ne passe pas par là : une
+case unique, pré-cochée, dont décocher revient à ne rien faire, n'est pas un choix mais un clic de
+plus. Il vit **dans cette fenêtre**, comme cinquième état — une seconde fenêtre serait exactement le
+défaut qu'on cherche à supprimer.
+
+**Un seul compte-rendu, à sections conditionnelles** : le presse-papier, les clés absentes, les
+fichiers écrits, les périmés — ce qui existe. Trois écrans vivaient là et un seul s'affichait, si
+bien qu'en mode « les deux » un succès complet montrait les fichiers et **ne disait jamais** que le
+rendu était dans le presse-papier : la moitié de l'information disparaissait sans que rien ne le
+signale. Le titre bascule vert/ambre sur `Complete`, et c'est tout ce qui sépare les deux états.
+
+**Seul un compte-rendu complet se referme au décompte** — zéro clic dans le cas nominal. Un
+compte-rendu incomplet demande une décision (supprimer les périmés, ou non) et le voir disparaître
+reviendrait à répondre à sa place ; un compte-rendu sans rendu n'a pas de décompte du tout.
+
+**Les listes sont des `TextBox` en lecture seule, pas des `TextBlock`** : un `TextBlock` ne se
+sélectionne pas, et ces lignes sont précisément ce qu'on veut recopier pour aller créer la clé dans
+le coffre. Pas de **bouton** de copie : il écraserait le rendu qu'on vient de mettre dans le
+presse-papier, alors qu'une sélection au clavier est un geste explicite.
 
 #### L'entrée de menu contextuel (`SecretMenu`)
 **Une seule clé**, `HKCU\Software\Classes\*\shell\DockPadInjectSecrets` — donc **tous les
@@ -1019,7 +1085,7 @@ première erreur qu'on fait ; le texte d'aide le dit.
 
 #### Captures
 `DialogShot.exe inject <fr|en> <png>` (saisie du mot de passe), `inject-failed` (compte-rendu
-d'échec), `inject-files` (fichiers écrits) et `inject-partial` (**rendu incomplet** : clés absentes,
+d'échec), `inject-choice` (choix des sorties), `inject-files` (les deux, complet) et `inject-partial` (**rendu incomplet** : clés absentes,
 fichiers écrits, fichiers périmés et leur bouton de suppression) — les états qui valent une
 relecture. Le dernier est le plus important : c'est le seul écran qui demande une décision. Posés **par réflexion**, comme `OverlayShot`
 appelle `ShowHintOverlay` : les exposer ferait entrer du code de test dans la fenêtre. Aucun des deux

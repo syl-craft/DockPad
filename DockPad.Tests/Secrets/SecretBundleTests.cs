@@ -177,4 +177,174 @@ public class SecretBundleTests : IDisposable
 
         Assert.Empty(SecretFileWriter.Delete(_dir, ["jamais-ecrit"]));
     }
+
+    // ───────────── `template:` — la garde de chemin ─────────────
+
+    [Fact]
+    public void UnCheminDeModele_RelatifEtSousLeDossier_EstAccepte()
+    {
+        var full = SecretTemplatePath.Resolve(_dir, "templates/ntfy-config/server.yml");
+
+        Assert.NotNull(full);
+        Assert.StartsWith(Path.GetFullPath(_dir), full);
+    }
+
+    /// <summary>
+    /// La garde qui compte : <c>template:</c> est la seule annotation qui désigne <b>quoi lire</b>,
+    /// et elle vient d'un fichier. Sans elle, un compose ferait lire n'importe quoi sur la machine
+    /// et l'écrirait, rendu, dans <c>secrets/</c>.
+    /// </summary>
+    /// <remarks>
+    /// On compare les chemins <b>résolus</b>, jamais la chaîne : chercher <c>..</c> dedans se
+    /// contourne par des séparateurs mélangés ou un chemin court 8.3.
+    /// </remarks>
+    [Theory]
+    [InlineData("../voisin/secret.yml")]
+    [InlineData("..\\voisin\\secret.yml")]
+    [InlineData("templates/../../dehors.yml")]
+    [InlineData("C:\\Users\\moi\\.ssh\\id_rsa")]
+    [InlineData("/etc/passwd")]
+    [InlineData("\\\\serveur\\partage\\secret.yml")]
+    [InlineData("")]
+    public void UnCheminDeModele_QuiSortDuDossier_EstRefuse(string relative)
+        => Assert.Null(SecretTemplatePath.Resolve(_dir, relative));
+
+    // ───────────── `template:` — le rendu ─────────────
+
+    private static ComposeSecret Templated(string file, string template) =>
+        new($"vw-{file}", file, null, template);
+
+    [Fact]
+    public void UnModele_EstRenduAvecLesValeursDuCoffre()
+    {
+        var result = SecretBundle.Resolve(
+            [Templated("server.yml", "templates/server.yml")],
+            m => SecretLookup.Found("hash-" + m.Field),
+            new Dictionary<string, string>
+            {
+                ["templates/server.yml"] = "auth-users:\n  - \"mobile:{{ bw:ntfy:hash-mobile }}:user\"\n",
+            });
+
+        Assert.True(result.Complete);
+        Assert.Equal("auth-users:\n  - \"mobile:hash-hash-mobile:user\"\n", result.Files.Single().Value);
+        Assert.Equal("server.yml", result.Files.Single().Name);
+    }
+
+    /// <summary>
+    /// <b>Tout ou rien, par fichier</b> — asymétrie assumée avec le presse-papier.
+    /// </summary>
+    /// <remarks>
+    /// Là, un marqueur non résolu reste littéral parce que l'utilisateur le <i>voit</i> dans ce
+    /// qu'il colle. Ici le fichier part sur le NAS sans que personne ne le relise : un
+    /// <c>{{ bw:… }}</c> déposé tel quel deviendrait un hachage bcrypt invalide, et le service
+    /// refuserait le compte sans dire pourquoi.
+    /// </remarks>
+    [Fact]
+    public void UnMarqueurManquantDansUnModele_NEcritPasCeFichier_MaisEcritLesAutres()
+    {
+        var result = SecretBundle.Resolve(
+            [Entry("a", "ts-authkey"), Templated("server.yml", "templates/server.yml")],
+            m => m.Field == "absent" ? SecretLookup.Missing("absent du coffre") : SecretLookup.Found("v"),
+            new Dictionary<string, string>
+            {
+                ["templates/server.yml"] = "ok: {{ bw:ntfy:present }}\nko: {{ bw:ntfy:absent }}\n",
+            });
+
+        Assert.Equal(["ts-authkey"], result.Files.Select(f => f.Name));
+        Assert.DoesNotContain(result.Files, f => f.Name == "server.yml");
+        Assert.Contains("server.yml", result.Stale);
+        Assert.False(result.Complete);
+    }
+
+    /// <summary>
+    /// Un modèle sans marqueur est valide — c'est un fichier de structure recopié tel quel.
+    /// Contrairement au presse-papier, où l'absence de marqueur signale qu'on a visé le mauvais
+    /// fichier, ici c'est le compose qui a désigné ce modèle : l'intention est explicite.
+    /// </summary>
+    [Fact]
+    public void UnModeleSansMarqueur_EstRecopieTelQuel()
+    {
+        var result = SecretBundle.Resolve(
+            [Templated("server.yml", "t.yml")],
+            _ => SecretLookup.Missing("jamais appele"),
+            new Dictionary<string, string> { ["t.yml"] = "listen: 127.0.0.1:8080\n" });
+
+        Assert.True(result.Complete);
+        Assert.Equal("listen: 127.0.0.1:8080\n", result.Files.Single().Value);
+    }
+
+    /// <summary>
+    /// Le modèle vient d'un dépôt git, qui peut l'avoir extrait en CRLF sous Windows ; la
+    /// destination est un conteneur Linux.
+    /// </summary>
+    [Fact]
+    public void LesFinsDeLigneDUnModele_SontNormaliseesEnLF()
+    {
+        var result = SecretBundle.Resolve(
+            [Templated("server.yml", "t.yml")],
+            _ => SecretLookup.Found("x"),
+            new Dictionary<string, string> { ["t.yml"] = "a: 1\r\nb: {{ bw:i:f }}\r\n" });
+
+        Assert.Equal("a: 1\nb: x\n", result.Files.Single().Value);
+    }
+
+    /// <summary>
+    /// Une <b>valeur</b> du coffre n'est jamais normalisée : c'est un secret, on l'écrit telle
+    /// qu'elle est. Seuls les modèles le sont.
+    /// </summary>
+    [Fact]
+    public void UneValeurDuCoffre_NEstJamaisNormalisee()
+    {
+        var result = SecretBundle.Resolve(
+            [Entry("a", "ts-authkey")], _ => SecretLookup.Found("tskey\r\nsuite"));
+
+        Assert.Equal("tskey\r\nsuite", result.Files.Single().Value);
+    }
+
+    /// <summary>Un modèle que l'appelant n'a pas lu ne produit rien, et le dit.</summary>
+    [Fact]
+    public void UnModeleNonFourni_NEcritRien()
+    {
+        var result = SecretBundle.Resolve(
+            [Templated("server.yml", "t.yml")], _ => SecretLookup.Found("x"));
+
+        Assert.Empty(result.Files);
+        Assert.Single(result.Missing);
+    }
+
+    // ───────────── `template:` — l'annotation ─────────────
+
+    private static string Compose(string annotation) =>
+        "secrets:\n  ntfy-config:\n    file: /share/x/secrets/server.yml\n    x-bw:\n" + annotation;
+
+    [Fact]
+    public void UneAnnotationTemplate_EstLue()
+    {
+        var scan = ComposeSecrets.Extract(Compose("      template: templates/server.yml\n"));
+
+        var entry = Assert.Single(scan.Entries);
+        Assert.Equal("templates/server.yml", entry.Template);
+        Assert.Null(entry.Marker);
+        Assert.Equal("server.yml", entry.FileName);
+    }
+
+    /// <summary>Deux sources pour un même fichier : refus, jamais un choix implicite.</summary>
+    [Fact]
+    public void UneAnnotationQuiPorteLesDeuxSources_EstUnRefus()
+    {
+        var scan = ComposeSecrets.Extract(
+            Compose("      item: ntfy-infra\n      field: f\n      template: templates/server.yml\n"));
+
+        Assert.Empty(scan.Entries);
+        Assert.Single(scan.Failures);
+    }
+
+    [Fact]
+    public void UneAnnotationSansAucuneSource_EstUnRefus()
+    {
+        var scan = ComposeSecrets.Extract(Compose("      item: ntfy-infra\n"));
+
+        Assert.Empty(scan.Entries);
+        Assert.Single(scan.Failures);
+    }
 }

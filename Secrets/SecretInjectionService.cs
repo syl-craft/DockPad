@@ -259,6 +259,7 @@ public static class SecretInjectionService
         string content, string folder, SecretMode mode, string masterPassword, CancellationToken token)
     {
         IReadOnlyList<ComposeSecret> entries = [];
+        var templates = new Dictionary<string, string>(StringComparer.Ordinal);
 
         if (mode is SecretMode.Files or SecretMode.Both)
         {
@@ -269,6 +270,7 @@ public static class SecretInjectionService
             var blocking = SecretFileWriter.Conflicts(scanned)
                 .Concat(scanned.Where(e => !SecretFileWriter.IsWritableName(e.FileName))
                                .Select(e => Loc.F("Inject_Error_BadFileName", e.Key)))
+                .Concat(ReadTemplates(scanned, folder, templates))
                 .ToList();
 
             if (blocking.Count > 0) return InjectionReport.Failed(blocking);
@@ -284,7 +286,7 @@ public static class SecretInjectionService
 
         if (entries.Count > 0)
         {
-            var bundle = SecretBundle.Resolve(entries, vault!.Lookup);
+            var bundle = SecretBundle.Resolve(entries, vault!.Lookup, templates);
             missing.AddRange(bundle.Missing);
 
             var written = SecretFileWriter.Write(folder, bundle.Files);
@@ -318,6 +320,60 @@ public static class SecretInjectionService
             return InjectionReport.Failed(Fallback(missing));
 
         return InjectionReport.Produced(render, files, missing.Distinct(StringComparer.Ordinal).ToList());
+    }
+
+    /// <summary>
+    /// Lit les modèles désignés par <c>template:</c>, et rend ce qui empêche de continuer.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Avant d'ouvrir le coffre.</b> Un modèle introuvable ou hors du dossier ne produira rien
+    /// de bon — inutile de réclamer un mot de passe maître pour s'en apercevoir après.
+    /// </para>
+    /// <para>
+    /// <b>Le chemin est vérifié par <see cref="SecretTemplatePath"/>, jamais pris tel quel.</b>
+    /// C'est la seule annotation qui désigne <i>quoi lire</i> : sans cette garde, un compose pourrait
+    /// faire lire n'importe quel fichier de la machine et l'écrire, rendu, dans <c>secrets/</c>.
+    /// </para>
+    /// </remarks>
+    private static List<string> ReadTemplates(
+        IReadOnlyList<ComposeSecret> entries, string folder, Dictionary<string, string> templates)
+    {
+        var failures = new List<string>();
+
+        foreach (var entry in entries)
+        {
+            if (entry.Template is not { } relative || templates.ContainsKey(relative)) continue;
+
+            var full = SecretTemplatePath.Resolve(folder, relative);
+            if (full is null)
+            {
+                failures.Add(Loc.F("Inject_Error_TemplateOutside", entry.Key, relative));
+                continue;
+            }
+
+            if (!File.Exists(full))
+            {
+                failures.Add(Loc.F("Inject_Error_TemplateMissing", entry.Key, relative));
+                continue;
+            }
+
+            // Meme plafond que le gabarit principal : l'annotation pourrait viser une image disque.
+            if (new FileInfo(full).Length > MaxTemplateBytes)
+            {
+                failures.Add(Loc.F("Inject_Error_TemplateTooBig", entry.Key, relative));
+                continue;
+            }
+
+            try { templates[relative] = File.ReadAllText(full); }
+            catch (Exception ex)
+            {
+                LogService.Warn(ex, "Lecture d'un modèle de secret");
+                failures.Add(Loc.F("Inject_Error_TemplateUnreadable", entry.Key, relative));
+            }
+        }
+
+        return failures;
     }
 
     /// <summary>Un échec doit dire ce qui a échoué — même quand la liste des manques est vide.</summary>

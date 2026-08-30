@@ -76,6 +76,25 @@ venu d'une **valeur du coffre** reste **compté, jamais recopié** : ce serait u
 l'écran. Un test le vérifie au milieu de clés manquantes, parce que c'est la fuite que ce
 relâchement pourrait ouvrir sans qu'on la voie.
 
+### `template:` — un modèle rendu plutôt qu'une valeur
+
+Une annotation `x-bw` porte **soit** `item`+`field` (la valeur du coffre *est* le contenu) **soit**
+`template:` (un modèle local est rendu). Les deux ensemble sont un refus : il n'y a qu'un fichier à
+produire.
+
+Deux règles portent tout le risque de cette forme :
+
+- **tout ou rien, par fichier.** Asymétrie assumée avec le presse-papier : là, un marqueur non
+  résolu reste littéral parce qu'on le *voit* dans ce qu'on colle ; ici le fichier part sur le NAS
+  sans être relu. Un seul marqueur manquant, et ce fichier-là n'est pas écrit ;
+- **le chemin est contraint au dossier du compose** (`SecretTemplatePath`). C'est la seule annotation
+  qui désigne *quoi lire*, et elle vient d'un fichier : sans garde, un `template: ../../../.ssh/id_rsa`
+  ferait lire une clé privée et l'écrirait, rendue, dans `secrets/`. On compare les chemins
+  **résolus**, jamais la chaîne — vérifié par mutation.
+
+Les modèles sont lus **avant** d'ouvrir le coffre, et les fins de ligne d'un modèle sont normalisées
+en LF. Une valeur du coffre, jamais : c'est un secret, on l'écrit telle qu'elle est.
+
 ### Les périmés : signalés, supprimés sur demande
 
 Une clé disparue laisse son fichier **intact**. Le supprimer d'office ferait d'un coffre

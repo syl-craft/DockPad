@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -1066,15 +1066,12 @@ This cannot be undone.</value>
     <value>Secret '{0}': the x-bw annotation has no file: — no file name to produce.</value>
   </data>
   <data name="Inject_Error_SecretIncomplete" xml:space="preserve">
-    <value>Secret '{0}': the x-bw annotation is missing item or field.</value>
+    <value>Secret « {0} »: the x-bw annotation has neither a vault field nor a template.</value>
   </data>
   <data name="Inject_Error_YamlUnreadable" xml:space="preserve">
     <value>This file is not readable YAML ({0}).</value>
   </data>
-  <data name="Inject_Files_Success" xml:space="preserve">
-    <value>{0} {0:plural:file written|files written}, {1} {1:plural:item read|items read}</value>
-  </data>
-  <data name="Inject_Files_Folder" xml:space="preserve">
+<data name="Inject_Files_Folder" xml:space="preserve">
     <value>Written to</value>
   </data>
   <data name="Inject_OpenFolder" xml:space="preserve">
@@ -1143,10 +1140,7 @@ This cannot be undone.</value>
   <data name="Inject_Unlock_Button" xml:space="preserve">
     <value>Unlock</value>
   </data>
-  <data name="Inject_Success" xml:space="preserve">
-    <value>{0} {0:plural:marker resolved|markers resolved}, {1} {1:plural:item read|items read}</value>
-  </data>
-  <data name="Inject_Success_Clipboard" xml:space="preserve">
+<data name="Inject_Success_Clipboard" xml:space="preserve">
     <value>Clipboard filled</value>
   </data>
   <data name="Inject_Countdown" xml:space="preserve">
@@ -1242,19 +1236,10 @@ This cannot be undone.</value>
   <data name="Inject_Partial_Title" xml:space="preserve">
     <value>Incomplete render</value>
   </data>
-  <data name="Inject_Partial_Summary" xml:space="preserve">
-    <value>{0} {0:plural:marker resolved|markers resolved}, {1} {1:plural:file written|files written} — but some values are missing.</value>
-  </data>
-  <data name="Inject_Partial_SummaryFiles" xml:space="preserve">
-    <value>{0} {0:plural:file written|files written} — but some values are missing.</value>
-  </data>
-  <data name="Inject_Partial_Missing" xml:space="preserve">
+<data name="Inject_Partial_Missing" xml:space="preserve">
     <value>Keys missing from the vault</value>
   </data>
-  <data name="Inject_Partial_Written" xml:space="preserve">
-    <value>Files written</value>
-  </data>
-  <data name="Inject_Partial_Stale" xml:space="preserve">
+<data name="Inject_Partial_Stale" xml:space="preserve">
     <value>These files already exist but their key is gone from the vault. They were left untouched: their previous value is kept.</value>
   </data>
   <data name="Inject_Partial_Delete" xml:space="preserve">
@@ -1262,5 +1247,44 @@ This cannot be undone.</value>
   </data>
   <data name="Inject_Missing_Replacer" xml:space="preserve">
     <value>A REMPLACER marker remains in the file.</value>
+  </data>
+  <data name="Inject_Error_SecretBothSources" xml:space="preserve">
+    <value>Secret « {0} »: the x-bw annotation carries both a vault field and a template. Keep one or the other — they are two sources for one file.</value>
+  </data>
+  <data name="Inject_Error_TemplateOutside" xml:space="preserve">
+    <value>Secret « {0} »: the template path leaves the compose folder ({1}). A template must stay under that folder.</value>
+  </data>
+  <data name="Inject_Error_TemplateMissing" xml:space="preserve">
+    <value>Secret « {0} »: template not found ({1}).</value>
+  </data>
+  <data name="Inject_Error_TemplateTooBig" xml:space="preserve">
+    <value>Secret « {0} »: the template is too large ({1}).</value>
+  </data>
+  <data name="Inject_Error_TemplateUnreadable" xml:space="preserve">
+    <value>Secret « {0} »: the template could not be read ({1}).</value>
+  </data>
+  <data name="Inject_Result_Title" xml:space="preserve">
+    <value>Render complete</value>
+  </data>
+  <data name="Inject_Result_Markers" xml:space="preserve">
+    <value>{0} {0:plural:marker resolved|markers resolved}</value>
+  </data>
+  <data name="Inject_Result_Files" xml:space="preserve">
+    <value>{0} {0:plural:file written|files written}</value>
+  </data>
+  <data name="Inject_Choice_Prompt" xml:space="preserve">
+    <value>This file carries both formats. What should DockPad produce?</value>
+  </data>
+  <data name="Inject_Choice_Files" xml:space="preserve">
+    <value>Write the secret files next to the compose</value>
+  </data>
+  <data name="Inject_Choice_Clipboard" xml:space="preserve">
+    <value>Copy the rendered file to the clipboard</value>
+  </data>
+  <data name="Inject_Choice_Hint" xml:space="preserve">
+    <value>Nothing selected: there would be nothing to produce.</value>
+  </data>
+  <data name="Inject_Choice_Continue" xml:space="preserve">
+    <value>Continue</value>
   </data>
 </root>

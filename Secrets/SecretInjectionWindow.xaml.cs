@@ -122,6 +122,9 @@ public partial class SecretInjectionWindow : Window
 
         if (preflight is not null) { ShowFailure(preflight); return; }
 
+        // Le fichier porte les deux formats : on demande lesquels produire, AVANT le mot de passe.
+        if (_mode == SecretMode.Both) { ShowChoice(); return; }
+
         ShowUnlock(error: null);
     }
 
@@ -239,23 +242,7 @@ public partial class SecretInjectionWindow : Window
         }
 
         _report = report;
-        ShowOutcome(report);
-    }
-
-    /// <summary>
-    /// Trois sorties possibles, et <b>le trou décide en premier</b>.
-    /// </summary>
-    /// <remarks>
-    /// Un rendu incomplet ne prend jamais l'écran vert, même quand tous les fichiers ont été
-    /// écrits : la panne d'origine n'était pas qu'un fichier soit partiel, c'est qu'il ait eu l'air
-    /// complet.
-    /// </remarks>
-    private void ShowOutcome(InjectionReport report)
-    {
-        if (!report.Complete) { ShowIncomplete(report); return; }
-        if (report.Files is { } files) { ShowFiles(files); return; }
-
-        ShowSuccess(report.Render!);
+        ShowResult(report);
     }
 
     /// <summary>
@@ -286,6 +273,46 @@ public partial class SecretInjectionWindow : Window
         Buttons(clear: false, unlock: false, folder: false);
     }
 
+    /// <summary>
+    /// Que faut-il produire ? Posé <b>avant</b> le mot de passe, et seulement pour un fichier qui
+    /// porte les deux formats.
+    /// </summary>
+    /// <remarks>
+    /// Les deux cases sont cochées : ne rien décocher redonne exactement le comportement d'avant,
+    /// donc l'écran ne coûte qu'un clic à qui veut tout. Les décocher toutes les deux ne produirait
+    /// rien : le bouton s'éteint plutôt que d'ouvrir le coffre pour rien.
+    /// </remarks>
+    private void ShowChoice()
+    {
+        Show(PanelChoice);
+        Buttons(clear: false, unlock: false, folder: false, proceed: true);
+        CloseLabel("Common_Cancel");
+        Choice_Changed(null, null!);
+    }
+
+    private void Choice_Changed(object? sender, RoutedEventArgs e)
+    {
+        var any = ChkFiles.IsChecked == true || ChkClipboard.IsChecked == true;
+
+        BtnContinue.IsEnabled = any;
+        TxtChoiceHint.Visibility = any ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>Le choix devient le mode, et le fil reprend au déverrouillage.</summary>
+    private void Continue_Click(object sender, RoutedEventArgs e)
+    {
+        var files = ChkFiles.IsChecked == true;
+        var clipboard = ChkClipboard.IsChecked == true;
+
+        if (!files && !clipboard) return;
+
+        _mode = files && clipboard ? SecretMode.Both
+              : files ? SecretMode.Files
+              : SecretMode.Clipboard;
+
+        ShowUnlock(error: null);
+    }
+
     private void ShowUnlock(string? error)
     {
         TxtUnlockError.Text = error ?? "";
@@ -296,66 +323,73 @@ public partial class SecretInjectionWindow : Window
         TxtPassword.Focus();
     }
 
-    private void ShowSuccess(SecretRenderResult result)
-    {
-        // Des noms et des nombres, jamais une valeur : ni le contenu du fichier, ni le rendu.
-        LogService.Info($"Injection : {Path.GetFileName(_filePath)}, {result.MarkerCount} marqueur(s), {result.ItemCount} item(s)");
-
-        TxtSummary.Text = Loc.F("Inject_Success", result.MarkerCount, result.ItemCount);
-        Show(PanelSuccess);
-        Buttons(clear: ClipboardGuard.IsArmed, unlock: false, folder: false);
-        CloseLabel("Common_Close");
-        OnGuardChanged(null, EventArgs.Empty);
-    }
-
-    private void ShowFiles(SecretFilesOutcome files)
-    {
-        LogService.Info($"Injection fichiers : {Path.GetFileName(_filePath)}, {files.Written.Count} fichier(s)");
-
-        _writtenFolder = files.Folder;
-        TxtFilesSummary.Text = Loc.F("Inject_Files_Success", files.Written.Count, files.ItemCount);
-        TxtFilesFolder.Text = files.Folder;
-        ListWritten.ItemsSource = files.Written;
-
-        Show(PanelFiles);
-        Buttons(clear: false, unlock: false, folder: true);
-        CloseLabel("Common_Close");
-    }
-
     /// <summary>
-    /// Produit, mais avec des trous : ce qui manque, ce qui a été écrit, ce qui est périmé.
+    /// L'unique compte-rendu : le rendu, les fichiers, les manques, les périmés — ce qui existe.
     /// </summary>
     /// <remarks>
-    /// Les trois listes appellent trois réactions différentes — créer la clé absente, vérifier ce
-    /// qui est à jour, décider du sort des périmés. Les fondre en une seule obligerait le lecteur à
-    /// les redémêler lui-même.
+    /// <para>
+    /// Trois écrans vivaient ici, et un seul s'affichait. Conséquence : en mode « les deux », un
+    /// succès complet montrait les fichiers et <b>ne disait jamais</b> que le rendu était dans le
+    /// presse-papier — la moitié de l'information disparaissait sans que rien ne le signale.
+    /// </para>
+    /// <para>
+    /// <b>Le titre bascule vert/ambre sur <see cref="InjectionReport.Complete"/></b>, et c'est ce
+    /// qui distingue les deux états. La panne d'origine n'était pas qu'un rendu soit partiel, c'est
+    /// qu'il ait eu l'air complet.
+    /// </para>
     /// </remarks>
-    private void ShowIncomplete(InjectionReport report)
+    private void ShowResult(InjectionReport report)
     {
         var written = report.Files?.Written ?? [];
         var stale = report.Files?.Stale ?? [];
         _writtenFolder = report.Files?.Folder;
 
         // Des noms et des nombres, jamais une valeur.
-        LogService.Info($"Injection incomplète : {Path.GetFileName(_filePath)}, {report.Missing.Count} manque(s), {written.Count} fichier(s), {stale.Count} périmé(s)");
+        LogService.Info($"Injection {(report.Complete ? "terminée" : "incomplète")} : {Path.GetFileName(_filePath)}, {report.Missing.Count} manque(s), {written.Count} fichier(s), {stale.Count} périmé(s)");
 
-        TxtPartialSummary.Text = report.Render is { } rendered
-            ? Loc.F("Inject_Partial_Summary", rendered.MarkerCount, written.Count)
-            : Loc.F("Inject_Partial_SummaryFiles", written.Count);
+        TxtResultTitle.Text = Loc.T(report.Complete ? "Inject_Result_Title" : "Inject_Partial_Title");
+        TxtResultTitle.SetResourceReference(ForegroundProperty,
+            report.Complete ? "Brush.Text" : "Brush.WarnTextStrong");
+
+        TxtResultSummary.Text = Summary(report.Render, written.Count);
+
+        BlocClipboard.Visibility = Vis(report.Render is not null);
 
         ListMissing.ItemsSource = report.Missing;
+        BlocMissing.Visibility = Vis(report.Missing.Count > 0);
 
-        LblPartialWritten.Visibility = written.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        ListPartialWritten.ItemsSource = written;
+        TxtFilesFolder.Text = report.Files?.Folder ?? "";
+        ListWritten.ItemsSource = written;
+        BlocWritten.Visibility = Vis(written.Count > 0);
 
         ListStale.ItemsSource = stale;
-        BlocStale.Visibility = stale.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        BlocStale.Visibility = Vis(stale.Count > 0);
 
-        Show(PanelIncomplete);
+        Show(PanelResult);
         Buttons(clear: ClipboardGuard.IsArmed, unlock: false, folder: written.Count > 0);
         CloseLabel("Common_Close");
         OnGuardChanged(null, EventArgs.Empty);
     }
+
+    /// <summary>
+    /// Ce qui a été produit, en fragments joints — un par sortie réelle.
+    /// </summary>
+    /// <remarks>
+    /// Le nombre d'items lus a disparu du résumé. Il valait quand une seule source était possible ;
+    /// avec deux, il faudrait l'union des items des deux, sinon il surestimerait. Ce sur quoi
+    /// l'utilisateur agit, ce sont les deux comptes de sorties.
+    /// </remarks>
+    private static string Summary(SecretRenderResult? render, int written)
+    {
+        var parts = new List<string>();
+
+        if (render is not null) parts.Add(Loc.F("Inject_Result_Markers", render.MarkerCount));
+        if (written > 0) parts.Add(Loc.F("Inject_Result_Files", written));
+
+        return string.Join(", ", parts);
+    }
+
+    private static Visibility Vis(bool shown) => shown ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>
     /// Supprime les fichiers dont la clé a disparu du coffre — sur un clic, jamais autrement.
@@ -388,10 +422,16 @@ public partial class SecretInjectionWindow : Window
     {
         LogService.Info("Synchronisation du cache Bitwarden depuis les Options");
 
-        TxtSummary.Text = Loc.T("Inject_Sync_Done");
-        TxtCountdown.Visibility = Visibility.Collapsed;
+        TxtResultTitle.Text = Loc.T("Inject_Sync_Done");
+        TxtResultTitle.SetResourceReference(ForegroundProperty, "Brush.Text");
+        TxtResultSummary.Text = "";
 
-        Show(PanelSuccess);
+        BlocClipboard.Visibility = Visibility.Collapsed;
+        BlocMissing.Visibility = Visibility.Collapsed;
+        BlocWritten.Visibility = Visibility.Collapsed;
+        BlocStale.Visibility = Visibility.Collapsed;
+
+        Show(PanelResult);
         Buttons(clear: false, unlock: false, folder: false);
         CloseLabel("Common_Close");
     }
@@ -419,15 +459,16 @@ public partial class SecretInjectionWindow : Window
 
     private void Show(UIElement panel)
     {
-        foreach (var candidate in new UIElement[] { PanelBusy, PanelUnlock, PanelSuccess, PanelFiles, PanelIncomplete, PanelFailed })
+        foreach (var candidate in new UIElement[] { PanelBusy, PanelChoice, PanelUnlock, PanelResult, PanelFailed })
             candidate.Visibility = candidate == panel ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void Buttons(bool clear, bool unlock, bool folder)
+    private void Buttons(bool clear, bool unlock, bool folder, bool proceed = false)
     {
         BtnClear.Visibility = clear ? Visibility.Visible : Visibility.Collapsed;
         BtnUnlock.Visibility = unlock ? Visibility.Visible : Visibility.Collapsed;
         BtnOpenFolder.Visibility = folder ? Visibility.Visible : Visibility.Collapsed;
+        BtnContinue.Visibility = proceed ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ───────────── Le décompte ─────────────
@@ -446,31 +487,25 @@ public partial class SecretInjectionWindow : Window
         // autre injection fermerait l'écran de confirmation sous les yeux.
         if (_syncOnly) return;
 
-        // L'écran incomplet ne se referme JAMAIS tout seul : c'est le seul qui demande une
-        // décision — supprimer les fichiers périmés, ou non. Le voir disparaître au bout du
-        // décompte reviendrait à répondre à sa place.
-        if (PanelIncomplete.Visibility == Visibility.Visible)
-        {
-            var armed = ClipboardGuard.IsArmed;
-            TxtPartialCountdown.Text = armed ? Loc.F("Inject_Countdown", ClipboardGuard.SecondsLeft) : "";
-            TxtPartialCountdown.Visibility = armed ? Visibility.Visible : Visibility.Collapsed;
-            BtnClear.Visibility = armed ? Visibility.Visible : Visibility.Collapsed;
-            return;
-        }
-
-        if (PanelSuccess.Visibility != Visibility.Visible) return;
+        if (PanelResult.Visibility != Visibility.Visible) return;
 
         if (ClipboardGuard.IsArmed)
         {
             TxtCountdown.Text = Loc.F("Inject_Countdown", ClipboardGuard.SecondsLeft);
             TxtCountdown.Visibility = Visibility.Visible;
+            BtnClear.Visibility = Visibility.Visible;
             return;
         }
 
-        // Désarmé alors que le succès est affiché : le décompte est allé au bout, ou l'utilisateur
-        // a demandé l'effacement. Il n'y a plus rien à surveiller.
-        if (AppSettingsService.Current.ClipboardClearSeconds > 0) Close();
-        else TxtCountdown.Visibility = Visibility.Collapsed;
+        TxtCountdown.Visibility = Visibility.Collapsed;
+        BtnClear.Visibility = Visibility.Collapsed;
+
+        // Fermeture automatique SEULEMENT quand il n'y a rien à décider — zéro clic dans le cas
+        // nominal. Un compte-rendu incomplet demande une décision (supprimer les périmés, ou non),
+        // et le voir disparaître au bout du décompte reviendrait à répondre à sa place. Un
+        // compte-rendu sans rendu n'a pas de décompte : le fermer serait arbitraire.
+        if (_report is { Complete: true, Render: not null }
+            && AppSettingsService.Current.ClipboardClearSeconds > 0) Close();
     }
 
     // ───────────── Les boutons ─────────────

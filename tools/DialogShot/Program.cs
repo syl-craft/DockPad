@@ -130,6 +130,7 @@ internal static class Program
             "inject-failed" => InjectionWindow(unlocked: true),
             "inject-files" => InjectionFilesWindow(),
             "inject-partial" => InjectionPartialWindow(),
+            "inject-choice" => InjectionChoiceWindow(),
             _ => throw new ArgumentException($"fenêtre inconnue : {target}"),
         };
 
@@ -199,11 +200,32 @@ internal static class Program
         var window = new DockPad.Secrets.SecretInjectionWindow(
             Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
 
-        var outcome = new DockPad.Secrets.SecretFilesOutcome(
+        var files = new DockPad.Secrets.SecretFilesOutcome(
             @"C:\Users\moi\Qnap\vaultwarden\secrets",
             ["ts-authkey", "smtp-password", "push-installation-id", "push-installation-key"], 1, []);
 
-        Invoke(window, "ShowFiles", outcome);
+        // Le cas « les deux » COMPLET : c'est celui qui perdait la moitie de son information
+        // avant la fusion des panneaux — il montrait les fichiers sans jamais dire que le rendu
+        // etait dans le presse-papier.
+        var render = DockPad.Secrets.SecretRenderResult.Rendered("services:", 3, 1, []);
+
+        Invoke(window, "ShowResult",
+            DockPad.Secrets.InjectionReport.Produced(render, files, []));
+        return window;
+    }
+
+    /// <summary>
+    /// L'ecran de CHOIX : seulement pour un fichier qui porte les deux formats.
+    /// </summary>
+    /// <remarks>
+    /// Il vit dans la fenetre d'injection comme cinquieme etat, et arrive AVANT le mot de passe.
+    /// </remarks>
+    private static Window InjectionChoiceWindow()
+    {
+        var window = new DockPad.Secrets.SecretInjectionWindow(
+            Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
+
+        Invoke(window, "ShowChoice");
         return window;
     }
 
@@ -232,14 +254,18 @@ internal static class Program
             "admin-token : aucun item de ce nom dans le coffre.",
         ]);
 
-        Invoke(window, "ShowIncomplete", report);
+        Invoke(window, "ShowResult", report);
         return window;
     }
 
-    private static void Invoke(Window window, string method, object? argument) =>
+    /// <remarks>
+    /// <c>params</c> : certains etats se posent sans argument (l'ecran de choix), d'autres avec un
+    /// seul. Un parametre obligatoire obligerait a inventer une valeur pour les premiers.
+    /// </remarks>
+    private static void Invoke(Window window, string method, params object?[] arguments) =>
         window.GetType()
             .GetMethod(method, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .Invoke(window, [argument]);
+            .Invoke(window, arguments);
 
     /// <summary>
     /// Monte chaque fenetre et rend le nombre de liaisons cassees.

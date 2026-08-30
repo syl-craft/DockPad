@@ -155,6 +155,48 @@ public static class SecretTemplate
             Unique(missing));
     }
 
+    /// <summary>
+    /// Rend un <b>fichier de secret</b> : tout, ou rien. Le texte, ou ce qui manquait.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Asymétrie assumée avec <see cref="Render"/>.</b> Là, un marqueur non résolu reste
+    /// littéral parce que l'utilisateur le <i>voit</i> dans ce qu'il colle. Ici le fichier part sur
+    /// le NAS sans que personne ne le relise : un <c>{{ bw:… }}</c> déposé tel quel deviendrait un
+    /// hachage bcrypt invalide, et le service refuserait le compte sans dire pourquoi. Un seul
+    /// marqueur manquant, et ce fichier-là n'est pas écrit.
+    /// </para>
+    /// <para>
+    /// <b>Un modèle sans aucun marqueur est valide</b> — c'est un fichier de structure recopié tel
+    /// quel. Contrairement au presse-papier, où l'absence de marqueur signale qu'on a visé le
+    /// mauvais fichier, ici c'est le compose qui a désigné ce modèle : l'intention est explicite.
+    /// </para>
+    /// </remarks>
+    public static (string? Text, IReadOnlyList<string> Missing) RenderStrict(
+        string content, Func<SecretMarker, SecretLookup> lookup)
+    {
+        var missing = new List<string>();
+        var resolved = new Dictionary<SecretMarker, string>();
+
+        foreach (var marker in FindMarkers(content).Distinct())
+        {
+            var found = lookup(marker);
+
+            if (string.IsNullOrEmpty(found.Value))
+                missing.Add(found.Failure
+                    ?? Loc.F("Inject_Error_EmptyField", marker.Item, marker.Field));
+            else
+                resolved[marker] = found.Value;
+        }
+
+        if (missing.Count > 0) return (null, Unique(missing));
+
+        var rendered = MarkerPattern.Replace(content,
+            m => resolved[new SecretMarker(m.Groups[1].Value.Trim(), m.Groups[2].Value)]);
+
+        return (rendered.Replace(Escaped, Unescaped), []);
+    }
+
     /// <summary>Ce reste est-il un marqueur qu'on a soi-même laissé en place ?</summary>
     private static bool IsKnown(string leftover, HashSet<SecretMarker> unresolved)
     {
