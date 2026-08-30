@@ -173,10 +173,14 @@ public partial class SecretInjectionWindow : Window
         }
         catch (OperationCanceledException) when (Timeout()) { ShowTimeout(); return; }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (_mode == SecretMode.Files && ex is IOException or UnauthorizedAccessException)
         {
             // La CLI a repondu, c'est le disque qui a resiste : annoncer « la CLI a refuse la
             // demande » enverrait chercher le probleme du mauvais cote.
+            //
+            // Restreint au mode FICHIERS : en presse-papier et en synchro, rien n'est jamais
+            // ecrit, et une IOException venue du tuyau de bw.exe se serait vu repondre « le
+            // dossier des secrets n'a pas pu etre ecrit » -- la meme mauvaise direction, inversee.
             LogService.Warn(ex, "Ecriture des fichiers de secrets");
             ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_FileLocked"), ex.GetType().Name));
             return;

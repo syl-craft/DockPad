@@ -16,7 +16,32 @@ L'app démarre sans droits admin — l'élévation est demandée à la demande v
 
 ## Structure
 
+> **Trois projets.** `DockPad.Core` porte ce qui ne sait rien du lanceur — langues, thème, journal,
+> chemins de profil, réglages, styles partagés. `DockPad` est l'application. `DockPad.Tests` les
+> vérifie. Le `RootNamespace` de Core est **`DockPad`**, et non `DockPad.Core` : c'est ce qui garde
+> le nom de manifeste des ressources à `DockPad.Resources.Strings` — que `Loc` code en dur — et ce
+> qui a permis l'extraction sans toucher un seul `using`.
+>
+> Deux pièges, tous deux du même genre : **un chemin non qualifié se résout dans l'assembly hôte**.
+> Les pack URI nomment donc `DockPad.Core`, et les treize XAML qui déclarent `xmlns:loc` portent
+> `;assembly=DockPad.Core`. Le second casse à la compilation ; le premier, non.
+
 ```
+DockPad.Core/                            BIBLIOTHEQUE PARTAGEE — ce qui ne sait rien du lanceur
+    GlobalUsings.cs                      Usings globaux de la bibliotheque
+    Shared.xaml                          Les six styles partages, sortis d'App.xaml
+    Models/AppSettings.cs                Contenu de settings.json
+    Resources/Strings*.resx              Les trois langues (anglais neutre, fr, qps-Ploc)
+    Services/AppInfo.cs                  Version affichee — assembly d'ENTREE, posable par un hote
+    Services/AppPaths.cs                 Racine du profil, par produit, resolue paresseusement
+    Services/AppSettingsService.cs       Load/Save settings.json + reprise du registre
+    Services/ConfigLock.cs               Verrou global des load-modify-save
+    Services/LogService.cs               Logger central Serilog
+    Services/ThemeService.cs             Theme clair/sombre
+    Services/Localization/Loc.cs         Seule porte d'acces aux chaines traduites
+    Services/Localization/LocExtension.cs  {loc:T Cle} + ButtonFlash
+    Themes/Light.xaml Dark.xaml Controls.xaml   Palettes et controles retemplates
+
 App.xaml/.cs                             Point d'entrée : instance unique (Mutex), NotifyIcon systray
 GlobalUsings.cs                          Usings globaux
 DockPad.csproj / DockPad.sln
@@ -40,7 +65,6 @@ Models/
     PageConfig.cs                        Config par page (icône du bouton de pagination + IconProfilePath)
     PresetEntry.cs                       Modèle preset avec enum PresetStatus
     ProcessSwitchConfig.cs               Config SwitchToProcess (processName, executable, parameters)
-    AppSettings.cs                        Contenu de settings.json (langue, thème, raccourci, options, injection de secrets)
     ShortcutAddItem.cs                    Item du lot dockpad_shortcut_add (position optionnelle)
     ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath, iconProfilePath)
     ShortcutUpdate.cs                     Champs modifiables par dockpad_shortcut_update (null = inchangé)
@@ -59,7 +83,7 @@ Services/Localization/
 Resources/
     Strings.resx                          Anglais, langue neutre
     Strings.qps-Ploc.resx                 « 1337 » — GÉNÉRÉ, ne pas éditer à la main
-    Strings.fr.resx                       Français, satellite fr\DockPad.resources.dll
+    Strings.fr.resx                       Français, satellite fr\DockPad.Core.resources.dll
 
 Themes/
     Light.xaml                            Palette claire — les valeurs d'origine de l'application
@@ -67,8 +91,6 @@ Themes/
     Controls.xaml                         Contrôles standards de WPF (case à cocher, liste déroulante…)
 
 Services/
-    AppInfo.cs                            Infos application (VersionText affiché dans les footers)
-    AppPaths.cs                           Racine du profil (%APPDATA%\DockPad ou DOCKPAD_PROFILE_DIR) — utilisée par toutes les configs
     BrowserActionService.cs               Actions navigateurs & règles de domaine, partagées UI ↔ MCP
     BrowserConfigService.cs              Load/Save browsers.json (%APPDATA%\DockPad\browsers.json)
     BrowserDetectionService.cs           Détection des navigateurs installés (Software\Clients\StartMenuInternet, HKLM+HKCU)
@@ -76,12 +98,10 @@ Services/
     BrowserRowLayout.cs                  Ordre d'affichage navigateurs + profils (groupes, en-têtes, ↑/↓, libellé « Chrome › Boulot »)
     BrowserRegistrationService.cs        Enregistrement per-user (HKCU) comme navigateur + lecture de l'état (non enregistré/enregistré/par défaut)
     ConfigBackup.cs                       Copie horodatée des configs dans .backup\ (suffixe _2, _3… si collision)
-    ConfigLock.cs                         Verrou global des load-modify-save de configs (UI et MCP sérialisés)
     DroppedShortcut.cs                    Dépôt Explorateur : acceptable ou non, nom de dossier, lecture d'un .url
     FaviconService.cs                     Icône du site pour une tuile web (domaine seul, jamais l'URL complète)
     HotkeyService.cs                     P/Invoke RegisterHotKey / UnregisterHotKey (user32.dll)
     IconStoreService.cs                  Store des icônes du profil (%APPDATA%\DockPad\icons\) — SHA1 dédup, extraction .exe/.dll → .png
-    LogService.cs                        Logger central Serilog — %APPDATA%\DockPad\logs\, rolling quotidien, 14 fichiers, shared multi-process
     McpConfigService.cs                   Load/Save mcp.json (%APPDATA%\DockPad\mcp.json)
     McpDispatcher.cs                       Traite une requête MCP : options → service d'action → journal → réponse JSON
     McpLogService.cs                       Journal en mémoire des actions MCP de la session (onglet Journal)
@@ -100,8 +120,6 @@ Services/
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
-    AppSettingsService.cs                 Load/Save settings.json + reprise des options restées dans le registre
-    ThemeService.cs                       Thème clair/sombre : décision pure, suivi de Windows, barre de titre
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
     UrlPipeService.cs                    Facade sur LinePipeService pour DockPad_UrlPipe

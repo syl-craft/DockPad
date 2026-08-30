@@ -16,7 +16,7 @@ public static class AppInfo
     /// l'outil — <c>v1.0.0</c> — au lieu de celle du produit. Constaté à l'écran en extrayant la
     /// bibliothèque, pas déduit.
     /// </remarks>
-    public static void Initialize(Assembly assembly) => _assembly = assembly;
+    public static void Initialize(Assembly? assembly) => _assembly = assembly;
 
     /// <summary>Version semver affichée (ex. « v1.14.0 »).</summary>
     /// <remarks>

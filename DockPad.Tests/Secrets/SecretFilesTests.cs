@@ -251,7 +251,7 @@ public class SecretFilesTests : IDisposable
     }
 
     [Fact]
-    public void UnVerrouPASSAGER_NEmpechePasLEcriture()
+    public async System.Threading.Tasks.Task UnVerrouPASSAGER_NEmpechePasLEcriture()
     {
         // C'est la cause de l'echec intermittent : un antivirus tient la destination quelques
         // millisecondes apres l'avoir scannee. La transformer en echec dur est exactement ce que
@@ -267,8 +267,30 @@ public class SecretFilesTests : IDisposable
         });
 
         SecretFileWriter.Write(_dir, [new SecretFile("token", "nouveau")]);
-        relache.Wait();
+        await relache;
 
         Assert.Equal("nouveau", File.ReadAllText(cible));
+    }
+
+    [Fact]
+    public void UnVerrouSurLeSECONDFichier_NeLaissePasLePREMIERmisAJour()
+    {
+        // Trouvaille de revue. Mon test precedent ne couvrait qu'UN fichier : il prouvait le
+        // tout-ou-rien de l'ecriture, pas celui de la bascule. Avec N secrets, un verrou sur le
+        // k-ieme laissait les k-1 premiers porter les NOUVELLES valeurs et le reste les anciennes.
+        // Un jeu de secrets a moitie a jour, c'est exactement ce que la classe jure impossible.
+        SecretFileWriter.Write(_dir, [new SecretFile("un", "vieux-1"), new SecretFile("deux", "vieux-2")]);
+
+        var second = Path.Combine(_dir, "secrets", "deux");
+
+        using (var _ = new FileStream(second, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.ThrowsAny<Exception>(() => SecretFileWriter.Write(
+                _dir, [new SecretFile("un", "neuf-1"), new SecretFile("deux", "neuf-2")]));
+        }
+
+        // Rien n'a bouge : ni le premier, ni le second.
+        Assert.Equal("vieux-1", File.ReadAllText(Path.Combine(_dir, "secrets", "un")));
+        Assert.Equal("vieux-2", File.ReadAllText(second));
     }
 }

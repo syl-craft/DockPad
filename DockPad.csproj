@@ -26,6 +26,12 @@
     <Compile Remove="DockPad.Tests\**;tools\**;DockPad.Core\**" />
     <EmbeddedResource Remove="DockPad.Tests\**;tools\**;DockPad.Core\**" />
     <None Remove="DockPad.Tests\**;DockPad.Core\**" />
+    <!-- Page et Resource aussi : le glob **/*.xaml du SDK WPF compilait les dictionnaires de
+         la bibliotheque une SECONDE fois dans l'application (verifie dans obj/). Quatre BAML
+         morts embarques, une double compilation de balisage a chaque edition de theme. Et le
+         jour ou un XAML de Core prendrait un x:Class, une collision de type genere. -->
+    <Page Remove="DockPad.Core\**" />
+    <Resource Remove="DockPad.Core\**" />
   </ItemGroup>
 
   <ItemGroup>

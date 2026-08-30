@@ -94,6 +94,14 @@ public static class SecretFileWriter
                 staged.Add((temp, final));
             }
 
+            // Toutes les destinations sont eprouvees AVANT d'en basculer une seule. Sans cela, un
+            // verrou sur le troisieme fichier laissait les deux premiers portant les nouvelles
+            // valeurs et le reste les anciennes — un jeu de secrets a moitie a jour, ce que cette
+            // classe jure impossible. La sonde ne supprime pas la course, elle la ramene de
+            // « toute la duree des basculements » a quelques microsecondes.
+            foreach (var (_, final) in staged)
+                EnsureWritable(final);
+
             foreach (var (temp, final) in staged)
                 MoveWithRetry(temp, final);
         }
@@ -133,9 +141,50 @@ public static class SecretFileWriter
                 File.Move(temp, final, overwrite: true);
                 return;
             }
-            catch (IOException) when (i < attempts) { Thread.Sleep(100); }
-            catch (UnauthorizedAccessException) when (i < attempts) { Thread.Sleep(100); }
+            catch (IOException ex) when (i < attempts && IsTransientLock(ex)) { Thread.Sleep(100); }
         }
+    }
+
+    /// <summary>
+    /// Une destination existante est-elle réellement remplaçable, maintenant ?
+    /// </summary>
+    /// <remarks>
+    /// On l'ouvre en écriture sans partage, et on referme aussitôt. C'est ce que fait la bascule
+    /// juste après ; l'échouer ici coûte un fichier intact plutôt qu'un jeu incohérent.
+    /// </remarks>
+    private static void EnsureWritable(string final)
+    {
+        if (!File.Exists(final)) return;
+
+        for (var i = 1; ; i++)
+        {
+            try
+            {
+                using var probe = new FileStream(final, FileMode.Open, FileAccess.Write, FileShare.None);
+                return;
+            }
+            catch (IOException ex) when (i < 20 && IsTransientLock(ex)) { Thread.Sleep(100); }
+        }
+    }
+
+    /// <summary>
+    /// Le verrou est-il de ceux qui se relâchent, ou de ceux qui ne se relâcheront pas ?
+    /// </summary>
+    /// <remarks>
+    /// Ne retenter que sur un <b>partage refusé</b>. Un fichier absent, un dossier disparu, un
+    /// attribut lecture seule ou une ACL qui refuse échouent identiquement à chaque tentative :
+    /// y insister brûle deux secondes par fichier — dix pour le compose de référence — avant de
+    /// dire ce qu'on savait dès la première.
+    /// </remarks>
+    private static bool IsTransientLock(IOException ex)
+    {
+        const int sharingViolation = 0x20;
+        const int lockViolation = 0x21;
+
+        if (ex is FileNotFoundException or DirectoryNotFoundException) return false;
+
+        var code = ex.HResult & 0xFFFF;
+        return code is sharingViolation or lockViolation;
     }
 
     /// <summary>Efface un temporaire, sans jamais masquer l'échec qui a mené jusqu'ici.</summary>

@@ -32,7 +32,18 @@ public static class AppPaths
     /// application écrirait dans le profil de la première.
     /// </para>
     /// </remarks>
-    public static void Initialize(string product) => _product = product;
+    public static void Initialize(string product)
+    {
+        // Un appel APRES la premiere lecture ne servirait a rien : la racine est deja figee, et le
+        // second produit ecrirait dans le profil du premier. C'est exactement la panne que la
+        // resolution paresseuse existe pour empecher -- la laisser passer en silence rendrait la
+        // precaution inutile. On la rend bruyante.
+        if (_root is not null)
+            throw new InvalidOperationException(
+                $"AppPaths.Initialize(\"{product}\") called after the profile root was already resolved to '{_root}'.");
+
+        _product = product;
+    }
 
     /// <summary>Décision pure : le produit posé, ou le défaut.</summary>
     public static string ResolveProduct(string? initialized, string fallback) =>

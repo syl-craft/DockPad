@@ -39,8 +39,18 @@ public class AppInfoTests
         var assembly = typeof(AppInfo).Assembly;
         var v = assembly.GetName().Version!;
 
-        AppInfo.Initialize(assembly);
+        try
+        {
+            AppInfo.Initialize(assembly);
 
-        Assert.Equal($"v{v.Major}.{v.Minor}.{v.Build}", AppInfo.VersionText);
+            Assert.Equal($"v{v.Major}.{v.Minor}.{v.Build}", AppInfo.VersionText);
+        }
+        finally
+        {
+            // Sans cette remise a zero, AppInfo reste epingle sur DockPad.Core pour tout le
+            // processus de test -- une mine a retardement pour le prochain test qui lira
+            // VersionText, la parallelisation xUnit etant desactivee dans ce depot.
+            AppInfo.Initialize(null);
+        }
     }
 }
