@@ -1125,6 +1125,9 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_Error_ClipboardBusy" xml:space="preserve">
     <value>L3 pr3553-p4p13r 35t t3nu p4r un3 4utr3 4ppl1c4t10n. R13n n'4 3t3 c0p13.</value>
   </data>
+  <data name="Inject_Error_FileLocked" xml:space="preserve">
+    <value>L3 d05513r d35 53cr3t5 n'4 p45 pu 3tr3 3cr1t : un f1ch13r 35t t3nu p4r un3 4utr3 4ppl1c4t10n.</value>
+  </data>
   <data name="Inject_Title" xml:space="preserve">
     <value>1nj3ct10n d3 53cr3t5</value>
   </data>

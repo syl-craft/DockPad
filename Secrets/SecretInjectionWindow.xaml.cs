@@ -173,6 +173,14 @@ public partial class SecretInjectionWindow : Window
         }
         catch (OperationCanceledException) when (Timeout()) { ShowTimeout(); return; }
         catch (OperationCanceledException) { return; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // La CLI a repondu, c'est le disque qui a resiste : annoncer « la CLI a refuse la
+            // demande » enverrait chercher le probleme du mauvais cote.
+            LogService.Warn(ex, "Ecriture des fichiers de secrets");
+            ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_FileLocked"), ex.GetType().Name));
+            return;
+        }
         catch (Exception ex)
         {
             LogService.Warn(ex, "Injection de secrets");

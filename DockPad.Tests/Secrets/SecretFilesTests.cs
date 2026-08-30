@@ -229,4 +229,46 @@ public class SecretFilesTests : IDisposable
 
         Assert.DoesNotContain(restes, f => f!.Contains("tmp", StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public void UneDestinationTenueParUnAutreProcessus_NeLaissePasDeTemporaire()
+    {
+        // Reproduction DETERMINISTE de l'echec intermittent : on tient le fichier de destination
+        // ouvert sans partage, comme le ferait un antivirus qui vient de le scanner, un indexeur,
+        // ou un client de synchronisation. Le dossier « secrets » vit dans un depot git, et
+        // souvent dans un dossier synchronise : le cas se produira.
+        SecretFileWriter.Write(_dir, [new SecretFile("token", "ancien")]);
+        var cible = Path.Combine(_dir, "secrets", "token");
+
+        using (var _ = new FileStream(cible, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.ThrowsAny<Exception>(() => SecretFileWriter.Write(_dir, [new SecretFile("token", "nouveau")]));
+        }
+
+        var restes = Directory.GetFiles(Path.Combine(_dir, "secrets")).Select(Path.GetFileName).ToList();
+        Assert.DoesNotContain(restes, f => f!.Contains("tmp", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("ancien", File.ReadAllText(cible));
+    }
+
+    [Fact]
+    public void UnVerrouPASSAGER_NEmpechePasLEcriture()
+    {
+        // C'est la cause de l'echec intermittent : un antivirus tient la destination quelques
+        // millisecondes apres l'avoir scannee. La transformer en echec dur est exactement ce que
+        // MSBuild evite en retentant -- on l'a vu retenter dix fois sur DockPad.exe.
+        SecretFileWriter.Write(_dir, [new SecretFile("token", "ancien")]);
+        var cible = Path.Combine(_dir, "secrets", "token");
+
+        var verrou = new FileStream(cible, FileMode.Open, FileAccess.Read, FileShare.None);
+        var relache = System.Threading.Tasks.Task.Run(() =>
+        {
+            System.Threading.Thread.Sleep(250);
+            verrou.Dispose();
+        });
+
+        SecretFileWriter.Write(_dir, [new SecretFile("token", "nouveau")]);
+        relache.Wait();
+
+        Assert.Equal("nouveau", File.ReadAllText(cible));
+    }
 }

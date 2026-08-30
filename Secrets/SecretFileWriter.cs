@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace DockPad.Secrets;
 
@@ -94,7 +95,7 @@ public static class SecretFileWriter
             }
 
             foreach (var (temp, final) in staged)
-                File.Move(temp, final, overwrite: true);
+                MoveWithRetry(temp, final);
         }
         finally
         {
@@ -103,6 +104,38 @@ public static class SecretFileWriter
         }
 
         return files.Select(f => f.Name).ToList();
+    }
+
+    /// <summary>
+    /// Bascule un temporaire en place, en retentant tant qu'un verrou <b>passager</b> s'y oppose.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Un antivirus qui vient de scanner le fichier, un indexeur, un client de synchronisation :
+    /// tous tiennent brièvement une destination fraîchement écrite. Sans reprise, cette poignée de
+    /// millisecondes devient un échec dur — et le dossier <c>secrets/</c> vit justement dans un
+    /// dépôt, souvent synchronisé.
+    /// </para>
+    /// <para>
+    /// C'est le remède que MSBuild applique à la même opération : il retente dix fois avant de
+    /// renoncer. Ici, deux secondes suffisent — au-delà, ce n'est plus un verrou passager mais un
+    /// fichier réellement occupé, et il faut le dire plutôt que d'attendre.
+    /// </para>
+    /// </remarks>
+    private static void MoveWithRetry(string temp, string final)
+    {
+        const int attempts = 20;
+
+        for (var i = 1; ; i++)
+        {
+            try
+            {
+                File.Move(temp, final, overwrite: true);
+                return;
+            }
+            catch (IOException) when (i < attempts) { Thread.Sleep(100); }
+            catch (UnauthorizedAccessException) when (i < attempts) { Thread.Sleep(100); }
+        }
     }
 
     /// <summary>Efface un temporaire, sans jamais masquer l'échec qui a mené jusqu'ici.</summary>

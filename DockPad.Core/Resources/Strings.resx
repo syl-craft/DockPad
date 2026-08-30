@@ -1125,6 +1125,9 @@ This cannot be undone.</value>
   <data name="Inject_Error_ClipboardBusy" xml:space="preserve">
     <value>The clipboard is held by another application. Nothing was copied.</value>
   </data>
+  <data name="Inject_Error_FileLocked" xml:space="preserve">
+    <value>The secrets folder could not be written: a file is held by another application.</value>
+  </data>
   <data name="Inject_Title" xml:space="preserve">
     <value>Secret injection</value>
   </data>

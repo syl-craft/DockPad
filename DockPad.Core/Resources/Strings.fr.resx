@@ -1125,6 +1125,9 @@ Cette action est irréversible.</value>
   <data name="Inject_Error_ClipboardBusy" xml:space="preserve">
     <value>Le presse-papier est tenu par une autre application. Rien n'a été copié.</value>
   </data>
+  <data name="Inject_Error_FileLocked" xml:space="preserve">
+    <value>Le dossier des secrets n'a pas pu être écrit : un fichier est tenu par une autre application.</value>
+  </data>
   <data name="Inject_Title" xml:space="preserve">
     <value>Injection de secrets</value>
   </data>
