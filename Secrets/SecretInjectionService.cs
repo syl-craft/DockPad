@@ -97,6 +97,19 @@ public sealed record InjectionReport
 /// </remarks>
 public static class SecretInjectionService
 {
+    /// <summary>
+    /// D'où viennent les valeurs. Un seul champ, et c'est <b>tout</b> ce que l'orchestrateur sait
+    /// du coffre.
+    /// </summary>
+    /// <remarks>
+    /// <b>En lecture seule, et sans point d'injection.</b> Une seconde source n'existe pas encore :
+    /// un sélecteur ou un passeur de dépendance seraient de l'API spéculative, et le jour venu le
+    /// choix se fera sur le <b>préfixe du marqueur</b> — pour que le fichier dise d'où viennent ses
+    /// secrets — et non sur un réglage global. Ce qui compte ici est la frontière, pas sa
+    /// configurabilité.
+    /// </remarks>
+    private static readonly ISecretSource Source = new BitwardenSecretSource();
+
     // ───────────── Décisions pures ─────────────
 
     /// <summary>
@@ -168,73 +181,36 @@ public static class SecretInjectionService
         }
     }
 
-    // ───────────── Les appels ─────────────
+    // ───────────── Les appels, tous derrière la frontière ─────────────
 
-    /// <summary>
-    /// Vérifie que la CLI est là et que le coffre est utilisable. <c>null</c> = on peut demander le
-    /// mot de passe.
-    /// </summary>
+    /// <summary>Peut-on demander sa clé à l'utilisateur ? <c>null</c> = oui.</summary>
     public static async Task<InjectionReport?> PreflightAsync(CancellationToken token)
     {
-        var exe = Executable();
-        if (exe is null) return InjectionReport.Fail(Loc.T("Inject_Error_CliMissing"));
+        var failure = await Source.PreflightAsync(token).ConfigureAwait(false);
 
-        var status = await RunAsync(exe, ["status"], NoSecrets, token).ConfigureAwait(false);
-        var failure = StatusFailure(BitwardenCli.ParseStatus(status.Stdout));
-
-        return failure is null ? null : InjectionReport.Fail(failure, Diagnostic(status));
+        return failure is null ? null : InjectionReport.Fail(failure.Message, failure.Diagnostic);
     }
 
     /// <summary>
-    /// La date de dernière synchronisation du cache local de la CLI, sans mot de passe.
+    /// Date de la dernière mise à jour de la vue locale, ou <c>null</c> si la source n'en a pas.
     /// </summary>
     /// <remarks>
-    /// <c>bw status</c> n'a besoin d'aucune session : la fenêtre des Options peut donc afficher
-    /// l'âge du cache sans jamais approcher un secret.
+    /// Aucun mot de passe n'est requis : la fenêtre des Options affiche l'âge du cache sans jamais
+    /// approcher un secret.
     /// </remarks>
-    public static async Task<DateTime?> LastSyncAsync(CancellationToken token)
-    {
-        var exe = Executable();
-        if (exe is null) return null;
+    public static Task<DateTime?> LastSyncAsync(CancellationToken token) =>
+        Source.LastRefreshAsync(token);
 
-        try
-        {
-            var status = await RunAsync(exe, ["status"], NoSecrets, token).ConfigureAwait(false);
-            return BitwardenCli.ParseLastSync(status.Stdout);
-        }
-        catch (Exception ex)
-        {
-            LogService.Warn(ex, "Lecture de la date de synchronisation du coffre");
-            return null;
-        }
-    }
-
-    /// <summary>Déverrouille et synchronise le cache local de la CLI.</summary>
-    /// <remarks>
-    /// Déclenché à la main depuis les Options, jamais avant chaque injection : synchroniser à
-    /// chaque clic droit paierait un aller-retour réseau pour un coffre qui bouge rarement.
-    /// </remarks>
+    /// <summary>Rafraîchit la vue locale à la demande, depuis les Options.</summary>
     public static async Task<InjectionReport> SyncAsync(string masterPassword, CancellationToken token)
     {
-        var exe = Executable();
-        if (exe is null) return InjectionReport.Fail(Loc.T("Inject_Error_CliMissing"));
+        var failure = await Source.RefreshAsync(masterPassword, token).ConfigureAwait(false);
 
-        var environment = new Dictionary<string, string> { ["BW_PASSWORD"] = masterPassword };
-
-        var unlock = await RunAsync(exe, ["unlock", "--passwordenv", "BW_PASSWORD", "--raw"],
-            environment, token).ConfigureAwait(false);
-
-        if (!unlock.Ok || string.IsNullOrWhiteSpace(unlock.Stdout))
-            return InjectionReport.Fail(Loc.T("Inject_Error_UnlockRefused"), Diagnostic(unlock));
-
-        var session = new Dictionary<string, string> { ["BW_SESSION"] = unlock.Stdout.Trim() };
-
-        var synced = await RunAsync(exe, ["sync"], session, token).ConfigureAwait(false);
-
-        return synced.Ok
+        return failure is null
             ? InjectionReport.Synced()
-            : InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), Diagnostic(synced));
+            : InjectionReport.Fail(failure.Message, failure.Diagnostic);
     }
+
 
     /// <summary>
     /// Déverrouille une fois, puis produit ce que le fichier demande : le rendu, les fichiers, ou
@@ -278,9 +254,14 @@ public static class SecretInjectionService
             entries = scanned;
         }
 
-        var (vault, failure, warning) = await OpenVaultAsync(masterPassword, syncFirst, token)
-            .ConfigureAwait(false);
-        if (failure is not null) return failure;
+        var opening = await Source.OpenAsync(masterPassword, syncFirst, token).ConfigureAwait(false);
+        if (opening.Failure is { } refused)
+            return InjectionReport.Fail(refused.Message, refused.Diagnostic);
+
+        // La SEULE chose que la source rend : de quoi resoudre un marqueur. Tout ce qui sait
+        // comment le coffre s'appelle, s'authentifie et se lit reste derriere cette fonction.
+        var lookup = opening.Lookup!;
+        var warning = opening.Warning;
 
         var missing = new List<string>();
 
@@ -294,7 +275,7 @@ public static class SecretInjectionService
 
         if (entries.Count > 0)
         {
-            var bundle = SecretBundle.Resolve(entries, vault!.Lookup, templates);
+            var bundle = SecretBundle.Resolve(entries, lookup, templates);
             missing.AddRange(bundle.Missing);
 
             var written = SecretFileWriter.Write(folder, bundle.Files);
@@ -309,7 +290,7 @@ public static class SecretInjectionService
 
         if (mode is SecretMode.Clipboard or SecretMode.Both)
         {
-            render = SecretTemplate.Render(content, vault!.Lookup);
+            render = SecretTemplate.Render(content, lookup);
 
             if (render.Ok) missing.AddRange(render.Missing);
             else
@@ -389,87 +370,4 @@ public static class SecretInjectionService
         missing.Count > 0 ? missing.Distinct(StringComparer.Ordinal).ToList()
                           : [Loc.T("Inject_Error_NoMarkers")];
 
-    /// <summary>
-    /// Le coffre ouvert, ou l'échec à afficher. La clé de session ne sort pas d'ici.
-    /// </summary>
-    /// <param name="syncFirst">
-    /// Rafraîchir le cache de la CLI avant de lire. Fait <b>ici</b>, entre le déverrouillage et la
-    /// lecture : la clé de session existe déjà, donc c'est un appel de plus dans la séquence, sans
-    /// second mot de passe ni second déverrouillage.
-    /// </param>
-    private static async Task<(SecretVault? Vault, InjectionReport? Failure, string? Warning)> OpenVaultAsync(
-        string masterPassword, bool syncFirst, CancellationToken token)
-    {
-        var exe = Executable();
-        if (exe is null) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliMissing")), null);
-
-        // Le mot de passe n'existe que dans l'environnement du processus enfant : jamais dans une
-        // ligne de commande, jamais dans celui de DockPad.
-        var environment = new Dictionary<string, string> { ["BW_PASSWORD"] = masterPassword };
-
-        var unlock = await RunAsync(exe, ["unlock", "--passwordenv", "BW_PASSWORD", "--raw"],
-            environment, token).ConfigureAwait(false);
-
-        if (!unlock.Ok || string.IsNullOrWhiteSpace(unlock.Stdout))
-            return (null, InjectionReport.Fail(Loc.T("Inject_Error_UnlockRefused"), Diagnostic(unlock)), null);
-
-        // La clé de session suit le même chemin, et ne quitte pas cette méthode.
-        var session = new Dictionary<string, string> { ["BW_SESSION"] = unlock.Stdout.Trim() };
-
-        string? warning = null;
-
-        if (syncFirst)
-        {
-            var synced = await RunAsync(exe, ["sync"], session, token).ConfigureAwait(false);
-            if (!synced.Ok)
-            {
-                LogService.Warn(new InvalidOperationException(Diagnostic(synced) ?? "sync failed"), "Synchronisation du coffre avant injection");
-                warning = Loc.T("Inject_Missing_SyncFailed");
-            }
-        }
-
-        var configured = AppSettingsService.Current.VaultOrganization;
-        string? organisationId = null;
-
-        if (!string.IsNullOrWhiteSpace(configured))
-        {
-            var listed = await RunAsync(exe, ["list", "organizations"], session, token).ConfigureAwait(false);
-            if (!listed.Ok) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), Diagnostic(listed)), null);
-
-            var (id, orgFailure) = ResolveOrganisation(BitwardenCli.ParseOrganizations(listed.Stdout), configured);
-            if (orgFailure is not null) return (null, InjectionReport.Fail(orgFailure), null);
-            organisationId = id;
-        }
-
-        string[] arguments = organisationId is null
-            ? ["list", "items"]
-            : ["list", "items", "--organizationid", organisationId];
-
-        var items = await RunAsync(exe, arguments, session, token).ConfigureAwait(false);
-        if (!items.Ok) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), Diagnostic(items)), null);
-
-        return (new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured), null, warning);
-    }
-
-    // ───────────── Détails ─────────────
-
-    private static readonly Dictionary<string, string> NoSecrets = [];
-
-    private static string? Executable() =>
-        BitwardenCli.Locate(AppSettingsService.Current.BitwardenCliPath);
-
-    private static Task<CliResult> RunAsync(string exe, string[] arguments,
-        IReadOnlyDictionary<string, string> secrets, CancellationToken token) =>
-        BitwardenCli.RunAsync(exe, arguments, secrets, token);
-
-    /// <summary>
-    /// Le diagnostic à montrer en infobulle et à journaliser : l'erreur standard et le code de
-    /// sortie, jamais la sortie standard — celle-là porte le coffre.
-    /// </summary>
-    private static string? Diagnostic(CliResult result)
-    {
-        var stderr = result.Stderr.Trim();
-        var first = stderr.Split('\n').FirstOrDefault()?.Trim();
-        return string.IsNullOrEmpty(first) ? $"exit {result.ExitCode}" : $"exit {result.ExitCode} — {first}";
-    }
 }

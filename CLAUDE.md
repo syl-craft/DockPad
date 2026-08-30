@@ -156,6 +156,8 @@ Secrets/                                 PERIMETRE D'AUDIT — tout ce qui voit 
     README.md                            Les invariants et la surface d'entree, en tete de dossier
     SecretInjection.cs                   Facade — les seuls appels autorises depuis le reste de l'app
     SecretMenu.cs                        Pose/retire l'unique cle HKCU\Software\Classes\*\shell (tous fichiers)
+    ISecretSource.cs                     D'ou viennent les valeurs — la frontiere, et ses deux resultats
+    BitwardenSecretSource.cs             Le coffre Bitwarden vu par la CLI bw : tout ce qui sait « Bitwarden »
     BwItem.cs                            Item de coffre tel que la CLI le rend
     SecretMarker.cs                      Un marqueur {{ bw:item:champ }}, et ce que le coffre repond
     SecretPlan.cs                        PUR — quel mode le fichier demande : presse-papier, fichiers, ou les deux
@@ -862,6 +864,37 @@ que dans `ProcessStartInfo.Environment` du processus enfant.
 > Le garde du motif d'arguments exige un `"--` dans la collection, et pas la seule accolade : sans
 > ça, `["BW_PASSWORD"] = motDePasse` — qui est **précisément** la bonne façon de faire — serait
 > signalé, et la garde pousserait à écrire le code dangereux pour se taire.
+
+#### `ISecretSource` : la frontière du coffre
+
+Extraite **en préparation** d'une seconde source (Azure Key Vault a été évoqué), et pas seulement
+pour elle : le cœur du rendu ne connaissait déjà le coffre que par un
+`Func<SecretMarker, SecretLookup>`. L'interface ne fait que **nommer** une frontière qui existait de
+fait, et rassembler derrière elle ce qui savait « Bitwarden » et qui était éparpillé dans
+l'orchestrateur.
+
+`SecretInjectionService` ne connaît plus qu'un champ, `Source`. Tout le reste — statut de la CLI,
+déverrouillage, organisation, `list items` — vit dans `BitwardenSecretSource`.
+
+- **Le champ est en lecture seule, sans point d'injection.** Une seconde source n'existe pas encore :
+  un sélecteur ou un passeur de dépendance seraient de l'API spéculative. Le jour venu, le choix se
+  fera sur le **préfixe du marqueur** (`bw:`) — pour que le fichier dise d'où viennent ses secrets,
+  comme il dit déjà ce qu'on fait de lui — et non sur un réglage global, qui mentirait dans le fichier
+- **Ce qui n'est PAS préparé** : l'authentification ne se généralise pas. Bitwarden demande un mot de
+  passe maître à chaque fois ; Azure passe par `DefaultAzureCredential` — navigateur, jeton mis en
+  cache sur disque par une bibliothèque qu'on ne contrôle pas, parfois MFA. Le paramètre `credential`
+  est un mot de passe *parce que la seule source implémentée en demande un* ; une source qui n'en
+  veut pas l'ignorerait, ce qui serait une abstraction qui ment. Cette moitié-là demandera une
+  décision, pas une interface
+- **Refactoring à comportement identique**, et vérifié comme tel : suite verte, et comparaison pixel
+  de la fenêtre d'injection — **68 pixels sur 234 000**, tous dans le numéro de version du pied
+
+> **Une prose française a déclenché la garde de frontière.** Son extracteur de noms de types cherche
+> `interface`, `class` ou `record` suivis d'un mot, et lisait « l'interface **ne** fait que nommer une
+> frontière » comme un type nommé `ne` — puis signalait toute ligne française du dépôt contenant ce
+> mot. L'extracteur ignore désormais les commentaires, ce qui le rend **plus juste et non plus
+> permissif** : une déclaration de type ne vit jamais dans un commentaire. Re-vérifié par mutation
+> après le changement.
 
 #### Rendu au mieux, et l'écran qui ne ment pas
 C'était **tout ou rien** : un seul marqueur non résolu, et rien ne partait dans le presse-papier.

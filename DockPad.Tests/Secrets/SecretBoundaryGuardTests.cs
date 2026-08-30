@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
@@ -181,10 +181,32 @@ public class SecretBoundaryGuardTests
 
         return Directory
             .EnumerateFiles(SecretsFolder(), "*.cs", SearchOption.AllDirectories)
-            .SelectMany(f => declaration.Matches(File.ReadAllText(f)).Select(m => m.Groups[1].Value))
+            .SelectMany(f => declaration.Matches(WithoutComments(File.ReadLines(f))).Select(m => m.Groups[1].Value))
             .Distinct(StringComparer.Ordinal)
             .ToList();
     }
+
+    /// <summary>
+    /// Le code seul, sans les commentaires.
+    /// </summary>
+    /// <remarks>
+    /// <b>Une prose française déclenchait la garde.</b> Le motif de déclaration cherche
+    /// <c>interface</c>, <c>class</c> ou <c>record</c> suivis d'un mot — et une phrase comme
+    /// « l'interface ne fait que nommer une frontière » lui donnait un type nommé <c>ne</c>. La
+    /// garde signalait alors toute ligne française du dépôt qui contient ce mot, c'est-à-dire
+    /// presque toutes.
+    /// </remarks>
+    /// <remarks>
+    /// Ne lire que le code rend la garde <b>plus juste</b>, pas plus permissive : une déclaration de
+    /// type ne vit jamais dans un commentaire. Vérifié par mutation après le changement.
+    /// </remarks>
+    private static string WithoutComments(IEnumerable<string> lines) =>
+        string.Join('\n', lines.Where(l =>
+        {
+            var trimmed = l.TrimStart();
+            return !trimmed.StartsWith("//", StringComparison.Ordinal)
+                && !trimmed.StartsWith("*", StringComparison.Ordinal);
+        }));
 
     /// <summary>
     /// Les instructions du dossier : les lignes agrégées jusqu'au point-virgule.
