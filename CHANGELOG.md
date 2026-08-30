@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.19.0] — 2026-08-30
+
+### Nouveautés utilisateur
+- **Le presse-papier attend un clic quand des fichiers de secrets l'accompagnent.** Le décompte courait pendant qu'on copiait les fichiers sur le NAS : quatre-vingt-dix secondes plus tard le rendu était effacé, et rien n'avait été collé. Le rendu est prêt, il attend le bouton *Mettre dans le presse-papier*
+- **Trois commandes sur le presse-papier** : *Arrêter le décompte*, *Vider le presse-papier*, et *Supprimer les fichiers générés* du côté des fichiers. Arrêter le décompte ne désarme pas le filet : le presse-papier est toujours vidé à la fermeture de DockPad
+- Les commandes vivent désormais **à côté de ce sur quoi elles agissent**, et les blocs suivent le geste : ce qui manque, les fichiers, le presse-papier, les périmés
+
+### Notes
+- Ce n'est pas un mode à part : c'est le même écran, et les modes simples en sont les cas dégénérés. Presse-papier seul, rien n'attend — c'est toujours zéro clic dans le cas nominal
+- Le rendu vit en mémoire entre les deux temps ; la durée est désormais bornée par le geste plutôt que par le minuteur
+
 ## [1.18.1] — 2026-08-30
 
 ### Corrections
