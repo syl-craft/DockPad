@@ -38,6 +38,26 @@ public class SecretSettingsTests : IDisposable
         Assert.Equal("", read.BitwardenCliPath);
         Assert.Equal(90, read.ClipboardClearSeconds);
         Assert.Equal("", read.VaultOrganization);
+
+        // Celui-ci compte plus que les autres : lu comme « décoché », il rendrait silencieusement
+        // le comportement qui a déposé une clé périmée sur le NAS — trois fois.
+        Assert.True(read.SyncVaultBeforeInject);
+    }
+
+    /// <summary>
+    /// Décocher se retient, et se relit tel quel.
+    /// </summary>
+    /// <remarks>
+    /// Un réglage à <c>false</c> et un réglage <b>absent</b> se sérialisent différemment mais se
+    /// liraient tous deux comme « faux » si le défaut était mal posé — c'est ce que le test du
+    /// dessus fixe, et celui-ci vérifie l'autre moitié.
+    /// </remarks>
+    [Fact]
+    public void UnRefusDeSynchroniser_EstConserve()
+    {
+        AppSettingsService.SaveTo(File_, new AppSettings { SyncVaultBeforeInject = false });
+
+        Assert.False(AppSettingsService.LoadFrom(File_, registry: _ => null).SyncVaultBeforeInject);
     }
 
     [Fact]

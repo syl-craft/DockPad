@@ -66,6 +66,24 @@ public class AppSettings
     /// </remarks>
     public string VaultOrganization { get; set; } = "";
 
+    /// <summary>
+    /// Synchroniser le cache de la CLI juste avant de lire le coffre.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Coché par défaut, et c'est un renversement.</b> La règle d'origine — « pas de sync avant
+    /// chaque injection, ce serait un aller-retour réseau pour un coffre qui bouge rarement » —
+    /// avait tort sur son propre critère : le coffre bouge <i>précisément</i> quand on injecte, on
+    /// vient d'y déposer la valeur qu'on veut déployer.
+    /// </para>
+    /// <para>
+    /// Le prix de l'oubli n'est pas une seconde d'attente, c'est un <b>secret périmé déposé sur le
+    /// NAS</b>, découvert bien plus tard et loin d'ici. Le piège a mordu trois fois. Qui trouve ça
+    /// lent décoche — et c'est alors son choix, explicite, au lieu d'un silence.
+    /// </para>
+    /// </remarks>
+    public bool SyncVaultBeforeInject { get; set; } = true;
+
     /// <summary>Modificateurs du raccourci global. Zéro = aucun réglage, le défaut s'applique.</summary>
     public int HotkeyModifiers { get; set; }
 

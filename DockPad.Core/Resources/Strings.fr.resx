@@ -1287,4 +1287,16 @@ Cette action est irréversible.</value>
   <data name="Inject_Choice_Continue" xml:space="preserve">
     <value>Continuer</value>
   </data>
+  <data name="Inject_Unlock_Sync" xml:space="preserve">
+    <value>Synchroniser le coffre avant d’injecter</value>
+  </data>
+  <data name="Inject_Unlock_SyncHint" xml:space="preserve">
+    <value>La CLI lit un cache local : sans cela, un item que tu viens de modifier dans le coffre n’est pas encore visible.</value>
+  </data>
+  <data name="Inject_State_SyncingWorking" xml:space="preserve">
+    <value>Synchronisation du coffre, puis lecture…</value>
+  </data>
+  <data name="Inject_Missing_SyncFailed" xml:space="preserve">
+    <value>Le coffre n’a pas pu être synchronisé : les valeurs viennent du cache local et peuvent être périmées.</value>
+  </data>
 </root>

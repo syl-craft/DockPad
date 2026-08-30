@@ -1287,4 +1287,16 @@ This cannot be undone.</value>
   <data name="Inject_Choice_Continue" xml:space="preserve">
     <value>Continue</value>
   </data>
+  <data name="Inject_Unlock_Sync" xml:space="preserve">
+    <value>Refresh the vault before injecting</value>
+  </data>
+  <data name="Inject_Unlock_SyncHint" xml:space="preserve">
+    <value>The CLI reads a local cache: without this, an item you just changed in the vault is not visible yet.</value>
+  </data>
+  <data name="Inject_State_SyncingWorking" xml:space="preserve">
+    <value>Refreshing the vault, then reading it…</value>
+  </data>
+  <data name="Inject_Missing_SyncFailed" xml:space="preserve">
+    <value>The vault could not be refreshed: the values come from the local cache and may be out of date.</value>
+  </data>
 </root>

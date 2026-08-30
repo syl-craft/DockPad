@@ -161,7 +161,11 @@ public partial class SecretInjectionWindow : Window
         var password = TxtPassword.Password;
         if (string.IsNullOrEmpty(password)) return;
 
-        ShowBusy(Loc.T("Inject_State_Working"));
+        var sync = !_syncOnly && ChkSync.IsChecked == true;
+
+        // L'attente doit se voir pour ce qu'elle est : une synchro ajoute un aller-retour reseau,
+        // et un ecran qui annonce « lecture » pendant qu'il telecharge fait croire a un blocage.
+        ShowBusy(Loc.T(sync ? "Inject_State_SyncingWorking" : "Inject_State_Working"));
 
         InjectionReport report;
         try
@@ -169,7 +173,7 @@ public partial class SecretInjectionWindow : Window
             report = _syncOnly
                 ? await SecretInjectionService.SyncAsync(password, _cancellation.Token).ConfigureAwait(true)
                 : await SecretInjectionService.InjectAsync(
-                    _content!, Path.GetDirectoryName(_filePath)!, _mode, password,
+                    _content!, Path.GetDirectoryName(_filePath)!, _mode, password, sync,
                     _cancellation.Token).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (Timeout()) { ShowTimeout(); return; }
@@ -290,6 +294,19 @@ public partial class SecretInjectionWindow : Window
         Choice_Changed(null, null!);
     }
 
+    /// <summary>
+    /// Le choix se retient : qui décoche une fois ne veut pas le redécocher à chaque injection.
+    /// </summary>
+    /// <remarks>
+    /// Écrit tout de suite plutôt qu'à la fermeture : cette fenêtre n'a pas de bouton
+    /// <i>Sauvegarder</i>, et son cas nominal est de se fermer toute seule au décompte.
+    /// </remarks>
+    private void Sync_Changed(object sender, RoutedEventArgs e)
+    {
+        // Update, et non Load/Save : c'est le load-modify-save sous le verrou global des configs.
+        AppSettingsService.Update(s => s.SyncVaultBeforeInject = ChkSync.IsChecked == true);
+    }
+
     private void Choice_Changed(object? sender, RoutedEventArgs e)
     {
         var any = ChkFiles.IsChecked == true || ChkClipboard.IsChecked == true;
@@ -317,6 +334,8 @@ public partial class SecretInjectionWindow : Window
     {
         TxtUnlockError.Text = error ?? "";
         TxtUnlockError.Visibility = error is null ? Visibility.Collapsed : Visibility.Visible;
+
+        ChkSync.IsChecked = AppSettingsService.Current.SyncVaultBeforeInject;
 
         Show(PanelUnlock);
         Buttons(clear: false, unlock: true, folder: false);

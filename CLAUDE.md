@@ -1043,14 +1043,38 @@ s'écrit sans admin.
 
 #### Synchroniser le cache (onglet Secrets)
 La CLI Bitwarden travaille sur un **cache local** : un item ajouté au coffre n'existe pas pour
-`bw list items` tant qu'aucun `bw sync` n'a eu lieu. Le piège a mordu **deux fois en une heure** à la
-mise au point — d'abord sur l'organisation, puis sur l'item. Trois réponses, cumulées :
+`bw list items` tant qu'aucun `bw sync` n'a eu lieu. Le piège a mordu **trois fois** — deux à la mise
+au point (l'organisation, puis l'item), et une en **déposant une clé périmée**. Quatre réponses,
+cumulées :
 
+- une case **« Synchroniser le coffre avant d'injecter »** sur l'écran de saisie du mot de passe,
+  **cochée par défaut** (voir ci-dessous) ;
 - l'onglet affiche la **date du dernier cache** (`bw status`, aucun mot de passe requis) et un bouton
   **Synchroniser maintenant** ;
 - le message « item absent » nomme la cause probable et la commande ;
-- pas de synchro avant chaque injection : ce serait un aller-retour réseau à chaque clic droit, pour
-  un coffre qui bouge rarement.
+- un `sync` qui échoue **ne bloque pas** l'injection mais rejoint la liste des manques : refuser de
+  travailler parce que le réseau est coupé serait pire, travailler en silence sur des valeurs datées
+  est précisément le piège.
+
+##### Pourquoi la synchro est passée d'« exclue » à « cochée par défaut »
+La règle d'origine — « pas de synchro avant chaque injection, ce serait un aller-retour réseau pour
+un coffre qui bouge rarement » — avait tort **sur son propre critère** : le coffre bouge
+*précisément* quand on injecte, puisqu'on vient d'y déposer la valeur qu'on veut déployer. Et le prix
+de l'oubli n'est pas une seconde d'attente, c'est un **secret périmé déposé sur le NAS**, découvert
+bien plus tard et loin d'ici.
+
+- **Aucune date d'ancienneté n'aurait suffi.** Le cas qui a mordu avait un cache vieux de deux
+  minutes — frais, et pourtant antérieur à la modification du coffre. Afficher une date rassure sur
+  le mauvais critère ; seule une synchro *juste avant la lecture* ferme le trou
+- **Elle a lieu entre le déverrouillage et la lecture**, dans `OpenVaultAsync` : la clé de session
+  existe déjà, donc c'est un appel de plus dans la séquence — aucun second mot de passe, aucun
+  second déverrouillage, et le périmètre d'audit ne bouge pas
+- **La case vit sur l'écran de saisie, pas dans les Options** : c'est le moment où la question se
+  pose. Le choix est retenu dans `settings.json` (`syncVaultBeforeInject`), écrit immédiatement —
+  cette fenêtre n'a pas de bouton *Sauvegarder*, et son cas nominal est de se fermer toute seule
+- **L'attente se dit** : l'écran de travail annonce « Synchronisation du coffre, puis lecture… ». Une
+  synchro ajoute un aller-retour réseau, et un écran qui annonce « lecture » pendant qu'il télécharge
+  fait croire à un blocage
 
 > **Le bouton vit dans les Options, le mot de passe non.** `SettingsDialog` appelle
 > `SecretInjection.SyncVault(this)`, et c'est la fenêtre du dossier `Secrets/` qui recueille le mot
@@ -1081,7 +1105,9 @@ première erreur qu'on fait ; le texte d'aide le dit.
 - **Pas de `-Show` ni de `-Out`** du script : ne jamais afficher le rendu, ne jamais l'écrire. La
   garde « rien sur disque » rend la seconde moitié structurelle plutôt que déclarative
 - **Pas d'entrée dans le menu ☰** avec sélecteur de fichier : le clic droit *est* le geste
-- **Pas de `bw sync`** avant lecture : lent, et le script ne le faisait pas
+- ~~Pas de `bw sync` avant lecture~~ — **fait depuis**, et coché par défaut : voir
+  « Pourquoi la synchro est passée d'« exclue » à « cochée par défaut » ». L'argument du coût était
+  juste, celui du risque l'était davantage
 
 #### Captures
 `DialogShot.exe inject <fr|en> <png>` (saisie du mot de passe), `inject-failed` (compte-rendu

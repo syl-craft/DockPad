@@ -188,7 +188,9 @@ internal static class Program
         }
         else
         {
-            Invoke(window, "ShowUnlock", null);
+            // (object?)null et non null : avec un parametre `params`, un null nu est pris pour le
+            // TABLEAU nul — donc zero argument, et la reflexion refuse.
+            Invoke(window, "ShowUnlock", (object?)null);
         }
 
         return window;

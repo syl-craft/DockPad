@@ -256,7 +256,8 @@ public static class SecretInjectionService
     /// </para>
     /// </remarks>
     public static async Task<InjectionReport> InjectAsync(
-        string content, string folder, SecretMode mode, string masterPassword, CancellationToken token)
+        string content, string folder, SecretMode mode, string masterPassword,
+        bool syncFirst, CancellationToken token)
     {
         IReadOnlyList<ComposeSecret> entries = [];
         var templates = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -277,10 +278,17 @@ public static class SecretInjectionService
             entries = scanned;
         }
 
-        var (vault, failure) = await OpenVaultAsync(masterPassword, token).ConfigureAwait(false);
+        var (vault, failure, warning) = await OpenVaultAsync(masterPassword, syncFirst, token)
+            .ConfigureAwait(false);
         if (failure is not null) return failure;
 
         var missing = new List<string>();
+
+        // Une synchro qui echoue n'annule PAS l'injection : le cache local reste lisible, et
+        // refuser de travailler parce que le reseau est coupe serait pire. Mais elle ne peut pas
+        // se taire — travailler sur des valeurs peut-etre datees SANS le dire est exactement le
+        // piege que cette option existe pour fermer.
+        if (warning is not null) missing.Add(warning);
         SecretFilesOutcome? files = null;
         SecretRenderResult? render = null;
 
@@ -381,12 +389,19 @@ public static class SecretInjectionService
         missing.Count > 0 ? missing.Distinct(StringComparer.Ordinal).ToList()
                           : [Loc.T("Inject_Error_NoMarkers")];
 
-    /// <summary>Le coffre ouvert, ou l'échec à afficher. La clé de session ne sort pas d'ici.</summary>
-    private static async Task<(SecretVault? Vault, InjectionReport? Failure)> OpenVaultAsync(
-        string masterPassword, CancellationToken token)
+    /// <summary>
+    /// Le coffre ouvert, ou l'échec à afficher. La clé de session ne sort pas d'ici.
+    /// </summary>
+    /// <param name="syncFirst">
+    /// Rafraîchir le cache de la CLI avant de lire. Fait <b>ici</b>, entre le déverrouillage et la
+    /// lecture : la clé de session existe déjà, donc c'est un appel de plus dans la séquence, sans
+    /// second mot de passe ni second déverrouillage.
+    /// </param>
+    private static async Task<(SecretVault? Vault, InjectionReport? Failure, string? Warning)> OpenVaultAsync(
+        string masterPassword, bool syncFirst, CancellationToken token)
     {
         var exe = Executable();
-        if (exe is null) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliMissing")));
+        if (exe is null) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliMissing")), null);
 
         // Le mot de passe n'existe que dans l'environnement du processus enfant : jamais dans une
         // ligne de commande, jamais dans celui de DockPad.
@@ -396,10 +411,22 @@ public static class SecretInjectionService
             environment, token).ConfigureAwait(false);
 
         if (!unlock.Ok || string.IsNullOrWhiteSpace(unlock.Stdout))
-            return (null, InjectionReport.Fail(Loc.T("Inject_Error_UnlockRefused"), Diagnostic(unlock)));
+            return (null, InjectionReport.Fail(Loc.T("Inject_Error_UnlockRefused"), Diagnostic(unlock)), null);
 
         // La clé de session suit le même chemin, et ne quitte pas cette méthode.
         var session = new Dictionary<string, string> { ["BW_SESSION"] = unlock.Stdout.Trim() };
+
+        string? warning = null;
+
+        if (syncFirst)
+        {
+            var synced = await RunAsync(exe, ["sync"], session, token).ConfigureAwait(false);
+            if (!synced.Ok)
+            {
+                LogService.Warn(new InvalidOperationException(Diagnostic(synced) ?? "sync failed"), "Synchronisation du coffre avant injection");
+                warning = Loc.T("Inject_Missing_SyncFailed");
+            }
+        }
 
         var configured = AppSettingsService.Current.VaultOrganization;
         string? organisationId = null;
@@ -407,10 +434,10 @@ public static class SecretInjectionService
         if (!string.IsNullOrWhiteSpace(configured))
         {
             var listed = await RunAsync(exe, ["list", "organizations"], session, token).ConfigureAwait(false);
-            if (!listed.Ok) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), Diagnostic(listed)));
+            if (!listed.Ok) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), Diagnostic(listed)), null);
 
             var (id, orgFailure) = ResolveOrganisation(BitwardenCli.ParseOrganizations(listed.Stdout), configured);
-            if (orgFailure is not null) return (null, InjectionReport.Fail(orgFailure));
+            if (orgFailure is not null) return (null, InjectionReport.Fail(orgFailure), null);
             organisationId = id;
         }
 
@@ -419,9 +446,9 @@ public static class SecretInjectionService
             : ["list", "items", "--organizationid", organisationId];
 
         var items = await RunAsync(exe, arguments, session, token).ConfigureAwait(false);
-        if (!items.Ok) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), Diagnostic(items)));
+        if (!items.Ok) return (null, InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), Diagnostic(items)), null);
 
-        return (new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured), null);
+        return (new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured), null, warning);
     }
 
     // ───────────── Détails ─────────────

@@ -1287,4 +1287,16 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_Choice_Continue" xml:space="preserve">
     <value>C0nt1nu3r</value>
   </data>
+  <data name="Inject_Unlock_Sync" xml:space="preserve">
+    <value>5ynchr0n153r l3 c0ffr3 4v4nt d’1nj3ct3r</value>
+  </data>
+  <data name="Inject_Unlock_SyncHint" xml:space="preserve">
+    <value>L4 CL1 l1t un c4ch3 l0c4l : 54n5 c3l4, un 1t3m qu3 tu v13n5 d3 m0d1f13r d4n5 l3 c0ffr3 n’35t p45 3nc0r3 v151bl3.</value>
+  </data>
+  <data name="Inject_State_SyncingWorking" xml:space="preserve">
+    <value>5ynchr0n154t10n du c0ffr3, pu15 l3ctur3…</value>
+  </data>
+  <data name="Inject_Missing_SyncFailed" xml:space="preserve">
+    <value>L3 c0ffr3 n’4 p45 pu 3tr3 5ynchr0n153 : l35 v4l3ur5 v13nn3nt du c4ch3 l0c4l 3t p3uv3nt 3tr3 p3r1m335.</value>
+  </data>
 </root>
