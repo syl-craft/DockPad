@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.0] — 2026-08-30
+
+### Nouveautés utilisateur
+- **Un fichier qui porte à la fois des marqueurs et des annotations `x-bw` produit désormais les deux** : les fichiers de secrets *et* le rendu dans le presse-papier, en un seul déverrouillage du coffre. C'était un refus
+- **Une clé absente du coffre n'annule plus tout.** Les secrets présents sont écrits, le rendu est produit, et un écran **« rendu incomplet »** liste ce qui manque. Le marqueur non résolu reste tel quel dans le texte : il est sa propre trace, visible dans ce qu'on colle
+- **Les fichiers dont la clé a disparu du coffre sont listés, et leur suppression est proposée** — un clic, jamais un défaut. Ils ne sont pas touchés autrement : un coffre temporairement inaccessible ne doit pas pouvoir détruire un déploiement qui marchait
+- **Un antislash devant un marqueur le laisse tranquille** : `\{{ bw:item:champ }}` s'écrit tel quel, sans son antislash, et n'est jamais cherché dans le coffre. Un fichier qui *documente* la syntaxe — un `CLAUDE.md`, un README — passait jusqu'ici pour un fichier à secrets
+
+### Notes
+- Trois garde-fous remplacent la règle du tout-ou-rien : **un fichier de secret n'est jamais écrit vide** (un conteneur partirait avec une chaîne vide et échouerait bien plus loin), **n'avoir rien résolu du tout reste un échec**, et l'écran incomplet est le seul de la fenêtre qui **ne se referme pas tout seul** — il demande une décision
+- Le risque n'a jamais été qu'un rendu soit partiel, mais qu'il ait l'air complet. L'écran incomplet est en ambre, jamais en vert
+
 ## [1.15.0] — 2026-08-30
 
 ### Nouveautés utilisateur
