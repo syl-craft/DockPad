@@ -130,9 +130,21 @@ public static class SecretFileWriter
     /// fichier réellement occupé, et il faut le dire plutôt que d'attendre.
     /// </para>
     /// </remarks>
+    /// <remarks>
+    /// <b><c>UnauthorizedAccessException</c> fait partie des erreurs passagères, et c'est
+    /// contre-intuitif.</b> Sur Windows, <c>MoveFile</c> sur une destination brièvement tenue
+    /// remonte <c>ERROR_ACCESS_DENIED</c>, que .NET traduit ainsi — et non en
+    /// <c>IOException</c> de partage. Mesuré : c'est exactement l'exception qu'a levée l'échec
+    /// intermittent, et l'exclure d'ici l'a fait revenir. La sonde d'écriture juste au-dessus y
+    /// contribue même, en relâchant son propre handle un instant plus tôt.
+    /// <para>
+    /// Le prix est qu'un refus <i>définitif</i> — une ACL, un attribut lecture seule — coûte une
+    /// seconde avant d'être annoncé. C'est le bon échange face à un produit qui échoue au hasard.
+    /// </para>
+    /// </remarks>
     private static void MoveWithRetry(string temp, string final)
     {
-        const int attempts = 20;
+        const int attempts = 10;
 
         for (var i = 1; ; i++)
         {
@@ -142,6 +154,7 @@ public static class SecretFileWriter
                 return;
             }
             catch (IOException ex) when (i < attempts && IsTransientLock(ex)) { Thread.Sleep(100); }
+            catch (UnauthorizedAccessException) when (i < attempts) { Thread.Sleep(100); }
         }
     }
 
