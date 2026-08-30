@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.IO;
 using System.Text;
 using DockPad.Secrets;
@@ -60,6 +60,22 @@ public class SecretFilesTests : IDisposable
     public void NiLUnNiLAutre_NEstPasUnMode()
     {
         Assert.Equal(SecretMode.None, SecretPlan.Of("image: nginx"));
+    }
+
+    /// <summary>
+    /// Un fichier qui ne fait que <b>documenter</b> la syntaxe n'a rien à produire.
+    /// </summary>
+    /// <remarks>
+    /// C'est la raison d'être de l'échappement : ce README, ce CLAUDE.md, passaient jusqu'ici pour
+    /// des fichiers à secrets. Le mode se déduit de <c>FindMarkers</c>, donc l'échappement le
+    /// corrige ici sans qu'une seule ligne de <see cref="SecretPlan"/> ait bougé — c'est la preuve
+    /// que la règle vit à un seul endroit.
+    /// </remarks>
+    [Fact]
+    public void UnFichierQuiDocumenteLaSyntaxe_NaRienAProduire()
+    {
+        Assert.Equal(SecretMode.None,
+            SecretPlan.Of("Ecrire " + @"\{{ bw:item:champ }}" + " dans le fichier."));
     }
 
     [Fact]

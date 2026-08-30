@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace DockPad.Secrets;
 
@@ -32,15 +32,32 @@ public static class SecretTemplate
     /// <see cref="SecretVault"/> les résout très bien. Le <c>:</c> et le <c>}}</c> délimitent
     /// suffisamment ; le nom est simplement rogné de ses espaces de bord.
     /// </remarks>
+    /// <remarks>
+    /// <b>Le <c>(?&lt;!\\)</c> de tête est l'échappement</b> : un antislash devant les accolades dit
+    /// « montre ce marqueur, ne le résous pas ». Un fichier qui documente la syntaxe — un
+    /// <c>CLAUDE.md</c>, un README — pouvait sinon passer pour un fichier à secrets. Posé sur ce
+    /// motif seul, il couvre du même coup la détection, la substitution, le compteur de marqueurs
+    /// et <see cref="SecretPlan"/> : un fichier entièrement échappé n'a « rien à produire ».
+    /// </remarks>
     private static readonly Regex MarkerPattern =
-        new(@"\{\{\s*bw:([^:}]+):([^}\s]+)\s*\}\}", RegexOptions.Compiled);
+        new(@"(?<!\\)\{\{\s*bw:([^:}]+):([^}\s]+)\s*\}\}", RegexOptions.Compiled);
+
+    /// <summary>Ce qui retire l'antislash, une fois tout le reste vérifié.</summary>
+    private const string Escaped = @"\{{";
+    private const string Unescaped = "{{";
 
     /// <summary>
     /// Le second filet. <c>REMPLACER</c> en fait partie : c'est le marqueur manuel qui a causé la
     /// panne d'origine, et rien ne garantit qu'il ne traîne pas encore dans un fichier.
     /// </summary>
+    /// <remarks>
+    /// Le même <c>(?&lt;!\\)</c> : un marqueur échappé produit un <c>{{ … }}</c> littéral, et ce filet
+    /// le rejetterait — donc l'échappement se ferait refuser par la garde censée nous protéger.
+    /// <c>REMPLACER</c>, lui, reste inconditionnel : c'est une sentinelle manuelle, rien ne demande
+    /// à l'échapper.
+    /// </remarks>
     private static readonly Regex LeftoverPattern =
-        new(@"\{\{[^}]*\}\}|REMPLACER", RegexOptions.Compiled);
+        new(@"(?<!\\)\{\{[^}]*\}\}|REMPLACER", RegexOptions.Compiled);
 
     /// <summary>Les marqueurs du texte, dans l'ordre où ils apparaissent, doublons compris.</summary>
     public static IReadOnlyList<SecretMarker> FindMarkers(string content) =>
@@ -97,7 +114,11 @@ public static class SecretTemplate
         if (leftovers.Count > 0)
             return SecretRenderResult.Failed([Loc.F("Inject_Error_Leftovers", leftovers.Count)]);
 
-        return SecretRenderResult.Rendered(rendered, markers.Count,
+        // L'antislash ne tombe qu'ICI, apres le balayage — et l'ordre EST la conception. Le retirer
+        // plus tot rendrait un « {{ … }} » litteral que le filet ci-dessus rejetterait aussitot :
+        // l'echappement se ferait refuser par la garde qui existe pour nous proteger. Dans cet
+        // ordre, les deux tiennent — un reste NON echappe fait toujours echouer le rendu.
+        return SecretRenderResult.Rendered(rendered.Replace(Escaped, Unescaped), markers.Count,
             markers.Select(m => m.Item).Distinct(StringComparer.Ordinal).Count());
     }
 

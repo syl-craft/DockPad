@@ -58,6 +58,19 @@ Deux filets, et le second ne fait pas confiance au premier :
 2. le texte produit est balayé, et tout `{{ … }}` ou `REMPLACER` survivant le rejette — y compris
    venu d'une valeur du coffre.
 
+### L'échappement, et l'ordre qui le rend compatible
+
+Un antislash devant les accolades — `\{{ bw:item:champ }}` — dit « montre ce marqueur, ne le
+résous pas » : sans lui, un fichier qui **documente** la syntaxe passe pour un fichier à secrets.
+
+Mais un marqueur échappé produit un `{{ … }}` littéral, que le second filet rejetterait. Les quatre
+étapes de `Render` existent pour que les deux tiennent : trouver (hors échappés) → substituer →
+**balayer** (hors échappés) → **puis seulement** retirer l'antislash. Le retirer plus tôt le ferait
+refuser par la garde censée nous protéger.
+
+Un `{{ … }}` **non** échappé fait toujours échouer le rendu — un test le vérifie aux côtés d'un
+échappé, parce que c'est précisément ce qu'un échappement mal placé casserait sans bruit.
+
 `SecretRenderResult` est *soit* un texte, *soit* une liste d'échecs. Lire `Text` sur un échec lève.
 
 **Conséquence assumée du second filet** : il rejette *tout* `{{ … }}`, y compris un gabarit Go ou

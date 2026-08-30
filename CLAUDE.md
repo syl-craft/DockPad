@@ -707,10 +707,35 @@ qu'on fait de lui (`SecretPlan`, décision pure sur le contenu) :
 | des annotations `x-bw:` sous `secrets:` | les **fichiers de secrets** dans un sous-dossier `secrets/` |
 | les deux | **refus** — deviner serait pire que demander |
 | ni l'un ni l'autre | refus « rien à produire » |
+| un marqueur précédé d'un antislash — `\{{ bw:item:champ }}` | le marqueur **littéral**, antislash retiré, jamais résolu |
 
 > **Les marqueurs tranchent en premier.** Un `.env` porte des marqueurs et n'est pas du YAML :
 > laisser le parseur décider d'abord ferait basculer ce cas courant vers un message d'erreur YAML
 > sans rapport avec ce que l'utilisateur essaie de faire.
+
+#### L'échappement `\{{ … }}`, et pourquoi son ordre est la conception
+
+Un antislash devant les accolades dit « montre ce marqueur, ne le résous pas ». Sans lui, un fichier
+qui **documente** la syntaxe — un `CLAUDE.md`, un README — passe pour un fichier à secrets.
+
+Le piège est que **le second filet rejette tout `{{ … }}` survivant** : un marqueur échappé en produit
+un, et se ferait donc refuser par la garde même qui existe pour nous protéger. Les quatre étapes de
+`Render` sont ordonnées pour que les deux tiennent ensemble :
+
+1. **trouver** les marqueurs — le `(?<!\\)` du motif écarte les échappés ;
+2. **résoudre** et substituer ;
+3. **balayer** les restes — même `(?<!\\)`, les échappés portent encore leur antislash ;
+4. **retirer l'antislash**, en tout dernier.
+
+L'étape 4 après l'étape 3, jamais avant. La garantie tout-ou-rien est intacte : un `{{ … }}` **non**
+échappé fait toujours échouer le rendu, et un test le vérifie aux côtés d'un échappé.
+
+- Le `(?<!\\)` est posé sur le **seul** motif de marqueur, donc il couvre du même coup la
+  détection, la substitution, le compteur et `SecretPlan` : un fichier entièrement échappé retombe en
+  mode « rien à produire », ce qui est la bonne réponse devant un README
+- **`REMPLACER` n'est pas échappable** : c'est une sentinelle manuelle, pas une syntaxe qu'on documente
+- **L'antislash est toujours consommé**, même doublé. Pas de règle de doublement : ce serait une
+  seconde syntaxe à retenir pour un cas que personne n'a
 
 #### Mode fichiers : les annotations `x-bw` (`ComposeSecrets`, `SecretFileWriter`)
 `x-` est le mécanisme d'extension prévu par la spécification Compose : Compose ignore ces champs,

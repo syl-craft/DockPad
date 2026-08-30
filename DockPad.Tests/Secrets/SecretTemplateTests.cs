@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using DockPad.Secrets;
 using DockPad.Services.Localization;
 
@@ -192,5 +192,79 @@ public class SecretTemplateTests
     public void UnTexteRenduPropre_NeLaisseAucunReste()
     {
         Assert.Empty(SecretTemplate.FindLeftovers("token: \"tk_42\""));
+    }
+
+    // ───────────── Échappement ─────────────
+    //
+    // Un fichier peut vouloir MONTRER la syntaxe sans la subir — un CLAUDE.md, un README. Un
+    // antislash devant les accolades le dit. Ce qui rend ces tests nécessaires plutôt que
+    // décoratifs, c'est que le second filet rejette tout « {{ … }} » survivant : un marqueur
+    // échappé en produit un, et se ferait rejeter par le filet censé nous protéger. L'ordre des
+    // quatre étapes de Render est la seule chose qui rend les deux compatibles.
+
+    [Fact]
+    public void UnMarqueurEchappeNestPasUnMarqueur()
+    {
+        var markers = SecretTemplate.FindMarkers(@"exemple : \{{ bw:ntfy:token }}");
+
+        Assert.Empty(markers);
+    }
+
+    [Fact]
+    public void UnMarqueurEchappeRessortLitteralSansSonAntislash()
+    {
+        var result = SecretTemplate.Render(
+            "vrai: {{ bw:ntfy:token }}\ndoc:  " + @"\{{ bw:item:champ }}",
+            _ => Always("s3cret"));
+
+        Assert.True(result.Ok);
+        Assert.Equal("vrai: s3cret\ndoc:  {{ bw:item:champ }}", result.Text);
+    }
+
+    /// <summary>Le second filet ne doit pas mordre sur ce que l'échappement produit légitimement.</summary>
+    [Fact]
+    public void UnMarqueurEchappeNeDeclenchePasLeSecondFilet()
+        => Assert.Empty(SecretTemplate.FindLeftovers(@"doc : \{{ bw:item:champ }}"));
+
+    /// <summary>
+    /// Le test qui compte : l'échappement ne perce pas le filet. Un « {{ … }} » <b>non</b> échappé
+    /// fait toujours échouer le rendu, même quand un échappé le côtoie.
+    /// </summary>
+    [Fact]
+    public void UnResteNonEchappeEchoueTouJoursMemeAuxCotesDUnEchappe()
+    {
+        var result = SecretTemplate.Render(
+            "vrai: {{ bw:ntfy:token }}\ndoc:  " + @"\{{ bw:item:champ }}",
+            _ => Always("{{ oups }}"));
+
+        Assert.False(result.Ok);
+    }
+
+    /// <summary>
+    /// Un fichier qui ne fait que documenter la syntaxe n'a rien à produire — le même refus que
+    /// devant un fichier sans marqueur, et c'est la bonne réponse : on a visé un README.
+    /// </summary>
+    [Fact]
+    public void UnFichierEntierementEchappeNaAucunMarqueur()
+    {
+        var result = SecretTemplate.Render(@"doc : \{{ bw:item:champ }}", _ => Always("x"));
+
+        Assert.False(result.Ok);
+        Assert.Contains(result.Failures, f => f.Contains("marqueur", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// L'antislash est toujours consommé, même doublé : je n'ajoute pas de règle de doublement,
+    /// ce serait une seconde syntaxe à retenir pour un cas que personne n'a.
+    /// </summary>
+    [Fact]
+    public void UnAntislashDoubleNeResoutToujoursPas()
+    {
+        var result = SecretTemplate.Render(
+            "vrai: {{ bw:ntfy:token }}\ndoc:  " + @"\\{{ bw:item:champ }}",
+            _ => Always("s3cret"));
+
+        Assert.True(result.Ok);
+        Assert.EndsWith(@"\{{ bw:item:champ }}", result.Text);
     }
 }
