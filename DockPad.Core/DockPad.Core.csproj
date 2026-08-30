@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <!--
+      DockPad, et non DockPad.Core. C'est ce qui garde le nom de manifeste des ressources a
+      « DockPad.Resources.Strings » — que Loc code en dur — et ce qui evite de toucher un seul
+      `using` dans les 85 fichiers consommateurs. Le nom de l'assembly, lui, reste DockPad.Core.
+    -->
+    <RootNamespace>DockPad</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Versions identiques a celles de DockPad.csproj : deux resolutions differentes du meme
+         paquet dans une meme sortie de publication est un mode de panne qu'on n'a pas a ouvrir. -->
+    <PackageReference Include="Serilog" Version="4.4.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="SmartFormat" Version="3.6.1" />
+  </ItemGroup>
+
+</Project>

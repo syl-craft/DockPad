@@ -23,13 +23,17 @@
     <!-- DockPad.Tests et tools\McpShot sont des projets frères situés dans des sous-dossiers du
          répertoire de DockPad.csproj : sans ces exclusions, le glob par défaut du SDK (**/*.cs)
          compile aussi leurs sources dans l'app. -->
-    <Compile Remove="DockPad.Tests\**;tools\**" />
-    <EmbeddedResource Remove="DockPad.Tests\**;tools\**" />
-    <None Remove="DockPad.Tests\**" />
+    <Compile Remove="DockPad.Tests\**;tools\**;DockPad.Core\**" />
+    <EmbeddedResource Remove="DockPad.Tests\**;tools\**;DockPad.Core\**" />
+    <None Remove="DockPad.Tests\**;DockPad.Core\**" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="CHANGELOG.md" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="DockPad.Core\DockPad.Core.csproj" />
   </ItemGroup>
 
   <!-- Microsoft.Data.Sqlite embarque les binaires natifs de toutes les plateformes : mesure faite,

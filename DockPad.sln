@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DockPad", "DockPad.csproj",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DockPad.Tests", "DockPad.Tests\DockPad.Tests.csproj", "{343F1232-C8DB-4D5D-A5B1-087D294BD4C9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DockPad.Core", "DockPad.Core\DockPad.Core.csproj", "{5BED9FB4-5308-468D-A037-477036E160CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,18 @@ Global
 		{343F1232-C8DB-4D5D-A5B1-087D294BD4C9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{343F1232-C8DB-4D5D-A5B1-087D294BD4C9}.Release|x86.ActiveCfg = Release|Any CPU
 		{343F1232-C8DB-4D5D-A5B1-087D294BD4C9}.Release|x86.Build.0 = Release|Any CPU
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Debug|x64.ActiveCfg = Debug|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Debug|x64.Build.0 = Debug|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Debug|Any CPU.Build.0 = Debug|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Debug|x86.ActiveCfg = Debug|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Debug|x86.Build.0 = Debug|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Release|x64.ActiveCfg = Release|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Release|x64.Build.0 = Release|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Release|Any CPU.ActiveCfg = Release|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Release|Any CPU.Build.0 = Release|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Release|x86.ActiveCfg = Release|x64
+		{5BED9FB4-5308-468D-A037-477036E160CD}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

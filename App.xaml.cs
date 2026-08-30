@@ -25,6 +25,10 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Avant tout acces aux chemins : AppPaths ne resout sa racine qu'une fois, et le
+        // journal ecrit deja dedans.
+        Services.AppPaths.Initialize("DockPad");
+
         Services.LogService.Init();
 
         // Avant toute fenêtre : une vue construite avant ce point figerait ses libellés dans la

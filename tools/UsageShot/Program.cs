@@ -73,6 +73,9 @@ internal static class Program
 
         var app = new App();
         app.InitializeComponent();
+        // L'outil EST l'assembly d'entree, mais il montre les fenetres de DockPad : sans
+        // cette pose, le pied de fenetre porterait la version de l'outil (v1.0.0).
+        DockPad.Services.AppInfo.Initialize(typeof(App).Assembly);
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // Theme de capture : une variable d'environnement plutot qu'un argument, pour ne pas

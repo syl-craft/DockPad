@@ -26,6 +26,9 @@ internal static class Program
         // systray, fenêtres — ne doit jamais s'exécuter ici).
         var app = new App();
         app.InitializeComponent();
+        // L'outil EST l'assembly d'entree, mais il montre les fenetres de DockPad : sans
+        // cette pose, le pied de fenetre porterait la version de l'outil (v1.0.0).
+        DockPad.Services.AppInfo.Initialize(typeof(App).Assembly);
         app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // Journal de démonstration (insertion en tête : la plus récente en premier).

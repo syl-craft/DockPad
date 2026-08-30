@@ -52,4 +52,14 @@ public class AppPathsTests
         Assert.Null(Environment.GetEnvironmentVariable(AppPaths.OverrideVariable));
         Assert.Equal("DockPad", Path.GetFileName(AppPaths.ProfileRoot));
     }
+
+    [Fact]
+    public void LaRacineDependDuProduit()
+    {
+        // Deux applications partagent Core et ne peuvent pas partager un profil. Le nom du
+        // produit entre donc par Initialize, appelé avant tout accès.
+        Assert.Equal("DockPad", AppPaths.ResolveProduct(null, "DockPad"));
+        Assert.Equal("SecretInject", AppPaths.ResolveProduct("SecretInject", "DockPad"));
+        Assert.Equal("DockPad", AppPaths.ResolveProduct("   ", "DockPad"));
+    }
 }

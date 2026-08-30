@@ -44,10 +44,22 @@ public class FrenchLiteralGuardTests
 
     /// <summary>Dossiers de l'application qui portent du texte affiché.</summary>
     /// <remarks>
+    /// <para>
     /// <c>Secrets</c> en fait partie comme les autres : un dossier neuf qui échapperait au balayage
     /// serait le premier à réintroduire ce que ce test existe pour empêcher.
+    /// </para>
+    /// <para>
+    /// <b>Les mêmes dossiers dans <c>DockPad.Core</c>.</b> Extraire la bibliothèque y a déplacé
+    /// <c>AppSettings</c> et cinq services : sans ces deux entrées, le garde <b>ne serait pas tombé</b>,
+    /// il aurait simplement cessé de les couvrir. Une perte de couverture silencieuse est pire qu'un
+    /// test rouge — celui-là, on le voit.
+    /// </para>
     /// </remarks>
-    private static readonly string[] Scanned = ["Views", "Dialogs", "Models", "Services", "Secrets"];
+    private static readonly string[] Scanned =
+    [
+        "Views", "Dialogs", "Models", "Services", "Secrets",
+        Path.Combine("DockPad.Core", "Models"), Path.Combine("DockPad.Core", "Services"),
+    ];
 
     /// <summary>
     /// Fichiers dont le français est <b>voulu</b> : les messages renvoyés au serveur MCP. Leur
