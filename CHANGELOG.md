@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.14.0] — 2026-08-30
+
+### Nouveautés utilisateur
+
+#### Injection de secrets depuis Vaultwarden
+- Clic droit sur **n'importe quel fichier** → *Afficher plus d'options* → **« Injecter les secrets… »**. DockPad demande le mot de passe maître du coffre, puis produit ce que le fichier réclame
+- **Des marqueurs `{{ bw:item:champ }}`** → le fichier rendu dans le **presse-papier**, prêt à coller dans Container Station
+- **Des annotations `x-bw:` sous `secrets:`** → les **fichiers de secrets** écrits dans un sous-dossier `secrets/`, à côté du compose. Sans saut de ligne final : `containerboot` lit `TS_AUTHKEY` sans rien rogner, un `
+` de trop y casse l'authentification Tailscale
+- **Rien ou tout.** Si un seul marqueur ou une seule annotation ne se résout pas, DockPad ne produit **rien** — ni presse-papier, ni fichier — et affiche ce qui a échoué en le nommant. Un rendu partiel est pire que pas de rendu
+- Le **presse-papier est marqué confidentiel** : le rendu n'entre ni dans l'historique `Win+V`, ni dans la synchronisation entre appareils. Il s'efface après 90 s, et **seulement s'il porte encore ce que DockPad y a mis** — si tu as copié autre chose entre-temps, rien n'est touché
+- **Onglet Secrets** dans les Options : chemin de la CLI Bitwarden (détection automatique), organisation Vaultwarden, délai d'effacement, entrée de menu contextuel, et un bouton **Synchroniser le coffre** avec la date du dernier cache
+- Section **Secrets** dans le menu ☰ : réglages, et synchronisation
+
+#### Options en trois onglets
+- La fenêtre atteignait 1218 px de haut, plus que la zone de travail d'un écran 1080p. Elle se répartit en **Général**, **Intégrations** et **Secrets**, et devient redimensionnable
+
+### Corrections
+- Les **titres de section** des fenêtres *Serveur MCP* et *Navigateurs* s'affichaient en bleu : la couleur de l'onglet actif descendait dans le contenu de la page. Ils reprennent la couleur du texte
+- Les boutons secondaires **posés dans une page** étaient invisibles — leur fond est celui de la fenêtre. Ils portent désormais une bordure
+
+### Notes
+- Le mot de passe maître est demandé **à chaque injection** : aucune clé de session n'est conservée. DockPad démarre avec Windows et tourne des semaines ; une clé de coffre n'a rien à y faire
+- Ni le mot de passe ni la clé de session ne passent par la **ligne de commande**, où tout autre processus pourrait les lire. Ils ne vivent que dans l'environnement du processus `bw.exe`
+- Tout le code qui voit un secret vit dans un **seul dossier**, et **trois gardes automatiques** le vérifient à chaque exécution des tests : la frontière du dossier, l'absence d'écriture disque hors du rédacteur de fichiers, et l'absence de secret en ligne de commande
+- La CLI Bitwarden travaille sur un **cache local** : un item ajouté au coffre n'existe pas pour DockPad tant qu'une synchronisation n'a pas eu lieu. Le message d'item absent le rappelle
+- Remplace `render-secrets.ps1` et `install-context-menu.ps1` du dépôt Qnap, supprimés
+
 ## [1.13.0] — 2026-08-29
 
 ### Nouveautés utilisateur
