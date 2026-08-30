@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.19.1] — 2026-08-30
+## [1.20.0] — 2026-08-30
 
 > Les versions 1.14.0 à 1.19.0 n'ont jamais été publiées : elles ont vu la même fonctionnalité
 > changer de forme plusieurs fois. Leurs notes sont réunies ici, dans l'état qui part réellement.
