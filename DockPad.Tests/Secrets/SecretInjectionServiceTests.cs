@@ -48,14 +48,14 @@ public class SecretInjectionServiceTests
 
     private static readonly BwOrganization[] Orgs =
     [
-        new() { Id = "org-1", Name = "NAS QNAP" },
+        new() { Id = "org-1", Name = "Infra maison" },
         new() { Id = "org-2", Name = "Perso" },
     ];
 
     [Fact]
     public void TrouveLOrganisationParSonNom()
     {
-        var (id, failure) = BitwardenSecretSource.ResolveOrganisation(Orgs, "NAS QNAP");
+        var (id, failure) = BitwardenSecretSource.ResolveOrganisation(Orgs, "Infra maison");
 
         Assert.Equal("org-1", id);
         Assert.Null(failure);
@@ -88,14 +88,14 @@ public class SecretInjectionServiceTests
         var (id, failure) = BitwardenSecretSource.ResolveOrganisation(Orgs, "Absente");
 
         Assert.Null(id);
-        Assert.Equal(Loc.F("Inject_Error_OrgMissing", "Absente", "NAS QNAP, Perso"), failure);
+        Assert.Equal(Loc.F("Inject_Error_OrgMissing", "Absente", "Infra maison, Perso"), failure);
     }
 
     [Fact]
     public void AucuneOrganisationDuTout_LeDitPlutotQueDeMontrerUnVide()
     {
-        var (_, failure) = BitwardenSecretSource.ResolveOrganisation([], "NAS QNAP");
+        var (_, failure) = BitwardenSecretSource.ResolveOrganisation([], "Infra maison");
 
-        Assert.Equal(Loc.F("Inject_Error_OrgMissing", "NAS QNAP", Loc.T("Inject_Error_OrgNone")), failure);
+        Assert.Equal(Loc.F("Inject_Error_OrgMissing", "Infra maison", Loc.T("Inject_Error_OrgNone")), failure);
     }
 }

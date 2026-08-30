@@ -75,14 +75,14 @@ public class SecretSettingsTests : IDisposable
         {
             BitwardenCliPath = @"C:\bw\bw.exe",
             ClipboardClearSeconds = 0,
-            VaultOrganization = "NAS QNAP",
+            VaultOrganization = "Infra maison",
         });
 
         var read = AppSettingsService.LoadFrom(File_, registry: _ => null);
 
         Assert.Equal(@"C:\bw\bw.exe", read.BitwardenCliPath);
         Assert.Equal(0, read.ClipboardClearSeconds);
-        Assert.Equal("NAS QNAP", read.VaultOrganization);
+        Assert.Equal("Infra maison", read.VaultOrganization);
     }
 
     [Fact]

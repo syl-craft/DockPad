@@ -90,12 +90,12 @@ public class SecretFieldResolverTests
     [Fact]
     public void UnItemAbsent_AvecOrganisation_NommeLOrganisation()
     {
-        var vault = new SecretVault([], organisation: "NAS QNAP");
+        var vault = new SecretVault([], organisation: "Infra maison");
 
         var found = vault.Lookup(new SecretMarker("ntfy", "token"));
 
         Assert.Null(found.Value);
-        Assert.Equal(Loc.F("Inject_Error_ItemMissingOrg", "ntfy", "NAS QNAP"), found.Failure);
+        Assert.Equal(Loc.F("Inject_Error_ItemMissingOrg", "ntfy", "Infra maison"), found.Failure);
     }
 
     [Fact]

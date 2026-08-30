@@ -183,7 +183,7 @@ internal static class Program
         if (unlocked)
         {
             var report = DockPad.Secrets.InjectionReport.Fail(
-                Loc.F("Inject_Error_ItemMissingOrg", "ntfy", "NAS QNAP"), "exit 1 — Not found.");
+                Loc.F("Inject_Error_ItemMissingOrg", "ntfy", "Infra maison"), "exit 1 — Not found.");
             Invoke(window, "ShowFailure", report);
         }
         else
@@ -203,7 +203,7 @@ internal static class Program
             Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
 
         var files = new DockPad.Secrets.SecretFilesOutcome(
-            @"C:\Users\moi\Qnap\vaultwarden\secrets",
+            @"C:\Users\moi\infra\vaultwarden\secrets",
             ["ts-authkey", "smtp-password", "push-installation-id", "push-installation-key"], 1, []);
 
         // Le cas « les deux » COMPLET : c'est celui qui perdait la moitie de son information
@@ -244,7 +244,7 @@ internal static class Program
             Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
 
         var files = new DockPad.Secrets.SecretFilesOutcome(
-            @"C:\Users\moi\Qnap\vaultwarden\secrets",
+            @"C:\Users\moi\infra\vaultwarden\secrets",
             ["ts-authkey", "push-installation-id"], 1,
             ["smtp-password", "admin-token"]);
 

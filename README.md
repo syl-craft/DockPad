@@ -182,7 +182,7 @@ Clic droit sur **n'importe quel fichier** → **Injecter les secrets…**. DockP
 ```
 
 Les espaces autour des `:` et des accolades sont facultatifs — `{{bw:item:champ}}` marche aussi. Le
-**nom d'item accepte les espaces** (`{{ bw:NAS QNAP:token }}`), le nom de champ non : le `:` et le
+**nom d'item accepte les espaces** (`{{ bw:Infra maison:token }}`), le nom de champ non : le `:` et le
 `}}` suffisent à délimiter.
 
 Un marqueur se remplace **dans n'importe quel fichier**, pas seulement du YAML — un `.env`, un

@@ -26,7 +26,7 @@ public static class SecretTemplate
     /// </summary>
     /// <remarks>
     /// <b>Le nom d'item accepte les espaces</b>, le nom de champ non. Le script d'origine les
-    /// excluait des deux, et un marqueur comme <c>{{ bw:NAS QNAP:token }}</c> n'était alors pas vu
+    /// excluait des deux, et un marqueur comme <c>{{ bw:Infra maison:token }}</c> n'était alors pas vu
     /// <i>du tout</i> : l'utilisateur s'entendait répondre « aucun marqueur » devant un fichier qui
     /// n'en manquait pas. Les espaces sont la norme dans les noms d'items de coffre, et
     /// <see cref="SecretVault"/> les résout très bien. Le <c>:</c> et le <c>}}</c> délimitent

@@ -811,7 +811,7 @@ git**. Le modèle vit désormais sous `templates/`, `secrets/` ne contient plus 
   de secrets déjà correct n'est jamais détruit à moitié par une résolution qui échoue au troisième
 - **Le dossier s'ignore lui-même** (`secrets/.gitignore` avec `*` et `!.gitignore`). Les fichiers
   produits n'ont **pas d'extension** : une règle `*.key` ne les couvre pas, et ils partiraient au
-  premier `git add .` — vérifié sur le dépôt Qnap, dont le `.gitignore` ne les attrapait pas. Un
+  premier `git add .` — vérifié sur le dépôt d'infrastructure, dont le `.gitignore` ne les attrapait pas. Un
   `.gitignore` local règle le cas sans invoquer git ni deviner ses règles, et vaut aussi hors dépôt
 - **Le compte d'items est distinct du compte de fichiers** : les cinq secrets du compose de référence
   viennent tous de `vaultwarden-infra`, et annoncer « 5 items lus » donnerait une fausse idée de ce
@@ -831,7 +831,7 @@ résultat **dans le presse-papier** — prêt à coller dans Container Station. 
 sur le disque, et le rendu a lieu sur le poste : ce n'est pas de quoi alimenter un conteneur au
 démarrage.
 
-Porte `render-secrets.ps1` et `install-context-menu.ps1` du dépôt Qnap, supprimés en même temps —
+Porte `render-secrets.ps1` et `install-context-menu.ps1` du dépôt d'infrastructure, supprimés en même temps —
 le second réimplémentait à côté la gestion du menu contextuel que DockPad possède déjà.
 
 #### `Secrets/` est un périmètre d'audit, pas un rangement
@@ -1298,7 +1298,7 @@ emportait pas.
   "autoFavicon": true,
   "bitwardenCliPath": "",
   "clipboardClearSeconds": 90,
-  "vaultOrganization": "NAS QNAP",
+  "vaultOrganization": "Infra maison",
   "hotkeyModifiers": 1,
   "hotkeyKey": 32
 }

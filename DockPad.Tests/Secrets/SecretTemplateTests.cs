@@ -46,13 +46,13 @@ public class SecretTemplateTests
     [Fact]
     public void UnNomDItemAvecDesEspaces_EstUnMarqueurValide()
     {
-        // Trouvaille de revue. « NAS QNAP » est un nom d'item parfaitement ordinaire, et le coffre
+        // Trouvaille de revue. « Infra maison » est un nom d'item parfaitement ordinaire, et le coffre
         // le résout très bien — mais la regex excluait l'espace, si bien que le marqueur n'était
         // pas vu du tout et que l'utilisateur s'entendait dire « aucun marqueur » devant un fichier
         // qui n'en manquait pas.
-        var markers = SecretTemplate.FindMarkers("token: \"{{ bw:NAS QNAP:token }}\"");
+        var markers = SecretTemplate.FindMarkers("token: \"{{ bw:Infra maison:token }}\"");
 
-        Assert.Equal([new SecretMarker("NAS QNAP", "token")], markers);
+        Assert.Equal([new SecretMarker("Infra maison", "token")], markers);
     }
 
     [Fact]

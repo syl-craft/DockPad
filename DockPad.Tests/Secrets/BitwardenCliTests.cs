@@ -145,11 +145,11 @@ public class BitwardenCliTests : IDisposable
     [Fact]
     public void LitLesOrganisationsParNomEtParIdentifiant()
     {
-        var orgs = BitwardenCli.ParseOrganizations("""[{"id":"org-1","name":"NAS QNAP"}]""");
+        var orgs = BitwardenCli.ParseOrganizations("""[{"id":"org-1","name":"Infra maison"}]""");
 
         var org = Assert.Single(orgs);
         Assert.Equal("org-1", org.Id);
-        Assert.Equal("NAS QNAP", org.Name);
+        Assert.Equal("Infra maison", org.Name);
     }
 
     [Fact]
