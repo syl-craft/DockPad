@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -298,6 +298,19 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
+
+        // SONDE TEMPORAIRE — « Entree ne lance rien, de temps en temps ».
+        // Le gestionnaire de la zone de recherche ne s'execute que si le focus clavier y est.
+        // Quand il n'y est pas, la touche part ailleurs et RIEN ne le montre : ni exception, ni
+        // dialogue, ni trace. Ce point-ci, lui, voit Entree quel que soit l'element focalise, parce
+        // que la version tunnelante part de la racine. On note donc ou la touche est reellement
+        // allee ; l'absence de la ligne « Entree traitee » juste apres designera le maillon rompu.
+        if (e.Key == Key.Enter && SearchBox.Text.Length > 0)
+            LogService.Info(
+                $"Recherche : Entree recue — focus={Keyboard.FocusedElement?.GetType().Name ?? "aucun"}, " +
+                $"popup={SearchPopup.IsOpen}, resultats={SearchResults.Items.Count}, " +
+                $"selection={SearchResults.SelectedIndex}");
+
         if (SearchBox.Text.Length > 0) return;
 
         // Premier trigger seul → overlay gauche
@@ -1391,6 +1404,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
                 break;
             case Key.Enter when SearchPopup.IsOpen:
                 int idx = SearchResults.SelectedIndex >= 0 ? SearchResults.SelectedIndex : 0;
+                LogService.Info($"Recherche : Entree traitee — index={idx}, resultats={SearchResults.Items.Count}");
                 if (SearchResults.Items.Count > 0 && SearchResults.Items[idx] is SearchResultItem hit)
                     ExecuteSearchResult(hit);
                 e.Handled = true;
