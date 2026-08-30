@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.18.1] — 2026-08-30
+
+### Corrections
+- **Relancer DockPad remonte la fenêtre existante** au lieu de ne rien faire. Le défaut ne se voyait pas tant que l'application avait une fenêtre à l'écran — mais une instance démarrée par un clic sur un lien tourne en arrière-plan, sans fenêtre : double-cliquer l'exécutable ne produisait alors plus rien du tout, et rien ne l'expliquait
+
 ## [1.18.0] — 2026-08-30
 
 ### Nouveautés utilisateur
