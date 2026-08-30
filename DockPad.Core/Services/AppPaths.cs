@@ -34,13 +34,29 @@ public static class AppPaths
     /// </remarks>
     public static void Initialize(string product)
     {
-        // Un appel APRES la premiere lecture ne servirait a rien : la racine est deja figee, et le
+        // Un appel APRES la premiere lecture ne peut plus rien changer : la racine est figee, et le
         // second produit ecrirait dans le profil du premier. C'est exactement la panne que la
-        // resolution paresseuse existe pour empecher -- la laisser passer en silence rendrait la
-        // precaution inutile. On la rend bruyante.
+        // resolution paresseuse existe pour empecher, et la laisser passer en silence rendrait la
+        // precaution inutile.
+        //
+        // Mais on ne crie que si ca CHANGE quelque chose. Les outils de capture posent leur profil
+        // de fixture par variable d'environnement, lisent la racine, puis montent l'application qui
+        // appelle Initialize : l'ordre est inverse, et pourtant les deux chemins menent au meme
+        // dossier. Lever la serait du bruit, et la garde finirait par etre desarmee.
         if (_root is not null)
-            throw new InvalidOperationException(
-                $"AppPaths.Initialize(\"{product}\") called after the profile root was already resolved to '{_root}'.");
+        {
+            var wouldBe = Resolve(
+                Environment.GetEnvironmentVariable(OverrideVariable),
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                ResolveProduct(product, DefaultProduct));
+
+            if (!string.Equals(wouldBe, _root, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException(
+                    $"AppPaths.Initialize(\"{product}\") would resolve to '{wouldBe}', " +
+                    $"but the profile root was already resolved to '{_root}'.");
+
+            return;
+        }
 
         _product = product;
     }
