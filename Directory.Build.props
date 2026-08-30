@@ -1,0 +1,41 @@
+<Project>
+
+  <!--
+    Symboles et chemins, pour tous les projets du depot.
+
+    <DebugType>embedded</DebugType>
+      Les symboles vont DANS l'assembly au lieu d'un .pdb a cote. Un fichier de moins a
+      distribuer, et surtout impossible de livrer un binaire sans ses symboles par megarde.
+      Les traces du journal gardent leurs numeros de ligne, ce dont tout le diagnostic depend :
+      « at ... in ...LinePipeService.cs:line 65 » vient de la.
+
+    <PathMap>
+      Sans lui, chaque trace publie l'arborescence du poste de developpement — « C:\dev\DockPad\... ».
+      Sans interet pour qui lit le journal, et de l'information qui n'a rien a faire chez un tiers
+      le jour ou une application de ce depot est distribuee.
+
+      C'est la RACINE DU DEPOT qui est mappee, pas le dossier de chaque projet : mapper
+      $(MSBuildProjectDirectory) ferait pointer DockPad et DockPad.Core sur le meme « . », et une
+      trace ne dirait plus de quel projet vient le fichier. Ici elles se lisent
+      « ./DockPad.Core/Services/AppPaths.cs ».
+  -->
+  <PropertyGroup>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <!--
+    PathMap ne s'applique PAS au projet de tests.
+
+    Il reecrit aussi [CallerFilePath], dont six gardes se servent pour retrouver la racine du
+    depot — frontiere du perimetre Secrets, litteraux francais, litteraux XAML, cles de
+    traduction, parite des themes, premier plan. Applique partout, il en cassait treize d'un
+    coup : le chemin rendu n'etait plus absolu, et « remonter de deux crans » ne menait nulle part.
+
+    L'exclusion ne coute rien : PathMap existe pour ne pas publier l'arborescence du poste dans un
+    binaire DISTRIBUE, et l'assembly de tests ne quitte jamais la machine.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'DockPad.Tests'">
+    <PathMap>$(MSBuildThisFileDirectory)=./</PathMap>
+  </PropertyGroup>
+
+</Project>

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.2] — 2026-08-30
+
+### Notes
+- Les symboles de débogage voyagent désormais **dans** les assemblys au lieu de fichiers `.pdb` à côté : deux fichiers de moins dans l'archive, et plus de risque de livrer un binaire sans ses symboles. Les traces du journal gardent leurs numéros de ligne, ce dont dépend tout le diagnostic
+- Ces traces ne publient plus l'arborescence du poste de développement : `C:\dev\DockPad\Services\…` devient `./Services/…`. Sans intérêt pour qui lit le journal, et de l'information qui n'a rien à faire chez un tiers le jour où une application de ce dépôt est distribuée
+
 ## [1.14.1] — 2026-08-30
 
 ### Corrections
