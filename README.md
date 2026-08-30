@@ -18,6 +18,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Sélecteur de navigateur** : popup de choix au clic sur une URL + règles par domaine
 - **Serveur MCP** : Claude (Claude Code / Claude Desktop) peut gérer la grille, les pages et les navigateurs
 - **Bandeau Usage IA** : consommation de jetons de Claude Code, Codex, Gemini et Copilot, sous la grille
+- **Injection de secrets** : clic droit sur un fichier → ses marqueurs `{{ bw:… }}` sont remplacés par les valeurs de Vaultwarden, dans le presse-papier ou dans des fichiers de secrets
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
 
@@ -157,10 +158,65 @@ DockPad expose un serveur [MCP](https://modelcontextprotocol.io) : depuis Claude
 - [ ] Demander par exemple : *« montre-moi ma grille DockPad »* ou *« ajoute un raccourci Bloc-notes »*
 - [ ] En cas de changement de chemin de l'exe : `claude mcp remove dockpad` puis ré-ajouter (bloc « Mise à jour du chemin » de la fenêtre)
 
+## Injection de secrets depuis Vaultwarden
+
+Clic droit sur **n'importe quel fichier** → **Injecter les secrets…**. DockPad remplace les marqueurs `{{ bw:item:champ }}` par les valeurs du coffre, et **le fichier dit lui-même ce qu'on fait de lui** — il n'y a rien à choisir au moment du clic.
+
+| Ce que porte le fichier | Ce que DockPad produit |
+|---|---|
+| des marqueurs `{{ bw:item:champ }}` | le rendu dans le **presse-papier**, prêt à coller |
+| des annotations `x-bw:` sous `secrets:` | les **fichiers de secrets** dans un sous-dossier `secrets/` |
+| les deux | **les deux**, avec un écran pour choisir |
+| un marqueur précédé d'un antislash — `\{{ … }}` | le marqueur **littéral** : un README peut documenter la syntaxe |
+
+| Mot de passe maître | Choix des sorties | Compte-rendu |
+|:---:|:---:|:---:|
+| ![Saisie du mot de passe](docs/screenshots/inject-unlock.png) | ![Choix des sorties](docs/screenshots/inject-choice.png) | ![Compte-rendu](docs/screenshots/inject-result.png) |
+
+**Aucune clé de session n'est conservée** : le mot de passe maître est redemandé à chaque injection, il ne quitte jamais l'environnement du processus enfant, et il n'apparaît dans aucune ligne de commande. Le rendu est retiré du presse-papier après un délai réglable (90 s par défaut), **à condition qu'il s'y trouve toujours** — si tu as copié autre chose entre-temps, rien n'est effacé.
+
+### Deux formes d'annotation
+
+Compose ignore tout champ commençant par `x-`, donc l'annotation cohabite sans rien changer au déploiement :
+
+```yaml
+secrets:
+  ntfy-ts-authkey:
+    file: /share/.../secrets/ts-authkey
+    x-bw:
+      item: ntfy-infra          # la valeur du coffre EST le contenu
+      field: ntfy-ts-authkey
+
+  ntfy-config:
+    file: /share/.../secrets/server.yml
+    x-bw:
+      template: templates/ntfy-config/server.yml   # un modèle local est rendu
+```
+
+`template:` sert aux fichiers de **structure** dont seules quelques valeurs sont sensibles. Le modèle reste versionné à sa place, `secrets/` ne contient que du produit — et s'ignore lui-même par un `.gitignore` posé automatiquement.
+
+### Quand une clé manque
+
+Une clé absente du coffre n'annule plus le reste : les secrets présents sont écrits, le rendu est produit, et un écran **ambre** liste ce qui manque. Les marqueurs non résolus restent visibles dans le texte, et un fichier de secret n'est **jamais** écrit vide ou à moitié rendu — il est simplement absent, et nommé.
+
+![Rendu incomplet](docs/screenshots/inject-partial.png)
+
+Les fichiers dont la clé a disparu du coffre sont **signalés, jamais supprimés d'office** : un coffre temporairement inaccessible ne doit pas détruire un déploiement qui marche.
+
+### Activer sur un ordinateur
+
+- [ ] Installer la **CLI Bitwarden** — `winget install Bitwarden.CLI` (le client de bureau ne la fournit pas : ce sont deux produits distincts)
+- [ ] `bw config server https://<ton-vaultwarden>` puis `bw login`
+- [ ] **☰ → Paramètres → onglet Secrets** : renseigner l'organisation si le coffre en a une, et cocher **Ajouter au menu contextuel**
+- [ ] Sur Windows 11, l'entrée est sous **Afficher plus d'options** (Maj + clic droit)
+- [ ] Clic droit sur un fichier portant des marqueurs → **Injecter les secrets…**
+- [ ] Laisser cochée **Synchroniser le coffre avant d'injecter** : la CLI lit un cache local, et sans elle un item que tu viens de modifier n'est pas encore visible
+
 ## Prérequis
 
 - Windows 10/11 x64
 - [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (Desktop)
+- *Pour l'injection de secrets uniquement* : la [CLI Bitwarden](https://bitwarden.com/help/cli/), sous GPL-3.0, à installer séparément — `winget install Bitwarden.CLI`
 
 ## Installation
 

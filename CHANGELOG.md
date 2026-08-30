@@ -2,115 +2,90 @@
 
 ## [1.19.1] — 2026-08-30
 
-### Notes
-- Le code qui parle au coffre passe derrière une frontière nommée (`ISecretSource`), en préparation d'une éventuelle seconde source de secrets. **Aucun changement visible** : vérifié par comparaison pixel de la fenêtre d'injection — 68 pixels d'écart sur 234 000, tous dans le numéro de version affiché en pied
-
-## [1.19.0] — 2026-08-30
-
-### Nouveautés utilisateur
-- **Le presse-papier attend un clic quand des fichiers de secrets l'accompagnent.** Le décompte courait pendant qu'on copiait les fichiers sur le NAS : quatre-vingt-dix secondes plus tard le rendu était effacé, et rien n'avait été collé. Le rendu est prêt, il attend le bouton *Mettre dans le presse-papier*
-- **Trois commandes sur le presse-papier** : *Arrêter le décompte*, *Vider le presse-papier*, et *Supprimer les fichiers générés* du côté des fichiers. Arrêter le décompte ne désarme pas le filet : le presse-papier est toujours vidé à la fermeture de DockPad
-- Les commandes vivent désormais **à côté de ce sur quoi elles agissent**, et les blocs suivent le geste : ce qui manque, les fichiers, le presse-papier, les périmés
-
-### Notes
-- Ce n'est pas un mode à part : c'est le même écran, et les modes simples en sont les cas dégénérés. Presse-papier seul, rien n'attend — c'est toujours zéro clic dans le cas nominal
-- Le rendu vit en mémoire entre les deux temps ; la durée est désormais bornée par le geste plutôt que par le minuteur
-
-## [1.18.1] — 2026-08-30
-
-### Corrections
-- **Relancer DockPad remonte la fenêtre existante** au lieu de ne rien faire. Le défaut ne se voyait pas tant que l'application avait une fenêtre à l'écran — mais une instance démarrée par un clic sur un lien tourne en arrière-plan, sans fenêtre : double-cliquer l'exécutable ne produisait alors plus rien du tout, et rien ne l'expliquait
-
-## [1.18.0] — 2026-08-30
-
-### Nouveautés utilisateur
-- **Une case « Synchroniser le coffre avant d'injecter » sur l'écran du mot de passe, cochée par défaut.** La CLI Bitwarden lit un cache local : sans elle, un item qu'on vient de modifier dans le coffre n'est pas encore visible, et c'est une valeur périmée qui part sur le NAS. Le choix se retient
-- Une synchronisation qui échoue **ne bloque pas** l'injection, mais le compte-rendu le dit : les valeurs viennent alors du cache local et peuvent être périmées
-
-### Notes
-- Aucun affichage d'ancienneté du cache n'aurait suffi : le cas qui a mordu avait un cache de deux minutes, frais mais antérieur à la modification du coffre. Seule une synchronisation **juste avant la lecture** ferme le trou
-- Elle a lieu entre le déverrouillage et la lecture, donc sans second mot de passe et sans appel supplémentaire au coffre
-- L'écrasement d'un fichier de secret existant a été remis en cause et vérifié : il fonctionne — c'était bien le cache qui servait d'anciennes valeurs
-
-## [1.17.0] — 2026-08-30
-
-### Nouveautés utilisateur
-- **Une annotation `x-bw` peut désigner un modèle plutôt qu'une valeur** : `template: templates/ntfy-config/server.yml` fait rendre ce fichier avec les valeurs du coffre, et écrire le résultat sous le nom de `file:`. Le modèle reste versionné à sa place, `secrets/` ne contient plus que du produit
-- **Un seul écran de compte-rendu**, quel que soit le nombre de sorties. En mode « les deux », un succès complet montrait les fichiers et ne disait jamais que le rendu était dans le presse-papier : la moitié de l'information disparaissait
-- **Un écran de choix** quand un fichier porte les deux formats : deux cases, cochées, posées **avant** le mot de passe maître. Un fichier qui ne porte qu'un format n'y passe pas
-- **Les listes du compte-rendu se sélectionnent** — clés absentes, fichiers écrits, fichiers périmés. C'est ce qu'on veut recopier pour aller créer la clé dans le coffre
-
-### Notes
-- Le rendu d'un modèle est **tout ou rien, par fichier** : un seul marqueur non résolu et ce fichier n'est pas écrit. Le presse-papier, lui, laisse le marqueur littéral — on l'y voit ; un fichier part sur le NAS sans être relu
-- Le chemin d'un `template:` est **contraint au dossier du compose**. C'est la seule annotation qui désigne quoi lire, et elle vient d'un fichier
-- Seul un compte-rendu **complet** se referme au décompte. Un compte-rendu incomplet attend une décision
-
-## [1.16.0] — 2026-08-30
-
-### Nouveautés utilisateur
-- **Un fichier qui porte à la fois des marqueurs et des annotations `x-bw` produit désormais les deux** : les fichiers de secrets *et* le rendu dans le presse-papier, en un seul déverrouillage du coffre. C'était un refus
-- **Une clé absente du coffre n'annule plus tout.** Les secrets présents sont écrits, le rendu est produit, et un écran **« rendu incomplet »** liste ce qui manque. Le marqueur non résolu reste tel quel dans le texte : il est sa propre trace, visible dans ce qu'on colle
-- **Les fichiers dont la clé a disparu du coffre sont listés, et leur suppression est proposée** — un clic, jamais un défaut. Ils ne sont pas touchés autrement : un coffre temporairement inaccessible ne doit pas pouvoir détruire un déploiement qui marchait
-- **Un antislash devant un marqueur le laisse tranquille** : `\{{ bw:item:champ }}` s'écrit tel quel, sans son antislash, et n'est jamais cherché dans le coffre. Un fichier qui *documente* la syntaxe — un `CLAUDE.md`, un README — passait jusqu'ici pour un fichier à secrets
-
-### Notes
-- Trois garde-fous remplacent la règle du tout-ou-rien : **un fichier de secret n'est jamais écrit vide** (un conteneur partirait avec une chaîne vide et échouerait bien plus loin), **n'avoir rien résolu du tout reste un échec**, et l'écran incomplet est le seul de la fenêtre qui **ne se referme pas tout seul** — il demande une décision
-- Le risque n'a jamais été qu'un rendu soit partiel, mais qu'il ait l'air complet. L'écran incomplet est en ambre, jamais en vert
-
-## [1.15.0] — 2026-08-30
-
-### Nouveautés utilisateur
-- **Un antislash devant un marqueur de secret le laisse tranquille** : `\{{ bw:item:champ }}` s'écrit tel quel dans le résultat, sans son antislash, et n'est jamais cherché dans le coffre. Un fichier qui *documente* la syntaxe — un `CLAUDE.md`, un README — passait jusqu'ici pour un fichier à secrets ; il répond désormais « rien à produire », ce qui est la bonne réponse. La garantie tout-ou-rien est intacte : un marqueur **non** échappé qui ne se résout pas fait toujours tout échouer
-
-### Corrections
-- **Le texte des Options redevient lisible en thème sombre.** « Langue », « Thème » et les libellés voisins s'affichaient en noir sur fond sombre depuis le correctif des titres de section de la version précédente
-- **Un fichier de secret tenu par un antivirus ne fait plus échouer l'injection au hasard.** La reprise avait été resserrée d'un cran de trop et ne couvrait plus l'erreur que Windows remonte réellement dans ce cas
-
-### Notes
-- La barre de recherche note désormais dans le journal ce qui se passe quand on valide par la touche Entrée. C'est une sonde temporaire, posée pour identifier un défaut intermittent signalé — « je tape, j'appuie sur Entrée, ça ne lance rien, de temps en temps » — qui ne laissait aucune trace. Elle sera retirée une fois la cause connue
-
-## [1.14.2] — 2026-08-30
-
-### Notes
-- Les symboles de débogage voyagent désormais **dans** les assemblys au lieu de fichiers `.pdb` à côté : deux fichiers de moins dans l'archive, et plus de risque de livrer un binaire sans ses symboles. Les traces du journal gardent leurs numéros de ligne, ce dont dépend tout le diagnostic
-- Ces traces ne publient plus l'arborescence du poste de développement : `C:\dev\DockPad\Services\…` devient `./Services/…`. Sans intérêt pour qui lit le journal, et de l'information qui n'a rien à faire chez un tiers le jour où une application de ce dépôt est distribuée
-
-## [1.14.1] — 2026-08-30
-
-### Corrections
-- **Un fichier de secret tenu par un antivirus ne fait plus échouer l'injection.** Un antivirus, un indexeur ou un client de synchronisation tiennent brièvement un fichier qu'ils viennent de voir écrit ; DockPad retente pendant deux secondes au lieu d'abandonner. Le dossier `secrets/` vivant souvent dans un dossier synchronisé, le cas se produit
-- Quand l'écriture échoue vraiment, le message le dit : il annonçait « la CLI Bitwarden a refusé la demande » alors que la CLI avait répondu et que c'est le disque qui résistait
-
-### Notes
-- Le code interne se répartit désormais entre `DockPad` et une bibliothèque `DockPad.Core` (langues, thème, journal, chemins, réglages). **Aucun changement visible** : vérifié par comparaison pixel de douze fenêtres, thème sombre compris, à zéro écart. C'est la première étape vers une application dédiée à l'injection de secrets, distribuable seule
-
-## [1.14.0] — 2026-08-30
+> Les versions 1.14.0 à 1.19.0 n'ont jamais été publiées : elles ont vu la même fonctionnalité
+> changer de forme plusieurs fois. Leurs notes sont réunies ici, dans l'état qui part réellement.
 
 ### Nouveautés utilisateur
 
 #### Injection de secrets depuis Vaultwarden
-- Clic droit sur **n'importe quel fichier** → *Afficher plus d'options* → **« Injecter les secrets… »**. DockPad demande le mot de passe maître du coffre, puis produit ce que le fichier réclame
-- **Des marqueurs `{{ bw:item:champ }}`** → le fichier rendu dans le **presse-papier**, prêt à coller dans Container Station
-- **Des annotations `x-bw:` sous `secrets:`** → les **fichiers de secrets** écrits dans un sous-dossier `secrets/`, à côté du compose. Sans saut de ligne final : `containerboot` lit `TS_AUTHKEY` sans rien rogner, un `
-` de trop y casse l'authentification Tailscale
-- **Rien ou tout.** Si un seul marqueur ou une seule annotation ne se résout pas, DockPad ne produit **rien** — ni presse-papier, ni fichier — et affiche ce qui a échoué en le nommant. Un rendu partiel est pire que pas de rendu
-- Le **presse-papier est marqué confidentiel** : le rendu n'entre ni dans l'historique `Win+V`, ni dans la synchronisation entre appareils. Il s'efface après 90 s, et **seulement s'il porte encore ce que DockPad y a mis** — si tu as copié autre chose entre-temps, rien n'est touché
-- **Onglet Secrets** dans les Options : chemin de la CLI Bitwarden (détection automatique), organisation Vaultwarden, délai d'effacement, entrée de menu contextuel, et un bouton **Synchroniser le coffre** avec la date du dernier cache
-- Section **Secrets** dans le menu ☰ : réglages, et synchronisation
 
-#### Options en trois onglets
-- La fenêtre atteignait 1218 px de haut, plus que la zone de travail d'un écran 1080p. Elle se répartit en **Général**, **Intégrations** et **Secrets**, et devient redimensionnable
+Clic droit sur **n'importe quel fichier** → *Afficher plus d'options* → **« Injecter les secrets… »**.
+DockPad demande le mot de passe maître du coffre, puis produit ce que le fichier réclame — **le
+fichier dit lui-même ce qu'on fait de lui**, il n'y a rien à choisir au moment du clic.
+
+- **Des marqueurs `{{ bw:item:champ }}`** → le fichier rendu dans le **presse-papier**, prêt à coller
+- **Des annotations `x-bw:` sous `secrets:`** → les **fichiers de secrets** écrits dans un
+  sous-dossier `secrets/`, à côté du compose. Sans saut de ligne final : `containerboot` lit
+  `TS_AUTHKEY` sans rien rogner, un caractère de trop y casse l'authentification Tailscale
+- **Les deux à la fois** → les deux, en un seul déverrouillage du coffre, avec un écran pour choisir
+  ce qu'on veut produire — posé **avant** le mot de passe maître
+- **Un antislash échappe un marqueur** : `\{{ bw:item:champ }}` s'écrit tel quel, sans son antislash, et
+  n'est jamais cherché dans le coffre. Un fichier qui *documente* la syntaxe — un `CLAUDE.md`, un
+  README — passait jusqu'ici pour un fichier à secrets
+
+**Une annotation peut désigner un modèle plutôt qu'une valeur** :
+`template: templates/ntfy-config/server.yml` fait rendre ce fichier avec les valeurs du coffre et
+écrire le résultat sous le nom de `file:`. C'est la forme des fichiers de **structure** dont seules
+quelques valeurs sont sensibles : le modèle reste versionné à sa place, et `secrets/` ne contient que
+du produit — il s'ignore lui-même par un `.gitignore` posé automatiquement.
+
+**Une clé absente du coffre n'annule pas le reste.** Les secrets présents sont écrits, le rendu est
+produit, et un écran **ambre** liste ce qui manque, sélectionnable pour aller créer la clé. Trois
+garde-fous tiennent la garantie à sa place :
+
+- un marqueur non résolu **reste littéral** — il est sa propre trace, visible dans ce qu'on colle ;
+- un fichier de secret n'est **jamais** écrit vide ni à moitié rendu : un conteneur partirait avec
+  une valeur fausse et échouerait bien plus loin ;
+- n'avoir **rien** résolu du tout reste un échec.
+
+**Les fichiers dont la clé a disparu du coffre sont signalés, jamais supprimés d'office** : un coffre
+temporairement inaccessible ne doit pas détruire un déploiement qui marche. Leur suppression demande
+un clic.
+
+**Le presse-papier attend un clic quand des fichiers l'accompagnent.** Le décompte courait pendant
+qu'on copiait les fichiers sur le NAS, et le rendu était effacé avant d'avoir été collé. Trois
+commandes l'accompagnent : *Arrêter le décompte* — qui ne désarme pas le filet, le presse-papier est
+toujours vidé à la fermeture de DockPad —, *Vider le presse-papier*, et *Supprimer les fichiers
+générés*. Quand le presse-papier est la seule sortie, rien n'attend : c'est toujours zéro clic.
+
+**Une case « Synchroniser le coffre avant d'injecter », cochée par défaut.** La CLI Bitwarden lit un
+cache local : sans elle, un item qu'on vient de modifier n'est pas encore visible, et c'est une
+valeur périmée qui part sur le NAS. Une synchronisation qui échoue ne bloque pas, mais le
+compte-rendu le dit.
+
+**Le presse-papier est marqué confidentiel** : le rendu n'entre ni dans l'historique `Win+V`, ni dans
+la synchronisation entre appareils. Il s'efface après 90 s, et **seulement s'il porte encore ce que
+DockPad y a mis** — si tu as copié autre chose entre-temps, rien n'est touché. Aucune clé de session
+n'est conservée : le mot de passe maître est redemandé à chaque injection.
+
+**Onglet Secrets** dans les Options — chemin de la CLI Bitwarden (détection automatique),
+organisation Vaultwarden, délai d'effacement, entrée de menu contextuel, et un bouton *Synchroniser
+le coffre* avec la date du dernier cache. Section **Secrets** dans le menu ☰ : réglages, et
+synchronisation.
 
 ### Corrections
-- Les **titres de section** des fenêtres *Serveur MCP* et *Navigateurs* s'affichaient en bleu : la couleur de l'onglet actif descendait dans le contenu de la page. Ils reprennent la couleur du texte
-- Les boutons secondaires **posés dans une page** étaient invisibles — leur fond est celui de la fenêtre. Ils portent désormais une bordure
+
+- **Le texte des Options redevient lisible en thème sombre.** « Langue », « Thème » et les libellés
+  voisins s'affichaient en noir sur fond sombre
+- **Relancer DockPad remonte la fenêtre existante** au lieu de ne rien faire. Le défaut ne se voyait
+  pas tant que l'application avait une fenêtre — mais une instance démarrée par un clic sur un lien
+  tourne en arrière-plan, sans fenêtre : double-cliquer l'exécutable ne produisait alors plus rien
+- **Un fichier de secret tenu par un antivirus ne fait plus échouer l'injection.** Un antivirus, un
+  indexeur ou un client de synchronisation tiennent brièvement un fichier fraîchement écrit ; DockPad
+  retente pendant deux secondes au lieu d'abandonner
 
 ### Notes
-- Le mot de passe maître est demandé **à chaque injection** : aucune clé de session n'est conservée. DockPad démarre avec Windows et tourne des semaines ; une clé de coffre n'a rien à y faire
-- Ni le mot de passe ni la clé de session ne passent par la **ligne de commande**, où tout autre processus pourrait les lire. Ils ne vivent que dans l'environnement du processus `bw.exe`
-- Tout le code qui voit un secret vit dans un **seul dossier**, et **trois gardes automatiques** le vérifient à chaque exécution des tests : la frontière du dossier, l'absence d'écriture disque hors du rédacteur de fichiers, et l'absence de secret en ligne de commande
-- La CLI Bitwarden travaille sur un **cache local** : un item ajouté au coffre n'existe pas pour DockPad tant qu'une synchronisation n'a pas eu lieu. Le message d'item absent le rappelle
-- Remplace `render-secrets.ps1` et `install-context-menu.ps1` du dépôt Qnap, supprimés
+
+- Le code interne se répartit entre `DockPad` et une bibliothèque `DockPad.Core` (langues, thème,
+  journal, chemins, réglages), et le code qui parle au coffre passe derrière une frontière nommée
+  (`ISecretSource`), en préparation d'une éventuelle seconde source. **Aucun changement visible** :
+  vérifié par comparaison pixel des fenêtres
+- Les symboles de débogage voyagent **dans** les assemblys au lieu de fichiers `.pdb` à côté, et les
+  traces ne publient plus l'arborescence du poste de développement — `C:\dev\DockPad\Services\…` devient
+  `./Services/…`
+- La barre de recherche note dans le journal ce qui se passe quand on valide par `Entrée`. Sonde
+  temporaire, posée pour identifier un défaut intermittent qui ne laissait aucune trace ; elle sera
+  retirée une fois la cause connue
 
 ## [1.13.0] — 2026-08-29
 
