@@ -31,6 +31,8 @@ public sealed class QuickAccessCommands(IQuickAccessView view)
     public ICommand OpenSettings { get; } = new RelayCommand(view.ShowSettings);
     public ICommand OpenBrowsers { get; } = new RelayCommand(view.ShowBrowsers);
     public ICommand OpenMcpConfig { get; } = new RelayCommand(view.ShowMcpConfig);
+    public ICommand OpenSecretSettings { get; } = new RelayCommand(view.ShowSecretSettings);
+    public ICommand SyncVault { get; } = new RelayCommand(view.SyncVault);
     public ICommand OpenUsageConfig { get; } = new RelayCommand(view.ShowUsageConfig);
 
     // ── Configuration
@@ -68,6 +70,12 @@ public interface IQuickAccessView
     void ShowBrowsers();
     void ShowMcpConfig();
     void ShowUsageConfig();
+
+    /// <summary>Les Options, ouvertes directement sur l'onglet Secrets.</summary>
+    void ShowSecretSettings();
+
+    /// <summary>Rafraîchit le cache local de la CLI Bitwarden.</summary>
+    void SyncVault();
 
     void RefreshGrid();
     void ToggleTileLock();

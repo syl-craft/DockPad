@@ -26,7 +26,13 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
+                            <!-- BorderBrush et BorderThickness sont liés au gabarit, alors qu'ils
+                                 ne l'étaient pas : un bouton secondaire a pour fond Brush.Surface,
+                                 soit exactement le fond de fenêtre, et disparaissait donc dans une
+                                 page. Sans effet ailleurs — l'épaisseur vaut 0 par défaut. -->
                             <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="4"
                                     Padding="{TemplateBinding Padding}"
                                     SnapsToDevicePixels="True"
@@ -72,6 +78,44 @@
                         <Setter Property="Background" Value="{DynamicResource Brush.SurfacePressed}"/>
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+
+            <!--
+                Onglet plat, soulignement bleu sur l'actif : le langage visuel des fenêtres à
+                onglets du projet. Il vivait en double, recopié mot pour mot dans McpConfigDialog
+                et BrowserConfigDialog ; la fenêtre d'Options en aurait fait une troisième copie.
+                À poser par ItemContainerStyle sur le TabControl.
+            -->
+            <!--
+                Typographie posée sur le Border du gabarit (TextElement.*), jamais sur le TabItem :
+                Foreground, FontSize et FontWeight sont des propriétés HÉRITÉES. Posées sur
+                l'onglet, elles descendent dans tout son contenu — l'accent bleu de l'onglet actif
+                repeignait alors les titres de section de la page. Le Border ne couvre que l'en-tête.
+            -->
+            <Style x:Key="FlatTabItem" TargetType="TabItem">
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <Border x:Name="Bd" Background="Transparent" Padding="14,8"
+                                    BorderThickness="0,0,0,2" BorderBrush="Transparent"
+                                    TextElement.FontSize="13"
+                                    TextElement.Foreground="{DynamicResource Brush.TextLabel}">
+                                <ContentPresenter ContentSource="Header"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.RowHover}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                    <Setter TargetName="Bd" Property="TextElement.Foreground" Value="{DynamicResource Brush.Accent}"/>
+                                    <Setter TargetName="Bd" Property="TextElement.FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <!-- Footer commun des fenêtres de config : version à gauche, boutons à droite -->

@@ -24,6 +24,8 @@ public class QuickAccessCommandsTests
         public void ShowBrowsers() => Calls.Add(nameof(ShowBrowsers));
         public void ShowMcpConfig() => Calls.Add(nameof(ShowMcpConfig));
         public void ShowUsageConfig() => Calls.Add(nameof(ShowUsageConfig));
+        public void ShowSecretSettings() => Calls.Add(nameof(ShowSecretSettings));
+        public void SyncVault() => Calls.Add(nameof(SyncVault));
         public void RefreshGrid() => Calls.Add(nameof(RefreshGrid));
         public void ToggleTileLock() => Calls.Add(nameof(ToggleTileLock));
         public void Minimize() => Calls.Add(nameof(Minimize));
@@ -45,6 +47,8 @@ public class QuickAccessCommandsTests
         commands.OpenUsageConfig.Execute(null);
         commands.OpenPresets.Execute(null);
         commands.OpenContextMenuManager.Execute(null);
+        commands.OpenSecretSettings.Execute(null);
+        commands.SyncVault.Execute(null);
         commands.Refresh.Execute(null);
         commands.ToggleTileLock.Execute(null);
         commands.Minimize.Execute(null);
@@ -54,7 +58,8 @@ public class QuickAccessCommandsTests
         Assert.Equal(
         [
             "ShowSettings", "ShowBrowsers", "ShowMcpConfig", "ShowUsageConfig", "ShowPresets",
-            "ShowContextMenuManager", "RefreshGrid", "ToggleTileLock", "Minimize", "HideToTray",
+            "ShowContextMenuManager", "ShowSecretSettings", "SyncVault",
+            "RefreshGrid", "ToggleTileLock", "Minimize", "HideToTray",
             "Quit",
         ], view.Calls);
     }

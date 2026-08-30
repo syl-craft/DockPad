@@ -190,6 +190,18 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     public void ShowMcpConfig() => new McpConfigDialog { Owner = this }.ShowDialog();
 
+    public void ShowSecretSettings() => new SettingsDialog(SettingsTab.Secrets) { Owner = this }.ShowDialog();
+
+    /// <summary>
+    /// Rafraîchit le cache local de la CLI Bitwarden.
+    /// </summary>
+    /// <remarks>
+    /// Passe par la façade : c'est la fenêtre du dossier <c>Secrets/</c> qui recueille le mot de
+    /// passe maître, jamais celle-ci. Ce point d'entrée est déclaré dans
+    /// <c>SecretBoundaryGuardTests</c> — l'y ajouter était un geste délibéré.
+    /// </remarks>
+    public void SyncVault() => Secrets.SecretInjection.SyncVault(this);
+
     public void ShowUsageConfig()
     {
         new UsageConfigDialog { Owner = this }.ShowDialog();

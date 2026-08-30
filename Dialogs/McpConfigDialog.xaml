@@ -32,35 +32,8 @@
         </Border>
 
         <!-- Onglets -->
-        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0"
+        <TabControl FontSize="13" ItemContainerStyle="{StaticResource FlatTabItem}" Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0"
                     Margin="16,10,16,0">
-            <TabControl.Resources>
-                <Style TargetType="TabItem">
-                    <Setter Property="FontSize" Value="13"/>
-                    <Setter Property="Foreground" Value="{DynamicResource Brush.TextLabel}"/>
-                    <Setter Property="Cursor" Value="Hand"/>
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="TabItem">
-                                <Border x:Name="Bd" Background="Transparent" Padding="14,8"
-                                        BorderThickness="0,0,0,2" BorderBrush="Transparent">
-                                    <ContentPresenter ContentSource="Header"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.RowHover}"/>
-                                    </Trigger>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
-                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </TabControl.Resources>
 
             <!-- ══ Onglet Options ══ -->
             <TabItem Header="{loc:T Mcp_Tab_Options}">

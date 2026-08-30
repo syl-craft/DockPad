@@ -110,6 +110,22 @@ public static class SettingsService
     public static void SaveClaudeArgs(string args) =>
         AppSettingsService.Update(s => s.ClaudeArgs = args.Trim());
 
+    public static string LoadBitwardenCliPath() => AppSettingsService.Current.BitwardenCliPath;
+
+    public static void SaveBitwardenCliPath(string path) =>
+        AppSettingsService.Update(s => s.BitwardenCliPath = path.Trim().Trim('"'));
+
+    public static int LoadClipboardClearSeconds() => AppSettingsService.Current.ClipboardClearSeconds;
+
+    /// <summary>Borné à un jour : au-delà, le réglage ne protège plus rien.</summary>
+    public static void SaveClipboardClearSeconds(int seconds) =>
+        AppSettingsService.Update(s => s.ClipboardClearSeconds = Math.Clamp(seconds, 0, 86400));
+
+    public static string LoadVaultOrganization() => AppSettingsService.Current.VaultOrganization;
+
+    public static void SaveVaultOrganization(string organisation) =>
+        AppSettingsService.Update(s => s.VaultOrganization = organisation.Trim());
+
     /// <summary>Ctrl+Shift+M.</summary>
     private static (uint, uint) DefaultHotkey() =>
         (HotkeyService.MOD_CONTROL | HotkeyService.MOD_SHIFT, 0x4D);

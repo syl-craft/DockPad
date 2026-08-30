@@ -1053,4 +1053,190 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Theme_Dark" xml:space="preserve">
     <value>50mbr3</value>
   </data>
+  <data name="Settings_Tab_General" xml:space="preserve">
+    <value>G3n3r4l</value>
+  </data>
+  <data name="Settings_Tab_Integrations" xml:space="preserve">
+    <value>1nt3gr4t10n5</value>
+  </data>
+  <data name="Settings_Tab_Secrets" xml:space="preserve">
+    <value>53cr3t5</value>
+  </data>
+  <data name="Inject_Error_SecretNoFile" xml:space="preserve">
+    <value>53cr3t « {0} » : l'4nn0t4t10n x-bw n'4 p45 d3 f1l3: — 4ucun n0m d3 f1ch13r 4 pr0du1r3.</value>
+  </data>
+  <data name="Inject_Error_SecretIncomplete" xml:space="preserve">
+    <value>53cr3t « {0} » : l'4nn0t4t10n x-bw n'4 p45 d'1t3m 0u d3 ch4mp.</value>
+  </data>
+  <data name="Inject_Error_YamlUnreadable" xml:space="preserve">
+    <value>C3 f1ch13r n'35t p45 du Y4ML l151bl3 ({0}).</value>
+  </data>
+  <data name="Inject_Files_Success" xml:space="preserve">
+    <value>{0} {0:plural:fichier écrit|fichiers écrits}, {1} {1:plural:item lu|items lus}</value>
+  </data>
+  <data name="Inject_Files_Folder" xml:space="preserve">
+    <value>3cr1t5 d4n5</value>
+  </data>
+  <data name="Inject_OpenFolder" xml:space="preserve">
+    <value>0uvr1r l3 d05513r</value>
+  </data>
+  <data name="Inject_Error_Ambiguous" xml:space="preserve">
+    <value>C3 f1ch13r p0rt3 4 l4 f015 d35 m4rqu3ur5 bw 3t d35 4nn0t4t10n5 x-bw. G4rd3 l'un 0u l'4utr3 : 1l5 pr0du153nt d35 ch0535 d1ff3r3nt35, 4 d35 3ndr01t5 d1ff3r3nt5.</value>
+  </data>
+  <data name="Inject_Failed_Hint_Files" xml:space="preserve">
+    <value>Un j3u d3 53cr3t5 p4rt13ll3m3nt 3cr1t 53r41t p1r3 qu3 r13n : 4ucun f1ch13r n'4 3t3 cr33.</value>
+  </data>
+  <data name="Inject_Sync_Subtitle" xml:space="preserve">
+    <value>5ynchr0n154t10n du c0ffr3</value>
+  </data>
+  <data name="Inject_Sync_Done" xml:space="preserve">
+    <value>C4ch3 l0c4l r4fr41ch1.</value>
+  </data>
+  <data name="Settings_Inject_Sync" xml:space="preserve">
+    <value>5ynchr0n153r m41nt3n4nt</value>
+  </data>
+  <data name="Settings_Inject_LastSync" xml:space="preserve">
+    <value>C4ch3 du c0ffr3 4 j0ur 4u {0}</value>
+  </data>
+  <data name="Settings_Inject_LastSyncUnknown" xml:space="preserve">
+    <value>C4ch3 du c0ffr3 j4m415 5ynchr0n153.</value>
+  </data>
+  <data name="Settings_Inject_SyncHint" xml:space="preserve">
+    <value>L4 CL1 B1tw4rd3n tr4v41ll3 5ur un c4ch3 l0c4l : un 1t3m 4j0ut3 4u c0ffr3 n'3x15t3 p45 p0ur D0ckP4d t4nt qu'un3 5ynchr0n154t10n n'4 p45 3u l13u.</value>
+  </data>
+  <data name="Quick_Menu_Secrets" xml:space="preserve">
+    <value>53cr3t5</value>
+  </data>
+  <data name="Quick_Menu_SecretSettings" xml:space="preserve">
+    <value>R3gl4g35 d35 53cr3t5</value>
+  </data>
+  <data name="Quick_Menu_SyncVault" xml:space="preserve">
+    <value>5ynchr0n153r l3 c0ffr3</value>
+  </data>
+  <data name="Inject_Error_DuplicateFile" xml:space="preserve">
+    <value>D3ux 53cr3t5 v153nt l3 m3m3 f1ch13r « {0} ». 3n r3n0mm3r un : un 53ul d35 d3ux 53r41t 3cr1t.</value>
+  </data>
+  <data name="Inject_Error_BadFileName" xml:space="preserve">
+    <value>53cr3t « {0} » : 50n f1l3: n3 53 t3rm1n3 p45 p4r un n0m d3 f1ch13r ut1l154bl3.</value>
+  </data>
+  <data name="Inject_Error_FileTooBig" xml:space="preserve">
+    <value>C3 f1ch13r d3p4553 {0} M0 — tr0p gr05 p0ur 3tr3 un g4b4r1t.</value>
+  </data>
+  <data name="Inject_Error_ClipboardBusy" xml:space="preserve">
+    <value>L3 pr3553-p4p13r 35t t3nu p4r un3 4utr3 4ppl1c4t10n. R13n n'4 3t3 c0p13.</value>
+  </data>
+  <data name="Inject_Title" xml:space="preserve">
+    <value>1nj3ct10n d3 53cr3t5</value>
+  </data>
+  <data name="Inject_ContextMenu_Label" xml:space="preserve">
+    <value>1nj3ct3r l35 53cr3t5…</value>
+  </data>
+  <data name="Inject_State_Checking" xml:space="preserve">
+    <value>V3r1f1c4t10n du c0ffr3…</value>
+  </data>
+  <data name="Inject_State_Working" xml:space="preserve">
+    <value>L3ctur3 du c0ffr3…</value>
+  </data>
+  <data name="Inject_Unlock_Prompt" xml:space="preserve">
+    <value>M0t d3 p4553 m41tr3</value>
+  </data>
+  <data name="Inject_Unlock_Button" xml:space="preserve">
+    <value>D3v3rr0u1ll3r</value>
+  </data>
+  <data name="Inject_Success" xml:space="preserve">
+    <value>{0} {0:plural:marqueur résolu|marqueurs résolus}, {1} {1:plural:item lu|items lus}</value>
+  </data>
+  <data name="Inject_Success_Clipboard" xml:space="preserve">
+    <value>Pr3553-p4p13r r3mpl1</value>
+  </data>
+  <data name="Inject_Countdown" xml:space="preserve">
+    <value>3ff4c3m3nt d4n5 {0} 5</value>
+  </data>
+  <data name="Inject_Failed_Title" xml:space="preserve">
+    <value>R13n n'4 3t3 r3ndu</value>
+  </data>
+  <data name="Inject_Failed_Hint" xml:space="preserve">
+    <value>Un f1ch13r p4rt13ll3m3nt r3ndu 53r41t p1r3 qu3 p45 d3 f1ch13r : r13n n'4 3t3 m15 d4n5 l3 pr3553-p4p13r.</value>
+  </data>
+  <data name="Inject_Detail" xml:space="preserve">
+    <value>D3t41l t3chn1qu3</value>
+  </data>
+  <data name="Inject_Error_NoMarkers" xml:space="preserve">
+    <value>4ucun m4rqu3ur bw:1t3m:ch4mp n1 4nn0t4t10n x-bw d4n5 c3 f1ch13r — r13n 4 pr0du1r3.</value>
+  </data>
+  <data name="Inject_Error_Leftovers" xml:space="preserve">
+    <value>{0} {0:plural:marqueur subsiste|marqueurs subsistent} 4pr35 r3ndu.</value>
+  </data>
+  <data name="Inject_Error_EmptyField" xml:space="preserve">
+    <value>{0} → ch4mp '{1}' 4b53nt 0u v1d3</value>
+  </data>
+  <data name="Inject_Error_ItemMissingOrg" xml:space="preserve">
+    <value>1t3m '{0}' 4b53nt d3 l'0rg4n154t10n '{1}'. 51 tu v13n5 d3 l'4j0ut3r, l4nc3 bw 5ync — l4 CL1 tr4v41ll3 5ur un c4ch3 l0c4l.</value>
+  </data>
+  <data name="Inject_Error_ItemMissingVault" xml:space="preserve">
+    <value>1t3m '{0}' 4b53nt du c0ffr3. 51 tu v13n5 d3 l'4j0ut3r, l4nc3 bw 5ync — l4 CL1 tr4v41ll3 5ur un c4ch3 l0c4l.</value>
+  </data>
+  <data name="Inject_Error_ItemAmbiguous" xml:space="preserve">
+    <value>Plu513ur5 1t3m5 n0mm35 '{0}' — 3n r3n0mm3r un p0ur l3v3r l'4mb1gu1t3.</value>
+  </data>
+  <data name="Inject_Error_FileMissing" xml:space="preserve">
+    <value>F1ch13r 1ntr0uv4bl3 : {0}</value>
+  </data>
+  <data name="Inject_Error_FileUnreadable" xml:space="preserve">
+    <value>C3 f1ch13r n3 p3ut p45 3tr3 lu.</value>
+  </data>
+  <data name="Inject_Error_CliMissing" xml:space="preserve">
+    <value>CL1 B1tw4rd3n 1ntr0uv4bl3. L'1n5t4ll3r 4v3c : w1ng3t 1n5t4ll B1tw4rd3n.CL1</value>
+  </data>
+  <data name="Inject_Error_NotLoggedIn" xml:space="preserve">
+    <value>C0ffr3 n0n c0nn3ct3. L4nc3r un3 f015 : bw l0g1n</value>
+  </data>
+  <data name="Inject_Error_UnlockRefused" xml:space="preserve">
+    <value>D3v3rr0u1ll4g3 r3fu53.</value>
+  </data>
+  <data name="Inject_Error_OrgMissing" xml:space="preserve">
+    <value>0rg4n154t10n 1ntr0uv4bl3 : '{0}'. D15p0n1bl35 : {1}</value>
+  </data>
+  <data name="Inject_Error_OrgNone" xml:space="preserve">
+    <value>4ucun3</value>
+  </data>
+  <data name="Inject_Error_CliFailed" xml:space="preserve">
+    <value>L4 CL1 B1tw4rd3n 4 r3fu53 l4 d3m4nd3.</value>
+  </data>
+  <data name="Inject_Error_Timeout" xml:space="preserve">
+    <value>L4 CL1 B1tw4rd3n n'4 p45 r3p0ndu 3n {0} 5.</value>
+  </data>
+  <data name="Settings_Inject_Section" xml:space="preserve">
+    <value>1nj3ct10n d3 53cr3t5</value>
+  </data>
+  <data name="Settings_Inject_CliPath" xml:space="preserve">
+    <value>CL1 B1tw4rd3n</value>
+  </data>
+  <data name="Settings_Inject_CliHint" xml:space="preserve">
+    <value>V1d3 = d3t3ct10n 4ut0m4t1qu3 (P4TH, pu15 W1nG3t). L3 cl13nt d3 bur34u B1tw4rd3n n3 f0urn1t p45 l4 CL1 : c3 50nt d3ux pr0du1t5 d15t1nct5.</value>
+  </data>
+  <data name="Settings_Inject_Detect" xml:space="preserve">
+    <value>D3t3ct3r</value>
+  </data>
+  <data name="Settings_Inject_DetectFailed" xml:space="preserve">
+    <value>bw.3x3 1ntr0uv4bl3</value>
+  </data>
+  <data name="Settings_Inject_Org" xml:space="preserve">
+    <value>0rg4n154t10n V4ultw4rd3n</value>
+  </data>
+  <data name="Settings_Inject_OrgHint" xml:space="preserve">
+    <value>V1d3 = ch3rch3r d4n5 t0ut l3 c0ffr3. Un3 0rg4n154t10n d3d133 3v1t3 qu'un 1t3m p3r50nn3l du m3m3 n0m r3nd3 l4 r350lut10n 4mb1gu3.</value>
+  </data>
+  <data name="Settings_Inject_ClearAfter" xml:space="preserve">
+    <value>3ff4c3r l3 pr3553-p4p13r 4pr35</value>
+  </data>
+  <data name="Settings_Inject_Seconds" xml:space="preserve">
+    <value>53c0nd35 (0 = d354ct1v3)</value>
+  </data>
+  <data name="Settings_Inject_MenuEntry" xml:space="preserve">
+    <value>3ntr33 « 1nj3ct3r l35 53cr3t5… » d4n5 l3 m3nu c0nt3xtu3l W1nd0w5</value>
+  </data>
+  <data name="Settings_Inject_MenuHint" xml:space="preserve">
+    <value>5ur t0u5 l35 f1ch13r5, y c0mpr15 c3ux 54n5 3xt3n510n. 5ur W1nd0w5 11 3ll3 53 tr0uv3 50u5 « 4ff1ch3r plu5 d'0pt10n5 », 0u d1r3ct3m3nt 4v3c M4j + cl1c dr01t.</value>
+  </data>
 </root>

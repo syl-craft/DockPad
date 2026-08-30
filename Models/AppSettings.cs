@@ -38,6 +38,34 @@ public class AppSettings
     /// </summary>
     public bool AutoFavicon { get; set; } = true;
 
+    /// <summary>
+    /// Chemin de <c>bw.exe</c>, ou vide pour laisser DockPad le chercher.
+    /// </summary>
+    /// <remarks>
+    /// Un chemin réglé qui n'existe plus retombe sur la détection : le dossier d'installation
+    /// WinGet porte un identifiant de version, donc la valeur enregistrée devient fausse à la
+    /// première mise à jour de la CLI.
+    /// </remarks>
+    public string BitwardenCliPath { get; set; } = "";
+
+    /// <summary>
+    /// Délai avant effacement du presse-papier après une injection. Zéro désactive.
+    /// </summary>
+    /// <remarks>
+    /// 90 et non 30 : la cible de collage est une interface web dans un navigateur, il faut le
+    /// temps de trouver l'onglet et d'ouvrir la bonne page.
+    /// </remarks>
+    public int ClipboardClearSeconds { get; set; } = 90;
+
+    /// <summary>
+    /// Organisation Vaultwarden où chercher les items, ou vide pour chercher dans tout le coffre.
+    /// </summary>
+    /// <remarks>
+    /// Vaultwarden n'a qu'un coffre par compte : sans ce cantonnement, un item personnel du même
+    /// nom rend la résolution ambiguë.
+    /// </remarks>
+    public string VaultOrganization { get; set; } = "";
+
     /// <summary>Modificateurs du raccourci global. Zéro = aucun réglage, le défaut s'applique.</summary>
     public int HotkeyModifiers { get; set; }
 

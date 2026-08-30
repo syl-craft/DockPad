@@ -39,7 +39,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|bindings|grid> <fr|en> <chemin.png>");
+            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|inject|inject-failed|inject-files|bindings|grid> <fr|en> <chemin.png> [onglet]");
             return;
         }
 
@@ -120,11 +120,93 @@ internal static class Program
             // d'une tuile et d'une entree de registre. Un defaut de couleur y serait passe inapercu.
             "shortcut" => new ShortcutDialog(row: 0, col: 0),
             "entry" => new EntryDialog(),
+            // La fenetre d'injection traverse quatre etats, dont deux valent une relecture : la
+            // saisie du mot de passe et le compte-rendu d'echec. On les pose par reflexion, comme
+            // OverlayShot appelle ShowHintOverlay — sans quoi il faudrait un coffre et un reseau.
+            "inject" => InjectionWindow(unlocked: false),
+            "inject-failed" => InjectionWindow(unlocked: true),
+            "inject-files" => InjectionFilesWindow(),
             _ => throw new ArgumentException($"fenêtre inconnue : {target}"),
         };
 
+        // Onglet a capturer, optionnel et en DERNIERE position : les fenetres a onglets n'en
+        // montrent qu'un, et une bascule apres rendu ne se repercute pas. Ajoute a la fin pour ne
+        // pas deplacer les arguments des cibles existantes.
+        if (window is { } tabbed && args.Length > 3 && int.TryParse(args[3], out var tabIndex))
+            SelectTab(tabbed, tabIndex);
+
         Render(window, outPath, target, lang);
     }
+
+    /// <summary>Selectionne un onglet avant le rendu, s'il y a un TabControl dans la fenetre.</summary>
+    private static void SelectTab(Window window, int index)
+    {
+        if (window.Content is not DependencyObject root) return;
+        if (FindTabControl(root) is { } tabs && index >= 0 && index < tabs.Items.Count)
+            tabs.SelectedIndex = index;
+    }
+
+    private static System.Windows.Controls.TabControl? FindTabControl(DependencyObject root)
+    {
+        if (root is System.Windows.Controls.TabControl found) return found;
+
+        foreach (var child in System.Windows.LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
+            if (FindTabControl(child) is { } nested) return nested;
+
+        return null;
+    }
+
+    /// <summary>
+    /// La fenetre d'injection, posee sur l'un de ses etats.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Par reflexion, comme <c>OverlayShot</c> : les etats sont poses par des methodes privees, et
+    /// les exposer pour l'outil de capture ferait entrer du code de test dans la fenetre.
+    /// </para>
+    /// <para>
+    /// <b>Aucun de ces deux etats ne touche au presse-papier.</b> L'armement appartient au
+    /// deroulement, pas a l'affichage — c'est ce qui rend cette capture sans effet de bord sur la
+    /// machine qui la produit.
+    /// </para>
+    /// </remarks>
+    private static Window InjectionWindow(bool unlocked)
+    {
+        var window = new DockPad.Secrets.SecretInjectionWindow(
+            Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
+
+        if (unlocked)
+        {
+            var report = DockPad.Secrets.InjectionReport.Fail(
+                Loc.F("Inject_Error_ItemMissingOrg", "ntfy", "NAS QNAP"), "exit 1 — Not found.");
+            Invoke(window, "ShowFailure", report);
+        }
+        else
+        {
+            Invoke(window, "ShowUnlock", null);
+        }
+
+        return window;
+    }
+
+    /// <summary>Le compte-rendu du mode fichiers, sans coffre ni ecriture disque.</summary>
+    private static Window InjectionFilesWindow()
+    {
+        var window = new DockPad.Secrets.SecretInjectionWindow(
+            Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
+
+        var outcome = new DockPad.Secrets.SecretFilesOutcome(
+            @"C:\Users\moi\Qnap\vaultwarden\secrets",
+            ["ts-authkey", "smtp-password", "push-installation-id", "push-installation-key"], 1);
+
+        Invoke(window, "ShowFiles", outcome);
+        return window;
+    }
+
+    private static void Invoke(Window window, string method, object? argument) =>
+        window.GetType()
+            .GetMethod(method, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(window, [argument]);
 
     /// <summary>
     /// Monte chaque fenetre et rend le nombre de liaisons cassees.
@@ -149,6 +231,7 @@ internal static class Program
             ("EntryDialog", () => new EntryDialog()),
             ("UsageConfigDialog", () => new UsageConfigDialog()),
             ("BrowserConfigDialog", () => new BrowserConfigDialog()),
+            ("SecretInjectionWindow", () => new DockPad.Secrets.SecretInjectionWindow("x.yml")),
         };
 
         foreach (var (name, build) in windows)

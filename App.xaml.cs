@@ -74,13 +74,26 @@ public partial class App : Application
             return;
         }
 
-        string? url = ParseUrlArg(e.Args);
+        string? url = ParseArg(e.Args, "--url");
+        string? injectPath = ParseArg(e.Args, "--inject-secrets");
 
         _mutex = new Mutex(initiallyOwned: true, "DockPad_SingleInstance", out bool createdNew);
         if (!createdNew)
         {
             _mutex.Dispose();
             _mutex = null;
+
+            // Instance secondaire lancée par Windows avec un fichier à injecter : relais via pipe.
+            if (injectPath is not null && !InjectPipe.TrySend(injectPath))
+            {
+                // Repli : l'instance principale est injoignable, on rend ici. Elle n'a pas de
+                // systray, donc elle mourrait à la fermeture de la fenêtre — et OnExit viderait le
+                // presse-papier avant que l'utilisateur ait pu coller. D'où la sortie différée.
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                var window = Secrets.SecretInjection.Handle(injectPath);
+                window.Closed += (_, _) => ShutdownWhenClipboardIsSafe();
+                return;
+            }
 
             // Instance secondaire lancée par Windows avec une URL : relais via pipe.
             if (url is not null && !Services.UrlPipeService.TrySend(url))
@@ -106,7 +119,7 @@ public partial class App : Application
         _mainWindow = new QuickAccessWindow();
         MainWindow = _mainWindow;
 
-        if (url is null)
+        if (url is null && injectPath is null)
         {
             _mainWindow.Show();
         }
@@ -123,23 +136,58 @@ public partial class App : Application
         Services.UrlPipeService.StartServer(u =>
             Dispatcher.BeginInvoke(() => Services.UrlRouterService.Handle(u)));
 
+        InjectPipe.StartServer(path =>
+            Dispatcher.BeginInvoke(() => Secrets.SecretInjection.Handle(path)));
+
         Services.McpDispatcher.OnMutation = () => Dispatcher.BeginInvoke(() => _mainWindow.RefreshGrid());
         Services.McpPipeService.StartServer(req => Services.McpDispatcher.Handle(req));
 
         if (url is not null)
             Dispatcher.BeginInvoke(() => Services.UrlRouterService.Handle(url));
+
+        if (injectPath is not null)
+            Dispatcher.BeginInvoke(() => Secrets.SecretInjection.Handle(injectPath));
     }
 
-    private static string? ParseUrlArg(string[] args)
+    /// <summary>Pipe du clic droit « Injecter les secrets… », jumeau de celui des URL.</summary>
+    private static readonly Services.LinePipeService InjectPipe = new("DockPad_InjectPipe");
+
+    private static string? ParseArg(string[] args, string name)
     {
         for (int i = 0; i < args.Length - 1; i++)
-            if (args[i] == "--url")
+            if (args[i] == name)
                 return args[i + 1];
         return null;
     }
 
+    /// <summary>
+    /// Quitte, mais pas avant que le presse-papier ait été rendu à l'utilisateur.
+    /// </summary>
+    /// <remarks>
+    /// Seule l'instance éphémère du repli en a besoin : l'instance résidente ne meurt pas à la
+    /// fermeture d'une fenêtre. Sans ce délai, sa sortie viderait le presse-papier immédiatement,
+    /// et l'injection paraîtrait n'avoir rien fait.
+    /// </remarks>
+    private void ShutdownWhenClipboardIsSafe()
+    {
+        if (!Secrets.SecretInjection.IsClipboardArmed) { Shutdown(); return; }
+
+        void OnChanged(object? sender, EventArgs e)
+        {
+            if (Secrets.SecretInjection.IsClipboardArmed) return;
+            Secrets.SecretInjection.ClipboardChanged -= OnChanged;
+            Dispatcher.BeginInvoke(() => Shutdown());
+        }
+
+        Secrets.SecretInjection.ClipboardChanged += OnChanged;
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
+        // Filet de sortie : un rendu encore dans le presse-papier en est retiré, à condition qu'il
+        // s'y trouve toujours — l'utilisateur a pu copier autre chose entre-temps.
+        Secrets.SecretInjection.ClearClipboardNow();
+
         // SystemEvents garde une référence statique sur l'abonné.
         Services.ThemeService.StopFollowingSystem();
         _trayIcon?.Dispose();

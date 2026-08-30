@@ -40,7 +40,7 @@ Models/
     PageConfig.cs                        Config par page (icône du bouton de pagination + IconProfilePath)
     PresetEntry.cs                       Modèle preset avec enum PresetStatus
     ProcessSwitchConfig.cs               Config SwitchToProcess (processName, executable, parameters)
-    AppSettings.cs                        Contenu de settings.json (langue, thème, raccourci, options)
+    AppSettings.cs                        Contenu de settings.json (langue, thème, raccourci, options, injection de secrets)
     ShortcutAddItem.cs                    Item du lot dockpad_shortcut_add (position optionnelle)
     ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath, iconProfilePath)
     ShortcutUpdate.cs                     Champs modifiables par dockpad_shortcut_update (null = inchangé)
@@ -103,7 +103,8 @@ Services/
     AppSettingsService.cs                 Load/Save settings.json + reprise des options restées dans le registre
     ThemeService.cs                       Thème clair/sombre : décision pure, suivi de Windows, barre de titre
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
-    UrlPipeService.cs                    Named pipe DockPad_UrlPipe — serveur (instance principale) / client (instance relais)
+    LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
+    UrlPipeService.cs                    Facade sur LinePipeService pour DockPad_UrlPipe
     UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
     UsageConfigService.cs                 Load/Save usage.json (%APPDATA%\DockPad\usage.json)
 
@@ -133,6 +134,24 @@ Mcp/
     DockPadTools.cs                        Les 13 outils dockpad_* exposés au SDK MCP (relais vers le pipe)
     McpRelay.cs                            Hôte MCP stdio du mode --mcp (SDK ModelContextProtocol, aucune UI/mutex)
 
+Secrets/                                 PERIMETRE D'AUDIT — tout ce qui voit un secret, et rien d'autre
+    README.md                            Les invariants et la surface d'entree, en tete de dossier
+    SecretInjection.cs                   Facade — les seuls appels autorises depuis le reste de l'app
+    SecretMenu.cs                        Pose/retire l'unique cle HKCU\Software\Classes\*\shell (tous fichiers)
+    BwItem.cs                            Item de coffre tel que la CLI le rend
+    SecretMarker.cs                      Un marqueur {{ bw:item:champ }}, et ce que le coffre repond
+    SecretPlan.cs                        PUR — quel mode le fichier demande : presse-papier ou fichiers
+    ComposeSecrets.cs                    PUR — lit les annotations x-bw du bloc secrets: (YamlDotNet)
+    SecretFileWriter.cs                  Le SEUL fichier du dossier autorise a ecrire sur le disque
+    SecretRenderResult.cs                Un rendu, ou une liste d'echecs — jamais les deux
+    SecretTemplate.cs                    PUR — marqueurs, substitution, les deux filets
+    SecretFieldResolver.cs               PUR — champ personnalise, puis password/username/notes/totp
+    SecretVault.cs                       PUR — un item, aucun, ou deux : les trois cas nommes
+    BitwardenCli.cs                      Le seul point qui lance bw.exe (secrets par l'environnement)
+    SecretInjectionService.cs            Orchestration : status -> unlock -> items -> rendu
+    ClipboardGuard.cs                    Copie marquee, empreinte, minuteur, effacement garde
+    SecretInjectionWindow.xaml/.cs       La fenetre a quatre etats
+
 Views/
     ContextMenuManagerWindow.xaml/.cs    Gestion des entrées de menu contextuel Windows
     QuickAccessCommands.cs               Les actions de la fenêtre en commandes + interface IQuickAccessView
@@ -151,12 +170,14 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (447 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (620 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
                                          + traduction (parité des clés, pluriels, culture par défaut)
                                          + logique sortie de la fenêtre (lancement, overlay, recherche, dépôts, sauvegarde, commandes)
+    Secrets/                             + injection de secrets : marqueurs, résolution, presse-papier, menu,
+                                           et les trois gardes du périmètre d'audit (vérifiés par mutation)
 
 tools/
     generate-leet-resx.ps1               Script PowerShell : engendre Strings.qps-Ploc.resx depuis le français
@@ -218,6 +239,7 @@ tools/
 - **Menu ☰** organisé en sections :
   - *Menu contextuel* : ☰ Gestion, 📋 Raccourcis prédéfinis
   - *Paramètres* : ⚙ Options, 🌐 Navigateurs, 🔌 Serveur MCP, 📊 Usage IA
+  - *Secrets* : 🔑 Réglages des secrets (ouvre les Options **sur l'onglet Secrets**), ↻ Synchroniser le coffre
   - *Configuration* : ↺ Actualiser, ✎ Modifier, 💾 Sauvegarder, 📁 Voir le dossier
   - ✕ Quitter l'application
 - **Raccourci clavier actif** affiché en bas à droite (badge `Consolas`, mis à jour après changement dans Options)
@@ -310,6 +332,19 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Enregistrement géré par `QuickAccessWindow`
 
 ### Paramètres (SettingsDialog)
+- **Trois onglets** — *Général* (langue, thème, raccourci global, raccourcis des tuiles, démarrage),
+  *Intégrations* (Claude Code, réseau) et *Secrets* (injection depuis Vaultwarden). Ce dernier ne
+  porte **pas** de titre de section : l'onglet le nomme déjà, et le répéter juste en dessous ne dit
+  rien de plus — `Settings_Inject_Section` sert encore de titre au dialogue d'erreur de l'entrée de
+  menu, donc la clé n'est pas orpheline. La fenêtre était en `SizeToContent` et
+  atteignait **1218 px** une fois la section d'injection ajoutée, plus que la zone de travail d'un
+  écran 1080p ; elle suit désormais le patron « listes / onglets » du dépôt : `CanResize`, taille
+  initiale + `MinWidth`/`MinHeight`, `MaxHeight` clampé, chaque onglet dans un `ScrollViewer`. Le
+  **footer reste hors des onglets** — il vaut pour toute la fenêtre
+- Le style d'onglet vit dans `App.xaml` (`FlatTabItem`, posé par `ItemContainerStyle`) : il était
+  recopié **mot pour mot** dans `McpConfigDialog` et `BrowserConfigDialog`, et cette fenêtre en
+  aurait fait une troisième copie
+
 - **Langue** en tête de fenêtre : `Automatique (Windows)` / `Français` / `English`. Stockée dans `HKCU\Software\DockPad\Settings\Language`, `""` = automatique — même convention que `TriggerFirst`/`TriggerSecond`. Application immédiate, sans redémarrage : la fenêtre se retraduit sous les yeux
 - Configuration du raccourci clavier global
 - **Raccourcis des tuiles** : choix des modificateurs gauche/droite de l'overlay (Auto, Ctrl, Alt, Shift) avec validation (modificateurs différents)
@@ -643,6 +678,249 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
   - **Journal** : actions de la session en mémoire (`McpLogService.Entries`), icône ✅/🚫/❌ + heure + outil + résumé des paramètres + message, compteur, bouton effacer ; trace persistante en parallèle via `LogService.Info` dans les logs Serilog
 - Erreurs renvoyées à Claude en français et actionnables (ex : case occupée → liste des cases libres)
 
+### Injection de secrets depuis Vaultwarden
+
+Clic droit sur **n'importe quel fichier** → « Injecter les secrets… ». Le fichier dit lui-même ce
+qu'on fait de lui (`SecretPlan`, décision pure sur le contenu) :
+
+| Ce que porte le fichier | Ce que DockPad produit |
+|---|---|
+| des marqueurs `{{ bw:item:champ }}` | le rendu dans le **presse-papier** |
+| des annotations `x-bw:` sous `secrets:` | les **fichiers de secrets** dans un sous-dossier `secrets/` |
+| les deux | **refus** — deviner serait pire que demander |
+| ni l'un ni l'autre | refus « rien à produire » |
+
+> **Les marqueurs tranchent en premier.** Un `.env` porte des marqueurs et n'est pas du YAML :
+> laisser le parseur décider d'abord ferait basculer ce cas courant vers un message d'erreur YAML
+> sans rapport avec ce que l'utilisateur essaie de faire.
+
+#### Mode fichiers : les annotations `x-bw` (`ComposeSecrets`, `SecretFileWriter`)
+`x-` est le mécanisme d'extension prévu par la spécification Compose : Compose ignore ces champs,
+DockPad les lit. Le fichier produit porte le **nom de base de `file:`** — `ts-authkey`, et non la clé
+du secret `vw-ts-authkey` : `file:` vise le NAS, seul son nom de base est exploitable, et confondre
+les deux casserait le déploiement en silence.
+
+- **Un vrai parseur (`YamlDotNet`), pas un balayage textuel.** Le compose de référence porte un
+  `entrypoint` de quatre-vingt-dix lignes en scalaire bloc avec des `$$` — et surtout il **documente
+  `x-bw` dans un commentaire** : une détection textuelle basculerait en mode fichiers sur un document
+  qui ne porte aucune annotation
+- **UTF-8 sans BOM et sans saut de ligne final.** Vaultwarden rogne ce qu'il lit via `_FILE`, mais
+  `containerboot` lit `TS_AUTHKEY` par `file:` **sans rien rogner** : un `
+` de trop y casse
+  l'authentification Tailscale. La contrainte n'est pas cosmétique
+- **Écriture en deux temps** : tout est écrit sous un nom temporaire, puis basculé en place. Un jeu
+  de secrets déjà correct n'est jamais détruit à moitié par une résolution qui échoue au troisième
+- **Le dossier s'ignore lui-même** (`secrets/.gitignore` avec `*` et `!.gitignore`). Les fichiers
+  produits n'ont **pas d'extension** : une règle `*.key` ne les couvre pas, et ils partiraient au
+  premier `git add .` — vérifié sur le dépôt Qnap, dont le `.gitignore` ne les attrapait pas. Un
+  `.gitignore` local règle le cas sans invoquer git ni deviner ses règles, et vaut aussi hors dépôt
+- **Le compte d'items est distinct du compte de fichiers** : les cinq secrets du compose de référence
+  viennent tous de `vaultwarden-infra`, et annoncer « 5 items lus » donnerait une fausse idée de ce
+  qui a été interrogé
+- **Hors périmètre** : les fichiers restent à déposer sur le NAS. DockPad les produit à côté du
+  compose et ouvre le dossier, rien de plus
+
+> **La garde « rien sur disque » n'a pas été supprimée pour ce mode : elle a été restreinte.**
+> L'écriture n'est autorisée que dans `SecretFileWriter.cs` ; partout ailleurs dans `Secrets/` elle
+> reste interdite, et un second test vérifie que ce fichier existe toujours — sans lui, l'exception
+> deviendrait une porte ouverte que plus rien ne referme. La question « où un secret peut-il toucher
+> le disque ? » garde une réponse d'un seul mot. Re-vérifié par mutation.
+
+DockPad remplace
+les marqueurs `{{ bw:<item>:<champ> }}` par les valeurs du coffre via la CLI Bitwarden, et met le
+résultat **dans le presse-papier** — prêt à coller dans Container Station. Rien n'est jamais écrit
+sur le disque, et le rendu a lieu sur le poste : ce n'est pas de quoi alimenter un conteneur au
+démarrage.
+
+Porte `render-secrets.ps1` et `install-context-menu.ps1` du dépôt Qnap, supprimés en même temps —
+le second réimplémentait à côté la gestion du menu contextuel que DockPad possède déjà.
+
+#### `Secrets/` est un périmètre d'audit, pas un rangement
+
+**Tout ce qui voit un secret vit dans `Secrets/`, et rien hors du dossier n'en voit.** Quatre
+matières ne franchissent jamais la frontière : mot de passe maître, clé de session, valeurs du
+coffre, texte rendu. Le dossier porte son propre `README.md`, en tête. La fenêtre y vit aussi, et
+non dans `Dialogs/` — c'est elle qui reçoit le mot de passe.
+
+`AppSettings` reste dehors avec ses trois réglages (`BitwardenCliPath`, `ClipboardClearSeconds`,
+`VaultOrganization`) : ce sont des préférences, jamais de la matière secrète. Elles **n'entrent pas**
+dans `FromRegistry` — la reprise ne concerne que les huit réglages qui ont réellement vécu dans le
+registre.
+
+DockPad étant un **assembly unique**, `internal` n'achète rien : la frontière ne peut pas être posée
+par un modificateur d'accès. Trois gardes la tiennent (`SecretBoundaryGuardTests`), **vérifiés par
+mutation** comme les autres gardes du projet :
+
+| Garde | Interdit | Prouve |
+|---|---|---|
+| **Frontière** | Nommer un type du dossier hors des points d'entrée déclarés | La surface ne grandit pas en douce |
+| **Rien sur disque** | `File.Write*`, `FileStream` en écriture, `StreamWriter` dans le dossier | La garantie centrale, par le code et non par relecture |
+| **Rien en ligne de commande** | `--session`, `--password`, et tout identifiant sentant le secret dans une collection d'arguments | Ni le mot de passe ni la clé ne sont lisibles des autres processus |
+
+La troisième est un **durcissement du script d'origine**, qui passait `--session $env:BW_SESSION` en
+argument — donc lisible de tout processus, y compris par la lecture WMI que DockPad fait lui-même
+pour `SwitchToProcess` — et posait `$env:BW_PASSWORD` sur son propre shell. Ici les deux ne vivent
+que dans `ProcessStartInfo.Environment` du processus enfant.
+
+> Le garde du motif d'arguments exige un `"--` dans la collection, et pas la seule accolade : sans
+> ça, `["BW_PASSWORD"] = motDePasse` — qui est **précisément** la bonne façon de faire — serait
+> signalé, et la garde pousserait à écrire le code dangereux pour se taire.
+
+#### La garantie centrale : tout ou rien
+Si un seul marqueur ne se résout pas, rien ne va dans le presse-papier. Deux filets, et **le second
+ne fait pas confiance au premier** : collecte des marqueurs non résolus, puis balayage du texte
+produit rejetant tout `{{ … }}` ou `REMPLACER` survivant — y compris venu d'une valeur du coffre.
+`SecretRenderResult` est *soit* un texte *soit* une liste d'échecs, jamais les deux : lire `Text` sur
+un échec lève. Même raison d'être qu'`ActionResult`.
+
+Conséquence assumée : le second filet rejette **tout** `{{ … }}`, gabarit Go ou Jinja légitime
+compris. Il ne sait pas distinguer, et il se trompe du bon côté.
+
+Un fichier **sans aucun marqueur** est un refus, pas un cas neutre : c'est le signe qu'on a visé le
+mauvais fichier.
+
+#### Aucune clé de session n'est conservée
+Mot de passe maître **à chaque injection**. Rien à garder, rien à faire expirer, rien à tester —
+DockPad démarre avec Windows et tourne des semaines, une clé de coffre n'a rien à y faire. La clé
+naît d'un `unlock`, vit le temps de `RenderAsync`, et sort de portée avec la méthode.
+
+`SecureString` n'est **pas** utilisé, et c'est délibéré : `PasswordBox.Password` matérialise déjà une
+chaîne managée immuable que le GC déplace, donc il ne gagnerait rien de réel et donnerait une fausse
+assurance. Ce qu'on gagne vraiment : jamais la ligne de commande, jamais l'environnement de DockPad.
+
+#### Quatre appels à `bw`, dont un seul `list items`
+`status`, `unlock --passwordenv BW_PASSWORD --raw`, `list organizations` (seulement si une
+organisation est configurée), `list items [--organizationid …]`. Le script d'origine lançait une
+recherche **par item** ; ramener l'organisation entière en un appel est plus rapide, et surtout
+déplace la résolution du côté testable de la frontière — `SecretVault` est pur, et nomme lui-même
+l'ambiguïté là où la CLI répondait « More than one result » sans dire quoi renommer.
+
+`bw status` ne sert qu'à distinguer **un seul** cas, `unauthenticated`, parce que lui seul appelle
+une autre action (`bw login`). Tout le reste mène au déverrouillage : sans clé de session la CLI ne
+peut rien lire, quoi qu'elle annonce.
+
+Tous les appels : `UseShellExecute = false`, `CreateNoWindow = true`, `ArgumentList`. Aucun `cmd`,
+aucun `powershell`, donc rien à échapper et aucune fenêtre console qui clignote. Délai maximal 60 s
+par appel — **et le dépassement est distingué de la fermeture par l'utilisateur**, les deux levant la
+même exception : les confondre laissait la fenêtre figée sur sa barre de progression, sans un mot,
+quand Vaultwarden ne répondait pas.
+
+#### Le presse-papier (`ClipboardGuard`)
+Trois formats enregistrés, **vérifiés contre la documentation Microsoft** (*Cloud Clipboard and
+Clipboard History Formats*) : `ExcludeClipboardContentFromMonitorProcessing` (n'importe quelle
+donnée), `CanIncludeInClipboardHistory` et `CanUploadToCloudClipboard` (**DWORD sérialisé à zéro**).
+Vider le presse-papier après un délai ne suffit pas — sans eux le secret survit en clair dans `Win+V`
+et part sur les autres appareils. C'est ce marquage qui justifie le passage en WPF, `Set-Clipboard`
+ne le permettant pas.
+
+- **Un `MemoryStream` de quatre octets, jamais un `int`** : `DataObject.SetData` sérialisait par
+  `BinaryFormatter`, désactivé depuis .NET 8. Un test fige les trois formats — sinon une montée de
+  version casse la protection en silence. (`DataObject` s'instancie hors STA : vérifié, le test ne
+  touche pas au presse-papier de la machine)
+- **L'effacement est gardé** : on retient l'empreinte SHA-256, jamais le texte, et on n'efface que si
+  le presse-papier porte encore exactement ce qu'on y a mis. Sinon l'utilisateur a copié autre chose,
+  et l'effacer détruirait ses données — c'est ce que fait KeePass
+- **Le minuteur n'appartient pas à la fenêtre** mais au service : fermer la fenêtre une fois le texte
+  collé est le geste naturel, et il laisserait sinon le secret dans le presse-papier pour toujours
+- **Zéro désarme le verrou entier**, pas seulement le minuteur : aucune empreinte retenue, et la
+  sortie de l'application n'efface rien. Un réglage qui dit « ne pas effacer » ne peut pas effacer
+  quand même à la fermeture
+- Défaut **90 s** et non 30 : la cible de collage est une interface web dans un navigateur, il faut
+  le temps de trouver l'onglet et d'ouvrir la bonne page
+
+#### Le flux, et le piège de l'instance éphémère
+Windows lance `DockPad.exe --inject-secrets "<fichier>"`. C'est le chemin `--url`, repli compris :
+relais par le named pipe `DockPad_InjectPipe` si DockPad tourne, démarrage en arrière-plan s'il ne
+tourne pas, traitement local si le pipe est injoignable. `UrlPipeService` est devenu une façade sur
+`LinePipeService(nom)`, dont les deux pipes sont deux instances — deux pipes distincts plutôt qu'un
+préfixe dans la charge utile, les deux flux n'ayant rien à voir.
+
+> **Le repli est un piège qu'il faut nommer.** L'instance qui rend localement n'a pas de systray :
+> elle mourrait à la fermeture de la fenêtre, et `ClearClipboardNow()` branché sur `OnExit` viderait
+> le presse-papier **avant** que l'utilisateur ait pu coller. La sortie est donc **différée jusqu'au
+> désarmement du verrou**.
+
+Fenêtre à quatre états : `Vérification → Déverrouillage → Travail → Compte-rendu`. Succès : le
+décompte s'affiche et la fenêtre se ferme à zéro — zéro clic dans le cas nominal. Échec : elle reste,
+avec la liste. Un déverrouillage refusé revient sur la saisie plutôt que sur un écran d'échec qu'il
+faudrait fermer pour réessayer.
+
+#### L'entrée de menu contextuel (`SecretMenu`)
+**Une seule clé**, `HKCU\Software\Classes\*\shell\DockPadInjectSecrets` — donc **tous les
+fichiers**, aucune élévation, et une désinstallation qui ne laisse rien. C'est le motif per-user
+qu'emploient déjà VS Code et MobaXterm sur un poste ordinaire ; vérifié, la clé y existe et
+s'écrit sans admin.
+
+> **Le ciblage par extension a été essayé et abandonné.** Une clé par extension sous
+> `SystemFileAssociations` ne peut pas atteindre les fichiers **sans extension** (Dockerfile,
+> Makefile), et Windows lit l'extension de `.env.prod` comme `.prod` — le cas le plus courant
+> échappait à la liste qui prétendait le couvrir. Aucune liste ne pouvait suffire. Le prix payé est
+> une ligne de plus dans le menu de chaque fichier ; un clic sur un binaire échoue proprement,
+> faute de marqueur.
+
+- `IsInstalled` exige la clé **et** une commande pointant sur l'exe courant, comme l'état
+  d'enregistrement navigateur : un DockPad déplacé laisse une entrée morte, et l'annoncer
+  « installée » ferait chercher le problème ailleurs
+- **Sauvegarder réécrit toujours** quand la case est cochée : c'est ce qui fait suivre le libellé
+  traduit après un changement de langue, sans le mécanisme de comparaison qu'a dû se payer
+  `PresetService.CompareStatus`
+- La case suit le contrat **transactionnel** de la fenêtre : état lu au chargement, clés écrites à
+  *Sauvegarder*. Une installation immédiate suivie d'un *Annuler* serait un piège
+- Sur Windows 11 l'entrée est sous « Afficher plus d'options » (Maj + clic droit) — **le texte
+  d'aide doit le dire**, sinon on l'installe, on ne la voit pas, et on conclut que ça ne marche pas
+
+> **L'onglet initial des Options se choisit par *référence*, pas par index.** `SettingsDialog(SettingsTab)`
+> sélectionne l'objet `TabItem` nommé : un index se désynchronise en silence dès qu'on réordonne le
+> XAML, et on ouvrirait le mauvais onglet sans que rien ne le signale.
+
+#### Synchroniser le cache (onglet Secrets)
+La CLI Bitwarden travaille sur un **cache local** : un item ajouté au coffre n'existe pas pour
+`bw list items` tant qu'aucun `bw sync` n'a eu lieu. Le piège a mordu **deux fois en une heure** à la
+mise au point — d'abord sur l'organisation, puis sur l'item. Trois réponses, cumulées :
+
+- l'onglet affiche la **date du dernier cache** (`bw status`, aucun mot de passe requis) et un bouton
+  **Synchroniser maintenant** ;
+- le message « item absent » nomme la cause probable et la commande ;
+- pas de synchro avant chaque injection : ce serait un aller-retour réseau à chaque clic droit, pour
+  un coffre qui bouge rarement.
+
+> **Le bouton vit dans les Options, le mot de passe non.** `SettingsDialog` appelle
+> `SecretInjection.SyncVault(this)`, et c'est la fenêtre du dossier `Secrets/` qui recueille le mot
+> de passe maître. Le faire saisir dans la fenêtre des Options aurait fait entrer un secret hors du
+> périmètre d'audit — précisément ce que la frontière existe pour empêcher.
+
+> **`SecondaryButton` était invisible sur un fond de page** : son fond est `Brush.Surface`, soit
+> exactement le fond de fenêtre, et le gabarit partagé ne liait ni `BorderBrush` ni
+> `BorderThickness`. Les deux liaisons ont été ajoutées — sans effet ailleurs, l'épaisseur valant 0
+> par défaut, **vérifié par comparaison pixel : 0 écart sur la fenêtre MCP** — et les deux boutons de
+> page portent désormais une bordure explicite.
+
+#### Réglages (Options)
+`CLI Bitwarden` (vide = détection : `PATH`, puis `%LOCALAPPDATA%\Microsoft\WinGet\Packages` en
+récursif), `Organisation Vaultwarden` (vide = tout le coffre), `Effacer le presse-papier après N
+secondes`, et la case du menu contextuel.
+
+> **Un chemin réglé qui n'existe plus retombe sur la détection**, et ce n'est pas de la complaisance :
+> le dossier d'installation WinGet porte un identifiant de version, donc la valeur enregistrée
+> devient fausse à la première mise à jour de la CLI. Le cas se produira.
+
+Le client de bureau Bitwarden ne fournit **pas** la CLI — deux produits distincts, et c'est la
+première erreur qu'on fait ; le texte d'aide le dit.
+
+#### Ce qui n'est pas fait, et pourquoi
+- **Aucun outil MCP.** Le réflexe du dépôt est d'exposer chaque service d'action au serveur MCP ; ici
+  le produit est un secret en clair, qui n'a rien à faire dans une réponse lue par un modèle
+- **Pas de `-Show` ni de `-Out`** du script : ne jamais afficher le rendu, ne jamais l'écrire. La
+  garde « rien sur disque » rend la seconde moitié structurelle plutôt que déclarative
+- **Pas d'entrée dans le menu ☰** avec sélecteur de fichier : le clic droit *est* le geste
+- **Pas de `bw sync`** avant lecture : lent, et le script ne le faisait pas
+
+#### Captures
+`DialogShot.exe inject <fr|en> <png>` (saisie du mot de passe) et `inject-failed` (compte-rendu
+d'échec) — les deux états qui valent une relecture. Posés **par réflexion**, comme `OverlayShot`
+appelle `ShowHintOverlay` : les exposer ferait entrer du code de test dans la fenêtre. Aucun des deux
+ne touche au presse-papier, l'armement appartenant au déroulement et non à l'affichage.
+
 ## Prédéfinis
 
 | Nom | Cible | Commande |
@@ -742,6 +1020,9 @@ emportait pas.
   "triggerSecond": "Shift",
   "claudeArgs": "--enable-auto-mode",
   "autoFavicon": true,
+  "bitwardenCliPath": "",
+  "clipboardClearSeconds": 90,
+  "vaultOrganization": "NAS QNAP",
   "hotkeyModifiers": 1,
   "hotkeyKey": 32
 }
@@ -832,7 +1113,7 @@ UsageShot.exe window-unlocked ...                               # verrou des tui
 
 > **La cible `window` ne doit jamais appeler `Show()`.** Affichée dans un hôte qui n'est pas une vraie application, `QuickAccessWindow` déclenche une boucle qui affame le dispatcher : le processus tourne à 80 % d'un cœur et rien ne s'exécute plus — ni `ContentRendered`, ni un `DispatcherTimer` posé après `Show`. Reproduit y compris à un commit où cette cible produisait encore une image correcte, donc ce n'est pas la mise en page. Le contournement est de **mesurer et arranger son contenu hors écran**, comme la cible `panel` : l'instanciation de la fenêtre est évitée et le rendu est immédiat.
 
-`tools/DialogShot <fenêtre> <fr|en> <cheminPng>` — n'importe quelle fenêtre, dans une langue donnée :
+`tools/DialogShot <fenêtre> <fr|en> <cheminPng> [onglet]` — n'importe quelle fenêtre, dans une langue donnée. L'index d'onglet est optionnel et **en dernière position**, pour ne pas déplacer les arguments des cibles existantes :
 
 ```bash
 dotnet build tools/DialogShot
@@ -865,6 +1146,13 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 - Un seul objet `Application` par processus : un process de capture par fenêtre/onglet
 - `DockPad.csproj` exclut `tools\**` de son glob de compilation (projet frère dans un sous-dossier, comme `DockPad.Tests`)
 - Le binaire `DockPad.exe` est verrouillé par une instance en cours : **fermer DockPad avant `dotnet build`**, sinon MSB3021/MSB3027 (l'outil de capture référence `DockPad.csproj`)
+
+> **La typographie d'un `TabItem` se pose sur le `Border` de son gabarit, jamais sur le `TabItem`.**
+> `Foreground`, `FontSize` et `FontWeight` sont **hérités** : posés sur l'onglet, ils descendent dans
+> tout son contenu, et l'accent bleu de l'onglet actif repeignait les **titres de section de la
+> page**. Le défaut existait depuis l'ajout des onglets et se voyait sur deux fenêtres — mesuré à
+> 6,6 % des pixels de la fenêtre MCP. Les `Setter` visent donc `TargetName="Bd"` avec les propriétés
+> attachées `TextElement.*`, qui ne couvrent que l'en-tête.
 
 > Une **valeur locale** (attribut posé sur l'élément, ex. `Visibility="Collapsed"`) bat les `Setter` des `DataTrigger` d'un `Style` : elle ne sera jamais remplacée. Mettre la valeur par défaut dans un `<Setter>` du `Style` et laisser les triggers la surcharger — sinon le trigger paraît « ne rien faire » (cas vécu sur le filet d'indentation des profils de navigateur).
 

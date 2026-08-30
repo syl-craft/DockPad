@@ -1,60 +1,22 @@
-using System.IO;
-using System.IO.Pipes;
-using System.Threading;
-
 namespace DockPad.Services;
 
 /// <summary>
-/// Relais d'URL entre instances : l'instance principale écoute sur un named pipe,
-/// les instances secondaires (lancées par Windows avec --url) lui transmettent l'URL.
+/// Relais d'URL entre instances : l'instance principale écoute sur un named pipe, les instances
+/// secondaires (lancées par Windows avec <c>--url</c>) lui transmettent l'URL.
 /// </summary>
+/// <remarks>
+/// Façade sur <see cref="LinePipeService"/>, dont la mécanique est partagée avec le pipe
+/// d'injection de secrets. L'API n'a pas changé : les appelants n'ont pas bougé.
+/// </remarks>
 public static class UrlPipeService
 {
     public const string PipeName = "DockPad_UrlPipe";
 
-    private static bool _serverFaulted;
+    private static readonly LinePipeService Pipe = new(PipeName);
 
     /// <summary>Démarre le serveur (instance principale). onUrl est appelé sur un thread de pool.</summary>
-    public static void StartServer(Action<string> onUrl)
-    {
-        var thread = new Thread(() =>
-        {
-            while (!App.IsExiting)
-            {
-                try
-                {
-                    using var server = new NamedPipeServerStream(
-                        PipeName, PipeDirection.In, maxNumberOfServerInstances: 1);
-                    server.WaitForConnection();
-                    _serverFaulted = false;
-                    using var reader = new StreamReader(server);
-                    var url = reader.ReadLine();
-                    if (!string.IsNullOrWhiteSpace(url)) onUrl(url);
-                }
-                catch (Exception ex)
-                {
-                    // Pipe cassé ou fermeture : on retente. Un seul WRN par série d'échecs,
-                    // et backoff pour ne pas spinner si l'échec est persistant.
-                    if (!_serverFaulted) { LogService.Warn(ex, "Pipe DockPad_UrlPipe interrompu, réécoute"); _serverFaulted = true; }
-                    Thread.Sleep(1000);
-                }
-            }
-        })
-        { IsBackground = true, Name = "DockPad_UrlPipeServer" };
-        thread.Start();
-    }
+    public static void StartServer(Action<string> onUrl) => Pipe.StartServer(onUrl);
 
     /// <summary>Envoie une URL à l'instance principale. false si échec ou timeout.</summary>
-    public static bool TrySend(string url, int timeoutMs = 2000)
-    {
-        try
-        {
-            using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-            client.Connect(timeoutMs);
-            using var writer = new StreamWriter(client) { AutoFlush = true };
-            writer.WriteLine(url);
-            return true;
-        }
-        catch (Exception ex) { LogService.Warn(ex, "Relais de l'URL vers l'instance principale (fallback popup locale)"); return false; }
-    }
+    public static bool TrySend(string url, int timeoutMs = 2000) => Pipe.TrySend(url, timeoutMs);
 }

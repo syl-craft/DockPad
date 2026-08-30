@@ -43,7 +43,11 @@ public class FrenchLiteralGuardTests
         new(@"^[A-Z][A-Za-z0-9]*_[A-Za-z0-9_]+$", RegexOptions.Compiled);
 
     /// <summary>Dossiers de l'application qui portent du texte affiché.</summary>
-    private static readonly string[] Scanned = ["Views", "Dialogs", "Models", "Services"];
+    /// <remarks>
+    /// <c>Secrets</c> en fait partie comme les autres : un dossier neuf qui échapperait au balayage
+    /// serait le premier à réintroduire ce que ce test existe pour empêcher.
+    /// </remarks>
+    private static readonly string[] Scanned = ["Views", "Dialogs", "Models", "Services", "Secrets"];
 
     /// <summary>
     /// Fichiers dont le français est <b>voulu</b> : les messages renvoyés au serveur MCP. Leur

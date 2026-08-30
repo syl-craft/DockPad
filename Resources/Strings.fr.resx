@@ -1053,4 +1053,190 @@ Cette action est irréversible.</value>
   <data name="Theme_Dark" xml:space="preserve">
     <value>Sombre</value>
   </data>
+  <data name="Settings_Tab_General" xml:space="preserve">
+    <value>Général</value>
+  </data>
+  <data name="Settings_Tab_Integrations" xml:space="preserve">
+    <value>Intégrations</value>
+  </data>
+  <data name="Settings_Tab_Secrets" xml:space="preserve">
+    <value>Secrets</value>
+  </data>
+  <data name="Inject_Error_SecretNoFile" xml:space="preserve">
+    <value>Secret « {0} » : l'annotation x-bw n'a pas de file: — aucun nom de fichier à produire.</value>
+  </data>
+  <data name="Inject_Error_SecretIncomplete" xml:space="preserve">
+    <value>Secret « {0} » : l'annotation x-bw n'a pas d'item ou de champ.</value>
+  </data>
+  <data name="Inject_Error_YamlUnreadable" xml:space="preserve">
+    <value>Ce fichier n'est pas du YAML lisible ({0}).</value>
+  </data>
+  <data name="Inject_Files_Success" xml:space="preserve">
+    <value>{0} {0:plural:fichier écrit|fichiers écrits}, {1} {1:plural:item lu|items lus}</value>
+  </data>
+  <data name="Inject_Files_Folder" xml:space="preserve">
+    <value>Écrits dans</value>
+  </data>
+  <data name="Inject_OpenFolder" xml:space="preserve">
+    <value>Ouvrir le dossier</value>
+  </data>
+  <data name="Inject_Error_Ambiguous" xml:space="preserve">
+    <value>Ce fichier porte à la fois des marqueurs bw et des annotations x-bw. Garde l'un ou l'autre : ils produisent des choses différentes, à des endroits différents.</value>
+  </data>
+  <data name="Inject_Failed_Hint_Files" xml:space="preserve">
+    <value>Un jeu de secrets partiellement écrit serait pire que rien : aucun fichier n'a été créé.</value>
+  </data>
+  <data name="Inject_Sync_Subtitle" xml:space="preserve">
+    <value>Synchronisation du coffre</value>
+  </data>
+  <data name="Inject_Sync_Done" xml:space="preserve">
+    <value>Cache local rafraîchi.</value>
+  </data>
+  <data name="Settings_Inject_Sync" xml:space="preserve">
+    <value>Synchroniser maintenant</value>
+  </data>
+  <data name="Settings_Inject_LastSync" xml:space="preserve">
+    <value>Cache du coffre à jour au {0}</value>
+  </data>
+  <data name="Settings_Inject_LastSyncUnknown" xml:space="preserve">
+    <value>Cache du coffre jamais synchronisé.</value>
+  </data>
+  <data name="Settings_Inject_SyncHint" xml:space="preserve">
+    <value>La CLI Bitwarden travaille sur un cache local : un item ajouté au coffre n'existe pas pour DockPad tant qu'une synchronisation n'a pas eu lieu.</value>
+  </data>
+  <data name="Quick_Menu_Secrets" xml:space="preserve">
+    <value>Secrets</value>
+  </data>
+  <data name="Quick_Menu_SecretSettings" xml:space="preserve">
+    <value>Réglages des secrets</value>
+  </data>
+  <data name="Quick_Menu_SyncVault" xml:space="preserve">
+    <value>Synchroniser le coffre</value>
+  </data>
+  <data name="Inject_Error_DuplicateFile" xml:space="preserve">
+    <value>Deux secrets visent le même fichier « {0} ». En renommer un : un seul des deux serait écrit.</value>
+  </data>
+  <data name="Inject_Error_BadFileName" xml:space="preserve">
+    <value>Secret « {0} » : son file: ne se termine pas par un nom de fichier utilisable.</value>
+  </data>
+  <data name="Inject_Error_FileTooBig" xml:space="preserve">
+    <value>Ce fichier dépasse {0} Mo — trop gros pour être un gabarit.</value>
+  </data>
+  <data name="Inject_Error_ClipboardBusy" xml:space="preserve">
+    <value>Le presse-papier est tenu par une autre application. Rien n'a été copié.</value>
+  </data>
+  <data name="Inject_Title" xml:space="preserve">
+    <value>Injection de secrets</value>
+  </data>
+  <data name="Inject_ContextMenu_Label" xml:space="preserve">
+    <value>Injecter les secrets…</value>
+  </data>
+  <data name="Inject_State_Checking" xml:space="preserve">
+    <value>Vérification du coffre…</value>
+  </data>
+  <data name="Inject_State_Working" xml:space="preserve">
+    <value>Lecture du coffre…</value>
+  </data>
+  <data name="Inject_Unlock_Prompt" xml:space="preserve">
+    <value>Mot de passe maître</value>
+  </data>
+  <data name="Inject_Unlock_Button" xml:space="preserve">
+    <value>Déverrouiller</value>
+  </data>
+  <data name="Inject_Success" xml:space="preserve">
+    <value>{0} {0:plural:marqueur résolu|marqueurs résolus}, {1} {1:plural:item lu|items lus}</value>
+  </data>
+  <data name="Inject_Success_Clipboard" xml:space="preserve">
+    <value>Presse-papier rempli</value>
+  </data>
+  <data name="Inject_Countdown" xml:space="preserve">
+    <value>Effacement dans {0} s</value>
+  </data>
+  <data name="Inject_Failed_Title" xml:space="preserve">
+    <value>Rien n'a été rendu</value>
+  </data>
+  <data name="Inject_Failed_Hint" xml:space="preserve">
+    <value>Un fichier partiellement rendu serait pire que pas de fichier : rien n'a été mis dans le presse-papier.</value>
+  </data>
+  <data name="Inject_Detail" xml:space="preserve">
+    <value>Détail technique</value>
+  </data>
+  <data name="Inject_Error_NoMarkers" xml:space="preserve">
+    <value>Aucun marqueur bw:item:champ ni annotation x-bw dans ce fichier — rien à produire.</value>
+  </data>
+  <data name="Inject_Error_Leftovers" xml:space="preserve">
+    <value>{0} {0:plural:marqueur subsiste|marqueurs subsistent} après rendu.</value>
+  </data>
+  <data name="Inject_Error_EmptyField" xml:space="preserve">
+    <value>{0} → champ '{1}' absent ou vide</value>
+  </data>
+  <data name="Inject_Error_ItemMissingOrg" xml:space="preserve">
+    <value>Item '{0}' absent de l'organisation '{1}'. Si tu viens de l'ajouter, lance bw sync — la CLI travaille sur un cache local.</value>
+  </data>
+  <data name="Inject_Error_ItemMissingVault" xml:space="preserve">
+    <value>Item '{0}' absent du coffre. Si tu viens de l'ajouter, lance bw sync — la CLI travaille sur un cache local.</value>
+  </data>
+  <data name="Inject_Error_ItemAmbiguous" xml:space="preserve">
+    <value>Plusieurs items nommés '{0}' — en renommer un pour lever l'ambiguïté.</value>
+  </data>
+  <data name="Inject_Error_FileMissing" xml:space="preserve">
+    <value>Fichier introuvable : {0}</value>
+  </data>
+  <data name="Inject_Error_FileUnreadable" xml:space="preserve">
+    <value>Ce fichier ne peut pas être lu.</value>
+  </data>
+  <data name="Inject_Error_CliMissing" xml:space="preserve">
+    <value>CLI Bitwarden introuvable. L'installer avec : winget install Bitwarden.CLI</value>
+  </data>
+  <data name="Inject_Error_NotLoggedIn" xml:space="preserve">
+    <value>Coffre non connecté. Lancer une fois : bw login</value>
+  </data>
+  <data name="Inject_Error_UnlockRefused" xml:space="preserve">
+    <value>Déverrouillage refusé.</value>
+  </data>
+  <data name="Inject_Error_OrgMissing" xml:space="preserve">
+    <value>Organisation introuvable : '{0}'. Disponibles : {1}</value>
+  </data>
+  <data name="Inject_Error_OrgNone" xml:space="preserve">
+    <value>aucune</value>
+  </data>
+  <data name="Inject_Error_CliFailed" xml:space="preserve">
+    <value>La CLI Bitwarden a refusé la demande.</value>
+  </data>
+  <data name="Inject_Error_Timeout" xml:space="preserve">
+    <value>La CLI Bitwarden n'a pas répondu en {0} s.</value>
+  </data>
+  <data name="Settings_Inject_Section" xml:space="preserve">
+    <value>Injection de secrets</value>
+  </data>
+  <data name="Settings_Inject_CliPath" xml:space="preserve">
+    <value>CLI Bitwarden</value>
+  </data>
+  <data name="Settings_Inject_CliHint" xml:space="preserve">
+    <value>Vide = détection automatique (PATH, puis WinGet). Le client de bureau Bitwarden ne fournit pas la CLI : ce sont deux produits distincts.</value>
+  </data>
+  <data name="Settings_Inject_Detect" xml:space="preserve">
+    <value>Détecter</value>
+  </data>
+  <data name="Settings_Inject_DetectFailed" xml:space="preserve">
+    <value>bw.exe introuvable</value>
+  </data>
+  <data name="Settings_Inject_Org" xml:space="preserve">
+    <value>Organisation Vaultwarden</value>
+  </data>
+  <data name="Settings_Inject_OrgHint" xml:space="preserve">
+    <value>Vide = chercher dans tout le coffre. Une organisation dédiée évite qu'un item personnel du même nom rende la résolution ambiguë.</value>
+  </data>
+  <data name="Settings_Inject_ClearAfter" xml:space="preserve">
+    <value>Effacer le presse-papier après</value>
+  </data>
+  <data name="Settings_Inject_Seconds" xml:space="preserve">
+    <value>secondes (0 = désactivé)</value>
+  </data>
+  <data name="Settings_Inject_MenuEntry" xml:space="preserve">
+    <value>Entrée « Injecter les secrets… » dans le menu contextuel Windows</value>
+  </data>
+  <data name="Settings_Inject_MenuHint" xml:space="preserve">
+    <value>Sur tous les fichiers, y compris ceux sans extension. Sur Windows 11 elle se trouve sous « Afficher plus d'options », ou directement avec Maj + clic droit.</value>
+  </data>
 </root>

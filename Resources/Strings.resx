@@ -1053,4 +1053,190 @@ This cannot be undone.</value>
   <data name="Theme_Dark" xml:space="preserve">
     <value>Dark</value>
   </data>
+  <data name="Settings_Tab_General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Settings_Tab_Integrations" xml:space="preserve">
+    <value>Integrations</value>
+  </data>
+  <data name="Settings_Tab_Secrets" xml:space="preserve">
+    <value>Secrets</value>
+  </data>
+  <data name="Inject_Error_SecretNoFile" xml:space="preserve">
+    <value>Secret '{0}': the x-bw annotation has no file: — no file name to produce.</value>
+  </data>
+  <data name="Inject_Error_SecretIncomplete" xml:space="preserve">
+    <value>Secret '{0}': the x-bw annotation is missing item or field.</value>
+  </data>
+  <data name="Inject_Error_YamlUnreadable" xml:space="preserve">
+    <value>This file is not readable YAML ({0}).</value>
+  </data>
+  <data name="Inject_Files_Success" xml:space="preserve">
+    <value>{0} {0:plural:file written|files written}, {1} {1:plural:item read|items read}</value>
+  </data>
+  <data name="Inject_Files_Folder" xml:space="preserve">
+    <value>Written to</value>
+  </data>
+  <data name="Inject_OpenFolder" xml:space="preserve">
+    <value>Open the folder</value>
+  </data>
+  <data name="Inject_Error_Ambiguous" xml:space="preserve">
+    <value>This file carries both bw markers and x-bw annotations. Keep one or the other: they produce different things, in different places.</value>
+  </data>
+  <data name="Inject_Failed_Hint_Files" xml:space="preserve">
+    <value>A partially written set of secrets would be worse than none at all, so no file was created.</value>
+  </data>
+  <data name="Inject_Sync_Subtitle" xml:space="preserve">
+    <value>Vault synchronisation</value>
+  </data>
+  <data name="Inject_Sync_Done" xml:space="preserve">
+    <value>Local cache refreshed.</value>
+  </data>
+  <data name="Settings_Inject_Sync" xml:space="preserve">
+    <value>Synchronise now</value>
+  </data>
+  <data name="Settings_Inject_LastSync" xml:space="preserve">
+    <value>Vault cache updated on {0}</value>
+  </data>
+  <data name="Settings_Inject_LastSyncUnknown" xml:space="preserve">
+    <value>Vault cache never synchronised.</value>
+  </data>
+  <data name="Settings_Inject_SyncHint" xml:space="preserve">
+    <value>The Bitwarden CLI works from a local cache: an item added to the vault does not exist for DockPad until a synchronisation.</value>
+  </data>
+  <data name="Quick_Menu_Secrets" xml:space="preserve">
+    <value>Secrets</value>
+  </data>
+  <data name="Quick_Menu_SecretSettings" xml:space="preserve">
+    <value>Secret settings</value>
+  </data>
+  <data name="Quick_Menu_SyncVault" xml:space="preserve">
+    <value>Synchronise the vault</value>
+  </data>
+  <data name="Inject_Error_DuplicateFile" xml:space="preserve">
+    <value>Two secrets both target the file '{0}'. Rename one: only one of the two would be written.</value>
+  </data>
+  <data name="Inject_Error_BadFileName" xml:space="preserve">
+    <value>Secret '{0}': its file: does not end in a usable file name.</value>
+  </data>
+  <data name="Inject_Error_FileTooBig" xml:space="preserve">
+    <value>This file is larger than {0} MB — too large to be a template.</value>
+  </data>
+  <data name="Inject_Error_ClipboardBusy" xml:space="preserve">
+    <value>The clipboard is held by another application. Nothing was copied.</value>
+  </data>
+  <data name="Inject_Title" xml:space="preserve">
+    <value>Secret injection</value>
+  </data>
+  <data name="Inject_ContextMenu_Label" xml:space="preserve">
+    <value>Inject secrets…</value>
+  </data>
+  <data name="Inject_State_Checking" xml:space="preserve">
+    <value>Checking the vault…</value>
+  </data>
+  <data name="Inject_State_Working" xml:space="preserve">
+    <value>Reading the vault…</value>
+  </data>
+  <data name="Inject_Unlock_Prompt" xml:space="preserve">
+    <value>Master password</value>
+  </data>
+  <data name="Inject_Unlock_Button" xml:space="preserve">
+    <value>Unlock</value>
+  </data>
+  <data name="Inject_Success" xml:space="preserve">
+    <value>{0} {0:plural:marker resolved|markers resolved}, {1} {1:plural:item read|items read}</value>
+  </data>
+  <data name="Inject_Success_Clipboard" xml:space="preserve">
+    <value>Clipboard filled</value>
+  </data>
+  <data name="Inject_Countdown" xml:space="preserve">
+    <value>Clearing in {0} s</value>
+  </data>
+  <data name="Inject_Failed_Title" xml:space="preserve">
+    <value>Nothing was rendered</value>
+  </data>
+  <data name="Inject_Failed_Hint" xml:space="preserve">
+    <value>A partially rendered file would be worse than no file at all, so nothing was put on the clipboard.</value>
+  </data>
+  <data name="Inject_Detail" xml:space="preserve">
+    <value>Technical detail</value>
+  </data>
+  <data name="Inject_Error_NoMarkers" xml:space="preserve">
+    <value>No bw:item:field marker and no x-bw annotation in this file — nothing to produce.</value>
+  </data>
+  <data name="Inject_Error_Leftovers" xml:space="preserve">
+    <value>{0} {0:plural:marker remains|markers remain} after rendering.</value>
+  </data>
+  <data name="Inject_Error_EmptyField" xml:space="preserve">
+    <value>{0} → field '{1}' missing or empty</value>
+  </data>
+  <data name="Inject_Error_ItemMissingOrg" xml:space="preserve">
+    <value>Item '{0}' is not in organisation '{1}'. If you have just added it, run bw sync — the CLI works from a local cache.</value>
+  </data>
+  <data name="Inject_Error_ItemMissingVault" xml:space="preserve">
+    <value>Item '{0}' is not in the vault. If you have just added it, run bw sync — the CLI works from a local cache.</value>
+  </data>
+  <data name="Inject_Error_ItemAmbiguous" xml:space="preserve">
+    <value>Several items are named '{0}' — rename one to remove the ambiguity.</value>
+  </data>
+  <data name="Inject_Error_FileMissing" xml:space="preserve">
+    <value>File not found: {0}</value>
+  </data>
+  <data name="Inject_Error_FileUnreadable" xml:space="preserve">
+    <value>This file cannot be read.</value>
+  </data>
+  <data name="Inject_Error_CliMissing" xml:space="preserve">
+    <value>Bitwarden CLI not found. Install it with: winget install Bitwarden.CLI</value>
+  </data>
+  <data name="Inject_Error_NotLoggedIn" xml:space="preserve">
+    <value>Vault not connected. Run once: bw login</value>
+  </data>
+  <data name="Inject_Error_UnlockRefused" xml:space="preserve">
+    <value>Unlock refused.</value>
+  </data>
+  <data name="Inject_Error_OrgMissing" xml:space="preserve">
+    <value>Organisation not found: '{0}'. Available: {1}</value>
+  </data>
+  <data name="Inject_Error_OrgNone" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="Inject_Error_CliFailed" xml:space="preserve">
+    <value>The Bitwarden CLI refused the request.</value>
+  </data>
+  <data name="Inject_Error_Timeout" xml:space="preserve">
+    <value>The Bitwarden CLI did not answer within {0} s.</value>
+  </data>
+  <data name="Settings_Inject_Section" xml:space="preserve">
+    <value>Secret injection</value>
+  </data>
+  <data name="Settings_Inject_CliPath" xml:space="preserve">
+    <value>Bitwarden CLI</value>
+  </data>
+  <data name="Settings_Inject_CliHint" xml:space="preserve">
+    <value>Empty = auto-detect (PATH, then WinGet). The Bitwarden desktop app does not ship the CLI: they are two separate products.</value>
+  </data>
+  <data name="Settings_Inject_Detect" xml:space="preserve">
+    <value>Detect</value>
+  </data>
+  <data name="Settings_Inject_DetectFailed" xml:space="preserve">
+    <value>bw.exe not found</value>
+  </data>
+  <data name="Settings_Inject_Org" xml:space="preserve">
+    <value>Vaultwarden organisation</value>
+  </data>
+  <data name="Settings_Inject_OrgHint" xml:space="preserve">
+    <value>Empty = search the whole vault. A dedicated organisation avoids a personal item of the same name making the lookup ambiguous.</value>
+  </data>
+  <data name="Settings_Inject_ClearAfter" xml:space="preserve">
+    <value>Clear the clipboard after</value>
+  </data>
+  <data name="Settings_Inject_Seconds" xml:space="preserve">
+    <value>seconds (0 = disabled)</value>
+  </data>
+  <data name="Settings_Inject_MenuEntry" xml:space="preserve">
+    <value>“Inject secrets…” entry in the Windows context menu</value>
+  </data>
+  <data name="Settings_Inject_MenuHint" xml:space="preserve">
+    <value>On every file, including ones with no extension. On Windows 11 it sits under “Show more options”, or directly with Shift + right-click.</value>
+  </data>
 </root>
