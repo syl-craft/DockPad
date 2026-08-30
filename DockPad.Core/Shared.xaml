@@ -85,6 +85,21 @@
         -->
         <Style x:Key="FlatTabItem" TargetType="TabItem">
             <Setter Property="Cursor" Value="Hand"/>
+            <!--
+                Foreground sur le TabItem : il descend dans le CONTENU de l'onglet, et c'est voulu.
+
+                Un TabControl ne propage PAS ses proprietes de texte a son contenu — mesure faite :
+                une sonde TextElement.Foreground posee sur le TabControl n'atteint pas les TextBlock
+                de la page, alors que la meme sonde posee plus bas, si. Sans ce Setter, tout texte
+                sans couleur explicite retombe sur le noir systeme : #000000 sur un fond #202020 en
+                theme sombre, donc illisible — et invisible en theme clair, ou le noir est justement
+                ce qu'on attendait.
+
+                La typographie de l'EN-TETE reste posee sur le Border du gabarit, qui gagne
+                localement : c'est ce qui empeche l'accent bleu de l'onglet actif de repeindre les
+                titres de section de la page.
+            -->
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
