@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Genere Resources/Strings.qps-Ploc.resx a partir du francais, en leet speak.
+    Genere DockPad.Core/Resources/Strings.qps-Ploc.resx a partir du francais, en leet speak.
 
 .DESCRIPTION
     La langue « 1337 » n'est pas traduite a la main : elle est DERIVEE du francais par
@@ -22,8 +22,8 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Source = (Join-Path $PSScriptRoot "..\Resources\Strings.fr.resx"),
-    [string]$Target = (Join-Path $PSScriptRoot "..\Resources\Strings.qps-Ploc.resx")
+    [string]$Source = (Join-Path $PSScriptRoot "..\DockPad.Core\Resources\Strings.fr.resx"),
+    [string]$Target = (Join-Path $PSScriptRoot "..\DockPad.Core\Resources\Strings.qps-Ploc.resx")
 )
 
 $ErrorActionPreference = "Stop"

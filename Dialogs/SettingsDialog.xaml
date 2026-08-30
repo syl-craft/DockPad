@@ -1,7 +1,7 @@
 <Window x:Class="DockPad.SettingsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:loc="clr-namespace:DockPad.Services.Localization"
+        xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
         Title="{loc:T Settings_Title}"
         Width="520" Height="640" MinWidth="460" MinHeight="420"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"

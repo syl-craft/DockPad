@@ -1,7 +1,7 @@
 <Window x:Class="DockPad.ShortcutDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:loc="clr-namespace:DockPad.Services.Localization"
+        xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
         Title="{loc:T Shortcut_Title}"
         Width="500" SizeToContent="Height" MaxHeight="720"
         WindowStartupLocation="CenterOwner"
