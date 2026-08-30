@@ -175,7 +175,52 @@ Clic droit sur **n'importe quel fichier** → **Injecter les secrets…**. DockP
 
 **Aucune clé de session n'est conservée** : le mot de passe maître est redemandé à chaque injection, il ne quitte jamais l'environnement du processus enfant, et il n'apparaît dans aucune ligne de commande. Le rendu est retiré du presse-papier après un délai réglable (90 s par défaut), **à condition qu'il s'y trouve toujours** — si tu as copié autre chose entre-temps, rien n'est effacé.
 
-### Deux formes d'annotation
+### Syntaxe des marqueurs
+
+```
+{{ bw:<item>:<champ> }}
+```
+
+Les espaces autour des `:` et des accolades sont facultatifs — `{{bw:item:champ}}` marche aussi. Le
+**nom d'item accepte les espaces** (`{{ bw:NAS QNAP:token }}`), le nom de champ non : le `:` et le
+`}}` suffisent à délimiter.
+
+Un marqueur se remplace **dans n'importe quel fichier**, pas seulement du YAML — un `.env`, un
+`Dockerfile`, un script. C'est le contenu qui décide, jamais l'extension.
+
+**L'item est cherché par son nom exact**, sans tenir compte de la casse :
+
+| Ce que le coffre répond | Ce que DockPad fait |
+|---|---|
+| un seul item de ce nom | il est utilisé |
+| aucun | refus **qui nomme l'item**, et rappelle l'organisation si une est configurée |
+| deux ou plus | refus : DockPad ne devine pas. Renommer l'un des deux, ou cantonner à une organisation |
+
+**Le champ suit un ordre, et le personnalisé gagne toujours :**
+
+| `<champ>` | Ce qui est lu |
+|---|---|
+| n'importe quel nom | le **champ personnalisé** de ce nom, s'il existe |
+| `password` | le mot de passe de l'identifiant |
+| `username` | l'identifiant |
+| `notes` | les notes de l'item |
+| `totp` | la graine TOTP |
+
+Un champ personnalisé nommé `password` masque donc le mot de passe standard — et **ne retombe pas
+dessus s'il est vide** : le champ qu'on a nommé soi-même existe, et le dire franchement vaut mieux
+que d'aller chercher ailleurs une valeur que personne n'a demandée.
+
+Une **valeur vide compte comme absente** : le champ existe mais ne porte rien, ce qui produirait une
+ligne syntaxiquement valide et fonctionnellement fausse.
+
+**Deux formes échappent au remplacement :**
+
+| Écrit | Effet |
+|---|---|
+| `\{{ bw:item:champ }}` | le marqueur **littéral**, antislash retiré, jamais cherché dans le coffre |
+| `REMPLACER` | rien — mais il est **signalé** dans le compte-rendu : c'est le marqueur manuel qui a causé la panne d'origine |
+
+### Syntaxe des annotations `x-bw`
 
 Compose ignore tout champ commençant par `x-`, donc l'annotation cohabite sans rien changer au déploiement :
 
@@ -193,7 +238,27 @@ secrets:
       template: templates/ntfy-config/server.yml   # un modèle local est rendu
 ```
 
-`template:` sert aux fichiers de **structure** dont seules quelques valeurs sont sensibles. Le modèle reste versionné à sa place, `secrets/` ne contient que du produit — et s'ignore lui-même par un `.gitignore` posé automatiquement.
+Chaque entrée annotée doit porter un `file:` : **son nom de base** devient le nom du fichier produit
+(`ts-authkey`, et non la clé du secret). Le chemin complet vise le NAS et n'est pas exploitable ici.
+
+`item` + `field` et `template` sont **exclusifs** — les deux ensemble sont un refus, il n'y a qu'un
+fichier à produire ; aucun des deux également.
+
+`template:` sert aux fichiers de **structure** dont seules quelques valeurs sont sensibles. Le modèle
+reste versionné à sa place, `secrets/` ne contient que du produit — et s'ignore lui-même par un
+`.gitignore` posé automatiquement. Trois règles s'y appliquent :
+
+- le chemin est **relatif au dossier du compose** et doit y rester. C'est la seule annotation qui
+  désigne *quoi lire*, et elle vient d'un fichier : un chemin qui remonte est refusé ;
+- le rendu est **tout ou rien, par fichier** — un seul marqueur non résolu et ce fichier n'est pas
+  écrit. Contrairement au presse-papier, où le marqueur reste visible dans ce qu'on colle, un fichier
+  part sur le NAS sans être relu ;
+- les fins de ligne sont **normalisées en LF** : le modèle vient d'un dépôt git qui a pu l'extraire
+  en CRLF, la destination est un conteneur Linux. Une *valeur* du coffre, elle, n'est jamais
+  touchée — c'est un secret, on l'écrit telle qu'elle est.
+
+Les fichiers produits n'ont **pas de saut de ligne final** : Vaultwarden rogne ce qu'il lit via
+`_FILE`, mais `containerboot` lit `TS_AUTHKEY` par `file:` sans rien rogner.
 
 ### Quand une clé manque
 
