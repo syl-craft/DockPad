@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +34,7 @@ public partial class SecretInjectionWindow : Window
     private string? _content;
     private SecretMode _mode;
     private string? _writtenFolder;
+    private InjectionReport? _report;
     private readonly bool _syncOnly;
 
     /// <summary>Clé du libellé de <c>BtnClose</c>, gardée pour pouvoir le retraduire.</summary>
@@ -133,7 +134,6 @@ public partial class SecretInjectionWindow : Window
     private InjectionReport? Refusal() => _mode switch
     {
         SecretMode.None => InjectionReport.Fail(Loc.T("Inject_Error_NoMarkers"), YamlError()),
-        SecretMode.Ambiguous => InjectionReport.Fail(Loc.T("Inject_Error_Ambiguous")),
         _ => null,
     };
 
@@ -165,15 +165,13 @@ public partial class SecretInjectionWindow : Window
         {
             report = _syncOnly
                 ? await SecretInjectionService.SyncAsync(password, _cancellation.Token).ConfigureAwait(true)
-                : _mode == SecretMode.Files
-                ? await SecretInjectionService.WriteFilesAsync(
-                    _content!, Path.GetDirectoryName(_filePath)!, password, _cancellation.Token).ConfigureAwait(true)
-                : await SecretInjectionService.RenderAsync(
-                    _content!, password, _cancellation.Token).ConfigureAwait(true);
+                : await SecretInjectionService.InjectAsync(
+                    _content!, Path.GetDirectoryName(_filePath)!, _mode, password,
+                    _cancellation.Token).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (Timeout()) { ShowTimeout(); return; }
         catch (OperationCanceledException) { return; }
-        catch (Exception ex) when (_mode == SecretMode.Files && ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (_mode is SecretMode.Files or SecretMode.Both && ex is IOException or UnauthorizedAccessException)
         {
             // La CLI a repondu, c'est le disque qui a resiste : annoncer « la CLI a refuse la
             // demande » enverrait chercher le probleme du mauvais cote.
@@ -210,27 +208,54 @@ public partial class SecretInjectionWindow : Window
 
         if (report.DidSync) { ShowSynced(); return; }
 
+        // L'armement appartient au déroulement et non à l'affichage : les écrans ne doivent que
+        // montrer. C'est aussi ce qui permet à l'outil de capture de les rendre sans écrire dans le
+        // presse-papier de la machine.
+        if (report.Render is { } rendered)
+        {
+            try
+            {
+                ClipboardGuard.Arm(rendered.Text, AppSettingsService.Current.ClipboardClearSeconds);
+            }
+            catch (Exception ex)
+            {
+                // Le presse-papier peut être tenu par une autre application — gestionnaire de
+                // presse-papier, session RDP, machine virtuelle. Sans ce catch, l'exception quittait
+                // un gestionnaire async void et ressortait en « Erreur inattendue » à l'échelle de
+                // l'application, alors que cette fenêtre sait très bien le dire elle-même.
+                LogService.Warn(ex, "Copie du rendu dans le presse-papier");
+
+                // Les fichiers déjà écrits restent acquis : un presse-papier occupé ne peut pas les
+                // effacer du compte-rendu. On dégrade en manque plutôt qu'en échec total.
+                if (report.Files is null)
+                {
+                    ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_ClipboardBusy"), ex.GetType().Name));
+                    return;
+                }
+
+                report = InjectionReport.Produced(null, report.Files,
+                    [.. report.Missing, Loc.T("Inject_Error_ClipboardBusy")]);
+            }
+        }
+
+        _report = report;
+        ShowOutcome(report);
+    }
+
+    /// <summary>
+    /// Trois sorties possibles, et <b>le trou décide en premier</b>.
+    /// </summary>
+    /// <remarks>
+    /// Un rendu incomplet ne prend jamais l'écran vert, même quand tous les fichiers ont été
+    /// écrits : la panne d'origine n'était pas qu'un fichier soit partiel, c'est qu'il ait eu l'air
+    /// complet.
+    /// </remarks>
+    private void ShowOutcome(InjectionReport report)
+    {
+        if (!report.Complete) { ShowIncomplete(report); return; }
         if (report.Files is { } files) { ShowFiles(files); return; }
 
-        // L'armement appartient au déroulement et non à l'affichage : ShowSuccess ne doit que
-        // montrer. C'est aussi ce qui permet à l'outil de capture de rendre cet état sans écrire
-        // dans le presse-papier de la machine.
-        try
-        {
-            ClipboardGuard.Arm(report.Render!.Text, AppSettingsService.Current.ClipboardClearSeconds);
-        }
-        catch (Exception ex)
-        {
-            // Le presse-papier peut être tenu par une autre application — gestionnaire de
-            // presse-papier, session RDP, machine virtuelle. Sans ce catch, l'exception quittait un
-            // gestionnaire async void et ressortait en « Erreur inattendue » à l'échelle de
-            // l'application, alors que cette fenêtre sait très bien le dire elle-même.
-            LogService.Warn(ex, "Copie du rendu dans le presse-papier");
-            ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_ClipboardBusy"), ex.GetType().Name));
-            return;
-        }
-
-        ShowSuccess(report.Render);
+        ShowSuccess(report.Render!);
     }
 
     /// <summary>
@@ -297,6 +322,67 @@ public partial class SecretInjectionWindow : Window
         CloseLabel("Common_Close");
     }
 
+    /// <summary>
+    /// Produit, mais avec des trous : ce qui manque, ce qui a été écrit, ce qui est périmé.
+    /// </summary>
+    /// <remarks>
+    /// Les trois listes appellent trois réactions différentes — créer la clé absente, vérifier ce
+    /// qui est à jour, décider du sort des périmés. Les fondre en une seule obligerait le lecteur à
+    /// les redémêler lui-même.
+    /// </remarks>
+    private void ShowIncomplete(InjectionReport report)
+    {
+        var written = report.Files?.Written ?? [];
+        var stale = report.Files?.Stale ?? [];
+        _writtenFolder = report.Files?.Folder;
+
+        // Des noms et des nombres, jamais une valeur.
+        LogService.Info($"Injection incomplète : {Path.GetFileName(_filePath)}, {report.Missing.Count} manque(s), {written.Count} fichier(s), {stale.Count} périmé(s)");
+
+        TxtPartialSummary.Text = report.Render is { } rendered
+            ? Loc.F("Inject_Partial_Summary", rendered.MarkerCount, written.Count)
+            : Loc.F("Inject_Partial_SummaryFiles", written.Count);
+
+        ListMissing.ItemsSource = report.Missing;
+
+        LblPartialWritten.Visibility = written.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ListPartialWritten.ItemsSource = written;
+
+        ListStale.ItemsSource = stale;
+        BlocStale.Visibility = stale.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        Show(PanelIncomplete);
+        Buttons(clear: ClipboardGuard.IsArmed, unlock: false, folder: written.Count > 0);
+        CloseLabel("Common_Close");
+        OnGuardChanged(null, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Supprime les fichiers dont la clé a disparu du coffre — sur un clic, jamais autrement.
+    /// </summary>
+    /// <remarks>
+    /// La liste vient des annotations <c>x-bw</c> dont la clé manque, jamais d'un balayage du
+    /// dossier : celui-ci peut contenir autre chose. Ce qui n'a pas pu être supprimé reste affiché,
+    /// pour que le compte-rendu ne prétende rien.
+    /// </remarks>
+    private void DeleteStale_Click(object sender, RoutedEventArgs e)
+    {
+        if (_report?.Files is not { } files || files.Stale.Count == 0) return;
+
+        var folder = Path.GetDirectoryName(_filePath);
+        if (folder is null) return;
+
+        var deleted = SecretFileWriter.Delete(folder, files.Stale);
+        LogService.Info($"Fichiers de secret périmés supprimés : {deleted.Count}");
+
+        var left = files.Stale.Except(deleted, StringComparer.OrdinalIgnoreCase).ToList();
+
+        ListStale.ItemsSource = left;
+        BlocStale.Visibility = left.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        _report = InjectionReport.Produced(_report.Render, files with { Stale = left }, _report.Missing);
+    }
+
     /// <summary>Le cache a été rafraîchi. Rien n'a été lu, rien n'a été produit.</summary>
     private void ShowSynced()
     {
@@ -316,7 +402,7 @@ public partial class SecretInjectionWindow : Window
 
         // La consolation doit parler de ce qui n'a pas eu lieu. En mode fichiers, invoquer le
         // presse-papier décrivait une opération qui n'était de toute façon pas prévue.
-        TxtFailedHint.Text = _mode == SecretMode.Files
+        TxtFailedHint.Text = _mode is SecretMode.Files or SecretMode.Both
             ? Loc.T("Inject_Failed_Hint_Files")
             : Loc.T("Inject_Failed_Hint");
 
@@ -333,7 +419,7 @@ public partial class SecretInjectionWindow : Window
 
     private void Show(UIElement panel)
     {
-        foreach (var candidate in new UIElement[] { PanelBusy, PanelUnlock, PanelSuccess, PanelFiles, PanelFailed })
+        foreach (var candidate in new UIElement[] { PanelBusy, PanelUnlock, PanelSuccess, PanelFiles, PanelIncomplete, PanelFailed })
             candidate.Visibility = candidate == panel ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -359,6 +445,19 @@ public partial class SecretInjectionWindow : Window
         // En mode synchro, rien n'est jamais armé : sans cette garde, un événement venu d'une
         // autre injection fermerait l'écran de confirmation sous les yeux.
         if (_syncOnly) return;
+
+        // L'écran incomplet ne se referme JAMAIS tout seul : c'est le seul qui demande une
+        // décision — supprimer les fichiers périmés, ou non. Le voir disparaître au bout du
+        // décompte reviendrait à répondre à sa place.
+        if (PanelIncomplete.Visibility == Visibility.Visible)
+        {
+            var armed = ClipboardGuard.IsArmed;
+            TxtPartialCountdown.Text = armed ? Loc.F("Inject_Countdown", ClipboardGuard.SecondsLeft) : "";
+            TxtPartialCountdown.Visibility = armed ? Visibility.Visible : Visibility.Collapsed;
+            BtnClear.Visibility = armed ? Visibility.Visible : Visibility.Collapsed;
+            return;
+        }
+
         if (PanelSuccess.Visibility != Visibility.Visible) return;
 
         if (ClipboardGuard.IsArmed)

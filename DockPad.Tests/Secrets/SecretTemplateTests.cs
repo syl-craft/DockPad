@@ -107,11 +107,32 @@ public class SecretTemplateTests
     // ───────────── Premier filet : tout ou rien ─────────────
 
     [Fact]
-    public void UnSeulMarqueurNonResolu_AnnuleToutLeRendu()
+    public void UnMarqueurNonResolu_LaisseLeMarqueurEtNommeLeManque()
     {
+        // Renversement assumé de la règle d'origine : le coffre qui ne connaît pas un item est un
+        // fait SUR LE COFFRE, pas une panne du rendu. Le marqueur non résolu reste littéral — il
+        // est sa propre trace, visible dans ce qu'on colle. Ce qui remplace la garantie perdue,
+        // c'est que le résultat sait qu'il est incomplet.
         var result = SecretTemplate.Render(
             "{{ bw:ok:token }} {{ bw:absent:token }}",
             m => m.Item == "ok" ? Always("v") : SecretLookup.Missing("absent du coffre"));
+
+        Assert.True(result.Ok);
+        Assert.False(result.Complete);
+        Assert.Equal("v {{ bw:absent:token }}", result.Text);
+        Assert.Equal(["absent du coffre"], result.Missing);
+    }
+
+    /// <summary>
+    /// N'avoir rien résolu du tout reste un échec : le dernier garde du tout-ou-rien, et celui qui
+    /// compte. Un texte où aucun marqueur n'a été remplacé n'est pas un rendu, c'est le fichier de
+    /// départ — l'annoncer comme un succès partiel serait un mensonge poli.
+    /// </summary>
+    [Fact]
+    public void AucunMarqueurResolu_ResteUnEchec()
+    {
+        var result = SecretTemplate.Render(
+            "{{ bw:a:token }} {{ bw:b:token }}", _ => SecretLookup.Missing("absent du coffre"));
 
         Assert.False(result.Ok);
     }
@@ -148,21 +169,27 @@ public class SecretTemplateTests
     // ───────────── Second filet : le balayage final ─────────────
 
     [Fact]
-    public void UneValeurDuCoffreQuiPorteUnMarqueur_FaitEchouerLeRendu()
+    public void UneValeurDuCoffreQuiPorteUnMarqueur_EstSignalee()
     {
-        // Le second filet ne fait pas confiance au premier : il regarde le résultat, quelle que
-        // soit l'origine de ce qui y traîne.
+        // Le second filet ne veto plus, mais il n'a rien perdu de son rôle : il regarde le
+        // résultat, quelle que soit l'origine de ce qui y traîne.
         var result = SecretTemplate.Render("{{ bw:ntfy:token }}", _ => Always("{{ oups }}"));
 
-        Assert.False(result.Ok);
+        Assert.True(result.Ok);
+        Assert.False(result.Complete);
+        Assert.NotEmpty(result.Missing);
     }
 
     [Fact]
-    public void UnRemplacerSurvivant_FaitEchouerLeRendu()
+    public void UnRemplacerSurvivant_EstNommeDansLesManques()
     {
+        // REMPLACER se NOMME, quand le reste se compte : c'est un littéral du fichier source, donc
+        // connu, donc sans danger à afficher — et c'est la panne d'origine, une stack déployée avec
+        // ses marqueurs manuels jamais remplacés.
         var result = SecretTemplate.Render("a: REMPLACER\nb: \"{{ bw:ntfy:token }}\"", _ => Always("tk"));
 
-        Assert.False(result.Ok);
+        Assert.True(result.Ok);
+        Assert.Contains(Loc.T("Inject_Missing_Replacer"), result.Missing);
     }
 
     [Fact]
@@ -174,8 +201,11 @@ public class SecretTemplateTests
         // ailleurs le périmètre ne sort que des noms et des nombres.
         var result = SecretTemplate.Render("x: \"{{ bw:ntfy:token }}\"", _ => Always("{{ secret-tres-reconnaissable }}"));
 
-        Assert.False(result.Ok);
-        Assert.DoesNotContain(result.Failures, f => f.Contains("reconnaissable", StringComparison.Ordinal));
+        // La règle ne bouge pas malgré le relâchement : on NOMME ce qui vient du fichier, on
+        // COMPTE ce qui vient du coffre. C'est la fuite que ce relâchement pourrait ouvrir.
+        Assert.True(result.Ok);
+        Assert.False(result.Complete);
+        Assert.DoesNotContain(result.Missing, f => f.Contains("reconnaissable", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -231,13 +261,16 @@ public class SecretTemplateTests
     /// fait toujours échouer le rendu, même quand un échappé le côtoie.
     /// </summary>
     [Fact]
-    public void UnResteNonEchappeEchoueTouJoursMemeAuxCotesDUnEchappe()
+    public void UnResteNonEchappeEstSignaleMemeAuxCotesDUnEchappe()
     {
         var result = SecretTemplate.Render(
             "vrai: {{ bw:ntfy:token }}\ndoc:  " + @"\{{ bw:item:champ }}",
             _ => Always("{{ oups }}"));
 
-        Assert.False(result.Ok);
+        // L'échappé ne compte pas, l'étranger si : sinon l'échappement percerait le filet.
+        Assert.True(result.Ok);
+        Assert.False(result.Complete);
+        Assert.NotEmpty(result.Missing);
     }
 
     /// <summary>

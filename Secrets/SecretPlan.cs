@@ -1,4 +1,4 @@
-namespace DockPad.Secrets;
+﻿namespace DockPad.Secrets;
 
 /// <summary>Ce que le fichier demande qu'on fasse de lui.</summary>
 public enum SecretMode
@@ -12,8 +12,8 @@ public enum SecretMode
     /// <summary>Des annotations <c>x-bw</c> : écriture des fichiers de secrets.</summary>
     Files,
 
-    /// <summary>Les deux à la fois : refus.</summary>
-    Ambiguous,
+    /// <summary>Les deux à la fois : on produit les deux.</summary>
+    Both,
 }
 
 /// <summary>
@@ -30,8 +30,9 @@ public enum SecretMode
 /// d'erreur YAML sans rapport avec ce que l'utilisateur essaie de faire.
 /// </para>
 /// <para>
-/// <b>Les deux à la fois sont un refus</b>, jamais un choix implicite : les deux modes produisent
-/// des choses différentes, à des endroits différents, et deviner serait pire que demander.
+/// <b>Les deux à la fois produisent les deux.</b> C'était un refus — « deviner serait pire que
+/// demander » — mais ce raisonnement supposait qu'il fallait <i>choisir</i>. Faire les deux ne
+/// devine rien : chaque source produit sa sortie, à sa place, en un seul déverrouillage du coffre.
 /// </para>
 /// </remarks>
 public static class SecretPlan
@@ -43,7 +44,7 @@ public static class SecretPlan
 
         return (hasMarkers, hasAnnotations) switch
         {
-            (true, true) => SecretMode.Ambiguous,
+            (true, true) => SecretMode.Both,
             (true, false) => SecretMode.Clipboard,
             (false, true) => SecretMode.Files,
             _ => SecretMode.None,

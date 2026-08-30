@@ -56,6 +56,9 @@ public static class SecretTemplate
     /// <c>REMPLACER</c>, lui, reste inconditionnel : c'est une sentinelle manuelle, rien ne demande
     /// à l'échapper.
     /// </remarks>
+    /// <summary>Le marqueur manuel du script d'origine — un littéral, donc nommable sans risque.</summary>
+    private const string ManualMarker = "REMPLACER";
+
     private static readonly Regex LeftoverPattern =
         new(@"(?<!\\)\{\{[^}]*\}\}|REMPLACER", RegexOptions.Compiled);
 
@@ -74,15 +77,32 @@ public static class SecretTemplate
             .ToList();
 
     /// <summary>
-    /// Substitue les marqueurs, ou refuse. <paramref name="lookup"/> interroge le coffre.
+    /// Substitue ce que le coffre sait rendre, et dit ce qu'il ne savait pas.
+    /// <paramref name="lookup"/> interroge le coffre.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Une clé absente n'annule plus le rendu.</b> C'est un renversement assumé de la règle
+    /// d'origine : le coffre qui ne connaît pas un item est un fait <i>sur le coffre</i>, pas une
+    /// panne du rendu, et bloquer les quatre secrets présents à cause du cinquième coûtait plus
+    /// qu'il ne protégeait. Le marqueur non résolu <b>reste littéral</b> dans le texte : il est sa
+    /// propre trace, visible dans ce qu'on colle, et le réécrire en <c>&lt;&lt;MANQUANT&gt;&gt;</c>
+    /// ferait perdre l'information de ce qu'il fallait y mettre.
+    /// </para>
+    /// <para>
+    /// <b>Ce qui reste bloquant</b> : n'avoir rien résolu du tout. Un texte où aucun marqueur n'a
+    /// été remplacé n'est pas un rendu, c'est le fichier de départ — l'annoncer comme un succès
+    /// partiel serait un mensonge poli.
+    /// </para>
+    /// </remarks>
     public static SecretRenderResult Render(string content, Func<SecretMarker, SecretLookup> lookup)
     {
         var markers = FindMarkers(content);
         if (markers.Count == 0)
             return SecretRenderResult.Failed([Loc.T("Inject_Error_NoMarkers")]);
 
-        var failures = new List<string>();
+        var missing = new List<string>();
+        var unresolved = new HashSet<SecretMarker>();
         var resolved = new Dictionary<SecretMarker, string>();
 
         foreach (var marker in markers.Distinct())
@@ -93,33 +113,54 @@ public static class SecretTemplate
             // produirait une ligne syntaxiquement valide et fonctionnellement fausse.
             if (string.IsNullOrEmpty(found.Value))
             {
-                failures.Add(found.Failure
+                missing.Add(found.Failure
                     ?? Loc.F("Inject_Error_EmptyField", marker.Item, marker.Field));
+                unresolved.Add(marker);
                 continue;
             }
 
             resolved[marker] = found.Value;
         }
 
-        if (failures.Count > 0) return SecretRenderResult.Failed(Unique(failures));
+        if (resolved.Count == 0) return SecretRenderResult.Failed(Unique(missing));
 
-        var rendered = MarkerPattern.Replace(content,
-            m => resolved[new SecretMarker(m.Groups[1].Value.Trim(), m.Groups[2].Value)]);
+        var replaced = 0;
+        var rendered = MarkerPattern.Replace(content, m =>
+        {
+            var marker = new SecretMarker(m.Groups[1].Value.Trim(), m.Groups[2].Value);
+            if (!resolved.TryGetValue(marker, out var value)) return m.Value;
 
-        // On compte, on ne recopie pas. Le balayage porte sur le texte SUBSTITUÉ : une valeur du
-        // coffre qui contiendrait elle-même des accolades verrait ce fragment interpolé dans le
-        // message et affiché à l'écran. Partout ailleurs le périmètre ne sort que des noms et des
-        // nombres ; ici il sortait un morceau de secret.
-        var leftovers = FindLeftovers(rendered);
-        if (leftovers.Count > 0)
-            return SecretRenderResult.Failed([Loc.F("Inject_Error_Leftovers", leftovers.Count)]);
+            replaced++;
+            return value;
+        });
 
-        // L'antislash ne tombe qu'ICI, apres le balayage — et l'ordre EST la conception. Le retirer
-        // plus tot rendrait un « {{ … }} » litteral que le filet ci-dessus rejetterait aussitot :
-        // l'echappement se ferait refuser par la garde qui existe pour nous proteger. Dans cet
-        // ordre, les deux tiennent — un reste NON echappe fait toujours echouer le rendu.
-        return SecretRenderResult.Rendered(rendered.Replace(Escaped, Unescaped), markers.Count,
-            markers.Select(m => m.Item).Distinct(StringComparer.Ordinal).Count());
+        // Le second filet ne veto plus, mais il n'a rien perdu de son role : il rapporte ce qu'il
+        // ne CONNAIT pas. Un marqueur qu'on a soi-meme laisse en place est deja nomme dans la
+        // liste ; ce qui survit en plus vient d'ailleurs — d'une valeur du coffre, ou d'un
+        // REMPLACER oublie dans le fichier.
+        var foreign = FindLeftovers(rendered).Where(v => !IsKnown(v, unresolved)).ToList();
+
+        // REMPLACER se nomme : c'est un litteral du fichier source, connu, et c'est la panne
+        // d'origine — celle d'une stack deployee avec ses marqueurs manuels jamais remplaces.
+        if (foreign.Remove(ManualMarker)) missing.Add(Loc.T("Inject_Missing_Replacer"));
+
+        // Le reste se COMPTE et ne se recopie pas : un « {{ … }} » venu d'une valeur du coffre
+        // afficherait un morceau de secret a l'ecran. Cette regle-la ne bouge pas.
+        if (foreign.Count > 0) missing.Add(Loc.F("Inject_Error_Leftovers", foreign.Count));
+
+        return SecretRenderResult.Rendered(
+            rendered.Replace(Escaped, Unescaped),
+            replaced,
+            resolved.Keys.Select(m => m.Item).Distinct(StringComparer.Ordinal).Count(),
+            Unique(missing));
+    }
+
+    /// <summary>Ce reste est-il un marqueur qu'on a soi-même laissé en place ?</summary>
+    private static bool IsKnown(string leftover, HashSet<SecretMarker> unresolved)
+    {
+        var m = MarkerPattern.Match(leftover);
+        return m.Success
+            && unresolved.Contains(new SecretMarker(m.Groups[1].Value.Trim(), m.Groups[2].Value));
     }
 
     private static List<string> Unique(List<string> failures) =>

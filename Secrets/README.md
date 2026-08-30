@@ -46,17 +46,43 @@ La troisième **durcit** le script PowerShell d'origine, qui passait `--session 
 argument — donc lisible par tout processus, y compris par la lecture WMI que DockPad fait lui-même
 pour `SwitchToProcess`.
 
-## La garantie centrale : tout ou rien
+## Rendu au mieux, et l'écran qui ne ment pas
 
-Si un seul marqueur ne se résout pas, **rien** ne va dans le presse-papier et rien n'est écrit. Un
-rendu partiel est pire que pas de rendu : c'est la panne d'origine, une stack déployée avec ses
-marqueurs `REMPLACER` jamais remplacés.
+C'était **tout ou rien**. La règle a été renversée : une clé absente du coffre n'annule plus les
+autres. Ce qui la remplace n'est pas rien — le risque réel n'a jamais été qu'un rendu soit partiel,
+mais qu'il **ait l'air complet**. La panne d'origine, c'est une stack déployée avec ses `REMPLACER`
+parce que personne ne les a vus.
 
-Deux filets, et le second ne fait pas confiance au premier :
+Une seule chose se dégrade : **le coffre qui répond « je ne l'ai pas »**. C'est une donnée sur le
+coffre, elle est listée et on continue. CLI absente, déverrouillage refusé, fichier illisible, deux
+annotations visant le même fichier : ce sont des erreurs, et elles refusent toujours.
 
-1. chaque marqueur non résolu est collecté, et un seul annule tout ;
-2. le texte produit est balayé, et tout `{{ … }}` ou `REMPLACER` survivant le rejette — y compris
-   venu d'une valeur du coffre.
+Trois choses tiennent la garantie à sa place :
+
+1. **un marqueur non résolu reste littéral** — il est sa propre trace, visible dans ce qu'on colle ;
+2. **un fichier de secret n'est jamais écrit vide** — `containerboot` lit `TS_AUTHKEY` sans rien
+   roger : ne pas écrire est bruyant, écrire du vide est silencieux ;
+3. **n'avoir rien résolu du tout reste un échec** — c'est le dernier garde, et celui qui compte.
+
+L'écran porte le reste : un état **incomplet** en ambre, distinct du vert, qui liste les clés
+absentes, les fichiers écrits et les fichiers périmés — et qui, seul de tous, **ne se referme pas
+tout seul**.
+
+### On nomme ce qui vient du fichier, on compte ce qui vient du coffre
+
+Le second filet ne veto plus, mais il n'a rien perdu de son rôle : il rapporte ce qu'il ne
+**connaît** pas. Une clé absente et `REMPLACER` viennent du gabarit — on les nomme. Un `{{ … }}`
+venu d'une **valeur du coffre** reste **compté, jamais recopié** : ce serait un morceau de secret à
+l'écran. Un test le vérifie au milieu de clés manquantes, parce que c'est la fuite que ce
+relâchement pourrait ouvrir sans qu'on la voie.
+
+### Les périmés : signalés, supprimés sur demande
+
+Une clé disparue laisse son fichier **intact**. Le supprimer d'office ferait d'un coffre
+temporairement inaccessible la cause d'un déploiement détruit. Le bouton **Supprimer ces fichiers**
+demande un clic, et ne supprime **que** des noms issus d'annotations `x-bw` dont la clé manque —
+jamais un balayage de `secrets/`, qui peut contenir autre chose. Les deux règles sont vérifiées par
+mutation.
 
 ### L'échappement, et l'ordre qui le rend compatible
 
@@ -68,10 +94,12 @@ Mais un marqueur échappé produit un `{{ … }}` littéral, que le second filet
 **balayer** (hors échappés) → **puis seulement** retirer l'antislash. Le retirer plus tôt le ferait
 refuser par la garde censée nous protéger.
 
-Un `{{ … }}` **non** échappé fait toujours échouer le rendu — un test le vérifie aux côtés d'un
-échappé, parce que c'est précisément ce qu'un échappement mal placé casserait sans bruit.
+Un `{{ … }}` **non** échappé est toujours signalé — un test le vérifie aux côtés d'un échappé,
+parce que c'est précisément ce qu'un échappement mal placé masquerait sans bruit.
 
-`SecretRenderResult` est *soit* un texte, *soit* une liste d'échecs. Lire `Text` sur un échec lève.
+`SecretRenderResult` est *soit* un texte, *soit* une liste d'échecs ; lire `Text` sur un échec lève.
+`Missing` vit **à côté** du texte : ce n'est pas un troisième état, c'est un succès qui sait ce qui
+lui manque.
 
 **Conséquence assumée du second filet** : il rejette *tout* `{{ … }}`, y compris un gabarit Go ou
 Jinja légitime qui cohabiterait dans le fichier. Il ne sait pas distinguer, et il se trompe du bon

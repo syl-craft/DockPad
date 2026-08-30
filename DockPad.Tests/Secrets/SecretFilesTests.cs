@@ -49,11 +49,11 @@ public class SecretFilesTests : IDisposable
     }
 
     [Fact]
-    public void LesDeuxAlaFois_SontUnRefus()
+    public void LesDeuxAlaFois_ProduisentLesDeux()
     {
         // Deviner serait pire que demander : les deux modes produisent des choses différentes, à
         // des endroits différents.
-        Assert.Equal(SecretMode.Ambiguous, SecretPlan.Of(Annotated + "\n# {{ bw:a:b }}\nx: \"{{ bw:a:b }}\""));
+        Assert.Equal(SecretMode.Both, SecretPlan.Of(Annotated + "\n# {{ bw:a:b }}\nx: \"{{ bw:a:b }}\""));
     }
 
     [Fact]

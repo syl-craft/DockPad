@@ -1080,10 +1080,7 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_OpenFolder" xml:space="preserve">
     <value>0uvr1r l3 d05513r</value>
   </data>
-  <data name="Inject_Error_Ambiguous" xml:space="preserve">
-    <value>C3 f1ch13r p0rt3 4 l4 f015 d35 m4rqu3ur5 bw 3t d35 4nn0t4t10n5 x-bw. G4rd3 l'un 0u l'4utr3 : 1l5 pr0du153nt d35 ch0535 d1ff3r3nt35, 4 d35 3ndr01t5 d1ff3r3nt5.</value>
-  </data>
-  <data name="Inject_Failed_Hint_Files" xml:space="preserve">
+<data name="Inject_Failed_Hint_Files" xml:space="preserve">
     <value>Un j3u d3 53cr3t5 p4rt13ll3m3nt 3cr1t 53r41t p1r3 qu3 r13n : 4ucun f1ch13r n'4 3t3 cr33.</value>
   </data>
   <data name="Inject_Sync_Subtitle" xml:space="preserve">
@@ -1241,5 +1238,29 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   </data>
   <data name="Settings_Inject_MenuHint" xml:space="preserve">
     <value>5ur t0u5 l35 f1ch13r5, y c0mpr15 c3ux 54n5 3xt3n510n. 5ur W1nd0w5 11 3ll3 53 tr0uv3 50u5 « 4ff1ch3r plu5 d'0pt10n5 », 0u d1r3ct3m3nt 4v3c M4j + cl1c dr01t.</value>
+  </data>
+  <data name="Inject_Partial_Title" xml:space="preserve">
+    <value>Rendu incomplet</value>
+  </data>
+  <data name="Inject_Partial_Summary" xml:space="preserve">
+    <value>{0} {0:plural:marqueur résolu|marqueurs résolus}, {1} {1:plural:fichier écrit|fichiers écrits} — mais il manque des valeurs.</value>
+  </data>
+  <data name="Inject_Partial_SummaryFiles" xml:space="preserve">
+    <value>{0} {0:plural:fichier écrit|fichiers écrits} — mais il manque des valeurs.</value>
+  </data>
+  <data name="Inject_Partial_Missing" xml:space="preserve">
+    <value>Clés absentes du coffre</value>
+  </data>
+  <data name="Inject_Partial_Written" xml:space="preserve">
+    <value>Fichiers écrits</value>
+  </data>
+  <data name="Inject_Partial_Stale" xml:space="preserve">
+    <value>Ces fichiers existent déjà mais leur clé a disparu du coffre. Ils n'ont pas été touchés : leur valeur précédente est conservée.</value>
+  </data>
+  <data name="Inject_Partial_Delete" xml:space="preserve">
+    <value>Supprimer ces fichiers</value>
+  </data>
+  <data name="Inject_Missing_Replacer" xml:space="preserve">
+    <value>Un marqueur REMPLACER subsiste dans le fichier.</value>
   </data>
 </root>

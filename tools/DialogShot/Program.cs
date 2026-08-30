@@ -129,6 +129,7 @@ internal static class Program
             "inject" => InjectionWindow(unlocked: false),
             "inject-failed" => InjectionWindow(unlocked: true),
             "inject-files" => InjectionFilesWindow(),
+            "inject-partial" => InjectionPartialWindow(),
             _ => throw new ArgumentException($"fenêtre inconnue : {target}"),
         };
 
@@ -200,9 +201,38 @@ internal static class Program
 
         var outcome = new DockPad.Secrets.SecretFilesOutcome(
             @"C:\Users\moi\Qnap\vaultwarden\secrets",
-            ["ts-authkey", "smtp-password", "push-installation-id", "push-installation-key"], 1);
+            ["ts-authkey", "smtp-password", "push-installation-id", "push-installation-key"], 1, []);
 
         Invoke(window, "ShowFiles", outcome);
+        return window;
+    }
+
+    /// <summary>
+    /// Le compte-rendu INCOMPLET : produit, mais avec des trous.
+    /// </summary>
+    /// <remarks>
+    /// C'est le seul ecran qui demande une decision — supprimer les fichiers perimes, ou non — et
+    /// le seul qui ne se referme pas tout seul. Donc celui qui vaut le plus une relecture.
+    /// </remarks>
+    private static Window InjectionPartialWindow()
+    {
+        var window = new DockPad.Secrets.SecretInjectionWindow(
+            Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
+
+        var files = new DockPad.Secrets.SecretFilesOutcome(
+            @"C:\Users\moi\Qnap\vaultwarden\secrets",
+            ["ts-authkey", "push-installation-id"], 1,
+            ["smtp-password", "admin-token"]);
+
+        var render = DockPad.Secrets.SecretRenderResult.Rendered("services:", 3, 1, []);
+
+        var report = DockPad.Secrets.InjectionReport.Produced(render, files,
+        [
+            "vaultwarden-infra : le champ « smtp-password » est vide dans le coffre.",
+            "admin-token : aucun item de ce nom dans le coffre.",
+        ]);
+
+        Invoke(window, "ShowIncomplete", report);
         return window;
     }
 

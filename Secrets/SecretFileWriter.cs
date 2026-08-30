@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using System.Threading;
 
@@ -112,6 +112,68 @@ public static class SecretFileWriter
         }
 
         return files.Select(f => f.Name).ToList();
+    }
+
+    /// <summary>
+    /// Parmi ces noms, ceux qui existent réellement dans <c>&lt;dossier&gt;\secrets\</c>.
+    /// </summary>
+    /// <remarks>
+    /// Sert à ne proposer la suppression que de fichiers qui sont là. Un nom qui ne pourrait pas
+    /// être écrit ne peut pas non plus être supprimé : <see cref="IsWritableName"/> filtre d'abord,
+    /// sinon un <c>..</c> venu d'une annotation ferait sortir la question du dossier.
+    /// </remarks>
+    public static IReadOnlyList<string> Existing(string folder, IReadOnlyList<string> names)
+    {
+        var target = Path.Combine(folder, FolderName);
+
+        return names.Where(IsWritableName)
+                    .Where(n => File.Exists(Path.Combine(target, n)))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+    }
+
+    /// <summary>
+    /// Supprime ces fichiers de <c>&lt;dossier&gt;\secrets\</c>, et rend ceux qui l'ont été.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Jamais un balayage du dossier.</b> On ne supprime que des noms qu'on nous donne, et
+    /// l'appelant ne construit cette liste qu'à partir d'annotations <c>x-bw</c> dont la clé a
+    /// disparu du coffre. Le dossier peut contenir autre chose, et un ménage automatique dans un
+    /// dossier de secrets est précisément le geste qu'on ne veut pas voir arriver tout seul.
+    /// </para>
+    /// <para>
+    /// <b>Jamais d'office.</b> Cette méthode n'est appelée que sur un clic explicite : un coffre
+    /// temporairement inaccessible ne doit pas pouvoir détruire un déploiement qui marchait.
+    /// </para>
+    /// <para>
+    /// Un échec de suppression n'est pas une panne de l'injection — les fichiers utiles sont déjà
+    /// écrits. Il est journalisé et le nom n'est pas rendu comme supprimé, ce qui suffit à ce que
+    /// le compte-rendu ne mente pas.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<string> Delete(string folder, IReadOnlyList<string> names)
+    {
+        var target = Path.Combine(folder, FolderName);
+        var deleted = new List<string>();
+
+        foreach (var name in names.Where(IsWritableName).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var path = Path.Combine(target, name);
+
+            try
+            {
+                if (!File.Exists(path)) continue;
+                File.Delete(path);
+                deleted.Add(name);
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Warn(ex, "Suppression d'un fichier de secret périmé");
+            }
+        }
+
+        return deleted;
     }
 
     /// <summary>

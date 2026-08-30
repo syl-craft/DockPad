@@ -1080,10 +1080,7 @@ This cannot be undone.</value>
   <data name="Inject_OpenFolder" xml:space="preserve">
     <value>Open the folder</value>
   </data>
-  <data name="Inject_Error_Ambiguous" xml:space="preserve">
-    <value>This file carries both bw markers and x-bw annotations. Keep one or the other: they produce different things, in different places.</value>
-  </data>
-  <data name="Inject_Failed_Hint_Files" xml:space="preserve">
+<data name="Inject_Failed_Hint_Files" xml:space="preserve">
     <value>A partially written set of secrets would be worse than none at all, so no file was created.</value>
   </data>
   <data name="Inject_Sync_Subtitle" xml:space="preserve">
@@ -1241,5 +1238,29 @@ This cannot be undone.</value>
   </data>
   <data name="Settings_Inject_MenuHint" xml:space="preserve">
     <value>On every file, including ones with no extension. On Windows 11 it sits under “Show more options”, or directly with Shift + right-click.</value>
+  </data>
+  <data name="Inject_Partial_Title" xml:space="preserve">
+    <value>Incomplete render</value>
+  </data>
+  <data name="Inject_Partial_Summary" xml:space="preserve">
+    <value>{0} {0:plural:marker resolved|markers resolved}, {1} {1:plural:file written|files written} — but some values are missing.</value>
+  </data>
+  <data name="Inject_Partial_SummaryFiles" xml:space="preserve">
+    <value>{0} {0:plural:file written|files written} — but some values are missing.</value>
+  </data>
+  <data name="Inject_Partial_Missing" xml:space="preserve">
+    <value>Keys missing from the vault</value>
+  </data>
+  <data name="Inject_Partial_Written" xml:space="preserve">
+    <value>Files written</value>
+  </data>
+  <data name="Inject_Partial_Stale" xml:space="preserve">
+    <value>These files already exist but their key is gone from the vault. They were left untouched: their previous value is kept.</value>
+  </data>
+  <data name="Inject_Partial_Delete" xml:space="preserve">
+    <value>Delete these files</value>
+  </data>
+  <data name="Inject_Missing_Replacer" xml:space="preserve">
+    <value>A REMPLACER marker remains in the file.</value>
   </data>
 </root>

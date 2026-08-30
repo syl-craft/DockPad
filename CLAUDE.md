@@ -158,7 +158,8 @@ Secrets/                                 PERIMETRE D'AUDIT — tout ce qui voit 
     SecretMenu.cs                        Pose/retire l'unique cle HKCU\Software\Classes\*\shell (tous fichiers)
     BwItem.cs                            Item de coffre tel que la CLI le rend
     SecretMarker.cs                      Un marqueur {{ bw:item:champ }}, et ce que le coffre repond
-    SecretPlan.cs                        PUR — quel mode le fichier demande : presse-papier ou fichiers
+    SecretPlan.cs                        PUR — quel mode le fichier demande : presse-papier, fichiers, ou les deux
+    SecretBundle.cs                      PUR — resout les annotations au mieux : ce qu'on ecrit, ce qui manque, ce qui est perime
     ComposeSecrets.cs                    PUR — lit les annotations x-bw du bloc secrets: (YamlDotNet)
     SecretFileWriter.cs                  Le SEUL fichier du dossier autorise a ecrire sur le disque
     SecretRenderResult.cs                Un rendu, ou une liste d'echecs — jamais les deux
@@ -705,7 +706,7 @@ qu'on fait de lui (`SecretPlan`, décision pure sur le contenu) :
 |---|---|
 | des marqueurs `{{ bw:item:champ }}` | le rendu dans le **presse-papier** |
 | des annotations `x-bw:` sous `secrets:` | les **fichiers de secrets** dans un sous-dossier `secrets/` |
-| les deux | **refus** — deviner serait pire que demander |
+| les deux | **les deux** — les fichiers, et le rendu dans le presse-papier |
 | ni l'un ni l'autre | refus « rien à produire » |
 | un marqueur précédé d'un antislash — `\{{ bw:item:champ }}` | le marqueur **littéral**, antislash retiré, jamais résolu |
 
@@ -809,18 +810,76 @@ que dans `ProcessStartInfo.Environment` du processus enfant.
 > ça, `["BW_PASSWORD"] = motDePasse` — qui est **précisément** la bonne façon de faire — serait
 > signalé, et la garde pousserait à écrire le code dangereux pour se taire.
 
-#### La garantie centrale : tout ou rien
-Si un seul marqueur ne se résout pas, rien ne va dans le presse-papier. Deux filets, et **le second
-ne fait pas confiance au premier** : collecte des marqueurs non résolus, puis balayage du texte
-produit rejetant tout `{{ … }}` ou `REMPLACER` survivant — y compris venu d'une valeur du coffre.
-`SecretRenderResult` est *soit* un texte *soit* une liste d'échecs, jamais les deux : lire `Text` sur
-un échec lève. Même raison d'être qu'`ActionResult`.
+#### Rendu au mieux, et l'écran qui ne ment pas
+C'était **tout ou rien** : un seul marqueur non résolu, et rien ne partait dans le presse-papier.
+La règle a été renversée à la demande — bloquer les quatre secrets présents à cause du cinquième
+coûtait plus qu'elle ne protégeait.
 
-Conséquence assumée : le second filet rejette **tout** `{{ … }}`, gabarit Go ou Jinja légitime
-compris. Il ne sait pas distinguer, et il se trompe du bon côté.
+**Ce qui la remplace n'est pas rien.** Le risque réel n'a jamais été qu'un rendu soit partiel, mais
+qu'il **ait l'air complet** : la panne d'origine, c'est une stack déployée avec ses `REMPLACER`
+parce que personne ne les a vus. Tout le poids est donc passé sur l'écran, qui porte un état
+**« rendu incomplet »** en ambre, distinct du vert, et qui — seul de tous — **ne se referme pas
+tout seul** : c'est le seul qui demande une décision.
+
+Une seule chose se dégrade, et la ligne est nette :
+
+| | |
+|---|---|
+| le coffre répond « je ne l'ai pas » | une clé manquante — **donnée**, listée, on continue |
+| CLI absente, déverrouillage refusé, organisation introuvable, fichier illisible, deux annotations visant le même fichier | **erreur** — refus, comme avant |
+
+- **Un marqueur non résolu reste littéral** dans le texte. Il est sa propre trace, visible dans ce
+  qu'on colle ; le réécrire en `<<MANQUANT>>` ferait perdre l'information de ce qu'il fallait y
+  mettre
+- **Un fichier de secret n'est jamais écrit vide.** C'est la moitié dangereuse : Vaultwarden rogne
+  ce qu'il lit via `_FILE`, mais `containerboot` lit `TS_AUTHKEY` par `file:` sans rien roger — il
+  partirait avec une chaîne vide et échouerait bien plus loin. Ne pas écrire est bruyant, écrire du
+  vide est silencieux
+- **N'avoir rien résolu du tout reste un échec** : c'est le dernier garde du tout-ou-rien, et celui
+  qui compte. Un texte où aucun marqueur n'a été remplacé n'est pas un rendu, c'est le fichier de
+  départ
+- **`SecretRenderResult` garde sa forme** — *soit* un texte *soit* des échecs. `Missing` vit **à
+  côté** du texte : ce n'est pas un troisième état, c'est un succès qui sait ce qui lui manque, et
+  `Complete` est ce que l'écran interroge
+
+#### On nomme ce qui vient du fichier, on compte ce qui vient du coffre
+Le second filet ne veto plus, mais il n'a rien perdu de son rôle : il rapporte ce qu'il ne
+**connaît** pas. Un marqueur qu'on a soi-même laissé en place est déjà nommé ; ce qui survit en plus
+vient d'ailleurs.
+
+- une **clé absente** vient du gabarit : la nommer est sans danger, et c'est tout l'intérêt ;
+- `REMPLACER` se nomme aussi — littéral connu, et c'est la panne d'origine ;
+- un `{{ … }}` venu d'une **valeur du coffre** reste **compté, jamais recopié**. Ce serait un
+  morceau de secret à l'écran, et un test le vérifie au milieu de clés manquantes — c'est la fuite
+  que ce relâchement pourrait ouvrir sans qu'on la voie.
 
 Un fichier **sans aucun marqueur** est un refus, pas un cas neutre : c'est le signe qu'on a visé le
 mauvais fichier.
+
+#### Les fichiers périmés : signalés, supprimés sur demande
+Une clé disparue du coffre laisse son fichier **intact** sur le disque. Le supprimer d'office ferait
+d'un coffre temporairement inaccessible la cause d'un déploiement détruit.
+
+L'écran incomplet le liste et propose **Supprimer ces fichiers** — un clic, jamais un défaut, jamais
+une case pré-cochée. Deux gardes tiennent ce bouton :
+
+- **jamais un balayage de `secrets/`** : on ne supprime que des noms issus d'annotations `x-bw` dont
+  la clé manque. Le dossier peut contenir autre chose, et un ménage automatique dans un dossier de
+  secrets est précisément le geste qu'on ne veut pas voir arriver tout seul ;
+- **la suppression vit dans `SecretFileWriter`**, seul fichier du périmètre autorisé à toucher le
+  disque : la question « où un secret peut-il toucher le disque ? » garde une réponse d'un seul mot.
+
+Les deux sont **vérifiées par mutation** — un balayage du dossier, et un fichier écrit vide : les
+deux font échouer la suite.
+
+#### Les deux modes à la fois
+Un fichier qui porte des marqueurs **et** des annotations produit les deux, en **un seul
+déverrouillage** et un seul `list items`. C'était un refus — « deviner serait pire que demander » —
+mais ce raisonnement supposait qu'il fallait *choisir* : faire les deux ne devine rien.
+
+Si le presse-papier est occupé alors que les fichiers sont écrits, les fichiers **restent acquis** et
+l'indisponibilité rejoint la liste des manques. Effacer ce qui a marché pour punir ce qui a raté
+serait le mauvais sens.
 
 #### Aucune clé de session n'est conservée
 Mot de passe maître **à chaque injection**. Rien à garder, rien à faire expirer, rien à tester —
@@ -959,8 +1018,10 @@ première erreur qu'on fait ; le texte d'aide le dit.
 - **Pas de `bw sync`** avant lecture : lent, et le script ne le faisait pas
 
 #### Captures
-`DialogShot.exe inject <fr|en> <png>` (saisie du mot de passe) et `inject-failed` (compte-rendu
-d'échec) — les deux états qui valent une relecture. Posés **par réflexion**, comme `OverlayShot`
+`DialogShot.exe inject <fr|en> <png>` (saisie du mot de passe), `inject-failed` (compte-rendu
+d'échec), `inject-files` (fichiers écrits) et `inject-partial` (**rendu incomplet** : clés absentes,
+fichiers écrits, fichiers périmés et leur bouton de suppression) — les états qui valent une
+relecture. Le dernier est le plus important : c'est le seul écran qui demande une décision. Posés **par réflexion**, comme `OverlayShot`
 appelle `ShowHintOverlay` : les exposer ferait entrer du code de test dans la fenêtre. Aucun des deux
 ne touche au presse-papier, l'armement appartenant au déroulement et non à l'affichage.
 

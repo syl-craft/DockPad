@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DockPad.Services;
@@ -11,12 +11,23 @@ namespace DockPad.Secrets;
 /// compose de référence viennent tous de <c>vaultwarden-infra</c>, et annoncer « 5 items lus »
 /// donnerait une fausse idée de ce qui a été interrogé.
 /// </param>
-public sealed record SecretFilesOutcome(string Folder, IReadOnlyList<string> Written, int ItemCount);
+/// <param name="Stale">
+/// Fichiers <b>présents sur le disque</b> dont la clé a disparu du coffre. Ils ne sont pas touchés :
+/// la suppression demande un geste, sinon un coffre temporairement inaccessible détruirait un
+/// déploiement qui marchait.
+/// </param>
+public sealed record SecretFilesOutcome(
+    string Folder, IReadOnlyList<string> Written, int ItemCount, IReadOnlyList<string> Stale);
 
 /// <summary>
-/// Ce qu'une étape a produit : <b>soit</b> un rendu, <b>soit</b> des fichiers, <b>soit</b> une
-/// liste d'échecs — jamais deux à la fois.
+/// Ce qu'une étape a produit : un rendu, des fichiers, <b>ou les deux</b> — ou une liste d'échecs.
 /// </summary>
+/// <remarks>
+/// <b><see cref="Missing"/> n'est pas <see cref="Failures"/>.</b> Une clé que le coffre ne connaît
+/// pas est une donnée : on produit ce qu'on peut et on la nomme. <see cref="Failures"/> reste ce
+/// qui empêche de produire quoi que ce soit — CLI absente, déverrouillage refusé, fichier
+/// illisible. Confondre les deux, c'est soit bloquer sur un détail, soit taire une panne.
+/// </remarks>
 /// <remarks>
 /// <c>Diagnostic</c> est l'erreur standard de la CLI — <b>jamais</b> sa sortie standard, qui porte
 /// les données du coffre. Il n'est pas traduit : c'est un diagnostic, il va au journal et en
@@ -34,9 +45,15 @@ public sealed record InjectionReport
     /// <summary>Les fichiers écrits, en mode fichiers.</summary>
     public SecretFilesOutcome? Files { get; private init; }
 
+    /// <summary>Ce que le coffre n'a pas su rendre. Nommé, parce que ça vient du fichier source.</summary>
+    public IReadOnlyList<string> Missing { get; private init; } = [];
+
     public string? Diagnostic { get; private init; }
 
     public bool Ok => Failures.Count == 0;
+
+    /// <summary>Produit, et sans trou : le seul cas qui a droit au vert.</summary>
+    public bool Complete => Ok && Missing.Count == 0;
 
     public static InjectionReport Fail(string failure, string? diagnostic = null) =>
         new() { Failures = [failure], Diagnostic = diagnostic };
@@ -46,9 +63,14 @@ public sealed record InjectionReport
 
     /// <summary>Le rendu presse-papier — un échec de rendu devient un échec de rapport, ici et nulle part ailleurs.</summary>
     public static InjectionReport Rendered(SecretRenderResult result) =>
-        result.Ok ? new() { Render = result } : new() { Failures = result.Failures };
+        result.Ok
+            ? new() { Render = result, Missing = result.Missing }
+            : new() { Failures = result.Failures };
 
-    public static InjectionReport Written(SecretFilesOutcome files) => new() { Files = files };
+    /// <summary>Ce qu'une injection a produit : l'un, l'autre, ou les deux, avec ses manques.</summary>
+    public static InjectionReport Produced(
+        SecretRenderResult? render, SecretFilesOutcome? files, IReadOnlyList<string> missing) =>
+        new() { Render = render, Files = files, Missing = missing };
 
     /// <summary>Le cache local a été rafraîchi. Rien n'a été lu, rien n'a été produit.</summary>
     public static InjectionReport Synced() => new() { DidSync = true };
@@ -214,65 +236,94 @@ public static class SecretInjectionService
             : InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), Diagnostic(synced));
     }
 
-    /// <summary>Déverrouille, lit le coffre, rend le gabarit dans le presse-papier.</summary>
-    public static async Task<InjectionReport> RenderAsync(
-        string content, string masterPassword, CancellationToken token)
-    {
-        var (vault, failure) = await OpenVaultAsync(masterPassword, token).ConfigureAwait(false);
-        return failure ?? InjectionReport.Rendered(SecretTemplate.Render(content, vault!.Lookup));
-    }
-
     /// <summary>
-    /// Déverrouille, lit le coffre, écrit les fichiers de secrets annotés à côté du compose.
+    /// Déverrouille une fois, puis produit ce que le fichier demande : le rendu, les fichiers, ou
+    /// les deux.
     /// </summary>
     /// <remarks>
-    /// <b>Tout ou rien, comme le rendu</b> : chaque annotation est résolue d'abord, et un seul
-    /// échec annule l'écriture entière. Un jeu de secrets déjà correct sur le disque n'est jamais
-    /// remplacé à moitié.
+    /// <para>
+    /// <b>Un seul déverrouillage et un seul <c>list items</c> pour les deux sorties.</b> Enchaîner
+    /// les deux méthodes d'avant aurait payé deux fois le prix du coffre pour le même mot de passe.
+    /// </para>
+    /// <para>
+    /// <b>Ce qui bloque est vérifié avant d'ouvrir le coffre</b> : annotations illisibles, deux
+    /// annotations visant le même fichier, nom qui sortirait du dossier. Aucune de ces trois ne
+    /// produira rien de bon — inutile de réclamer un mot de passe maître pour s'en apercevoir après.
+    /// </para>
+    /// <para>
+    /// <b>Ne rien avoir produit du tout est un échec</b>, pas un succès vide : c'est le seul garde
+    /// qui reste de la règle du tout-ou-rien, et c'est celui qui compte.
+    /// </para>
     /// </remarks>
-    public static async Task<InjectionReport> WriteFilesAsync(
-        string content, string folder, string masterPassword, CancellationToken token)
+    public static async Task<InjectionReport> InjectAsync(
+        string content, string folder, SecretMode mode, string masterPassword, CancellationToken token)
     {
-        var (entries, annotationFailures, yamlError) = ComposeSecrets.Extract(content);
+        IReadOnlyList<ComposeSecret> entries = [];
 
-        if (annotationFailures.Count > 0)
-            return InjectionReport.Failed(annotationFailures, yamlError);
+        if (mode is SecretMode.Files or SecretMode.Both)
+        {
+            var (scanned, annotationFailures, yamlError) = ComposeSecrets.Extract(content);
+            if (annotationFailures.Count > 0)
+                return InjectionReport.Failed(annotationFailures, yamlError);
 
-        // Refuser AVANT d'ouvrir le coffre : deux annotations qui visent le même fichier, ou un
-        // nom qui sortirait du dossier, ne produiront rien de bon — inutile de réclamer un mot de
-        // passe maître pour s'en apercevoir après.
-        var blocking = SecretFileWriter.Conflicts(entries)
-            .Concat(entries.Where(e => !SecretFileWriter.IsWritableName(e.FileName))
-                           .Select(e => Loc.F("Inject_Error_BadFileName", e.Key)))
-            .ToList();
+            var blocking = SecretFileWriter.Conflicts(scanned)
+                .Concat(scanned.Where(e => !SecretFileWriter.IsWritableName(e.FileName))
+                               .Select(e => Loc.F("Inject_Error_BadFileName", e.Key)))
+                .ToList();
 
-        if (blocking.Count > 0) return InjectionReport.Failed(blocking);
+            if (blocking.Count > 0) return InjectionReport.Failed(blocking);
+            entries = scanned;
+        }
 
         var (vault, failure) = await OpenVaultAsync(masterPassword, token).ConfigureAwait(false);
         if (failure is not null) return failure;
 
-        var files = new List<SecretFile>();
-        var unresolved = new List<string>();
+        var missing = new List<string>();
+        SecretFilesOutcome? files = null;
+        SecretRenderResult? render = null;
 
-        foreach (var entry in entries)
+        if (entries.Count > 0)
         {
-            var found = vault!.Lookup(entry.Marker);
-            if (string.IsNullOrEmpty(found.Value))
-                unresolved.Add(found.Failure ?? Loc.F("Inject_Error_EmptyField", entry.Marker.Item, entry.Marker.Field));
-            else
-                files.Add(new SecretFile(entry.FileName, found.Value));
+            var bundle = SecretBundle.Resolve(entries, vault!.Lookup);
+            missing.AddRange(bundle.Missing);
+
+            var written = SecretFileWriter.Write(folder, bundle.Files);
+            var target = Path.Combine(folder, SecretFileWriter.FolderName);
+
+            // Les perimes sont ceux qui EXISTENT vraiment : proposer la suppression d'un fichier
+            // absent ferait douter de ce que la fenetre sait du disque.
+            var stale = SecretFileWriter.Existing(folder, bundle.Stale);
+
+            files = new SecretFilesOutcome(target, written, bundle.ItemCount, stale);
         }
 
-        if (unresolved.Count > 0)
-            return InjectionReport.Failed(unresolved.Distinct(StringComparer.Ordinal).ToList());
+        if (mode is SecretMode.Clipboard or SecretMode.Both)
+        {
+            render = SecretTemplate.Render(content, vault!.Lookup);
 
-        var written = SecretFileWriter.Write(folder, files);
-        var target = System.IO.Path.Combine(folder, SecretFileWriter.FolderName);
+            if (render.Ok) missing.AddRange(render.Missing);
+            else
+            {
+                // En mode presse-papier seul, un rendu qui n'aboutit pas est TOUT l'echec. Combine
+                // aux fichiers, c'est une moitie manquante : les fichiers ecrits restent acquis, et
+                // la raison rejoint la liste des manques plutot que d'effacer ce qui a marche.
+                if (files is null) return InjectionReport.Failed(render.Failures);
 
-        var items = entries.Select(e => e.Marker.Item).Distinct(StringComparer.Ordinal).Count();
+                missing.AddRange(render.Failures);
+                render = null;
+            }
+        }
 
-        return InjectionReport.Written(new SecretFilesOutcome(target, written, items));
+        if (render is null && files is null)
+            return InjectionReport.Failed(Fallback(missing));
+
+        return InjectionReport.Produced(render, files, missing.Distinct(StringComparer.Ordinal).ToList());
     }
+
+    /// <summary>Un échec doit dire ce qui a échoué — même quand la liste des manques est vide.</summary>
+    private static IReadOnlyList<string> Fallback(List<string> missing) =>
+        missing.Count > 0 ? missing.Distinct(StringComparer.Ordinal).ToList()
+                          : [Loc.T("Inject_Error_NoMarkers")];
 
     /// <summary>Le coffre ouvert, ou l'échec à afficher. La clé de session ne sort pas d'ici.</summary>
     private static async Task<(SecretVault? Vault, InjectionReport? Failure)> OpenVaultAsync(
