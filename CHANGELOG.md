@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.18.0] — 2026-08-30
+
+### Nouveautés utilisateur
+- **Une case « Synchroniser le coffre avant d'injecter » sur l'écran du mot de passe, cochée par défaut.** La CLI Bitwarden lit un cache local : sans elle, un item qu'on vient de modifier dans le coffre n'est pas encore visible, et c'est une valeur périmée qui part sur le NAS. Le choix se retient
+- Une synchronisation qui échoue **ne bloque pas** l'injection, mais le compte-rendu le dit : les valeurs viennent alors du cache local et peuvent être périmées
+
+### Notes
+- Aucun affichage d'ancienneté du cache n'aurait suffi : le cas qui a mordu avait un cache de deux minutes, frais mais antérieur à la modification du coffre. Seule une synchronisation **juste avant la lecture** ferme le trou
+- Elle a lieu entre le déverrouillage et la lecture, donc sans second mot de passe et sans appel supplémentaire au coffre
+- L'écrasement d'un fichier de secret existant a été remis en cause et vérifié : il fonctionne — c'était bien le cache qui servait d'anciennes valeurs
+
 ## [1.17.0] — 2026-08-30
 
 ### Nouveautés utilisateur
