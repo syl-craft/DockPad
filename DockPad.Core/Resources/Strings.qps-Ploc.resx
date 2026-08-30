@@ -1140,10 +1140,7 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_Unlock_Button" xml:space="preserve">
     <value>D3v3rr0u1ll3r</value>
   </data>
-<data name="Inject_Success_Clipboard" xml:space="preserve">
-    <value>Pr3553-p4p13r r3mpl1</value>
-  </data>
-  <data name="Inject_Countdown" xml:space="preserve">
+<data name="Inject_Countdown" xml:space="preserve">
     <value>3ff4c3m3nt d4n5 {0} 5</value>
   </data>
   <data name="Inject_Failed_Title" xml:space="preserve">
@@ -1298,5 +1295,29 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   </data>
   <data name="Inject_Missing_SyncFailed" xml:space="preserve">
     <value>L3 c0ffr3 n’4 p45 pu 3tr3 5ynchr0n153 : l35 v4l3ur5 v13nn3nt du c4ch3 l0c4l 3t p3uv3nt 3tr3 p3r1m335.</value>
+  </data>
+  <data name="Inject_Clipboard_Pending" xml:space="preserve">
+    <value>L3 f1ch13r r3ndu 35t pr3t. M3t5-l3 d4n5 l3 pr3553-p4p13r qu4nd tu 3n 45 f1n1 4v3c l35 f1ch13r5.</value>
+  </data>
+  <data name="Inject_Clipboard_Filled" xml:space="preserve">
+    <value>L3 f1ch13r r3ndu 35t d4n5 l3 pr3553-p4p13r.</value>
+  </data>
+  <data name="Inject_Clipboard_Held" xml:space="preserve">
+    <value>L3 f1ch13r r3ndu 35t d4n5 l3 pr3553-p4p13r — d3c0mpt3 4rr3t3. 1l 35t t0uj0ur5 3ff4c3 4 l4 f3rm3tur3 d3 D0ckP4d.</value>
+  </data>
+  <data name="Inject_Clipboard_Cleared" xml:space="preserve">
+    <value>L3 pr3553-p4p13r 4 3t3 v1d3.</value>
+  </data>
+  <data name="Inject_Clipboard_Arm" xml:space="preserve">
+    <value>M3ttr3 d4n5 l3 pr3553-p4p13r</value>
+  </data>
+  <data name="Inject_Clipboard_Pause" xml:space="preserve">
+    <value>4rr3t3r l3 d3c0mpt3</value>
+  </data>
+  <data name="Inject_Clipboard_Clear" xml:space="preserve">
+    <value>V1d3r l3 pr3553-p4p13r</value>
+  </data>
+  <data name="Inject_Files_Delete" xml:space="preserve">
+    <value>5uppr1m3r l35 f1ch13r5 g3n3r35</value>
   </data>
 </root>

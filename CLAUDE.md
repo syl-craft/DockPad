@@ -1008,6 +1008,43 @@ case unique, pré-cochée, dont décocher revient à ne rien faire, n'est pas un
 plus. Il vit **dans cette fenêtre**, comme cinquième état — une seconde fenêtre serait exactement le
 défaut qu'on cherche à supprimer.
 
+**Le presse-papier attend un clic dès que des fichiers l'accompagnent.** Le décompte courait pendant
+qu'on copiait les fichiers sur le NAS : quatre-vingt-dix secondes plus tard le rendu était effacé, et
+rien n'avait été collé. Le rendu est donc produit avec les fichiers — **un seul déverrouillage** —
+mais gardé en mémoire jusqu'au bouton *Mettre dans le presse-papier*. L'attente devient bornée par le
+geste plutôt que par le minuteur.
+
+- **Ce n'est pas un mode à part** : c'est le même écran, et les modes simples en sont les cas
+  dégénérés. Presse-papier seul → rempli tout de suite, zéro clic dans le cas nominal, rien n'a à
+  attendre. Fichiers seuls → pas de bloc presse-papier du tout
+- **Le rendu vit en mémoire entre les deux temps**, et ça se dit. Ce n'est pas une nouvelle classe
+  d'exposition — `SecretRenderResult.Text` est déjà une chaîne managée qui vit jusqu'à la fermeture
+  de la fenêtre — mais la **durée** change, et elle est désormais bornée par l'utilisateur
+- **Les commandes vivent à côté de ce sur quoi elles agissent** : *Ouvrir le dossier* et *Supprimer
+  les fichiers générés* dans le bloc des fichiers, *Arrêter le décompte* et *Vider le presse-papier*
+  dans le sien. Cinq boutons dans un pied de 520 px ne tiendraient pas, et le bloc des périmés faisait
+  déjà ainsi. Le pied ne garde que *Fermer*
+- **Les blocs suivent le geste** : ce qui manque, puis les fichiers, puis le presse-papier, puis les
+  périmés. Le presse-papier était en tête et invitait à coller avant d'avoir déposé les fichiers
+- **`ClipboardGuard.Pause()` n'est pas `Disarm()`**, et la nuance porte tout le sens. Désarmer oublie
+  l'empreinte, donc la sortie de DockPad n'effacerait plus rien et le secret resterait dans le
+  presse-papier indéfiniment — pas ce qu'on attend d'un bouton qui dit seulement « arrêter le
+  décompte ». `Pause` arrête le minuteur et **garde l'empreinte** : on gagne du temps sans perdre le
+  filet de sortie
+- **Quatre états du bloc, dont deux montrent un presse-papier vide** : *en attente* d'un clic,
+  *rempli* avec décompte, *tenu* décompte arrêté, *effacé*. D'où le drapeau `_armedOnce`, sans lequel
+  « pas encore » et « plus » seraient indiscernables
+- **La fermeture automatique ne joue qu'après un armement suivi d'un effacement.** Jamais avant — le
+  rendu attend un geste ; jamais sur une pause — on vient de demander du temps ; jamais sur un
+  compte-rendu incomplet — il demande une décision
+
+> **L'état *armé* n'est pas capturable.** `ClipboardGuard.Arm` écrit dans le **vrai** presse-papier,
+> et les outils de capture ne doivent pas y toucher — c'est déjà la règle des deux états d'injection
+> existants. Les captures couvrent *en attente* et *effacé* ; *rempli* et *tenu* se relisent à
+> l'écran. Même raison pour laquelle la distinction `Pause`/`Disarm` n'a pas de test automatique :
+> l'exercer demanderait d'armer, donc d'écraser le presse-papier du développeur. Lacune nommée
+> plutôt que test de façade.
+
 **Un seul compte-rendu, à sections conditionnelles** : le presse-papier, les clés absentes, les
 fichiers écrits, les périmés — ce qui existe. Trois écrans vivaient là et un seul s'affichait, si
 bien qu'en mode « les deux » un succès complet montrait les fichiers et **ne disait jamais** que le

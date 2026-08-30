@@ -1140,10 +1140,7 @@ This cannot be undone.</value>
   <data name="Inject_Unlock_Button" xml:space="preserve">
     <value>Unlock</value>
   </data>
-<data name="Inject_Success_Clipboard" xml:space="preserve">
-    <value>Clipboard filled</value>
-  </data>
-  <data name="Inject_Countdown" xml:space="preserve">
+<data name="Inject_Countdown" xml:space="preserve">
     <value>Clearing in {0} s</value>
   </data>
   <data name="Inject_Failed_Title" xml:space="preserve">
@@ -1298,5 +1295,29 @@ This cannot be undone.</value>
   </data>
   <data name="Inject_Missing_SyncFailed" xml:space="preserve">
     <value>The vault could not be refreshed: the values come from the local cache and may be out of date.</value>
+  </data>
+  <data name="Inject_Clipboard_Pending" xml:space="preserve">
+    <value>The rendered file is ready. Put it in the clipboard once you are done with the files.</value>
+  </data>
+  <data name="Inject_Clipboard_Filled" xml:space="preserve">
+    <value>The rendered file is in the clipboard.</value>
+  </data>
+  <data name="Inject_Clipboard_Held" xml:space="preserve">
+    <value>The rendered file is in the clipboard — countdown stopped. It is still cleared when DockPad exits.</value>
+  </data>
+  <data name="Inject_Clipboard_Cleared" xml:space="preserve">
+    <value>The clipboard has been cleared.</value>
+  </data>
+  <data name="Inject_Clipboard_Arm" xml:space="preserve">
+    <value>Put in the clipboard</value>
+  </data>
+  <data name="Inject_Clipboard_Pause" xml:space="preserve">
+    <value>Stop the countdown</value>
+  </data>
+  <data name="Inject_Clipboard_Clear" xml:space="preserve">
+    <value>Clear the clipboard</value>
+  </data>
+  <data name="Inject_Files_Delete" xml:space="preserve">
+    <value>Delete the generated files</value>
   </data>
 </root>

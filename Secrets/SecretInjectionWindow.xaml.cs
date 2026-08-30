@@ -35,6 +35,15 @@ public partial class SecretInjectionWindow : Window
     private SecretMode _mode;
     private string? _writtenFolder;
     private InjectionReport? _report;
+
+    /// <summary>
+    /// Le presse-papier a-t-il déjà été rempli une fois pour ce rendu ?
+    /// </summary>
+    /// <remarks>
+    /// Distingue « en attente d'un clic » de « rempli puis effacé » : les deux montrent un
+    /// presse-papier vide, et ils n'appellent pas les mêmes boutons.
+    /// </remarks>
+    private bool _armedOnce;
     private readonly bool _syncOnly;
 
     /// <summary>Clé du libellé de <c>BtnClose</c>, gardée pour pouvoir le retraduire.</summary>
@@ -218,11 +227,16 @@ public partial class SecretInjectionWindow : Window
         // L'armement appartient au déroulement et non à l'affichage : les écrans ne doivent que
         // montrer. C'est aussi ce qui permet à l'outil de capture de les rendre sans écrire dans le
         // presse-papier de la machine.
-        if (report.Render is { } rendered)
+        // Le presse-papier n'est rempli TOUT DE SUITE que s'il est la seule sortie : c'est le cas
+        // nominal a zero clic, et rien ne le retarde. Des qu'il accompagne des fichiers, il attend
+        // un clic — sinon le decompte court pendant qu'on copie les fichiers sur le NAS, et
+        // quatre-vingt-dix secondes plus tard le rendu est efface sans que rien ait ete colle.
+        if (report is { Render: { } rendered, Files: null })
         {
             try
             {
                 ClipboardGuard.Arm(rendered.Text, AppSettingsService.Current.ClipboardClearSeconds);
+                _armedOnce = true;
             }
             catch (Exception ex)
             {
@@ -245,7 +259,6 @@ public partial class SecretInjectionWindow : Window
             }
         }
 
-        _report = report;
         ShowResult(report);
     }
 
@@ -274,7 +287,7 @@ public partial class SecretInjectionWindow : Window
     {
         TxtBusy.Text = label;
         Show(PanelBusy);
-        Buttons(clear: false, unlock: false, folder: false);
+        Buttons(unlock: false);
     }
 
     /// <summary>
@@ -289,7 +302,7 @@ public partial class SecretInjectionWindow : Window
     private void ShowChoice()
     {
         Show(PanelChoice);
-        Buttons(clear: false, unlock: false, folder: false, proceed: true);
+        Buttons(unlock: false, proceed: true);
         CloseLabel("Common_Cancel");
         Choice_Changed(null, null!);
     }
@@ -338,7 +351,7 @@ public partial class SecretInjectionWindow : Window
         ChkSync.IsChecked = AppSettingsService.Current.SyncVaultBeforeInject;
 
         Show(PanelUnlock);
-        Buttons(clear: false, unlock: true, folder: false);
+        Buttons(unlock: true);
         TxtPassword.Focus();
     }
 
@@ -359,6 +372,10 @@ public partial class SecretInjectionWindow : Window
     /// </remarks>
     private void ShowResult(InjectionReport report)
     {
+        // Pose ici et non chez l'appelant : RefreshClipboard et les commandes lisent _report, et
+        // l'outil de capture appelle cette methode directement.
+        _report = report;
+
         var written = report.Files?.Written ?? [];
         var stale = report.Files?.Stale ?? [];
         _writtenFolder = report.Files?.Folder;
@@ -372,7 +389,6 @@ public partial class SecretInjectionWindow : Window
 
         TxtResultSummary.Text = Summary(report.Render, written.Count);
 
-        BlocClipboard.Visibility = Vis(report.Render is not null);
 
         ListMissing.ItemsSource = report.Missing;
         BlocMissing.Visibility = Vis(report.Missing.Count > 0);
@@ -385,9 +401,94 @@ public partial class SecretInjectionWindow : Window
         BlocStale.Visibility = Vis(stale.Count > 0);
 
         Show(PanelResult);
-        Buttons(clear: ClipboardGuard.IsArmed, unlock: false, folder: written.Count > 0);
+        Buttons(unlock: false);
         CloseLabel("Common_Close");
-        OnGuardChanged(null, EventArgs.Empty);
+        RefreshClipboard();
+    }
+
+    /// <summary>
+    /// L'état du presse-papier et les commandes qui vont avec.
+    /// </summary>
+    /// <remarks>
+    /// Quatre états, et deux d'entre eux montrent un presse-papier vide sans appeler les mêmes
+    /// gestes : <b>en attente</b> d'un clic, <b>rempli</b> avec décompte, <b>tenu</b> décompte
+    /// arrêté, <b>effacé</b>. D'où <c>_armedOnce</c>, sans lequel « pas encore » et « plus »
+    /// seraient indiscernables.
+    /// </remarks>
+    private void RefreshClipboard()
+    {
+        if (_report?.Render is null) { BlocClipboard.Visibility = Visibility.Collapsed; return; }
+
+        BlocClipboard.Visibility = Visibility.Visible;
+
+        var armed = ClipboardGuard.IsArmed;
+        var paused = ClipboardGuard.IsPaused;
+        var counting = armed && !paused;
+
+        TxtClipboardState.Text = Loc.T(
+            !_armedOnce ? "Inject_Clipboard_Pending"
+            : paused ? "Inject_Clipboard_Held"
+            : armed ? "Inject_Clipboard_Filled"
+            : "Inject_Clipboard_Cleared");
+
+        TxtCountdown.Text = counting ? Loc.F("Inject_Countdown", ClipboardGuard.SecondsLeft) : "";
+        TxtCountdown.Visibility = Vis(counting);
+
+        BtnArm.Visibility = Vis(!_armedOnce);
+        BtnPause.Visibility = Vis(counting);
+        BtnClear.Visibility = Vis(armed);
+    }
+
+    /// <summary>Remplit le presse-papier, quand l'utilisateur en a fini avec les fichiers.</summary>
+    private void Arm_Click(object sender, RoutedEventArgs e)
+    {
+        if (_report?.Render is not { } rendered || _armedOnce) return;
+
+        try
+        {
+            ClipboardGuard.Arm(rendered.Text, AppSettingsService.Current.ClipboardClearSeconds);
+            _armedOnce = true;
+        }
+        catch (Exception ex)
+        {
+            // Le presse-papier peut être tenu par une autre application. Les fichiers écrits
+            // restent acquis : on le dit sans rien défaire.
+            LogService.Warn(ex, "Copie du rendu dans le presse-papier");
+            TxtClipboardState.Text = Loc.T("Inject_Error_ClipboardBusy");
+            BtnArm.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        RefreshClipboard();
+    }
+
+    /// <summary>Arrête le décompte — mais le filet de sortie efface toujours.</summary>
+    private void Pause_Click(object sender, RoutedEventArgs e)
+    {
+        ClipboardGuard.Pause();
+        RefreshClipboard();
+    }
+
+    /// <summary>
+    /// Supprime les fichiers qu'on vient d'écrire, sur un clic.
+    /// </summary>
+    /// <remarks>
+    /// Même garde que les périmés : uniquement les noms qu'on a écrits, jamais un balayage du
+    /// dossier — il peut contenir autre chose.
+    /// </remarks>
+    private void DeleteWritten_Click(object sender, RoutedEventArgs e)
+    {
+        if (_report?.Files is not { } files || files.Written.Count == 0) return;
+        if (Path.GetDirectoryName(_filePath) is not { } folder) return;
+
+        var deleted = SecretFileWriter.Delete(folder, files.Written);
+        LogService.Info($"Fichiers de secret supprimés à la demande : {deleted.Count}");
+
+        var left = files.Written.Except(deleted, StringComparer.OrdinalIgnoreCase).ToList();
+
+        ListWritten.ItemsSource = left;
+        BlocWritten.Visibility = Vis(left.Count > 0);
+        _report = InjectionReport.Produced(_report.Render, files with { Written = left }, _report.Missing);
     }
 
     /// <summary>
@@ -451,7 +552,7 @@ public partial class SecretInjectionWindow : Window
         BlocStale.Visibility = Visibility.Collapsed;
 
         Show(PanelResult);
-        Buttons(clear: false, unlock: false, folder: false);
+        Buttons(unlock: false);
         CloseLabel("Common_Close");
     }
 
@@ -472,7 +573,7 @@ public partial class SecretInjectionWindow : Window
             LogService.Info($"Injection refusée ({Path.GetFileName(_filePath)}) : {report.Diagnostic}");
 
         Show(PanelFailed);
-        Buttons(clear: false, unlock: false, folder: false);
+        Buttons(unlock: false);
         CloseLabel("Common_Close");
     }
 
@@ -482,11 +583,13 @@ public partial class SecretInjectionWindow : Window
             candidate.Visibility = candidate == panel ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void Buttons(bool clear, bool unlock, bool folder, bool proceed = false)
+    /// <summary>
+    /// Le pied ne porte plus que les boutons d'<b>étape</b> — les commandes vivent à côté de ce sur
+    /// quoi elles agissent.
+    /// </summary>
+    private void Buttons(bool unlock, bool proceed = false)
     {
-        BtnClear.Visibility = clear ? Visibility.Visible : Visibility.Collapsed;
         BtnUnlock.Visibility = unlock ? Visibility.Visible : Visibility.Collapsed;
-        BtnOpenFolder.Visibility = folder ? Visibility.Visible : Visibility.Collapsed;
         BtnContinue.Visibility = proceed ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -508,22 +611,13 @@ public partial class SecretInjectionWindow : Window
 
         if (PanelResult.Visibility != Visibility.Visible) return;
 
-        if (ClipboardGuard.IsArmed)
-        {
-            TxtCountdown.Text = Loc.F("Inject_Countdown", ClipboardGuard.SecondsLeft);
-            TxtCountdown.Visibility = Visibility.Visible;
-            BtnClear.Visibility = Visibility.Visible;
-            return;
-        }
+        RefreshClipboard();
 
-        TxtCountdown.Visibility = Visibility.Collapsed;
-        BtnClear.Visibility = Visibility.Collapsed;
-
-        // Fermeture automatique SEULEMENT quand il n'y a rien à décider — zéro clic dans le cas
-        // nominal. Un compte-rendu incomplet demande une décision (supprimer les périmés, ou non),
-        // et le voir disparaître au bout du décompte reviendrait à répondre à sa place. Un
-        // compte-rendu sans rendu n'a pas de décompte : le fermer serait arbitraire.
-        if (_report is { Complete: true, Render: not null }
+        // Fermeture automatique quand le presse-papier a été rempli PUIS vidé : le travail est
+        // fini, zéro clic dans le cas nominal. Jamais AVANT l'armement — le rendu attend un
+        // geste ; jamais sur une PAUSE — l'utilisateur vient de demander du temps ; jamais sur un
+        // compte-rendu incomplet — il demande une décision, et le fermer y répondrait à sa place.
+        if (_report is { Complete: true } && _armedOnce && !ClipboardGuard.IsArmed
             && AppSettingsService.Current.ClipboardClearSeconds > 0) Close();
     }
 

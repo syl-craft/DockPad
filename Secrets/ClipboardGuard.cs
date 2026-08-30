@@ -150,6 +150,35 @@ public static class ClipboardGuard
         Disarm();
     }
 
+    /// <summary>
+    /// Arrête le décompte <b>en gardant l'empreinte</b> : le filet de sortie efface toujours.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// La différence avec <see cref="Disarm"/> porte tout le sens. Désarmer oublie l'empreinte,
+    /// donc la sortie de l'application n'effacerait plus rien et le secret resterait dans le
+    /// presse-papier <b>indéfiniment</b> — ce n'est pas ce qu'on attend d'un bouton qui dit
+    /// seulement « arrêter le décompte ».
+    /// </para>
+    /// <para>
+    /// Ici on gagne du temps sans perdre la garantie : plus de minuteur, mais
+    /// <see cref="ClearNow"/> — appelé à la fermeture de DockPad — a toujours de quoi reconnaître
+    /// ce qu'il a mis là et l'effacer.
+    /// </para>
+    /// </remarks>
+    public static void Pause()
+    {
+        if (_armedFingerprint is null) return;
+
+        _timer?.Stop();
+        _timer = null;
+        SecondsLeft = 0;
+        Notify();
+    }
+
+    /// <summary>Le décompte a-t-il été arrêté alors qu'un rendu est toujours dans le presse-papier ?</summary>
+    public static bool IsPaused => _armedFingerprint is not null && _timer is null;
+
     /// <summary>Oublie l'empreinte et arrête le minuteur, sans toucher au presse-papier.</summary>
     public static void Disarm()
     {

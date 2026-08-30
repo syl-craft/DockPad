@@ -1140,10 +1140,7 @@ Cette action est irréversible.</value>
   <data name="Inject_Unlock_Button" xml:space="preserve">
     <value>Déverrouiller</value>
   </data>
-<data name="Inject_Success_Clipboard" xml:space="preserve">
-    <value>Presse-papier rempli</value>
-  </data>
-  <data name="Inject_Countdown" xml:space="preserve">
+<data name="Inject_Countdown" xml:space="preserve">
     <value>Effacement dans {0} s</value>
   </data>
   <data name="Inject_Failed_Title" xml:space="preserve">
@@ -1298,5 +1295,29 @@ Cette action est irréversible.</value>
   </data>
   <data name="Inject_Missing_SyncFailed" xml:space="preserve">
     <value>Le coffre n’a pas pu être synchronisé : les valeurs viennent du cache local et peuvent être périmées.</value>
+  </data>
+  <data name="Inject_Clipboard_Pending" xml:space="preserve">
+    <value>Le fichier rendu est prêt. Mets-le dans le presse-papier quand tu en as fini avec les fichiers.</value>
+  </data>
+  <data name="Inject_Clipboard_Filled" xml:space="preserve">
+    <value>Le fichier rendu est dans le presse-papier.</value>
+  </data>
+  <data name="Inject_Clipboard_Held" xml:space="preserve">
+    <value>Le fichier rendu est dans le presse-papier — décompte arrêté. Il est toujours effacé à la fermeture de DockPad.</value>
+  </data>
+  <data name="Inject_Clipboard_Cleared" xml:space="preserve">
+    <value>Le presse-papier a été vidé.</value>
+  </data>
+  <data name="Inject_Clipboard_Arm" xml:space="preserve">
+    <value>Mettre dans le presse-papier</value>
+  </data>
+  <data name="Inject_Clipboard_Pause" xml:space="preserve">
+    <value>Arrêter le décompte</value>
+  </data>
+  <data name="Inject_Clipboard_Clear" xml:space="preserve">
+    <value>Vider le presse-papier</value>
+  </data>
+  <data name="Inject_Files_Delete" xml:space="preserve">
+    <value>Supprimer les fichiers générés</value>
   </data>
 </root>

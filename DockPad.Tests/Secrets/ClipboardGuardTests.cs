@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using DockPad.Secrets;
 
 namespace DockPad.Tests.Secrets;
@@ -107,4 +107,36 @@ public class ClipboardGuardTests
             Assert.Equal(new byte[] { 0, 0, 0, 0 }, stream.ToArray());
         }
     }
+
+    // ───────────── Arrêter le décompte sans désarmer ─────────────
+
+    /// <summary>
+    /// <c>Pause</c> sur un verrou non armé ne fait rien, et ne lève pas.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Ce que ce test NE couvre pas, et pourquoi.</b> La propriété qui compte — <c>Pause</c>
+    /// <i>conserve</i> l'empreinte là où <c>Disarm</c> l'oublie, donc l'effacement de sortie mord
+    /// encore — exige d'armer, et <c>Arm</c> écrit dans le <b>vrai</b> presse-papier de la machine.
+    /// Un test qui le ferait écraserait ce que le développeur y avait mis.
+    /// </para>
+    /// <para>
+    /// La distinction est donc portée par le type (<c>IsArmed</c> suit l'empreinte, pas le
+    /// minuteur) et par la documentation, pas par un test automatique. C'est une lacune assumée et
+    /// nommée plutôt qu'un test de façade qui n'exercerait rien.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void ArreterLeDecompte_SansArmement_NeFaitRien()
+    {
+        ClipboardGuard.Pause();
+
+        Assert.False(ClipboardGuard.IsArmed);
+        Assert.False(ClipboardGuard.IsPaused);
+    }
+
+    /// <summary>Un verrou non armé n'est pas « en pause » : les deux états sont distincts.</summary>
+    [Fact]
+    public void UnVerrouNonArme_NEstPasEnPause()
+        => Assert.False(ClipboardGuard.IsPaused);
 }
