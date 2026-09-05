@@ -37,7 +37,15 @@ public sealed class QuickAccessCommands(IQuickAccessView view)
 
     // ── Configuration
     public ICommand Refresh { get; } = new RelayCommand(view.RefreshGrid);
-    public ICommand EditConfig { get; } = new RelayCommand(() => view.OpenPath(ShortcutService.FilePath));
+    /// <summary>
+    /// Ouvre le fichier de la grille <b>affichée</b> — les raccourcis, ou les favoris.
+    /// </summary>
+    /// <remarks>
+    /// La commande ne nomme pas le fichier : figée sur <c>shortcuts.json</c>, elle ouvrait l'autre
+    /// grille en mode Favoris, si bien qu'on éditait et sauvegardait un fichier sans rapport avec
+    /// ce qu'on avait sous les yeux — et la grille affichée ne bougeait pas.
+    /// </remarks>
+    public ICommand EditConfig { get; } = new RelayCommand(view.OpenCurrentConfig);
     public ICommand OpenConfigFolder { get; } =
         new RelayCommand(() => view.OpenPath(AppPaths.ProfileRoot));
 
@@ -79,6 +87,9 @@ public interface IQuickAccessView
     void SyncVault();
 
     void RefreshGrid();
+
+    /// <summary>Ouvre le fichier de la grille affichée, en le créant s'il n'existe pas encore.</summary>
+    void OpenCurrentConfig();
     void ToggleTileMode();
     void ToggleTileLock();
 

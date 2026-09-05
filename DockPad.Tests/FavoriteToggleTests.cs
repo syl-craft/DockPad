@@ -1,3 +1,4 @@
+using System.IO;
 using DockPad.Models;
 using DockPad.Services;
 
@@ -57,37 +58,43 @@ public class FavoriteToggleTests
         Assert.Null(FavoriteToggle.Find(all, "https://github.com"));
     }
 
-    // ── Placer ───────────────────────────────────────────────────────────────
+    // ── Placer ────────────────────────────────────────────────────────────────
+    //
+    // Placement choisit la PAGE ; c'est AddCore qui choisit la case dans cette page. Une seule
+    // règle par endroit : dupliquer le balayage des cases ici, c'était deux implémentations à
+    // garder d'accord, et une page créée pour rien quand la seconde refusait ce que la première
+    // avait promis.
 
     [Fact]
-    public void Placement_GrilleVide_PremiereCaseDeLaPremierePage()
+    public void Placement_GrilleVide_PremierePage()
     {
         var p = FavoriteToggle.Placement([], []);
 
-        Assert.Equal((0, 0, 0), (p.Page, p.Row, p.Col));
+        Assert.Equal(0, p.Page);
         Assert.False(p.NeedsNewPage);
     }
 
     [Fact]
-    public void Placement_SuitLOrdreDeLecture()
+    public void Placement_PageEntamee_YReste()
     {
         var all = new List<ShortcutEntry> { Url("https://a.test", 0, 0, 0), Url("https://b.test", 0, 0, 1) };
 
         var p = FavoriteToggle.Placement(all, []);
 
-        Assert.Equal((0, 0, 2), (p.Page, p.Row, p.Col));
+        Assert.Equal(0, p.Page);
+        Assert.False(p.NeedsNewPage);
     }
 
     [Fact]
-    public void Placement_ReboucheUnTrouLaisseParUneSuppression()
+    public void Placement_TrouLaisseParUneSuppression_LaPageCompteCommeLibre()
     {
-        // Le balayage cherche une case LIBRE, pas la suite du dernier ajout.
         var all = FullPage(0);
         all.RemoveAll(s => s is { Row: 2, Col: 3 });
 
         var p = FavoriteToggle.Placement(all, []);
 
-        Assert.Equal((0, 2, 3), (p.Page, p.Row, p.Col));
+        Assert.Equal(0, p.Page);
+        Assert.False(p.NeedsNewPage);
     }
 
     [Fact]
@@ -100,7 +107,7 @@ public class FavoriteToggleTests
 
         var p = FavoriteToggle.Placement(all, []);
 
-        Assert.Equal((1, 0, 1), (p.Page, p.Row, p.Col));
+        Assert.Equal(1, p.Page);
         Assert.False(p.NeedsNewPage);
     }
 
@@ -113,7 +120,7 @@ public class FavoriteToggleTests
 
         var p = FavoriteToggle.Placement(all, configs);
 
-        Assert.Equal((1, 0, 0), (p.Page, p.Row, p.Col));
+        Assert.Equal(1, p.Page);
         Assert.False(p.NeedsNewPage);
     }
 
@@ -125,7 +132,7 @@ public class FavoriteToggleTests
 
         var p = FavoriteToggle.Placement(all, []);
 
-        Assert.Equal((2, 0, 0), (p.Page, p.Row, p.Col));
+        Assert.Equal(2, p.Page);
         Assert.True(p.NeedsNewPage);
     }
 
@@ -150,5 +157,71 @@ public class FavoriteToggleTests
     {
         // Une tuile sans nom est invisible dans la grille : mieux vaut un nom laid qu'aucun.
         Assert.Equal("pas une url", FavoriteToggle.NameFor("pas une url"));
+    }
+
+    // ── Poser et retirer ─────────────────────────────────────────────────────
+    //
+    // Seuls les chemins qui NE partent PAS sur le réseau sont testés ici. Poser un favori déclenche
+    // le téléchargement de l'icône du site — c'est voulu, et c'est aussi ce qui rend ce chemin
+    // intestable sans sortir de la machine : un test qui appelle un service tiers casse un jour
+    // sans raison. Lacune nommée plutôt que test de façade.
+
+    [Fact]
+    public async Task SetAsync_Retirer_SupprimeLaTuileEtRienDAutre()
+    {
+        using var dir = new TempProfile();
+        ShortcutService.Save(
+        [
+            Url("https://a.test", 0, 0, 0),
+            Url("https://b.test", 0, 0, 1),
+        ], dir.Files.EntriesPath);
+
+        bool state = await FavoriteToggle.SetAsync("https://a.test", favorite: false, dir.Files);
+
+        Assert.False(state);
+        var rest = ShortcutService.Load(dir.Files.EntriesPath);
+        Assert.Equal("https://b.test", Assert.Single(rest).Command);
+    }
+
+    [Fact]
+    public async Task SetAsync_RetirerCeQuiNEstPasFavori_NeCasseRien()
+    {
+        // Le toggle peut être décoché sur une URL absente du fichier : deux popups ouverts sur la
+        // même page, l'un retire, l'autre retire encore.
+        using var dir = new TempProfile();
+        ShortcutService.Save([Url("https://b.test", 0, 0, 0)], dir.Files.EntriesPath);
+
+        bool state = await FavoriteToggle.SetAsync("https://a.test", favorite: false, dir.Files);
+
+        Assert.False(state);
+        Assert.Single(ShortcutService.Load(dir.Files.EntriesPath));
+    }
+
+    [Fact]
+    public async Task SetAsync_DejaFavori_NeCreePasDeDoublon()
+    {
+        // Chemin sans réseau : l'entrée existe, on sort avant tout téléchargement.
+        using var dir = new TempProfile();
+        ShortcutService.Save([Url("https://a.test", 0, 0, 0)], dir.Files.EntriesPath);
+
+        bool state = await FavoriteToggle.SetAsync("https://a.test", favorite: true, dir.Files);
+
+        Assert.True(state);
+        Assert.Single(ShortcutService.Load(dir.Files.EntriesPath));
+    }
+
+    private sealed class TempProfile : IDisposable
+    {
+        private readonly string _dir = Path.Combine(Path.GetTempPath(), $"fav_{Guid.NewGuid():N}");
+
+        public TempProfile() => Directory.CreateDirectory(_dir);
+
+        public TileFiles Files => new(Path.Combine(_dir, "favorites.json"),
+                                      Path.Combine(_dir, "favorite-pages.json"));
+
+        public void Dispose()
+        {
+            if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true);
+        }
     }
 }

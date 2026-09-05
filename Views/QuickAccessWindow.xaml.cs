@@ -308,6 +308,21 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// Ouvre un chemin avec l'application par défaut. Le dossier est créé au besoin : le profil peut
     /// ne pas exister au tout premier lancement, et l'Explorateur afficherait une erreur.
     /// </summary>
+    /// <summary>
+    /// Ouvre le fichier de la grille affichée dans l'éditeur associé.
+    /// </summary>
+    /// <remarks>
+    /// <b>Le fichier est créé s'il manque.</b> <see cref="OpenPath"/> ne crée que le dossier, donc
+    /// « ✎ Modifier » levait une <c>Win32Exception</c> sur une configuration jamais écrite — cas
+    /// normal des favoris, qui commencent vides.
+    /// </remarks>
+    public void OpenCurrentConfig()
+    {
+        var path = Files.EntriesPath;
+        if (!File.Exists(path)) ShortcutService.Save([], path);
+        OpenPath(path);
+    }
+
     public void OpenPath(string path)
     {
         if (Path.GetExtension(path).Length == 0) Directory.CreateDirectory(path);
@@ -1290,15 +1305,26 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// <summary>Resynchronise icônes + grille. Appelé par ↻ Actualiser et après chaque mutation MCP.</summary>
     public void RefreshGrid()
     {
-        var all = ShortcutService.Load(Files.EntriesPath);
-        if (IconStoreService.SyncAll(all))
-            ShortcutService.Save(all, Files.EntriesPath);
-
-        var pages = PageConfigService.Load(Files.PagesPath);
-        if (IconStoreService.SyncAllPages(pages))
-            PageConfigService.Save(pages, Files.PagesPath);
+        // Les DEUX grilles, pas seulement celle qu'on regarde : ↻ Actualiser annonce qu'il
+        // resynchronise le store pour toutes les entrées existantes. Ne traiter que le mode
+        // affiché laissait un favori sans icône jusqu'à ce qu'on pense à refaire le geste depuis
+        // l'autre mode — et rien n'expliquait l'écart.
+        foreach (var target in new[] { TileTarget.Shortcuts, TileTarget.Favorites })
+            ResyncIcons(TileStore.FilesFor(target));
 
         PopulateGrid();
+    }
+
+    /// <summary>Remet le store d'icônes d'accord avec une grille, tuiles et pages.</summary>
+    private static void ResyncIcons(TileFiles files)
+    {
+        var all = ShortcutService.Load(files.EntriesPath);
+        if (IconStoreService.SyncAll(all))
+            ShortcutService.Save(all, files.EntriesPath);
+
+        var pages = PageConfigService.Load(files.PagesPath);
+        if (IconStoreService.SyncAllPages(pages))
+            PageConfigService.Save(pages, files.PagesPath);
     }
     // ── Triggers dynamiques ───────────────────────────────────────────────────
 

@@ -108,7 +108,7 @@ public partial class App : Application
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 var picker = Services.UrlRouterService.Handle(url);
                 if (picker is not null)
-                    picker.Closed += (_, _) => Shutdown();
+                    picker.Closed += (_, _) => ShutdownWhenFavoriteIsWritten(picker);
                 else
                     Shutdown();
                 return;
@@ -197,6 +197,22 @@ public partial class App : Application
     /// fermeture d'une fenêtre. Sans ce délai, sa sortie viderait le presse-papier immédiatement,
     /// et l'injection paraîtrait n'avoir rien fait.
     /// </remarks>
+    /// <summary>
+    /// Sortie différée jusqu'à la fin de l'enregistrement d'un favori, s'il y en a un en vol.
+    /// </summary>
+    /// <remarks>
+    /// Même raison que <see cref="ShutdownWhenClipboardIsSafe"/>, et même forme : seule l'instance
+    /// éphémère du repli en a besoin, parce qu'elle meurt à la fermeture de sa popup. Poser un
+    /// favori télécharge l'icône du site ; sans ce délai, choisir un navigateur juste après avoir
+    /// cliqué l'étoile tuait le processus au milieu de l'écriture, sans un mot.
+    /// </remarks>
+    private void ShutdownWhenFavoriteIsWritten(BrowserPickerWindow picker)
+    {
+        if (picker.PendingFavoriteWrite.IsCompleted) { Shutdown(); return; }
+
+        picker.PendingFavoriteWrite.ContinueWith(_ => Dispatcher.BeginInvoke(() => Shutdown()));
+    }
+
     private void ShutdownWhenClipboardIsSafe()
     {
         if (!Secrets.SecretInjection.IsClipboardArmed) { Shutdown(); return; }

@@ -195,7 +195,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (711 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (714 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -332,6 +332,12 @@ petite — et c'est la raison de `TileStore`.
 - **`MinWidth="40"` sur le bouton**, pour la raison déjà payée par le verrou : `★` et `▦` n'ont pas
   la même largeur, et toute la toolbar se décalerait à chaque bascule. **Vérifié par comparaison
   pixel : 0 écart** sur la toolbar hors boutons de droite entre les deux modes
+- **« ✎ Modifier » suit le mode affiché.** La commande ne nomme plus de fichier : elle demande à la
+  vue d'ouvrir *sa* configuration (`IQuickAccessView.OpenCurrentConfig`). Figée sur
+  `ShortcutService.FilePath`, elle ouvrait l'autre grille en mode Favoris — on éditait et
+  sauvegardait un fichier sans rapport avec ce qu'on avait sous les yeux, et la grille ne bougeait
+  pas. C'était le dernier appelant resté hors du routage. **Le fichier est créé s'il manque** :
+  `OpenPath` ne crée que le dossier, et une grille de favoris commence vide
 - L'état vit dans `Services/TileModeState.cs` et non dans le code-behind, comme `TileLockState`
 
 #### L'étoile du popup (`FavoriteToggle`)
@@ -349,10 +355,16 @@ favori sans jamais ouvrir le lien.
 - **Correspondance exacte, sur une tuile `OpenUrl`** : le favori garde l'**URL complète** et prend le
   **domaine** pour nom (`UrlRouterService.ExtractHost`, pas une seconde façon d'extraire un hôte).
   Conséquence assumée : le toggle parle de *cette* page, pas du site
-- **Placement : première case libre, pages balayées dans l'ordre** ; toutes pleines, une page est
-  créée. **Règle distincte de celle d'`AddCore`**, qui ne regarde que la page 0 et refuse — et
-  `AddCore` n'est pas touché : sa sémantique tout-ou-rien est ce que le serveur MCP promet aux
-  modèles. Le popup, lui, ne peut pas refuser, personne n'est devant l'écran pour lire le message
+- **`Placement` choisit la PAGE, `AddCore` choisit la case.** La première page qui a de la place,
+  pages balayées dans l'ordre ; toutes pleines, une page est créée. **Règle distincte de celle
+  d'`AddCore`**, qui ne regarde que la page 0 et refuse — et `AddCore` n'est pas touché : sa
+  sémantique tout-ou-rien est ce que le serveur MCP promet aux modèles. Le popup, lui, ne peut pas
+  refuser, personne n'est devant l'écran pour lire le message.
+  **Une seule règle par endroit** : décider aussi la case ici, c'était deux balayages à garder
+  d'accord, et surtout une case promise **avant** le verrou. Si une requête MCP la prenait entre
+  temps, l'ajout échouait alors qu'une autre case était libre, en laissant derrière lui la page
+  qu'on venait de créer pour rien. La course reste théorique et **n'a pas de test** : c'est la
+  conception qui la referme, pas un garde
 - **L'ajout passe par `AddAsync`** : c'est ce qui donne au favori l'icône du site, comme à toute
   tuile web, et qui garde le téléchargement hors du verrou global
 - **Aucune fenêtre n'est supposée exister** : au clic sur un lien, DockPad tourne souvent en
@@ -360,6 +372,17 @@ favori sans jamais ouvrir le lien.
   seulement si elle est là — par `McpDispatcher.OnMutation`, le même point que les mutations MCP
 - **Un échec n'emporte pas le popup** : on est là pour ouvrir un lien. L'étoile revient à l'état
   d'avant, qui est la vérité du fichier
+- **L'instance de repli attend l'écriture avant de sortir.** Elle quitte le processus à la fermeture
+  de la popup, et poser un favori télécharge l'icône du site : cliquer l'étoile puis choisir un
+  navigateur — ou simplement cliquer ailleurs, ce qui ferme la popup — tuait le processus au milieu
+  de l'écriture. L'étoile s'était allumée, le fichier n'avait jamais été touché, et rien ne le
+  signalait. Le clic n'est donc plus `async void` : il retient sa tâche dans
+  `BrowserPickerWindow.PendingFavoriteWrite`, et `App.ShutdownWhenFavoriteIsWritten` diffère la
+  sortie — exactement comme `ShutdownWhenClipboardIsSafe` après une injection de secrets
+- **Seuls les chemins hors réseau sont testés** dans `FavoriteToggleTests` : retirer, retirer ce qui
+  n'y est pas, reposer un favori déjà posé. Poser un favori absent part chercher l'icône du site,
+  et un test qui sort de la machine casse un jour sans raison. Lacune nommée plutôt que test de
+  façade
 
 ### Barre de recherche globale
 - Champ de recherche dans la toolbar : filtre les raccourcis par nom sur toutes les pages
@@ -381,7 +404,7 @@ favori sans jamais ouvrir le lien.
 - À la sauvegarde, l'icône source est copiée dans le store (déduplication SHA1) ; les `.exe`/`.dll` sont extraits et sauvegardés en `.png`
 - `IconProfilePath` (chemin relatif au profil, pointe dans le store) est la source d'affichage ; `IconPath` (chemin absolu d'origine) n'est gardé qu'à titre de provenance
 - À la création/modification : si aucune icône spécifiée, l'icône de l'exe associé est utilisée automatiquement (RunCommand, SwitchToProcess, OpenTerminal)
-- **↻ Actualiser** : resynchronise le store pour toutes les entrées existantes
+- **↻ Actualiser** : resynchronise le store pour toutes les entrées existantes, **des deux grilles** — ne traiter que le mode affiché laissait un favori sans icône jusqu'à ce qu'on pense à refaire le geste depuis l'autre mode, et rien n'expliquait l'écart
 
 ### Icône automatique des tuiles web (FaviconService)
 - À l'enregistrement d'une tuile **`OpenUrl` sans icône**, DockPad va chercher l'icône du site et la range dans le store — même mécanique que l'icône d'un `.exe` pour les autres types, qui existait déjà

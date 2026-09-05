@@ -27,6 +27,7 @@ public class QuickAccessCommandsTests
         public void ShowSecretSettings() => Calls.Add(nameof(ShowSecretSettings));
         public void SyncVault() => Calls.Add(nameof(SyncVault));
         public void RefreshGrid() => Calls.Add(nameof(RefreshGrid));
+        public void OpenCurrentConfig() => Calls.Add(nameof(OpenCurrentConfig));
         public void ToggleTileMode() => Calls.Add(nameof(ToggleTileMode));
         public void ToggleTileLock() => Calls.Add(nameof(ToggleTileLock));
         public void Minimize() => Calls.Add(nameof(Minimize));
@@ -67,15 +68,20 @@ public class QuickAccessCommandsTests
     }
 
     [Fact]
-    public void ModifierLaConfiguration_OuvreLeFichierDesRaccourcis()
+    public void ModifierLaConfiguration_OuvreLaGrilleAFFICHEE()
     {
-        // Et non le dossier : « ✎ Modifier » édite shortcuts.json, « 📁 Voir le dossier » ouvre le
-        // profil. Les deux commandes se ressemblent assez pour être interverties un jour.
+        // La commande ne nomme plus le fichier : elle demande à la vue d'ouvrir SA configuration.
+        // Figée sur shortcuts.json, « ✎ Modifier » ouvrait l'autre grille en mode Favoris — on
+        // éditait et sauvegardait un fichier sans rapport avec ce qu'on avait sous les yeux, et
+        // la grille affichée ne bougeait pas.
         var view = new FakeView();
 
         new QuickAccessCommands(view).EditConfig.Execute(null);
 
-        Assert.EndsWith("shortcuts.json", view.LastPath);
+        Assert.Equal(["OpenCurrentConfig"], view.Calls);
+        // Et non le dossier : « 📁 Voir le dossier » ouvre le profil. Les deux commandes se
+        // ressemblent assez pour être interverties un jour.
+        Assert.Null(view.LastPath);
     }
 
     [Fact]

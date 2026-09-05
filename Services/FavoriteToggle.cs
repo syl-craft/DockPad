@@ -19,8 +19,14 @@ namespace DockPad.Services;
 /// </remarks>
 public static class FavoriteToggle
 {
-    /// <summary>Où atterrit un favori, et faut-il créer la page pour ça.</summary>
-    public readonly record struct FavoritePlacement(int Page, int Row, int Col, bool NeedsNewPage);
+    /// <summary>Sur quelle page atterrit un favori, et faut-il la créer pour ça.</summary>
+    /// <remarks>
+    /// La <b>page</b>, et pas la case : celle-ci est choisie par <c>AddCore</c>, qui sait déjà le
+    /// faire. Décider les deux ici, c'était deux implémentations du même balayage à garder
+    /// d'accord — et une page créée pour rien le jour où la seconde refuse ce que la première a
+    /// promis, par exemple parce qu'une requête MCP a pris la case entre les deux.
+    /// </remarks>
+    public readonly record struct FavoritePlacement(int Page, bool NeedsNewPage);
 
     /// <summary>
     /// Le favori qui vise cette URL, ou <c>null</c>.
@@ -36,7 +42,7 @@ public static class FavoriteToggle
                                     && string.Equals(s.Command, url, StringComparison.Ordinal));
 
     /// <summary>
-    /// Première case libre, pages balayées dans l'ordre ; toutes pleines, une page est demandée.
+    /// La première page qui a une case libre ; toutes pleines, une page est demandée.
     /// </summary>
     /// <remarks>
     /// <b>Règle distincte de celle d'<c>AddCore</c></b>, qui ne regarde que la page 0 et refuse si
@@ -50,16 +56,19 @@ public static class FavoriteToggle
         int maxConfig = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
         int lastShown = Math.Max(Math.Max(maxUsed, maxConfig), 0);
 
+        // Un balayage des cases, et non un comptage des entrées : deux tuiles peuvent partager une
+        // position dans un fichier édité à la main, et une position peut être hors bornes. Compter
+        // déclarerait alors une page pleine qui ne l'est pas.
         for (int page = 0; page <= lastShown; page++)
         {
             var occupied = entries.Where(s => s.Page == page).Select(s => (s.Row, s.Col)).ToHashSet();
             for (int row = 0; row < ShortcutActionService.GridRows; row++)
                 for (int col = 0; col < ShortcutActionService.GridCols; col++)
                     if (!occupied.Contains((row, col)))
-                        return new FavoritePlacement(page, row, col, NeedsNewPage: false);
+                        return new FavoritePlacement(page, NeedsNewPage: false);
         }
 
-        return new FavoritePlacement(lastShown + 1, 0, 0, NeedsNewPage: true);
+        return new FavoritePlacement(lastShown + 1, NeedsNewPage: true);
     }
 
     /// <summary>
@@ -89,9 +98,9 @@ public static class FavoriteToggle
     /// arrière-plan sans grille affichée : le toggle écrit dans le fichier, un point c'est tout.
     /// </para>
     /// </remarks>
-    public static async Task<bool> SetAsync(string url, bool favorite)
+    public static async Task<bool> SetAsync(string url, bool favorite, TileFiles? files = null)
     {
-        var files = TileStore.FilesFor(TileTarget.Favorites);
+        files ??= TileStore.FilesFor(TileTarget.Favorites);
 
         var existing = Find(ShortcutService.Load(files.EntriesPath), url);
 
@@ -111,11 +120,13 @@ public static class FavoriteToggle
         // borne sur l'état initial est ce qui rend un lot tout-ou-rien vérifiable.
         if (placement.NeedsNewPage) PageActionService.Add(null, files);
 
+        // Aucune position : AddCore prend la première case libre de la page, sous le verrou et sur
+        // l'état du moment. Lui dicter une case calculée avant le verrou, c'est promettre à sa
+        // place — et si une requête MCP l'a prise entretemps, l'ajout échoue alors qu'une autre
+        // case était libre, en laissant derrière lui la page qu'on venait de créer pour rien.
         var result = await ShortcutActionService.AddAsync([new ShortcutAddItem
         {
             Page = placement.Page,
-            Row = placement.Row,
-            Col = placement.Col,
             Name = NameFor(url),
             Type = ShortcutType.OpenUrl,
             Command = url,

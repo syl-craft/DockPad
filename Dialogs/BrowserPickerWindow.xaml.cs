@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -25,6 +26,20 @@ public partial class BrowserPickerWindow : Window
 
     private DispatcherTimer? _autoOpenTimer;
     private int _autoOpenRemaining;
+
+    /// <summary>
+    /// L'enregistrement du favori en cours, s'il y en a un. Terminée par défaut.
+    /// </summary>
+    /// <remarks>
+    /// <b>Une popup n'implique pas une application.</b> Quand le tube est injoignable, c'est
+    /// l'instance de repli qui affiche cette fenêtre, et elle <b>quitte le processus</b> à sa
+    /// fermeture. Or poser un favori télécharge l'icône du site : cliquer l'étoile puis choisir un
+    /// navigateur — ou simplement cliquer ailleurs, ce qui ferme la popup — tuait le processus au
+    /// milieu de l'écriture. L'étoile s'était allumée, le fichier n'avait jamais été touché, et
+    /// rien ne le signalait. <c>App</c> attend donc cette tâche avant de sortir, comme il attend
+    /// déjà le désarmement du presse-papier après une injection de secrets.
+    /// </remarks>
+    public Task PendingFavoriteWrite { get; private set; } = Task.CompletedTask;
 
     /// <summary>Ligne de la liste. INotifyPropertyChanged pour le décompte sur le badge n°1.</summary>
     private sealed class PickerItem : System.ComponentModel.INotifyPropertyChanged
@@ -223,12 +238,13 @@ public partial class BrowserPickerWindow : Window
     /// rafraîchit seulement si elle est là, par le même point que les mutations MCP.
     /// </para>
     /// </remarks>
-    private async void BtnFavorite_Click(object sender, RoutedEventArgs e)
-    {
-        bool wanted = BtnFavorite.IsChecked == true;
+    private void BtnFavorite_Click(object sender, RoutedEventArgs e) =>
+        // Le décompte d'ouverture automatique est déjà annulé par PreviewMouseDown : sans ça,
+        // mettre en favori aurait ouvert le navigateur sous les doigts.
+        PendingFavoriteWrite = ApplyFavoriteAsync(BtnFavorite.IsChecked == true);
 
-        // Le décompte est déjà annulé par PreviewMouseDown : sans ça, mettre en favori aurait
-        // ouvert le navigateur sous les doigts.
+    private async Task ApplyFavoriteAsync(bool wanted)
+    {
         BtnFavorite.IsEnabled = false;
         try
         {
