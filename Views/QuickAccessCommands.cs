@@ -52,6 +52,7 @@ public sealed class QuickAccessCommands(IQuickAccessView view)
     });
 
     // ── Fenêtre
+    public ICommand ToggleTileMode { get; } = new RelayCommand(view.ToggleTileMode);
     public ICommand ToggleTileLock { get; } = new RelayCommand(view.ToggleTileLock);
     public ICommand Minimize { get; } = new RelayCommand(view.Minimize);
     public ICommand HideToTray { get; } = new RelayCommand(view.HideToTray);
@@ -78,6 +79,7 @@ public interface IQuickAccessView
     void SyncVault();
 
     void RefreshGrid();
+    void ToggleTileMode();
     void ToggleTileLock();
 
     void Minimize();

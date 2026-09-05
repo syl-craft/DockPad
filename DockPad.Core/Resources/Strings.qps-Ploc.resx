@@ -483,6 +483,12 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
 
 {2}</value>
   </data>
+  <data name="Picker_Favorite_Add" xml:space="preserve">
+    <value>4j0ut3r c3tt3 p4g3 4ux f4v0r15</value>
+  </data>
+  <data name="Picker_Favorite_Remove" xml:space="preserve">
+    <value>R3t1r3r c3tt3 p4g3 d35 f4v0r15</value>
+  </data>
   <data name="Picker_Title" xml:space="preserve">
     <value>0uvr1r 4v3c…</value>
   </data>
@@ -662,6 +668,12 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   </data>
   <data name="Quick_TileLock_Unlocked" xml:space="preserve">
     <value>T3rm1n3r — l3 d3pl4c3m3nt d35 tu1l35 35t 4ct1f</value>
+  </data>
+  <data name="Quick_TileMode_ToFavorites" xml:space="preserve">
+    <value>4ff1ch3r l35 f4v0r15</value>
+  </data>
+  <data name="Quick_TileMode_ToShortcuts" xml:space="preserve">
+    <value>R3v3n1r 4ux r4cc0urc15</value>
   </data>
   <data name="Quick_Tile_Add" xml:space="preserve">
     <value>➕ 4j0ut3r</value>

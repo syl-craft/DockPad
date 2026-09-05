@@ -82,4 +82,23 @@ public class ConfigBackupTests : IDisposable
         Assert.True(Directory.Exists(dir));
         Assert.EndsWith(".backup", dir);
     }
+
+    /// <summary>
+    /// La liste des configurations sauvegardées doit suivre l'ajout des favoris.
+    /// </summary>
+    /// <remarks>
+    /// Un oubli ici ne se voit qu'au moment d'une restauration — c'est-à-dire au pire moment, et
+    /// trop tard. La grille des favoris a le même poids que celle des raccourcis : la laisser
+    /// dehors, c'est sauvegarder la moitié de la configuration en croyant l'avoir toute prise.
+    /// </remarks>
+    [Fact]
+    public void ProfileFiles_ContientLesQuatreFichiersDesDeuxGrilles()
+    {
+        var noms = ConfigBackup.ProfileFiles().Select(Path.GetFileName).ToList();
+
+        Assert.Contains("shortcuts.json", noms);
+        Assert.Contains("pages.json", noms);
+        Assert.Contains("favorites.json", noms);
+        Assert.Contains("favorite-pages.json", noms);
+    }
 }

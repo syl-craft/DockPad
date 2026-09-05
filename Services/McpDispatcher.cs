@@ -54,29 +54,39 @@ public static class McpDispatcher
         }
     }
 
+    /// <summary>
+    /// Grille visée par la requête. Absente = les raccourcis, donc les appels existants ne changent
+    /// pas de sens ; une valeur inconnue lève, et <see cref="Handle"/> en fait un refus nommé.
+    /// </summary>
+    private static TileFiles Files(JsonElement args) =>
+        TileStore.FilesFor(TileStore.Parse(OptString(args, "target")));
+
     private static ActionResult Execute(string tool, JsonElement args) => tool switch
     {
-        "dockpad_grid_get"        => ShortcutActionService.GetGrid(OptInt(args, "page")),
+        "dockpad_grid_get"        => ShortcutActionService.GetGrid(OptInt(args, "page"), Files(args)),
         "dockpad_shortcut_add"    => ShortcutActionService.Add(
                                          Deserialize<List<ShortcutAddItem>>(args, "items")
-                                         ?? throw new JsonException("items requis")),
+                                         ?? throw new JsonException("items requis"), Files(args)),
         "dockpad_shortcut_update" => ShortcutActionService.Update(
                                          ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
-                                         Deserialize<ShortcutUpdate>(args, "changes") ?? new ShortcutUpdate()),
+                                         Deserialize<ShortcutUpdate>(args, "changes") ?? new ShortcutUpdate(),
+                                         Files(args)),
         "dockpad_shortcut_move"   => ShortcutActionService.Move(
                                          ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
-                                         ReqInt(args, "toPage"), OptInt(args, "toRow"), OptInt(args, "toCol")),
+                                         ReqInt(args, "toPage"), OptInt(args, "toRow"), OptInt(args, "toCol"),
+                                         Files(args)),
         "dockpad_shortcut_delete" => ShortcutActionService.Delete(
-                                         ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col")),
-        "dockpad_page_add"        => PageActionService.Add(OptString(args, "iconPath")),
+                                         ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
+                                         Files(args)),
+        "dockpad_page_add"        => PageActionService.Add(OptString(args, "iconPath"), Files(args)),
         // iconPath : propriété absente = inchangé ; "" = retirer (mappé vers null) ; chemin = nouvelle icône
         "dockpad_page_update"     => PageActionService.Update(
                                          ReqInt(args, "index"),
                                          iconProvided: args.ValueKind == JsonValueKind.Object
                                                        && args.TryGetProperty("iconPath", out _),
                                          OptString(args, "iconPath") is { Length: > 0 } ip ? ip : null,
-                                         OptInt(args, "newIndex")),
-        "dockpad_page_delete"     => PageActionService.Delete(ReqInt(args, "index")),
+                                         OptInt(args, "newIndex"), Files(args)),
+        "dockpad_page_delete"     => PageActionService.Delete(ReqInt(args, "index"), Files(args)),
         "dockpad_browser_list"    => BrowserActionService.ListBrowsers(),
         "dockpad_browser_update"  => BrowserActionService.UpdateBrowser(
                                          ReqString(args, "id"),

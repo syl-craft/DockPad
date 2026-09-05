@@ -46,7 +46,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-idle|panel-loading|panel-quota|window|window-off|window-unlocked|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-idle|panel-loading|panel-quota|window|window-off|window-unlocked|window-favorites|config> <cheminPng>");
             return;
         }
 
@@ -69,7 +69,10 @@ internal static class Program
 
         // La fenêtre entière se juge avec une grille remplie : vide, elle ne montre ni les icônes,
         // ni les bandes de couleur des types, ni la pagination.
-        if (target is "window" or "window-off" or "window-unlocked") WriteDemoGrid();
+        if (target is "window" or "window-off" or "window-unlocked" or "window-favorites") WriteDemoGrid();
+        // La grille des favoris est un fichier à part : sans elle, « window-favorites » capturerait
+        // une page vide, qui ne montre ni tuile, ni bande de couleur, ni pagination.
+        if (target == "window-favorites") WriteDemoFavorites();
 
         var app = new App();
         app.InitializeComponent();
@@ -115,9 +118,10 @@ internal static class Program
             return;
         }
 
-        if (target is "window" or "window-off" or "window-unlocked")
+        if (target is "window" or "window-off" or "window-unlocked" or "window-favorites")
         {
-            CaptureWindow(outPath, unlockTiles: target == "window-unlocked");
+            CaptureWindow(outPath, unlockTiles: target == "window-unlocked",
+                          favorites: target == "window-favorites");
             return;
         }
 
@@ -130,7 +134,7 @@ internal static class Program
 
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | panel-quota | window | window-off | window-unlocked | config)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | panel-quota | window | window-off | window-unlocked | window-favorites | config)");
         }
 
         // Show + Dispatcher.Run : ShowDialog retourne immédiatement ici (Application jamais Run).
@@ -150,14 +154,9 @@ internal static class Program
     /// son contenu contourne l'instanciation de la fenêtre. Le ViewModel de production est remplacé
     /// par la fixture avant toute lecture : sinon la capture embarquerait la consommation réelle.
     /// </remarks>
-    private static void CaptureWindow(string outPath, bool unlockTiles = false)
+    private static void CaptureWindow(string outPath, bool unlockTiles = false, bool favorites = false)
     {
         var quick = new QuickAccessWindow();
-
-        // Le verrou des tuiles n'a pas d'autre déclencheur que son bouton : on lève son événement
-        // Click, plutôt que d'ouvrir l'état en public pour le seul besoin de la capture.
-        if (unlockTiles && quick.FindName("TileLockButton") is Button lockButton)
-            lockButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
 
         // Largeur lue sur la fenêtre ; la hauteur vient de la mesure, la fenêtre étant en
         // SizeToContent (sa propriété Height vaut NaN).
@@ -166,6 +165,18 @@ internal static class Program
         quick.UsageBannerPanel.Start();
 
         var root = (FrameworkElement)quick.Content;
+
+        // Un premier passage AVANT de presser : une liaison ne s'évalue qu'à la mise en page, donc
+        // la propriété Command des boutons est encore nulle sur une fenêtre jamais mesurée.
+        root.Measure(new Size(width, double.PositiveInfinity));
+        root.Arrange(new Rect(0, 0, width, root.DesiredSize.Height));
+        root.UpdateLayout();
+
+        // Le verrou et le mode n'ont pas d'autre déclencheur que leur bouton : on passe par lui,
+        // plutôt que d'ouvrir leur état en public pour le seul besoin de la capture.
+        if (unlockTiles) Press(quick, "TileLockButton");
+        if (favorites) Press(quick, "TileModeButton");
+
         // Deux passages : la géométrie du bandeau est posée au premier LayoutUpdated, donc APRÈS la
         // première mesure. Sans le second passage, la hauteur retenue est celle d'avant et la barre
         // de pagination sort de l'image. La vraie fenêtre, elle, en SizeToContent, se réajuste
@@ -443,6 +454,69 @@ internal static class Program
             new PageConfig { Index = 1 },
             new PageConfig { Index = 2 },
         ]);
+    }
+
+    /// <summary>
+    /// Déclenche un bouton de la toolbar par sa <b>commande</b>, et non par son événement Click.
+    /// </summary>
+    /// <remarks>
+    /// <c>RaiseEvent(ButtonBase.ClickEvent)</c> ne fait <b>pas</b> exécuter la <c>Command</c> liée :
+    /// c'est <c>Button.OnClick()</c> qui s'en charge, et il est protégé. Depuis que les boutons de
+    /// la toolbar sont des commandes, la cible <c>window-unlocked</c> capturait donc l'état par
+    /// défaut — cadenas fermé — en prétendant montrer le verrou ouvert, sans le moindre message.
+    /// Passer par la commande emprunte exactement le chemin de l'utilisateur.
+    /// </remarks>
+    private static void Press(QuickAccessWindow window, string buttonName)
+    {
+        if (window.FindName(buttonName) is not Button button)
+            throw new InvalidOperationException($"bouton introuvable : {buttonName}");
+        if (button.Command is not { } command)
+            throw new InvalidOperationException($"bouton sans commande : {buttonName}");
+
+        command.Execute(button.CommandParameter);
+    }
+
+    /// <summary>
+    /// Une grille de favoris de démonstration : des sites, ce que le mode Favoris contient
+    /// naturellement.
+    /// </summary>
+    /// <remarks>
+    /// Les icônes viennent du jeu de PNG du projet quand il est là, et retombent sinon sur celle du
+    /// navigateur — exactement ce que fait DockPad pour une tuile web sans icône propre. Aucune
+    /// n'est embarquée dans le dépôt : ce sont des logos de produits.
+    /// </remarks>
+    private static void WriteDemoFavorites()
+    {
+        string browser = FirstExisting(
+            @"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe");
+
+        var favorites = new List<ShortcutEntry>
+        {
+            Tile(0, 0, 0, "github.com", ShortcutType.OpenUrl,
+                 "https://github.com/anthropics/claude-code/pull/1234", Or(DemoIcon("github"), browser)),
+            Tile(0, 0, 1, "dev.azure.com", ShortcutType.OpenUrl,
+                 "https://dev.azure.com/demo/_boards", Or(DemoIcon("azure-devops"), browser)),
+            Tile(0, 0, 2, "mail.google.com", ShortcutType.OpenUrl,
+                 "https://mail.google.com/mail/u/0", Or(DemoIcon("gmail"), browser)),
+            Tile(0, 0, 3, "figma.com", ShortcutType.OpenUrl,
+                 "https://figma.com/files/recent", Or(DemoIcon("figma"), browser)),
+            Tile(0, 1, 0, "learn.microsoft.com", ShortcutType.OpenUrl,
+                 "https://learn.microsoft.com/dotnet/desktop/wpf", browser),
+            Tile(0, 1, 1, "localhost:44351", ShortcutType.OpenUrl,
+                 "https://localhost:44351/admin", browser),
+        };
+
+        ShortcutService.Save(favorites.Where(t => t.Command.Length > 0).ToList(),
+                             TileStore.EntriesPath(TileTarget.Favorites));
+
+        // Deux pages : les favoris ont leur PROPRE pagination, et c'est la moitié de ce que la
+        // capture doit montrer — la barre du bas ne suit pas celle des raccourcis.
+        PageConfigService.Save(
+        [
+            new PageConfig { Index = 0 },
+            new PageConfig { Index = 1 },
+        ], TileStore.PagesPath(TileTarget.Favorites));
     }
 
     /// <summary>Le premier des deux qui ne soit pas vide.</summary>

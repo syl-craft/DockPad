@@ -14,20 +14,25 @@ public static class PageConfigService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    public static List<PageConfig> Load()
+    public static List<PageConfig> Load() => Load(FilePath);
+
+    /// <summary>Les pages d'un fichier donné — celles des raccourcis, ou celles des favoris.</summary>
+    public static List<PageConfig> Load(string path)
     {
-        if (!File.Exists(FilePath)) return [];
+        if (!File.Exists(path)) return [];
         try
         {
-            var json = File.ReadAllText(FilePath);
+            var json = File.ReadAllText(path);
             return JsonSerializer.Deserialize<List<PageConfig>>(json, JsonOptions) ?? [];
         }
-        catch (Exception ex) { LogService.Warn(ex, "Chargement de pages.json (liste vide utilisée)"); return []; }
+        catch (Exception ex) { LogService.Warn(ex, $"Chargement de {Path.GetFileName(path)} (liste vide utilisée)"); return []; }
     }
 
-    public static void Save(List<PageConfig> pages)
+    public static void Save(List<PageConfig> pages) => Save(pages, FilePath);
+
+    public static void Save(List<PageConfig> pages, string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(pages, JsonOptions));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, JsonSerializer.Serialize(pages, JsonOptions));
     }
 }

@@ -17,6 +17,14 @@ public static class DockPadTools
 
     private const string PosDoc = "Positions 0-based : page 0 = première page, lignes 0-3, colonnes 0-5.";
 
+    /// <summary>
+    /// Documentation du paramètre de grille, la même sur les huit outils : une seule phrase, donc
+    /// une seule à corriger le jour où une troisième grille apparaîtrait.
+    /// </summary>
+    private const string TargetDoc =
+        "Grille visée : \"shortcuts\" (défaut) ou \"favorites\". Les favoris ont leurs propres pages " +
+        "et leurs propres positions ; les deux grilles ne se mélangent jamais.";
+
     // ───── Grille ─────
 
     [McpServerTool(Name = "dockpad_grid_get")]
@@ -24,8 +32,9 @@ public static class DockPadTools
                  "libres. iconProfilePath est relatif à %APPDATA%\\DockPad\\ ; iconPath est le chemin " +
                  "source d'origine. " + PosDoc)]
     public static string GridGet(
-        [Description("Limiter à une page (0-based). Omis = toutes les pages.")] int? page = null)
-        => Call("dockpad_grid_get", new { page });
+        [Description("Limiter à une page (0-based). Omis = toutes les pages.")] int? page = null,
+        [Description(TargetDoc)] string? target = null)
+        => Call("dockpad_grid_get", new { page, target });
 
     [McpServerTool(Name = "dockpad_shortcut_add")]
     [Description("Ajoute un ou plusieurs raccourcis (lot tout-ou-rien). Position omise = première case " +
@@ -35,27 +44,31 @@ public static class DockPadTools
                      "(RunCommand|OpenFolder|OpenUrl|OpenTerminal|SwitchToProcess, défaut RunCommand), " +
                      "page/row/col (optionnels), iconPath (optionnel — sinon icône de l'exe), " +
                      "terminal (pour OpenTerminal), processSwitch (pour SwitchToProcess).")]
-        List<ShortcutAddItem> items)
-        => Call("dockpad_shortcut_add", new { items });
+        List<ShortcutAddItem> items,
+        [Description(TargetDoc)] string? target = null)
+        => Call("dockpad_shortcut_add", new { items, target });
 
     [McpServerTool(Name = "dockpad_shortcut_update")]
     [Description("Modifie une tuile identifiée par (page, row, col). Seuls les champs fournis changent. " + PosDoc)]
     public static string ShortcutUpdate(int page, int row, int col,
         [Description("Champs à modifier : name, type, command, iconPath, terminal, processSwitch.")]
-        ShortcutUpdate changes)
-        => Call("dockpad_shortcut_update", new { page, row, col, changes });
+        ShortcutUpdate changes,
+        [Description(TargetDoc)] string? target = null)
+        => Call("dockpad_shortcut_update", new { page, row, col, changes, target });
 
     [McpServerTool(Name = "dockpad_shortcut_move")]
     [Description("Déplace une tuile vers une page/case. Sans toRow/toCol : même case si libre, sinon " +
                  "première case libre de la page cible. " + PosDoc)]
     public static string ShortcutMove(int page, int row, int col, int toPage,
-                                      int? toRow = null, int? toCol = null)
-        => Call("dockpad_shortcut_move", new { page, row, col, toPage, toRow, toCol });
+                                      int? toRow = null, int? toCol = null,
+                                      [Description(TargetDoc)] string? target = null)
+        => Call("dockpad_shortcut_move", new { page, row, col, toPage, toRow, toCol, target });
 
     [McpServerTool(Name = "dockpad_shortcut_delete")]
     [Description("Supprime une tuile. Requiert l'option « Autoriser la suppression » de DockPad. " + PosDoc)]
-    public static string ShortcutDelete(int page, int row, int col)
-        => Call("dockpad_shortcut_delete", new { page, row, col });
+    public static string ShortcutDelete(int page, int row, int col,
+                                       [Description(TargetDoc)] string? target = null)
+        => Call("dockpad_shortcut_delete", new { page, row, col, target });
 
     // ───── Pages ─────
 
@@ -63,23 +76,26 @@ public static class DockPadTools
     [Description("Crée une nouvelle page (à la fin) et renvoie son index 0-based.")]
     public static string PageAdd(
         [Description("Icône du bouton de pagination (chemin .png/.ico/.exe…). Optionnel.")]
-        string? iconPath = null)
-        => Call("dockpad_page_add", new { iconPath });
+        string? iconPath = null,
+        [Description(TargetDoc)] string? target = null)
+        => Call("dockpad_page_add", new { iconPath, target });
 
     [McpServerTool(Name = "dockpad_page_update")]
     [Description("Change l'icône d'une page et/ou la déplace par insertion à newIndex (pages " +
                  "intermédiaires décalées). iconPath : omis = icône inchangée, chaîne vide \"\" = " +
                  "retirer l'icône, chemin = nouvelle icône.")]
-    public static string PageUpdate(int index, string? iconPath = null, int? newIndex = null)
+    public static string PageUpdate(int index, string? iconPath = null, int? newIndex = null,
+                                    [Description(TargetDoc)] string? target = null)
         // iconPath null est omis du JSON (WhenWritingNull) → « inchangé » côté dispatcher ;
         // "" est transmis → « retirer » ; un chemin est transmis → nouvelle icône.
-        => Call("dockpad_page_update", new { index, iconPath, newIndex });
+        => Call("dockpad_page_update", new { index, iconPath, newIndex, target });
 
     [McpServerTool(Name = "dockpad_page_delete")]
     [Description("Supprime une page : ses tuiles sont supprimées, les pages suivantes décalées. " +
                  "Requiert l'option « Autoriser la suppression » de DockPad.")]
-    public static string PageDelete(int index)
-        => Call("dockpad_page_delete", new { index });
+    public static string PageDelete(int index,
+                                    [Description(TargetDoc)] string? target = null)
+        => Call("dockpad_page_delete", new { index, target });
 
     // ───── Navigateurs & règles ─────
 

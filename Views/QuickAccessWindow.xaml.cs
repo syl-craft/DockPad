@@ -24,7 +24,32 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// </summary>
     public QuickAccessCommands Commands { get; }
 
-    private int _currentPage = 0;
+    /// <summary>
+    /// Laquelle des deux grilles est affichée. Voir <see cref="TileModeState"/> : le mode Favoris
+    /// est un détour, il se repose quand la fenêtre est rangée et rien n'est écrit sur le disque.
+    /// </summary>
+    private readonly TileModeState _mode = new();
+
+    /// <summary>Les deux fichiers de la grille affichée — tout passe par là, lecture et écriture.</summary>
+    private TileFiles Files => TileStore.FilesFor(_mode.Target);
+
+    /// <summary>
+    /// Un index de page <b>par mode</b>, et non un seul partagé.
+    /// </summary>
+    /// <remarks>
+    /// Aller voir les favoris et revenir ne doit pas faire perdre la page où l'on était ; et
+    /// arriver sur les favoris doit commencer à leur page 0, pas à la page 3 des raccourcis, qui
+    /// n'existe peut-être pas chez eux.
+    /// </remarks>
+    private int _pageShortcuts = 0;
+    private int _pageFavorites = 0;
+
+    /// <summary>La page affichée dans le mode courant.</summary>
+    private int CurrentPage
+    {
+        get => _mode.IsFavorites ? _pageFavorites : _pageShortcuts;
+        set { if (_mode.IsFavorites) _pageFavorites = value; else _pageShortcuts = value; }
+    }
 
     private IntPtr _hwnd;
     private Point _dragStartPoint;
@@ -56,6 +81,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // devient cliquable et inerte, sans erreur de compilation ni exception.
         if (MenuButton.ContextMenu is { } menu) menu.DataContext = this;
 
+        ApplyTileMode();   // avant PopulateGrid : c'est lui qui décide de quel fichier elle vient
         PopulateGrid();
         UpdateHotkeyDisplay();
         UpdateTriggerMods();
@@ -149,6 +175,17 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // Ranger la fenêtre repose le verrou : on ne peut pas oublier de le refermer.
         _tileLock.Lock();
         ApplyTileLock();
+
+        // Et repose le mode, pour la même raison : le mode Favoris est un détour, pas un état.
+        // Le retrouver deux jours plus tard sans savoir pourquoi la grille a changé serait
+        // déroutant. Rien ne se repeuple ici — la fenêtre n'est plus visible, PopulateGrid aura
+        // lieu au prochain affichage par le chemin qui la remonte.
+        if (_mode.IsFavorites)
+        {
+            _mode.Reset();
+            ApplyTileMode();
+            PopulateGrid();
+        }
     }
 
     /// <summary>
@@ -161,6 +198,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     {
         UpdateHotkeyDisplay();
         ApplyTileLock();
+        ApplyTileMode();
         PopulateGrid();   // infobulles de tuiles et libellés de type
     }
 
@@ -218,6 +256,31 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         RegisterHotkey();
         UpdateHotkeyDisplay();
         UpdateTriggerMods();
+    }
+
+    /// <summary>Reporte le mode affiché sur le bouton de la toolbar.</summary>
+    /// <remarks>
+    /// Même patron que <see cref="ApplyTileLock"/>, y compris le nom d'accessibilité : le bouton
+    /// n'a qu'un glyphe, et un lecteur d'écran annoncerait sinon « bouton » sans plus. Ni infobulle
+    /// ni nom ne peuvent venir d'un <c>{loc:T}</c> en XAML — cette affectation est une valeur
+    /// locale, elle remplacerait la liaison dès l'initialisation.
+    /// </remarks>
+    private void ApplyTileMode()
+    {
+        TileModeButton.Content = _mode.Glyph;
+        TileModeButton.ToolTip = _mode.Tooltip;
+        System.Windows.Automation.AutomationProperties.SetName(TileModeButton, _mode.Tooltip);
+        // Sur les favoris, le bouton passe en bleu accent : c'est un mode actif, il doit se voir
+        // depuis l'autre bout de la fenêtre — comme le verrou ouvert.
+        TileModeButton.Style = (Style)FindResource(_mode.IsFavorites ? "PrimaryButton" : "SecondaryButton");
+    }
+
+    public void ToggleTileMode()
+    {
+        ClearSearch();   // la recherche filtre le mode courant : ses résultats ne valent plus rien
+        _mode.Toggle();
+        ApplyTileMode();
+        PopulateGrid();
     }
 
     public void ToggleTileLock()
@@ -365,13 +428,13 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private void GoToAdjacentPage(int delta)
     {
         // Même règle d'affichage que UpdatePagination : pages avec contenu ou config
-        var all       = ShortcutService.Load();
-        var configs   = PageConfigService.Load();
+        var all       = ShortcutService.Load(Files.EntriesPath);
+        var configs   = PageConfigService.Load(Files.PagesPath);
         int maxUsed   = all.Count     > 0 ? all.Max(s => s.Page)      : -1;
         int maxConfig = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
-        int lastShown = Math.Max(Math.Max(maxUsed, maxConfig), _currentPage);
+        int lastShown = Math.Max(Math.Max(maxUsed, maxConfig), CurrentPage);
 
-        int target = _currentPage + delta;
+        int target = CurrentPage + delta;
         if (target < 0 || target > lastShown) return; // pas de bouclage aux extrémités
         GoToPage(target);
     }
@@ -496,10 +559,10 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// </remarks>
     private void PopulateGrid()
     {
-        var all = ShortcutService.Load();
+        var all = ShortcutService.Load(Files.EntriesPath);
         UpdatePagination(all);
 
-        var onPage = all.Where(s => s.Page == _currentPage).ToList();
+        var onPage = all.Where(s => s.Page == CurrentPage).ToList();
         var cells = new List<TileCell>(ShortcutActionService.GridRows * ShortcutActionService.GridCols);
 
         for (int row = 0; row < ShortcutActionService.GridRows; row++)
@@ -533,17 +596,17 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     {
         PaginationBar.Children.Clear();
 
-        var configs     = PageConfigService.Load();
+        var configs     = PageConfigService.Load(Files.PagesPath);
         int maxUsed     = all.Count     > 0 ? all.Max(s => s.Page)      : -1;
         int maxConfig   = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
         // Uniquement les pages avec contenu + la page courante si elle est plus loin
-        int lastShown   = Math.Max(Math.Max(maxUsed, maxConfig), _currentPage);
+        int lastShown   = Math.Max(Math.Max(maxUsed, maxConfig), CurrentPage);
 
         for (int p = 0; p <= lastShown; p++)
         {
             int page   = p;
             var config = configs.FirstOrDefault(c => c.Index == page);
-            bool active = page == _currentPage;
+            bool active = page == CurrentPage;
 
             var btn = BuildPageButton(page, config, active, lastShown);
             btn.Click += (_, _) => GoToPage(page);
@@ -622,7 +685,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     private void GoToPage(int page)
     {
-        _currentPage = page;
+        CurrentPage = page;
         PopulateGrid();
     }
 
@@ -633,39 +696,39 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             Title  = Loc.T("Quick_Page_PickIcon"),
             Filter = Loc.T("Shortcut_PickIcon_Filter"),
         };
-        var configs = PageConfigService.Load();
+        var configs = PageConfigService.Load(Files.PagesPath);
         var current = configs.FirstOrDefault(p => p.Index == pageIndex);
         var initDir = current != null ? GetIconInitialDir(current.IconPath, current.IconProfilePath) : null;
         if (initDir != null) dlg.InitialDirectory = initDir;
 
         if (dlg.ShowDialog() != true) return;
 
-        var r = PageActionService.Update(pageIndex, iconProvided: true, dlg.FileName, null);
+        var r = PageActionService.Update(pageIndex, iconProvided: true, dlg.FileName, null, Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
     private void ClearPageIcon(int pageIndex)
     {
-        var r = PageActionService.Update(pageIndex, iconProvided: true, null, null);
+        var r = PageActionService.Update(pageIndex, iconProvided: true, null, null, Files);
         if (!r.Ok) return;
         PopulateGrid();
     }
 
     private void MovePage(int fromIndex, int toIndex)
     {
-        var r = PageActionService.Update(fromIndex, iconProvided: false, null, newIndex: toIndex);
+        var r = PageActionService.Update(fromIndex, iconProvided: false, null, newIndex: toIndex, files: Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
 
-        if      (_currentPage == fromIndex) _currentPage = toIndex;
-        else if (_currentPage == toIndex)   _currentPage = fromIndex;
+        if      (CurrentPage == fromIndex) CurrentPage = toIndex;
+        else if (CurrentPage == toIndex)   CurrentPage = fromIndex;
 
         PopulateGrid();
     }
 
     private void DeletePage(int pageIndex)
     {
-        var shortcuts    = ShortcutService.Load();
+        var shortcuts    = ShortcutService.Load(Files.EntriesPath);
         int entryCount   = shortcuts.Count(s => s.Page == pageIndex);
         string msg = entryCount > 0
             ? Loc.F("Quick_Page_ConfirmDelete", pageIndex + 1, entryCount)
@@ -674,12 +737,12 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         if (!AppDialog.Confirm(msg, Loc.T("Quick_Page_Delete"), this))
             return;
 
-        var r = PageActionService.Delete(pageIndex);
+        var r = PageActionService.Delete(pageIndex, Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
 
-        var all = ShortcutService.Load();
+        var all = ShortcutService.Load(Files.EntriesPath);
         int newMax = all.Count > 0 ? all.Max(s => s.Page) : 0;
-        _currentPage = Math.Min(_currentPage > pageIndex ? _currentPage - 1 : _currentPage, newMax);
+        CurrentPage = Math.Min(CurrentPage > pageIndex ? CurrentPage - 1 : CurrentPage, newMax);
 
         PopulateGrid();
     }
@@ -751,11 +814,11 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         var item = new ShortcutAddItem
         {
             Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
-            Page = _currentPage, Row = dlg.Entry.Row, Col = dlg.Entry.Col,
+            Page = CurrentPage, Row = dlg.Entry.Row, Col = dlg.Entry.Col,
             IconPath = string.IsNullOrEmpty(dlg.Entry.IconPath) ? null : dlg.Entry.IconPath,
             Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
         };
-        var r = await ShortcutActionService.AddAsync([item]);
+        var r = await ShortcutActionService.AddAsync([item], Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
@@ -769,14 +832,14 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         {
             Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
             IconPath = dlg.Entry.IconPath, Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
-        });
+        }, Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
     private void DuplicateTile(ShortcutEntry entry)
     {
-        var r = ShortcutActionService.Duplicate(entry.Page, entry.Row, entry.Col);
+        var r = ShortcutActionService.Duplicate(entry.Page, entry.Row, entry.Col, Files);
         if (!r.Ok) { AppDialog.Info(r.Error!, "Dupliquer", this); return; }
         PopulateGrid();
     }
@@ -785,15 +848,15 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     {
         var moveMenu = new MenuItem { Header = Loc.T("Quick_Tile_MoveToPage") };
 
-        var all     = ShortcutService.Load();
-        var configs = PageConfigService.Load();
+        var all     = ShortcutService.Load(Files.EntriesPath);
+        var configs = PageConfigService.Load(Files.PagesPath);
         int maxUsed   = all.Count     > 0 ? all.Max(s => s.Page)      : -1;
         int maxConfig = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
         int lastPage  = Math.Max(maxUsed, maxConfig) + 1; // inclut une page vide
 
         for (int p = 0; p <= lastPage; p++)
         {
-            if (p == _currentPage) continue; // pas la page courante
+            if (p == CurrentPage) continue; // pas la page courante
 
             int targetPage = p;
             var config     = configs.FirstOrDefault(c => c.Index == p);
@@ -846,7 +909,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     private void MoveTileToPage(ShortcutEntry entry, int targetPage)
     {
-        var r = ShortcutActionService.Move(entry.Page, entry.Row, entry.Col, targetPage);
+        var r = ShortcutActionService.Move(entry.Page, entry.Row, entry.Col, targetPage, files: Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
@@ -891,7 +954,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     {
         if (!AppDialog.Confirm(Loc.F("Quick_Tile_ConfirmDelete", entry.Name), owner: this)) return;
 
-        ShortcutActionService.Delete(entry.Page, entry.Row, entry.Col);
+        ShortcutActionService.Delete(entry.Page, entry.Row, entry.Col, Files);
         PopulateGrid();
     }
 
@@ -1010,14 +1073,14 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         entry.IconPath        = dlg.FileName;
         entry.IconProfilePath = profilePath;
 
-        var all = ShortcutService.Load();
+        var all = ShortcutService.Load(Files.EntriesPath);
         var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
         if (existing != null)
         {
             existing.IconPath        = dlg.FileName;
             existing.IconProfilePath = profilePath;
         }
-        ShortcutService.Save(all);
+        ShortcutService.Save(all, Files.EntriesPath);
 
         // Le contenu du bouton est engendre par le gabarit : on ne va plus y chercher l'Image a
         // la main. Repeupler la grille republie la cellule, donc l'icone.
@@ -1104,9 +1167,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         if (_dragSource == null) return;
         if (_dragSource.Row == targetRow && _dragSource.Col == targetCol) return;
 
-        var all    = ShortcutService.Load();
-        var source = all.FirstOrDefault(s => s.Page == _currentPage && s.Row == _dragSource.Row && s.Col == _dragSource.Col);
-        var target = all.FirstOrDefault(s => s.Page == _currentPage && s.Row == targetRow       && s.Col == targetCol);
+        var all    = ShortcutService.Load(Files.EntriesPath);
+        var source = all.FirstOrDefault(s => s.Page == CurrentPage && s.Row == _dragSource.Row && s.Col == _dragSource.Col);
+        var target = all.FirstOrDefault(s => s.Page == CurrentPage && s.Row == targetRow       && s.Col == targetCol);
 
         if (source == null) return;
 
@@ -1116,7 +1179,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         else
             (source.Row, source.Col) = (targetRow, targetCol);
 
-        ShortcutService.Save(all);
+        ShortcutService.Save(all, Files.EntriesPath);
         PopulateGrid();
     }
 
@@ -1133,7 +1196,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     {
         var entry = new ShortcutEntry
         {
-            Page            = _currentPage,
+            Page            = CurrentPage,
             Row             = row,
             Col             = col,
             Name            = DroppedShortcut.FolderName(folderPath),
@@ -1152,7 +1215,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
         SaveDroppedEntry(new ShortcutEntry
         {
-            Page            = _currentPage,
+            Page            = CurrentPage,
             Row             = row,
             Col             = col,
             Name            = dropped.Name,
@@ -1164,13 +1227,13 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     private void SaveDroppedEntry(ShortcutEntry entry, int row, int col)
     {
-        var all      = ShortcutService.Load();
-        var existing = all.FirstOrDefault(s => s.Page == _currentPage && s.Row == row && s.Col == col);
+        var all      = ShortcutService.Load(Files.EntriesPath);
+        var existing = all.FirstOrDefault(s => s.Page == CurrentPage && s.Row == row && s.Col == col);
 
         if (existing != null)
         {
             // Case occupée : ouvrir le dialog pré-rempli
-            entry.Page = _currentPage;
+            entry.Page = CurrentPage;
             var dlg = new ShortcutDialog(entry) { Owner = this };
             if (dlg.ShowDialog() != true) return;
             all.Remove(existing);
@@ -1181,7 +1244,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             all.Add(entry);
         }
 
-        ShortcutService.Save(all);
+        ShortcutService.Save(all, Files.EntriesPath);
         PopulateGrid();
     }
 
@@ -1227,13 +1290,13 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// <summary>Resynchronise icônes + grille. Appelé par ↻ Actualiser et après chaque mutation MCP.</summary>
     public void RefreshGrid()
     {
-        var all = ShortcutService.Load();
+        var all = ShortcutService.Load(Files.EntriesPath);
         if (IconStoreService.SyncAll(all))
-            ShortcutService.Save(all);
+            ShortcutService.Save(all, Files.EntriesPath);
 
-        var pages = PageConfigService.Load();
+        var pages = PageConfigService.Load(Files.PagesPath);
         if (IconStoreService.SyncAllPages(pages))
-            PageConfigService.Save(pages);
+            PageConfigService.Save(pages, Files.PagesPath);
 
         PopulateGrid();
     }
@@ -1378,8 +1441,8 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private void ExecuteByHintKey(int keyNum, bool isCtrl)
     {
         var (row, col) = TileHintMap.CellFor(keyNum, isCtrl);
-        var entry = ShortcutService.Load()
-            .FirstOrDefault(s => s.Page == _currentPage && s.Row == row && s.Col == col);
+        var entry = ShortcutService.Load(Files.EntriesPath)
+            .FirstOrDefault(s => s.Page == CurrentPage && s.Row == row && s.Col == col);
         if (entry != null)
             ExecuteEntry(entry);
     }
@@ -1403,7 +1466,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     {
         // La regle de filtrage vit dans ShortcutSearch ; la vue ne fait que charger les icones et
         // ouvrir le popup, ce qui la regarde.
-        var results = ShortcutSearch.Filter(ShortcutService.Load(), SearchBox.Text)
+        var results = ShortcutSearch.Filter(ShortcutService.Load(Files.EntriesPath), SearchBox.Text)
             .Select(s => new SearchResultItem(
                 s, IconStoreService.LoadImage(IconStoreService.ResolveProfilePath(s.IconProfilePath) ?? s.IconPath)))
             .ToList();

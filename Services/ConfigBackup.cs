@@ -55,12 +55,18 @@ public static class ConfigBackup
         return backupDir;
     }
 
-    /// <summary>Les cinq configurations du profil, dans l'ordre où elles apparaissent à l'écran.</summary>
+    /// <summary>
+    /// Les configurations du profil, dans l'ordre où elles apparaissent à l'écran.
+    /// </summary>
+    /// <remarks>
+    /// Les <b>deux</b> grilles y sont, raccourcis et favoris : elles ont le même poids, et n'en
+    /// sauvegarder qu'une reviendrait à prendre la moitié de la configuration en croyant l'avoir
+    /// toute prise. L'oubli ne se verrait qu'au moment d'une restauration, donc trop tard.
+    /// </remarks>
     public static string[] ProfileFiles() =>
     [
         AppSettingsService.FilePath,
-        ShortcutService.FilePath,
-        PageConfigService.FilePath,
+        .. TileStore.AllPaths(),
         BrowserConfigService.FilePath,
         McpConfigService.FilePath,
         UsageConfigService.FilePath,

@@ -5,41 +5,45 @@ namespace DockPad.Services;
 /// <summary>Actions sur les pages, partagées UI ↔ MCP (mêmes règles que la pagination de QuickAccessWindow).</summary>
 public static class PageActionService
 {
-    public static ActionResult Add(string? iconPath = null)
+    public static ActionResult Add(string? iconPath = null, TileFiles? files = null)
     {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
-            var all = ShortcutService.Load();
-            var configs = PageConfigService.Load();
+            var all = ShortcutService.Load(files.EntriesPath);
+            var configs = PageConfigService.Load(files.PagesPath);
             string? profile = string.IsNullOrEmpty(iconPath) ? null : IconStoreService.CopyToProfile(iconPath);
             var result = AddCore(all, configs, iconPath ?? "", profile);
-            if (result.Ok) PageConfigService.Save(configs);
+            if (result.Ok) PageConfigService.Save(configs, files.PagesPath);
             return result;
         }
     }
 
-    public static ActionResult Update(int index, bool iconProvided, string? iconPath, int? newIndex)
+    public static ActionResult Update(int index, bool iconProvided, string? iconPath, int? newIndex,
+                                      TileFiles? files = null)
     {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
-            var all = ShortcutService.Load();
-            var configs = PageConfigService.Load();
+            var all = ShortcutService.Load(files.EntriesPath);
+            var configs = PageConfigService.Load(files.PagesPath);
             string? profile = iconProvided && !string.IsNullOrEmpty(iconPath)
                 ? IconStoreService.CopyToProfile(iconPath) : null;
             var result = UpdateCore(all, configs, index, iconProvided, iconPath, profile, newIndex);
-            if (result.Ok) { ShortcutService.Save(all); PageConfigService.Save(configs); }
+            if (result.Ok) { ShortcutService.Save(all, files.EntriesPath); PageConfigService.Save(configs, files.PagesPath); }
             return result;
         }
     }
 
-    public static ActionResult Delete(int index)
+    public static ActionResult Delete(int index, TileFiles? files = null)
     {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
-            var all = ShortcutService.Load();
-            var configs = PageConfigService.Load();
+            var all = ShortcutService.Load(files.EntriesPath);
+            var configs = PageConfigService.Load(files.PagesPath);
             var result = DeleteCore(all, configs, index);
-            if (result.Ok) { ShortcutService.Save(all); PageConfigService.Save(configs); }
+            if (result.Ok) { ShortcutService.Save(all, files.EntriesPath); PageConfigService.Save(configs, files.PagesPath); }
             return result;
         }
     }

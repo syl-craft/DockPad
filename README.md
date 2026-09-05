@@ -10,6 +10,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Thème clair et sombre**, lié à Windows ou choisi — bascule immédiate, barre de titre comprise
 - **Français, anglais et « 1337 »**, avec bascule immédiate depuis les Options — aucun redémarrage, les fenêtres ouvertes se retraduisent. Par défaut DockPad suit la langue de Windows
 - **Verrou du déplacement des tuiles** : un bouton de la toolbar (🔒 → ✓) ouvre la réorganisation, pour qu'un clic manqué ne déplace pas la tuile qu'on voulait lancer. Ranger la fenêtre repose le verrou
+- **Mode Favoris** : une seconde grille, avec ses propres pages et positions, alimentée par l'étoile de la popup de choix du navigateur (▦ → ★ dans la toolbar)
 - **Barre de recherche** globale avec navigation clavier
 - **Overlay numérique** (Ctrl/Shift + 1–9) pour exécution rapide au clavier
 - **Store d'icônes** portable dans `%APPDATA%\DockPad\icons\`
@@ -90,6 +91,28 @@ Clavier : `1-9` choix direct · `↑/↓` + `Entrée` · `Échap` annule · pert
 - [ ] Cliquer une URL n'importe où → la popup s'affiche ; cocher **Toujours pour ce domaine** pour créer une règle
 - [ ] Gérer les règles dans l'onglet **Règles de domaine** (recherche, filtre, réassociation, suppression)
 
+## Mode Favoris
+
+Une **seconde grille**, dédiée aux sites : ses propres pages, ses propres positions, et tout ce que
+la grille des raccourcis sait déjà faire — glisser-déposer, clic droit, overlay clavier, recherche.
+Le bouton **▦ / ★** de la toolbar, à gauche du verrou, passe de l'une à l'autre.
+
+![La grille des favoris](docs/screenshots/window-favorites.png)
+
+On y ajoute une page depuis la popup de choix du navigateur : l'**étoile en bas à droite** met la
+page courante en favori, et la retire si on la décoche. Elle est déjà allumée à l'ouverture quand
+l'URL y est — un toggle qui montre un état dit la vérité, et l'on peut mettre en favori sans ouvrir
+le lien.
+
+- Le favori garde l'**URL complète** et prend le **domaine** comme nom de tuile ; l'icône du site est
+  téléchargée comme pour toute tuile web (réglage Options → *Réseau*)
+- Il atterrit à la **première case libre**, pages balayées dans l'ordre ; si tout est plein, une page
+  est créée
+- **Le mode ne survit pas au rangement de la fenêtre** : masquer ou réduire ramène aux raccourcis.
+  C'est un détour, pas un réglage — rien n'est écrit sur le disque
+- Les favoris vivent dans `%APPDATA%\DockPad\favorites.json` et `favorite-pages.json`, **même
+  format** que les raccourcis, et sont inclus dans 💾 *Sauvegarder la configuration*
+
 ## Bandeau Usage IA
 
 Un bandeau sous la grille montre la consommation des assistants IA détectés : les deux jauges de quota (session de 5 h et semaine) avec leur heure de remise à zéro, puis les jetons de la session, du jour et du mois, le nombre de requêtes, le coût estimé et le modèle en cours. Un onglet par fournisseur quand il y en a plusieurs.
@@ -144,6 +167,8 @@ DockPad expose un serveur [MCP](https://modelcontextprotocol.io) : depuis Claude
 | Grille | `grid_get` · `shortcut_add` (lot tout-ou-rien) · `shortcut_update` · `shortcut_move` · `shortcut_delete` 🔒 |
 | Pages | `page_add` · `page_update` (icône, position) · `page_delete` 🔒 |
 | Navigateurs | `browser_list` · `browser_update` · `rule_list` · `rule_add` · `rule_delete` 🔒 |
+
+Les huit outils de grille et de pages acceptent un **`target`** optionnel — `"shortcuts"` (défaut) ou `"favorites"` — pour travailler sur l’une ou l’autre grille. Une valeur inconnue est refusée plutôt que ramenée aux raccourcis : écrire dans la mauvaise grille sans le dire serait pire.
 
 **Sécurité par défaut** : les outils 🔒 de suppression sont refusés tant que la case « Autoriser Claude à supprimer » n'est pas cochée — Claude peut construire, pas détruire. Chaque action (exécutée ✅, refusée 🚫 ou en erreur ❌) est visible dans l'onglet **Journal** et tracée dans les logs. Configuration dans `%APPDATA%\DockPad\mcp.json`, incluse dans 💾 Sauvegarder la configuration.
 

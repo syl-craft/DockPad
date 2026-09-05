@@ -16,6 +16,7 @@ namespace BrowserShot;
 /// Usage : BrowserShot &lt;cible&gt; &lt;cheminPng&gt; [tabIndex]
 ///   picker         popup « Ouvrir avec… » : 2 navigateurs à profils + 1 sans profil
 ///   picker-header  idem, 1er navigateur masqué → titre de groupe non choisissable
+///   picker-fav     idem, l'URL déjà en favori → étoile pleine en bleu accent
 ///   config         fenêtre « Navigateurs » (tabIndex 0 = Navigateurs, 1 = Règles)
 ///
 /// Les données affichées viennent d'un **profil de fixture** dans %TEMP% : la variable
@@ -82,6 +83,22 @@ internal static class Program
         {
             case "picker":
             case "picker-header":
+            case "picker-fav":
+                // « picker-fav » pose le favori AVANT de construire la fenêtre : l'état de
+                // l'étoile est lu au constructeur, sur le fichier. C'est le seul état qui prouve
+                // que le Trigger IsChecked mord — un attribut Content resté sur l'élément le
+                // battrait en silence, et l'étoile resterait creuse une fois cochée.
+                if (target == "picker-fav")
+                    ShortcutService.Save(
+                    [
+                        new ShortcutEntry
+                        {
+                            Name = "github.com", Type = ShortcutType.OpenUrl, Command = DemoUrl,
+                        },
+                    ], TileStore.EntriesPath(TileTarget.Favorites));
+                else
+                    ShortcutService.Save([], TileStore.EntriesPath(TileTarget.Favorites));
+
                 win = new BrowserPickerWindow(DemoUrl,
                     DemoConfig(hideFirst: target == "picker-header", withCanary: true)) { Topmost = true };
                 break;
@@ -104,7 +121,7 @@ internal static class Program
                 break;
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (picker | picker-header | config)");
+                throw new ArgumentException($"cible inconnue : {target} (picker | picker-header | picker-fav | config)");
         }
 
         win.ContentRendered += (_, _) =>

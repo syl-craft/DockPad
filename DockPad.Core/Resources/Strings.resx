@@ -483,6 +483,12 @@ This cannot be undone.</value>
 
 {2}</value>
   </data>
+  <data name="Picker_Favorite_Add" xml:space="preserve">
+    <value>Add this page to favourites</value>
+  </data>
+  <data name="Picker_Favorite_Remove" xml:space="preserve">
+    <value>Remove this page from favourites</value>
+  </data>
   <data name="Picker_Title" xml:space="preserve">
     <value>Open with…</value>
   </data>
@@ -662,6 +668,12 @@ This cannot be undone.</value>
   </data>
   <data name="Quick_TileLock_Unlocked" xml:space="preserve">
     <value>Done — tile moving is active</value>
+  </data>
+  <data name="Quick_TileMode_ToFavorites" xml:space="preserve">
+    <value>Show favourites</value>
+  </data>
+  <data name="Quick_TileMode_ToShortcuts" xml:space="preserve">
+    <value>Back to shortcuts</value>
   </data>
   <data name="Quick_Tile_Add" xml:space="preserve">
     <value>➕ Add</value>

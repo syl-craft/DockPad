@@ -68,6 +68,7 @@ Models/
     ShortcutAddItem.cs                    Item du lot dockpad_shortcut_add (position optionnelle)
     ShortcutEntry.cs                     Modèle raccourci rapide (page, row, col, name, type, command, iconPath, iconProfilePath)
     ShortcutUpdate.cs                     Champs modifiables par dockpad_shortcut_update (null = inchangé)
+    TileTarget.cs                         Laquelle des deux grilles : Shortcuts ou Favorites
     AiUsage.cs                            Instantané de consommation d'un fournisseur IA (jetons, quotas, coût)
     UsageWindow.cs                        Une fenêtre de quota : consommé + heure de remise à zéro
     AiProviderEntry.cs                    Un fournisseur dans usage.json (nom, masquage, ordre, détection)
@@ -107,7 +108,7 @@ Services/
     McpLogService.cs                       Journal en mémoire des actions MCP de la session (onglet Journal)
     McpPipeService.cs                      Named pipe DockPad_McpPipe — serveur multi-instances (instance principale) / client (relais --mcp)
     PageActionService.cs                  Actions sur les pages, partagées UI ↔ MCP (mêmes règles que la pagination)
-    PageConfigService.cs                 Load/Save pages.json (%APPDATA%\DockPad\pages.json)
+    PageConfigService.cs                 Load/Save des pages d'une grille (pages.json ou favorite-pages.json)
     PresetService.cs                     Raccourcis prédéfinis (Claude, PowerShell, VS Code, SSMS, GitHub Desktop)
     ProcessSwitchService.cs              SwitchOrLaunch : cherche via WMI, SetForegroundWindow ou lance l'exe
     RegistryService.cs                   CRUD registre (HKCR / HKCU / HKLM)
@@ -115,10 +116,13 @@ Services/
     ResourceStringResolver.cs            Résolution des @dll,-id via SHLoadIndirectString
     SettingsService.cs                   Lecture/écriture paramètres HKCU + autostart
     TileLockState.cs                      Verrou du déplacement des tuiles (état + glyphe + infobulle, sans WPF)
+    TileModeState.cs                      Mode affiché : raccourcis ou favoris (état + glyphe + infobulle, sans WPF)
+    TileStore.cs                          Le SEUL endroit qui sait quel fichier porte quelle grille
+    FavoriteToggle.cs                     L'étoile du popup : trouver, placer, nommer (cœurs purs) + SetAsync
     ShortcutActionService.cs              Actions sur la grille de raccourcis, partagées UI ↔ MCP (cœurs purs + enveloppes verrou/IO)
     ShortcutLauncher.cs                   Décide ce que lance une tuile (plan pur) puis l'exécute
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
-    ShortcutService.cs                   Load/Save shortcuts.json (%APPDATA%\DockPad\shortcuts.json)
+    ShortcutService.cs                   Load/Save des tuiles d'une grille (shortcuts.json ou favorites.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
@@ -191,7 +195,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (620 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (711 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -274,7 +278,7 @@ tools/
   - *Configuration* : ↺ Actualiser, ✎ Modifier, 💾 Sauvegarder, 📁 Voir le dossier
   - ✕ Quitter l'application
 - **Raccourci clavier actif** affiché en bas à droite (badge `Consolas`, mis à jour après changement dans Options)
-- **Sauvegarder la configuration** : copie `shortcuts.json`, `pages.json`, `browsers.json`, `mcp.json` et `usage.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
+- **Sauvegarder la configuration** : copie `settings.json`, les **quatre** fichiers des deux grilles (`shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`), `browsers.json`, `mcp.json` et `usage.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
 - Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
 - Config pages stockée dans `%APPDATA%\DockPad\pages.json`
 - **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | 🗑 Supprimer
@@ -294,6 +298,68 @@ tools/
 - L'état vit dans `Services/TileLockState.cs` et non dans le code-behind, pour la même raison que `UsageViewModel` : le glyphe et l'infobulle sont des décisions, elles se testent sans WPF. Le code-behind ne fait que brancher le clic, lire les trois propriétés et choisir le style
 - **`MinWidth="40"` sur le bouton** : sans elle, `✓` est plus étroit que `🔒` et toute la toolbar — barre de recherche comprise — se décalait de 4 px à chaque bascule
 - Les tuiles, elles, ne changent pas d'apparence : le bouton porte l'information
+
+### Mode Favoris
+
+Une **seconde grille**, dédiée aux sites. Bouton de toolbar **à gauche du verrou** : **▦** (raccourcis,
+style secondaire) ↔ **★** (favoris, fond bleu accent).
+
+**Ce n'est pas une vue restreinte, c'est la même grille sur d'autres fichiers.** Pagination, clic
+droit, glisser-déposer, dépôts depuis l'Explorateur, overlay clavier, les cinq types de tuiles : tout
+est réutilisé sans condition, et sans une ligne de code en plus. C'est ce qui rend la fonctionnalité
+petite — et c'est la raison de `TileStore`.
+
+- **`TileStore` est le seul endroit qui sait quel fichier porte quelle grille.** `ShortcutService` et
+  `PageConfigService` ont gagné une surcharge par chemin ; leur forme sans argument reste une façade,
+  donc **aucun des trente appelants existants n'a bougé**. Même patron que
+  `UsageConfigService.Load(path)`, et que `SettingsService` devenu façade
+- **Les cœurs purs des services d'actions n'ont pas changé du tout** : ils reçoivent déjà des listes
+  et ne savent rien des fichiers. Seules les enveloppes (verrou + load/save) prennent une `TileFiles`.
+  Sans cette frontière déjà posée, il aurait fallu dupliquer 450 lignes
+- **`TileFiles` plutôt qu'une `TileTarget` dans les enveloppes** : sans un point où poser des chemins
+  choisis, le routage de cible ne se vérifierait que sur le profil réel de la machine — donc pas du
+  tout. C'est exactement pourquoi `UsageConfigService.Load(path)` existe
+- **Le format des deux grilles est identique** : `favorites.json` est une `List<ShortcutEntry>`,
+  relisible, sauvegardable et éditable à la main comme `shortcuts.json`. Un second modèle aurait
+  dupliqué le socle entier pour ne rien apporter
+- **Un index de page par mode**, et non un seul partagé : aller voir les favoris et revenir ne doit
+  pas faire perdre la page où l'on était, et arriver sur les favoris commence à *leur* page 0
+- **La recherche filtre le mode courant** — un seul argument à changer, mais l'oublier rendrait la
+  barre muette sur ce qu'on regarde. Elle est vidée à chaque bascule : ses résultats désignaient des
+  cases de l'autre grille
+- **Ranger la fenêtre repose le mode**, branché sur `SyncWindowActivity()` comme le verrou : c'est un
+  détour, pas un réglage, et **rien n'est écrit sur le disque**
+- **`MinWidth="40"` sur le bouton**, pour la raison déjà payée par le verrou : `★` et `▦` n'ont pas
+  la même largeur, et toute la toolbar se décalerait à chaque bascule. **Vérifié par comparaison
+  pixel : 0 écart** sur la toolbar hors boutons de droite entre les deux modes
+- L'état vit dans `Services/TileModeState.cs` et non dans le code-behind, comme `TileLockState`
+
+#### L'étoile du popup (`FavoriteToggle`)
+
+Un `ToggleButton` en bas à droite du pied de `BrowserPickerWindow` : **☆** creux gris ↔ **★** plein
+bleu. Il **agit immédiatement**, et c'est ce qui justifie sa forme — un toggle qui montre un état
+doit dire la vérité. Il est déjà allumé à l'ouverture si l'URL est en favori, et l'on peut mettre en
+favori sans jamais ouvrir le lien.
+
+- **`Click`, jamais `Checked`/`Unchecked`** : ces deux-là se déclenchent aussi quand le code pose
+  l'état initial, ce qui ferait réécrire le favori à chaque ouverture du popup
+- **Le glyphe vit dans le `Style`, jamais en attribut sur l'élément** : une valeur locale bat les
+  `Setter` d'un `Trigger`, et l'étoile resterait creuse une fois cochée. La cible de capture
+  `BrowserShot picker-fav` existe pour que ce cas se voie
+- **Correspondance exacte, sur une tuile `OpenUrl`** : le favori garde l'**URL complète** et prend le
+  **domaine** pour nom (`UrlRouterService.ExtractHost`, pas une seconde façon d'extraire un hôte).
+  Conséquence assumée : le toggle parle de *cette* page, pas du site
+- **Placement : première case libre, pages balayées dans l'ordre** ; toutes pleines, une page est
+  créée. **Règle distincte de celle d'`AddCore`**, qui ne regarde que la page 0 et refuse — et
+  `AddCore` n'est pas touché : sa sémantique tout-ou-rien est ce que le serveur MCP promet aux
+  modèles. Le popup, lui, ne peut pas refuser, personne n'est devant l'écran pour lire le message
+- **L'ajout passe par `AddAsync`** : c'est ce qui donne au favori l'icône du site, comme à toute
+  tuile web, et qui garde le téléchargement hors du verrou global
+- **Aucune fenêtre n'est supposée exister** : au clic sur un lien, DockPad tourne souvent en
+  arrière-plan sans grille affichée. Le toggle écrit dans le fichier, et la grille se rafraîchit
+  seulement si elle est là — par `McpDispatcher.OnMutation`, le même point que les mutations MCP
+- **Un échec n'emporte pas le popup** : on est là pour ouvrir un lien. L'étoile revient à l'état
+  d'avant, qui est la vérité du fichier
 
 ### Barre de recherche globale
 - Champ de recherche dans la toolbar : filtre les raccourcis par nom sur toutes les pages
@@ -703,6 +769,11 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
   - Pages : `page_add`, `page_update` (`iconPath` omis = inchangé, `""` = retirer l'icône ; `newIndex` = déplacement par insertion), `page_delete` 🔒
   - Navigateurs & règles : `browser_list`, `browser_update`, `rule_list`, `rule_add`, `rule_delete` 🔒 — `browser_list` expose `parentId`/`profileDirectory` (une entrée avec `parentId` est un profil, visable par une règle) ; `order` se compte dans la fratrie (parmi les navigateurs, ou parmi les profils d'un même navigateur)
   - 🔒 = refusé si `AllowDelete` est désactivé dans `mcp.json`
+- **`target` sur les huit outils de grille et de pages** : `"shortcuts"` (défaut) ou `"favorites"`.
+  Le défaut ne peut pas changer de sens — les appels existants ne connaissent pas le paramètre. Une
+  valeur inconnue est un **refus nommé** et non un repli silencieux : écrire dans la mauvaise grille
+  sans le dire est le pire des deux comportements. Le verrou `allowDelete` est posé sur le **nom de
+  l'outil**, pas sur la cible, donc il vaut pour les deux grilles — rien à faire, mais un test le fige
 - **Config `%APPDATA%\DockPad\mcp.json`** (`McpConfigService`) : `{ "enabled": true, "allowDelete": false }` par défaut (suppression refusée par défaut) ; relu à **chaque requête** (changement pris en compte immédiatement, pas besoin de redémarrer) ; incluse dans **💾 Sauvegarder la configuration**
 - **Fenêtre `McpConfigDialog`** (☰ → Paramètres → **🔌 Serveur MCP**) : 2 onglets
   - **Options** : case « Serveur activé », case « Autoriser la suppression », commandes d'enregistrement avec bouton ⧉ Copier — Claude Code : `claude mcp add dockpad -- "<chemin réel du .exe>" --mcp` ; Claude Desktop : bloc JSON pour `claude_desktop_config.json`
@@ -1334,7 +1405,11 @@ Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) su
 
 ## Profil DockPad (AppPaths)
 
-Toutes les données utilisateur vivent dans un seul dossier, résolu par `AppPaths.ProfileRoot` : `shortcuts.json`, `pages.json`, `browsers.json`, `mcp.json`, `usage.json`, `icons\`, `logs\`, `.backup\`.
+Toutes les données utilisateur vivent dans un seul dossier, résolu par `AppPaths.ProfileRoot` : `shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`, `browsers.json`, `mcp.json`, `usage.json`, `settings.json`, `icons\`, `logs\`, `.backup\`.
+
+> Les **quatre** premiers vont deux par deux : une grille, c'est un fichier de tuiles et un fichier
+> de pages. `TileStore` est le seul endroit qui fait cette correspondance — ne la refaites pas à la
+> main, et ne nommez pas ces fichiers ailleurs.
 
 - Par défaut `%APPDATA%\DockPad`
 - Surchargeable par la variable d'environnement **`DOCKPAD_PROFILE_DIR`** : le dossier indiqué est utilisé **tel quel** (aucun sous-dossier `DockPad` ajouté), chemin relatif accepté (rendu absolu), guillemets et espaces tolérés
@@ -1352,6 +1427,7 @@ Les captures du README vivent dans `docs/screenshots/`. Elles sont générées p
 dotnet build tools/BrowserShot
 BrowserShot.exe picker        docs/screenshots/browser-picker.png   # popup avec profils
 BrowserShot.exe picker-header out.png                               # 1er navigateur masqué → titre de groupe
+BrowserShot.exe picker-fav    out.png                               # URL déjà en favori → étoile pleine bleue
 BrowserShot.exe config        docs/screenshots/browser-config.png 0 # onglet Navigateurs
 BrowserShot.exe config        docs/screenshots/browser-rules.png  1 # onglet Règles de domaine
 ```
@@ -1374,6 +1450,7 @@ UsageShot.exe panel-loading ...                                 # etat d'attente
 UsageShot.exe panel-idle ...                                    # fournisseur detecte mais inactif : onglet a zero
 UsageShot.exe panel-quota docs/screenshots/usage-panel-quota.png # quota refuse : la notice a la place des jauges
 UsageShot.exe window-unlocked ...                               # verrou des tuiles ouvert : bouton en coche bleue
+UsageShot.exe window-favorites docs/screenshots/window-favorites.png # mode Favoris : grille ET pagination propres
 ```
 
 - **Les cibles `window*` écrivent aussi une grille de démonstration** dans le profil de fixture : sans elle la fenêtre se juge sur une grille vide, qui ne montre ni les icônes, ni les bandes de couleur des types, ni la pagination — donc rien de ce qui fait l'application. Dix-neuf tuiles des cinq types sur trois pages, et quelques cases laissées vides parce que le `+` grisé fait partie de ce qu'il faut montrer. Les icônes viennent de deux sources, dans cet ordre : le jeu de PNG du projet (`C:\dev\Dock-icons`, surchargeable par `DOCKPAD_DEMO_ICONS`) puis l'icône de l'exécutable, quand il est réellement installé — même patron de candidats que `PresetService`. **Rien n'est embarqué dans le dépôt** : ce sont des logos de produits, qu'on ne redistribue pas dans un dépôt public. Sur une machine sans ce dossier ni ces applications, la tuile s'affiche sans icône : la capture est moins jolie, elle n'est pas cassée. Les tuiles `OpenUrl` sans logo retombent sur l'icône du navigateur, ce qui est exactement le comportement de l'application. L'icône dossier par défaut étant une ressource **embarquée**, donc absente du disque, le csproj de l'outil la copie à côté de l'exe : sans ça les tuiles `OpenFolder` s'affichaient sans icône
@@ -1422,6 +1499,13 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 - Un seul objet `Application` par processus : un process de capture par fenêtre/onglet
 - `DockPad.csproj` exclut `tools\**` de son glob de compilation (projet frère dans un sous-dossier, comme `DockPad.Tests`)
 - Le binaire `DockPad.exe` est verrouillé par une instance en cours : **fermer DockPad avant `dotnet build`**, sinon MSB3021/MSB3027 (l'outil de capture référence `DockPad.csproj`)
+- **`RaiseEvent(ButtonBase.ClickEvent)` ne déclenche PAS la `Command` liée d'un bouton** : c'est
+  `Button.OnClick()` qui s'en charge, et il est protégé. Depuis le passage de la toolbar aux
+  commandes, la cible `window-unlocked` capturait donc le cadenas **fermé** en prétendant montrer le
+  verrou ouvert — sans erreur, sans message, pendant plusieurs versions. `UsageShot.Press` exécute la
+  commande du bouton, donc le chemin réel de l'utilisateur
+- **Une liaison ne s'évalue qu'à la mise en page** : sur une fenêtre jamais mesurée, `button.Command`
+  est encore nul. D'où le passage de `Measure`/`Arrange` **avant** de presser quoi que ce soit
 
 > **La typographie d'un `TabItem` se pose sur le `Border` de son gabarit, jamais sur le `TabItem`.**
 > `Foreground`, `FontSize` et `FontWeight` sont **hérités** : posés sur l'onglet, ils descendent dans

@@ -19,10 +19,12 @@ public static class ShortcutActionService
 
     // ───────────── Enveloppes (verrou + fichiers) ─────────────
 
-    public static ActionResult GetGrid(int? page = null)
+    public static ActionResult GetGrid(int? page = null, TileFiles? files = null)
     {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
-            return GetGridCore(ShortcutService.Load(), PageConfigService.Load(), page);
+            return GetGridCore(ShortcutService.Load(files.EntriesPath),
+                               PageConfigService.Load(files.PagesPath), page);
     }
 
     /// <summary>
@@ -33,14 +35,15 @@ public static class ShortcutActionService
     /// est le verrou global des configs, et l'y tenir le temps d'un appel réseau bloquerait
     /// l'interface et toute requête MCP concurrente.
     /// </remarks>
-    public static async Task<ActionResult> AddAsync(List<ShortcutAddItem> items)
+    public static async Task<ActionResult> AddAsync(List<ShortcutAddItem> items, TileFiles? files = null)
     {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         var favicons = await ResolveFaviconsAsync(items).ConfigureAwait(false);
 
         lock (ConfigLock.Gate)
         {
-            var all = ShortcutService.Load();
-            var configs = PageConfigService.Load();
+            var all = ShortcutService.Load(files.EntriesPath);
+            var configs = PageConfigService.Load(files.PagesPath);
             var result = AddCore(all, configs, items);
             if (!result.Ok) return result;
 
@@ -53,7 +56,7 @@ public static class ShortcutActionService
                     s.IconProfilePath = stored;
                 ApplyIcon(s);
             }
-            ShortcutService.Save(all);
+            ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
     }
@@ -62,8 +65,8 @@ public static class ShortcutActionService
     /// Variante bloquante, pour les appelants sans contexte asynchrone — le serveur MCP, qui
     /// travaille sur un thread de pipe. À ne pas appeler depuis le thread d'interface.
     /// </summary>
-    public static ActionResult Add(List<ShortcutAddItem> items) =>
-        AddAsync(items).GetAwaiter().GetResult();
+    public static ActionResult Add(List<ShortcutAddItem> items, TileFiles? files = null) =>
+        AddAsync(items, files).GetAwaiter().GetResult();
 
     /// <summary>
     /// Icône de site pour les items qui la méritent, indexée par leur position dans le lot.
@@ -94,13 +97,15 @@ public static class ShortcutActionService
     /// une icône qui ne servira pas — un fichier de plus dans le store dédupliqué, contre un appel
     /// réseau sous le verrou global. Le compromis est vite vu.
     /// </remarks>
-    public static async Task<ActionResult> UpdateAsync(int page, int row, int col, ShortcutUpdate changes)
+    public static async Task<ActionResult> UpdateAsync(int page, int row, int col, ShortcutUpdate changes,
+                                                       TileFiles? files = null)
     {
-        string? favicon = await ResolveFaviconForUpdateAsync(page, row, col, changes).ConfigureAwait(false);
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
+        string? favicon = await ResolveFaviconForUpdateAsync(page, row, col, changes, files).ConfigureAwait(false);
 
         lock (ConfigLock.Gate)
         {
-            var all = ShortcutService.Load();
+            var all = ShortcutService.Load(files.EntriesPath);
             var result = UpdateCore(all, page, row, col, changes);
             if (!result.Ok) return result;
             if (changes.IconPath != null || changes.Command != null || changes.Type != null)
@@ -110,21 +115,22 @@ public static class ShortcutActionService
                 if (favicon != null && string.IsNullOrEmpty(s.IconPath)) s.IconProfilePath = favicon;
                 ApplyIcon(s);
             }
-            ShortcutService.Save(all);
+            ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
     }
 
     /// <summary>Variante bloquante — voir <see cref="Add"/>.</summary>
-    public static ActionResult Update(int page, int row, int col, ShortcutUpdate changes) =>
-        UpdateAsync(page, row, col, changes).GetAwaiter().GetResult();
+    public static ActionResult Update(int page, int row, int col, ShortcutUpdate changes,
+                                      TileFiles? files = null) =>
+        UpdateAsync(page, row, col, changes, files).GetAwaiter().GetResult();
 
     private static async Task<string?> ResolveFaviconForUpdateAsync(
-        int page, int row, int col, ShortcutUpdate changes)
+        int page, int row, int col, ShortcutUpdate changes, TileFiles files)
     {
         ShortcutEntry? existing;
         lock (ConfigLock.Gate)
-            existing = ShortcutService.Load()
+            existing = ShortcutService.Load(files.EntriesPath)
                 .FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
 
         if (existing is null) return null;
@@ -139,37 +145,41 @@ public static class ShortcutActionService
             : null;
     }
 
-    public static ActionResult Move(int page, int row, int col, int toPage, int? toRow = null, int? toCol = null)
+    public static ActionResult Move(int page, int row, int col, int toPage, int? toRow = null,
+                                    int? toCol = null, TileFiles? files = null)
     {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
-            var all = ShortcutService.Load();
-            var configs = PageConfigService.Load();
+            var all = ShortcutService.Load(files.EntriesPath);
+            var configs = PageConfigService.Load(files.PagesPath);
             var result = MoveCore(all, configs, page, row, col, toPage, toRow, toCol);
-            if (result.Ok) ShortcutService.Save(all);
+            if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
     }
 
-    public static ActionResult Delete(int page, int row, int col)
+    public static ActionResult Delete(int page, int row, int col, TileFiles? files = null)
     {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
-            var all = ShortcutService.Load();
+            var all = ShortcutService.Load(files.EntriesPath);
             var result = DeleteCore(all, page, row, col);
-            if (result.Ok) ShortcutService.Save(all);
+            if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
     }
 
     /// <summary>Utilisée par l'UI uniquement (⧉ Dupliquer) — non exposée côté MCP.</summary>
-    public static ActionResult Duplicate(int page, int row, int col)
+    public static ActionResult Duplicate(int page, int row, int col, TileFiles? files = null)
     {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
-            var all = ShortcutService.Load();
+            var all = ShortcutService.Load(files.EntriesPath);
             var result = DuplicateCore(all, page, row, col);
-            if (result.Ok) ShortcutService.Save(all);
+            if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
     }

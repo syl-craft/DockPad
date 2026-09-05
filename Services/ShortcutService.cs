@@ -15,21 +15,33 @@ public static class ShortcutService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    public static List<ShortcutEntry> Load()
+    public static List<ShortcutEntry> Load() => Load(FilePath);
+
+    /// <summary>
+    /// Les tuiles d'un fichier donné — les raccourcis, ou les favoris.
+    /// </summary>
+    /// <remarks>
+    /// Les deux grilles ont le <b>même format</b> : c'est ce qui permet à un seul lecteur de les
+    /// servir toutes les deux, et à <c>favorites.json</c> d'être sauvegardé et édité à la main
+    /// exactement comme <c>shortcuts.json</c>.
+    /// </remarks>
+    public static List<ShortcutEntry> Load(string path)
     {
-        if (!File.Exists(FilePath)) return [];
+        if (!File.Exists(path)) return [];
         try
         {
-            var json = File.ReadAllText(FilePath);
+            var json = File.ReadAllText(path);
             return JsonSerializer.Deserialize<List<ShortcutEntry>>(json, JsonOptions) ?? [];
         }
-        catch (Exception ex) { LogService.Warn(ex, "Chargement de shortcuts.json (liste vide utilisée)"); return []; }
+        catch (Exception ex) { LogService.Warn(ex, $"Chargement de {Path.GetFileName(path)} (liste vide utilisée)"); return []; }
     }
 
-    public static void Save(List<ShortcutEntry> entries)
+    public static void Save(List<ShortcutEntry> entries) => Save(entries, FilePath);
+
+    public static void Save(List<ShortcutEntry> entries, string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(entries, JsonOptions));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, JsonSerializer.Serialize(entries, JsonOptions));
     }
 
     public static void OpenInEditor()

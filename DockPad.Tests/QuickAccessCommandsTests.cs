@@ -27,6 +27,7 @@ public class QuickAccessCommandsTests
         public void ShowSecretSettings() => Calls.Add(nameof(ShowSecretSettings));
         public void SyncVault() => Calls.Add(nameof(SyncVault));
         public void RefreshGrid() => Calls.Add(nameof(RefreshGrid));
+        public void ToggleTileMode() => Calls.Add(nameof(ToggleTileMode));
         public void ToggleTileLock() => Calls.Add(nameof(ToggleTileLock));
         public void Minimize() => Calls.Add(nameof(Minimize));
         public void HideToTray() => Calls.Add(nameof(HideToTray));
@@ -50,6 +51,7 @@ public class QuickAccessCommandsTests
         commands.OpenSecretSettings.Execute(null);
         commands.SyncVault.Execute(null);
         commands.Refresh.Execute(null);
+        commands.ToggleTileMode.Execute(null);
         commands.ToggleTileLock.Execute(null);
         commands.Minimize.Execute(null);
         commands.HideToTray.Execute(null);
@@ -59,7 +61,7 @@ public class QuickAccessCommandsTests
         [
             "ShowSettings", "ShowBrowsers", "ShowMcpConfig", "ShowUsageConfig", "ShowPresets",
             "ShowContextMenuManager", "ShowSecretSettings", "SyncVault",
-            "RefreshGrid", "ToggleTileLock", "Minimize", "HideToTray",
+            "RefreshGrid", "ToggleTileMode", "ToggleTileLock", "Minimize", "HideToTray",
             "Quit",
         ], view.Calls);
     }

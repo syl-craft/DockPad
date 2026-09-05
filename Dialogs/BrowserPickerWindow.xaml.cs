@@ -65,6 +65,14 @@ public partial class BrowserPickerWindow : Window
         ChkAlways.IsEnabled = _host is not null;
         if (_host is not null) ChkAlways.Content = Loc.F("Picker_AlwaysForHost", _host);
 
+        // L'état réel, lu sur le fichier des favoris : un toggle qui montre un état doit dire la
+        // vérité, sinon il n'est qu'un bouton déguisé. Posé avant tout affichage, et sans passer
+        // par Checked/Unchecked — c'est Click qui déclenche l'écriture, donc seule une action de
+        // l'utilisateur écrit.
+        BtnFavorite.IsChecked = FavoriteToggle.Find(
+            ShortcutService.Load(TileStore.EntriesPath(Models.TileTarget.Favorites)), url) is not null;
+        UpdateFavoriteHints();
+
         // Navigateurs et leurs profils : les badges 1-9 ne numérotent que les lignes
         // choisissables (un titre de groupe n'en reçoit pas).
         _items = [];
@@ -199,6 +207,57 @@ public partial class BrowserPickerWindow : Window
         try { Clipboard.SetText(_url); } catch (Exception ex) { Services.LogService.Warn(ex, "Copie de l'URL dans le presse-papiers"); return; }
 
         ButtonFlash.Flash(BtnCopy, Loc.T("Picker_Copied"), TimeSpan.FromSeconds(1.5));
+    }
+
+    /// <summary>
+    /// Met la page en favori, ou l'en retire. Le clic a déjà basculé <c>IsChecked</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>Click</c> et non <c>Checked</c>/<c>Unchecked</c> : ces deux-là se déclenchent aussi quand
+    /// le code pose l'état initial, ce qui ferait réécrire le favori à chaque ouverture du popup.
+    /// </para>
+    /// <para>
+    /// <b>Aucune fenêtre n'est supposée exister.</b> Au clic sur un lien, DockPad tourne souvent en
+    /// arrière-plan sans grille affichée — l'écriture passe par le service, et la grille se
+    /// rafraîchit seulement si elle est là, par le même point que les mutations MCP.
+    /// </para>
+    /// </remarks>
+    private async void BtnFavorite_Click(object sender, RoutedEventArgs e)
+    {
+        bool wanted = BtnFavorite.IsChecked == true;
+
+        // Le décompte est déjà annulé par PreviewMouseDown : sans ça, mettre en favori aurait
+        // ouvert le navigateur sous les doigts.
+        BtnFavorite.IsEnabled = false;
+        try
+        {
+            bool actual = await FavoriteToggle.SetAsync(_url, wanted);
+            BtnFavorite.IsChecked = actual;
+            UpdateFavoriteHints();
+            McpDispatcher.OnMutation?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            // Un favori qui ne s'enregistre pas ne doit pas emporter la popup : on est là pour
+            // ouvrir un lien. L'étoile revient à l'état d'avant, qui est la vérité du fichier.
+            LogService.Warn(ex, "Enregistrement d'un favori depuis la popup");
+            BtnFavorite.IsChecked = !wanted;
+            UpdateFavoriteHints();
+        }
+        finally { BtnFavorite.IsEnabled = true; }
+    }
+
+    /// <summary>
+    /// Infobulle et nom d'accessibilité de l'étoile : ils nomment l'action, là où le glyphe du
+    /// Style dit l'état. Posés en code parce qu'ils suivent l'état — un <c>{loc:T}</c> serait
+    /// une liaison que cette affectation remplacerait définitivement.
+    /// </summary>
+    private void UpdateFavoriteHints()
+    {
+        var text = Loc.T(BtnFavorite.IsChecked == true ? "Picker_Favorite_Remove" : "Picker_Favorite_Add");
+        BtnFavorite.ToolTip = text;
+        System.Windows.Automation.AutomationProperties.SetName(BtnFavorite, text);
     }
 
     private void OpenBrowser(BrowserEntry browser)

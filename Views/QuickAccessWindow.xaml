@@ -330,6 +330,17 @@
                          ApplyTileLock depuis TileLockState — l'état par défaut est le verrou.
                          Pas de {loc:T} sur ToolTip : l'affectation en code est une valeur locale,
                          elle remplacerait la liaison des l'initialisation. -->
+                    <!-- Bascule Raccourcis / Favoris. Comme le verrou : glyphe, infobulle et style
+                         posés par ApplyTileMode depuis TileModeState, et MinWidth="40" parce que
+                         ★ et ▦ n'ont pas la même largeur — sans elle toute la toolbar, barre de
+                         recherche comprise, se décale à chaque bascule.
+                         Pas de {loc:T} sur ToolTip : l'affectation en code est une valeur locale,
+                         elle remplacerait la liaison dès l'initialisation. -->
+                    <Button x:Name="TileModeButton" Content="▦"
+                            Style="{StaticResource SecondaryButton}"
+                            FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
+                            Padding="10,6" Margin="0,0,8,0" MinWidth="40"
+                            Command="{Binding Commands.ToggleTileMode}"/>
                     <Button x:Name="TileLockButton" Content="🔒"
                             Style="{StaticResource SecondaryButton}"
                             FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"

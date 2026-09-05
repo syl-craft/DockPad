@@ -11,6 +11,45 @@
         FontFamily="Segoe UI"
         PreviewKeyDown="Window_PreviewKeyDown">
 
+    <Window.Resources>
+        <!-- L'étoile du favori. Style local : il ne sert qu'ici, et sortir dans App.xaml une
+             apparence utilisée une seule fois donnerait une clé de plus sans structure de plus. -->
+        <Style x:Key="FavoriteToggle" TargetType="ToggleButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="FontSize" Value="18"/>
+            <!-- Segoe UI ne contient ni ☆ ni ★ : sans cette pile ils tombent en tofu. -->
+            <Setter Property="FontFamily" Value="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"/>
+            <!-- TextSubtle et non TextFaint : à #999 sur fond de carte l'étoile creuse ne se lit
+                 plus comme un contrôle mais comme une décoration, et personne ne clique dessus.
+                 Vérifié à la capture. -->
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextSubtle}"/>
+            <Setter Property="Content" Value="☆"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="9,3"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.AccentTintSoft}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Content" Value="★"/>
+                    <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
     <Border TextElement.Foreground="{DynamicResource Brush.Text}" Background="{DynamicResource Brush.SurfaceCard}" CornerRadius="8" Margin="16"
             SnapsToDevicePixels="True" UseLayoutRounding="True">
         <Border.Effect>
@@ -181,14 +220,29 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <!-- Pied : règle de domaine + décompte d'ouverture automatique -->
+            <!-- Pied : règle de domaine + décompte d'ouverture automatique, et le favori à droite -->
             <Border Grid.Row="2" Padding="18,10,18,14">
-                <StackPanel>
-                    <CheckBox x:Name="ChkAlways" Content="{loc:T Picker_AlwaysForDomain}"
-                              FontSize="12" Foreground="{DynamicResource Brush.TextLabel}" VerticalContentAlignment="Center"/>
-                    <TextBlock x:Name="TxtCountdown" Visibility="Collapsed"
-                               FontSize="11" Foreground="{DynamicResource Brush.Accent}" Margin="0,8,0,0"/>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <CheckBox x:Name="ChkAlways" Content="{loc:T Picker_AlwaysForDomain}"
+                                  FontSize="12" Foreground="{DynamicResource Brush.TextLabel}" VerticalContentAlignment="Center"/>
+                        <TextBlock x:Name="TxtCountdown" Visibility="Collapsed"
+                                   FontSize="11" Foreground="{DynamicResource Brush.Accent}" Margin="0,8,0,0"/>
+                    </StackPanel>
+
+                    <!-- Le glyphe et l'état vivent dans le Style, jamais en attribut sur l'élément :
+                         une valeur locale bat les Setter d'un Trigger, et l'étoile resterait creuse
+                         une fois cochée. Infobulle et nom d'accessibilité sont posés en code, parce
+                         qu'ils suivent l'état — un {loc:T} y serait écrasé dès l'initialisation. -->
+                    <ToggleButton x:Name="BtnFavorite" Grid.Column="1"
+                                  Style="{StaticResource FavoriteToggle}"
+                                  VerticalAlignment="Center" Click="BtnFavorite_Click"/>
+                </Grid>
             </Border>
         </Grid>
     </Border>
