@@ -59,17 +59,37 @@ public sealed class LinePipeService(string pipeName)
     /// <summary>Envoie une ligne à l'instance principale. Faux si échec ou dépassement du délai.</summary>
     public bool TrySend(string line, int timeoutMs = 2000)
     {
+        if (Send(line, timeoutMs, out var error)) return true;
+
+        LogService.Warn(error!, $"Relais vers l'instance principale par {PipeName}");
+        return false;
+    }
+
+    /// <summary>
+    /// Même envoi, sans une ligne au journal.
+    /// </summary>
+    /// <remarks>
+    /// Réservé au raccourci de démarrage (<see cref="StartupRelay"/>), qui s'exécute <b>avant</b>
+    /// <c>LogService.Init()</c> : initialiser le journal pour tracer cet envoi lui rendrait une
+    /// part du coût qu'il existe justement pour éviter. Un échec reste journalisé, par le chemin
+    /// lent sur lequel on retombe.
+    /// </remarks>
+    public bool TrySendSilently(string line, int timeoutMs) => Send(line, timeoutMs, out _);
+
+    private bool Send(string line, int timeoutMs, out Exception? error)
+    {
         try
         {
             using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
             client.Connect(timeoutMs);
             using var writer = new StreamWriter(client) { AutoFlush = true };
             writer.WriteLine(line);
+            error = null;
             return true;
         }
         catch (Exception ex)
         {
-            LogService.Warn(ex, $"Relais vers l'instance principale par {PipeName}");
+            error = ex;
             return false;
         }
     }

@@ -12,7 +12,18 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <Version>1.20.0</Version>
+    <!-- Point d'entrée explicite : voir Program.cs. Le Main engendré par WPF commence par
+         construire l'Application, ce qui interdit tout raccourci de démarrage. -->
+    <StartupObject>DockPad.Program</StartupObject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- App.xaml en Page et non en ApplicationDefinition : celle-ci engendre un Main, qui
+         entrerait en conflit avec le nôtre. InitializeComponent reste engendré — c'est déjà
+         ce dont les quatre outils de capture se servent. -->
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
 
   <ItemGroup>
     <Resource Include="app.ico" />

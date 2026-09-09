@@ -42,7 +42,8 @@ DockPad.Core/                            BIBLIOTHEQUE PARTAGEE — ce qui ne sai
     Services/Localization/LocExtension.cs  {loc:T Cle} + ButtonFlash
     Themes/Light.xaml Dark.xaml Controls.xaml   Palettes et controles retemplates
 
-App.xaml/.cs                             Point d'entrée : instance unique (Mutex), NotifyIcon systray
+Program.cs                               Point d'entrée EXPLICITE : le relais avant WPF, puis App
+App.xaml/.cs                             Instance unique (Mutex), NotifyIcon systray
 GlobalUsings.cs                          Usings globaux
 DockPad.csproj / DockPad.sln
 
@@ -127,6 +128,7 @@ Services/
     TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
     LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
     UrlPipeService.cs                    Facade sur LinePipeService pour DockPad_UrlPipe
+    StartupRelay.cs                      Rendre la main à l'instance résidente AVANT de construire WPF
     UrlRouterService.cs                  Règles de domaine, file d'URLs, orchestration popup/lancement
     UsageConfigService.cs                 Load/Save usage.json (%APPDATA%\DockPad\usage.json)
 
@@ -195,7 +197,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (714 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (724 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -234,6 +236,68 @@ tools/
   vivent les cinq gestes, dont le rafraîchissement explicite du bandeau. Vérifié par comparaison —
   en 1.18.0 la fenêtre réduite reste réduite après un second lancement, avec le correctif elle
   remonte
+
+### Le raccourci de démarrage (`Program.cs`, `StartupRelay`)
+
+Au clic sur un lien, Windows lance un **`DockPad.exe` entier** dont le seul travail est d'écrire une
+ligne dans un tube. Mesuré par sondes jetables, machine au repos, minimum et p25 sur 20 tours
+entrelacés :
+
+| Couche | min | p25 |
+|---|---|---|
+| démarrage du runtime .NET, rien du tout | 81 | 91 ms |
+| + connexion au tube et envoi | 81 | 95 ms |
+| + `Application` WPF sans aucun dictionnaire | 163 | 175 ms |
+| **`DockPad.exe` relais, avant** | **~300** | **~330 ms** |
+
+Soit **~240 ms sur 300 dépensées pour rien** : le runtime est incompressible, le travail utile coûte
+~2 ms, et tout le reste est l'`Application` WPF plus le prologue de `OnStartup` (journal, culture et
+assembly satellite, dictionnaire de thème, `SystemEvents`).
+
+`Program.Main` tente donc le relais **avant** de construire quoi que ce soit. Mesuré en alternance,
+résidente stabilisée : **322 → 78 ms** au minimum, **412 → 100 ms** en médiane.
+
+- **Le mutex est consulté avant le tube, et ce n'est pas une optimisation de plus.** Sur un tube dont
+  personne n'écoute, `Connect` attend **tout** son délai avant d'échouer : sans cette question
+  préalable, un clic sur un lien alors que DockPad ne tourne pas paierait deux secondes avant de
+  commencer à démarrer. `InstanceIsRunning` prend le nom du mutex en paramètre pour se vérifier sur
+  un mutex de test, sans dépendre de ce qui tourne sur la machine
+- **`App` ne retente plus le relais.** Atteindre `OnStartup` avec le mutex déjà pris prouve qu'il a
+  échoué ; le retenter ferait payer **deux** délais au seul cas qui en souffre, une instance qui tient
+  le mutex sans répondre à ses tubes. Le repli local est donc atteint directement
+- **`--mcp` ne se relaie jamais** : c'est un serveur stdio, il doit démarrer, et il coexiste
+  volontairement avec l'instance résidente. Il paie encore le prologue complet, une fois par session
+  Claude — pas un chemin chaud
+- **Envoi sans journal** : `LogService.Init()` n'a pas encore eu lieu, et l'initialiser rendrait au
+  chemin rapide une part du coût qu'il existe pour éviter. D'où `TrySendSilently`. Un échec reste
+  journalisé, par le chemin lent sur lequel on retombe
+- **Les trois noms de tube et le nom du mutex vivent dans `StartupRelay`**, et les serveurs les
+  lisent. Un nom qui divergerait ne lèverait pas : le raccourci échouerait en silence et
+  l'application redeviendrait lente **pour toujours**, sans un mot au journal. La parade est
+  structurelle — un test qui comparerait la constante à elle-même ne prouverait rien
+- **Une seule lecture de la ligne de commande** : `App.ParseArg` a disparu au profit de
+  `StartupRelay.Arg`. Deux copies, et le jour où l'une apprend une forme que l'autre ignore, un
+  lancement part sur le mauvais tube
+
+> **`App.xaml` passe en `Page`, et le csproj nomme `DockPad.Program` dans `StartupObject`.** Une
+> `ApplicationDefinition` engendre son propre `Main`, qui commence par construire l'`Application` —
+> donc qui interdit tout raccourci. Deux conséquences à connaître : `[STAThread]` doit être posé à la
+> main (le `Main` engendré le portait), et `InitializeComponent` reste engendré — c'est déjà ce dont
+> les quatre outils de capture se servent, ce qui rend le patron déjà éprouvé dans ce dépôt.
+
+> **Le raccourci global, lui, n'avait rien à gagner** : mesuré à **1–2 ms** entre le message et la
+> fenêtre au premier plan. `BringToFront()` réveille une fenêtre déjà construite, ne repeuple pas la
+> grille et ne relit aucun fichier. Ce qu'on prend parfois pour de la lenteur est le **sablier du
+> bandeau Usage**, qui met 1,7 à 2,5 s à parcourir les transcripts — asynchrone, il ne bloque rien.
+
+> **ReadyToRun a été mesuré et écarté** : 285 → 244 ms sur le relais, pour un paquet qui passe de 3,8
+> à 7,4 Mo zippé et de 9,3 à 18 Mo déployé. Mauvais échange face aux 240 ms de l'autre piste. À
+> reconsidérer seulement pour le démarrage à froid de l'application elle-même.
+
+> **Attention aux mesures de démarrage.** Deux pièges rencontrés : le **premier** lancement d'un
+> binaire fraîchement compilé coûte plusieurs secondes (analyse antivirus), et une instance résidente
+> **qui vient de démarrer** tarde à accepter la connexion, ce qui fait paraître le relais lent alors
+> qu'il ne l'est pas. Chauffer, puis entrelacer les cas comparés.
 
 ### Logging (LogService)
 - Serilog → `%APPDATA%\DockPad\logs\dockpad-YYYYMMDD.log`, rolling quotidien, 14 fichiers gardés, `shared: true` (l'instance relais URL écrit dans le même fichier)

@@ -78,17 +78,25 @@ public partial class App : Application
             return;
         }
 
-        string? url = ParseArg(e.Args, "--url");
-        string? injectPath = ParseArg(e.Args, "--inject-secrets");
+        string? url = Services.StartupRelay.Arg(e.Args, "--url");
+        string? injectPath = Services.StartupRelay.Arg(e.Args, "--inject-secrets");
 
-        _mutex = new Mutex(initiallyOwned: true, "DockPad_SingleInstance", out bool createdNew);
+        _mutex = new Mutex(initiallyOwned: true, Services.StartupRelay.SingleInstanceMutex, out bool createdNew);
         if (!createdNew)
         {
             _mutex.Dispose();
             _mutex = null;
 
-            // Instance secondaire lancée par Windows avec un fichier à injecter : relais via pipe.
-            if (injectPath is not null && !InjectPipe.TrySend(injectPath))
+            // ARRIVER ICI VEUT DIRE QUE LE RELAIS A ÉCHOUÉ. Il a été tenté avant WPF, dans
+            // Program.Main : s'il avait abouti, le processus serait déjà sorti sans rien
+            // construire. Le retenter ferait payer deux fois le délai d'attente au seul cas qui
+            // en souffre — une instance qui tient le mutex sans répondre à ses tubes.
+            //
+            // Reste la course : le mutex a pu être pris entre la question de Program.Main et
+            // celle-ci. On sert alors le repli sans avoir tenté le tube, ce qui reste correct —
+            // l'utilisateur a sa fenêtre — simplement moins direct.
+
+            if (injectPath is not null)
             {
                 // Repli : l'instance principale est injoignable, on rend ici. Elle n'a pas de
                 // systray, donc elle mourrait à la fermeture de la fenêtre — et OnExit viderait le
@@ -99,8 +107,7 @@ public partial class App : Application
                 return;
             }
 
-            // Instance secondaire lancée par Windows avec une URL : relais via pipe.
-            if (url is not null && !Services.UrlPipeService.TrySend(url))
+            if (url is not null)
             {
                 // Fallback : instance principale injoignable → popup locale. On reste en
                 // shutdown explicite : si aucune popup n'a été créée (lancement direct via
@@ -119,8 +126,7 @@ public partial class App : Application
             // une instance demarree par un clic sur un lien n'en a AUCUNE. Double-cliquer
             // l'executable ne faisait alors plus rien du tout, et rien ne l'expliquait : ni
             // fenetre, ni message, ni ligne au journal.
-            if (url is null && injectPath is null && !ShowPipe.TrySend(ShowRequest))
-                Services.LogService.Warn(new InvalidOperationException("show pipe unreachable"), "Une instance tient le mutex sans ecouter le tube d'affichage");
+            Services.LogService.Warn(new InvalidOperationException("show pipe unreachable"), "Une instance tient le mutex sans ecouter le tube d'affichage");
 
             Current.Shutdown();
             return;
@@ -166,7 +172,7 @@ public partial class App : Application
     }
 
     /// <summary>Pipe du clic droit « Injecter les secrets… », jumeau de celui des URL.</summary>
-    private static readonly Services.LinePipeService InjectPipe = new("DockPad_InjectPipe");
+    private static readonly Services.LinePipeService InjectPipe = new(Services.StartupRelay.InjectPipeName);
 
     /// <summary>
     /// Pipe du <b>second lancement</b> : « montre-toi ». Troisième jumeau.
@@ -176,18 +182,7 @@ public partial class App : Application
     /// à voir, et un protocole partagé se paie au premier ajout — celui où l'on découvre qu'un des
     /// consommateurs doit distinguer un cas de plus.
     /// </remarks>
-    private static readonly Services.LinePipeService ShowPipe = new("DockPad_ShowPipe");
-
-    /// <summary>La seule charge utile que ce tube transporte.</summary>
-    private const string ShowRequest = "show";
-
-    private static string? ParseArg(string[] args, string name)
-    {
-        for (int i = 0; i < args.Length - 1; i++)
-            if (args[i] == name)
-                return args[i + 1];
-        return null;
-    }
+    private static readonly Services.LinePipeService ShowPipe = new(Services.StartupRelay.ShowPipeName);
 
     /// <summary>
     /// Quitte, mais pas avant que le presse-papier ait été rendu à l'utilisateur.
