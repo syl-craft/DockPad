@@ -161,30 +161,39 @@ public static class PresetService
     private static string? ChatGptIconPath()
     {
         var target = Path.Combine(AppPaths.ProfileRoot, "icons", "chatgpt.ico");
-        if (File.Exists(target)) return target;
 
-        if (FindChatGptExe() is not { } exe) return null;
+        // Application absente : on garde ce qu'on avait. C'est tout l'intérêt de la copie — elle
+        // survit à une désinstallation, et à un chemin de paquet devenu faux.
+        if (FindChatGptExe() is not { } exe) return File.Exists(target) ? target : null;
 
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-
             // 64 px : le menu contextuel affiche 16 ou 24 px selon la mise à l'échelle, et
             // réduire une image nette vaut mieux qu'agrandir une petite.
             using var icon = Icon.ExtractIcon(exe, 0, IconSize) ?? Icon.ExtractAssociatedIcon(exe);
-            if (icon is null) return null;
+            if (icon is null) return File.Exists(target) ? target : null;
 
             using var bitmap = icon.ToBitmap();
             using var png = new MemoryStream();
             bitmap.Save(png, System.Drawing.Imaging.ImageFormat.Png);
+            var ico = BuildIco(png.ToArray(), bitmap.Width);
 
-            File.WriteAllBytes(target, BuildIco(png.ToArray(), bitmap.Width));
+            // On réextrait à chaque fois, mais on n'écrit que si le logo a changé. Un cache posé
+            // une fois pour toutes serait faux le jour où l'application est remplacée : c'est
+            // arrivé — l'ancienne « ChatGPT Classic » désinstallée, le nouveau paquet portant un
+            // logo différent à 100 % des pixels, et DockPad affichait encore l'ancien.
+            if (!File.Exists(target) || !ico.AsSpan().SequenceEqual(File.ReadAllBytes(target)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.WriteAllBytes(target, ico);
+            }
+
             return target;
         }
         catch (Exception ex)
         {
             LogService.Warn(ex, "Extraction du logo ChatGPT");
-            return null;
+            return File.Exists(target) ? target : null;
         }
     }
 
@@ -247,8 +256,12 @@ public static class PresetService
             using var packages = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(repository);
             if (packages is null) return null;
 
+            // « OpenAI. » et non « OpenAI.ChatGPT » : l'application s'est appelée
+            // OpenAI.ChatGPT-Desktop, puis OpenAI.Codex tout en gardant « ChatGPT » pour nom
+            // affiché et ChatGPT.exe pour binaire. Chercher le nom du paquet, c'est suivre une
+            // décision de l'éditeur ; chercher l'exécutable, c'est suivre ce dont on a besoin.
             foreach (var name in packages.GetSubKeyNames()
-                         .Where(n => n.StartsWith("OpenAI.ChatGPT", StringComparison.OrdinalIgnoreCase)))
+                         .Where(n => n.StartsWith("OpenAI.", StringComparison.OrdinalIgnoreCase)))
             {
                 using var package = packages.OpenSubKey(name);
                 if (package?.GetValue("PackageRootFolder") is not string root) continue;
@@ -270,18 +283,14 @@ public static class PresetService
     /// Lequel des exécutables d'un paquet ChatGPT porte le logo.
     /// </summary>
     /// <remarks>
-    /// Le paquet n'en expose qu'un aujourd'hui, mais rien ne le garantit demain : un utilitaire de
-    /// mise à jour posé à côté, et l'on extrairait <b>son</b> icône sans le voir. À défaut de nom
-    /// reconnaissable on prend le premier — une icône plausible vaut mieux qu'aucune.
+    /// <b>Le nom est exigé, pas préféré.</b> Le paquet réel en contient sept — <c>chrome_proxy</c>,
+    /// un service d'élévation, un assistant de notifications, et un <c>Codex.exe</c> qui n'a
+    /// justement <b>pas</b> d'icône (mesuré). Prendre « le premier venu » à défaut poserait l'icône
+    /// de l'un d'eux sans que personne le voie. Mieux vaut aucune icône qu'une icône fausse.
     /// </remarks>
-    public static string? PickChatGptExe(IEnumerable<string> exeFiles)
-    {
-        var all = exeFiles.ToList();
-
-        return all.FirstOrDefault(f => Path.GetFileName(f)
-                       .Contains("ChatGPT", StringComparison.OrdinalIgnoreCase))
-               ?? all.FirstOrDefault();
-    }
+    public static string? PickChatGptExe(IEnumerable<string> exeFiles) =>
+        exeFiles.FirstOrDefault(f => Path.GetFileName(f)
+                    .Contains("ChatGPT", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Le binaire natif de Codex, dont l'icône du prédéfini est tirée : le <c>PATH</c>, puis

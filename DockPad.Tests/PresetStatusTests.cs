@@ -221,13 +221,26 @@ public class PresetStatusTests
     }
 
     [Fact]
-    public void ChatGptExe_AucunNomReconnu_PrendLePremier()
+    public void ChatGptExe_AucunNomReconnu_RendNull()
     {
-        // Mieux vaut une icone plausible que pas d'icone : le dossier « app » d'un paquet
-        // ChatGPT ne contient pas grand-chose d'autre.
-        var pick = PresetService.PickChatGptExe([@"C:\app\a.exe", @"C:\app\b.exe"]);
+        // On balaie desormais TOUS les paquets OpenAI, pas seulement celui de ChatGPT : prendre
+        // « le premier exe venu » y attraperait chrome_proxy.exe ou un service d'elevation, et
+        // l'on poserait leur icone sans le voir. Mieux vaut aucune icone qu'une icone fausse.
+        var pick = PresetService.PickChatGptExe(
+            [@"C:\app\chrome_proxy.exe", @"C:\app\elevation_service.exe"]);
 
-        Assert.Equal(@"C:\app\a.exe", pick);
+        Assert.Null(pick);
+    }
+
+    [Fact]
+    public void ChatGptExe_LeTrouveParmiLesBinairesDuPaquet()
+    {
+        // Le paquet reel en contient sept, dont Codex.exe — qui n'a PAS d'icone (mesure).
+        var pick = PresetService.PickChatGptExe(
+            [@"C:\app\chrome_proxy.exe", @"C:\app\Codex.exe",
+             @"C:\app\ChatGPT.exe", @"C:\app\notification_helper.exe"]);
+
+        Assert.Equal(@"C:\app\ChatGPT.exe", pick);
     }
 
     [Fact]
