@@ -106,7 +106,7 @@ public static class PresetService
 
     /// <summary>
     /// Le binaire natif de Codex, dont l'icône du prédéfini est tirée : le <c>PATH</c>, puis
-    /// l'arborescence WinGet, puis — en dernier — le paquet npm.
+    /// les racines d'installation, puis — en dernier — le paquet npm.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -128,7 +128,8 @@ public static class PresetService
     /// s'affiche sans visuel.
     /// </para>
     /// </remarks>
-    public static string? FindCodexExe(string pathVariable, string wingetRoot, IEnumerable<string> npmRoots)
+    public static string? FindCodexExe(string pathVariable, IEnumerable<string> installRoots,
+                                       IEnumerable<string> npmRoots)
     {
         foreach (var dir in pathVariable.Split(';', StringSplitOptions.RemoveEmptyEntries))
         {
@@ -143,7 +144,11 @@ public static class PresetService
             }
         }
 
-        if (Search(wingetRoot) is { } fromWinget) return fromWinget;
+        // Le PATH d'un processus est fige a son demarrage : Codex installe pendant que DockPad
+        // tourne n'y apparait pas. On regarde donc aussi le disque, sous les racines ou les
+        // installateurs rangent le binaire — chacune nommant une version dans un sous-dossier.
+        foreach (var root in installRoots)
+            if (Search(root) is { } installed) return installed;
 
         foreach (var root in npmRoots)
             if (Search(Path.Combine(root,
@@ -170,14 +175,20 @@ public static class PresetService
     }
 
     /// <summary>Les emplacements réels de cette machine.</summary>
-    private static string? FindCodexExe() => FindCodexExe(
-        Environment.GetEnvironmentVariable("PATH") ?? "",
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                     @"Microsoft\WinGet\Packages"),
-        [
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "npm"),
-        ]);
+    private static string? FindCodexExe()
+    {
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return FindCodexExe(
+            Environment.GetEnvironmentVariable("PATH") ?? "",
+            [
+                Path.Combine(local, @"Programs\OpenAI"),          // installateur natif
+                Path.Combine(local, @"Microsoft\WinGet\Packages"), // WinGet
+            ],
+            [
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "npm"),
+            ]);
+    }
 
     /// <summary>
     /// Statut d'un prédéfini face à ce que porte le registre.

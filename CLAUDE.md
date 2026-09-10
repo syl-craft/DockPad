@@ -197,7 +197,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (742 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (743 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -1397,7 +1397,7 @@ ne touche au presse-papier, l'armement appartenant au déroulement et non à l'a
 | Nom | Cible | Commande |
 | ----- | ------- | --------- |
 | Ouvrir un terminal Claude | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- claude` |
-| Ouvrir un terminal Codex | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- codex` (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône tirée du **vrai** `codex.exe`, cherché comme `bw.exe` l'est : `PATH`, puis l'arborescence **WinGet** en récursif, puis — en dernier — le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`, un script. Codex s'installe de plusieurs façons et elles ne posent pas le binaire au même endroit ; on cherche **sous** les dossiers versionnés plutôt que de les nommer. Il n'embarque aujourd'hui aucune icône ; on le pointe quand même, pour que celle qu'OpenAI y mettra un jour apparaisse sans toucher au code. Proposé sans condition, comme Claude) |
+| Ouvrir un terminal Codex | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- codex` (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône tirée du **vrai** `codex.exe`, cherché comme `bw.exe` l'est : `PATH`, puis les racines d'installation en récursif (`%LOCALAPPDATA%\Programs\OpenAI` pour l'installateur natif, `Microsoft\WinGet\Packages` pour WinGet), puis — en dernier — le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`, un script. On cherche **sous** les dossiers versionnés plutôt que de les nommer. **Le disque est consulté même quand le `PATH` échoue** : celui d'un processus est figé à son démarrage, donc Codex installé pendant que DockPad tourne n'y apparaît pas — cas vécu. Il n'embarque aujourd'hui aucune icône ; on le pointe quand même, pour que celle qu'OpenAI y mettra un jour apparaisse sans toucher au code. Proposé sans condition, comme Claude) |
 | Ouvrir dans PowerShell | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V"` (pwsh/powershell fallback) |
 | Ouvrir dans Visual Studio Code | FolderBackground | `code "%V"` |
 | Ouvrir dans SQL Server Management Studio | FolderBackground | `ssms.exe "%V"` |

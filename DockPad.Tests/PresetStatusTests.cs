@@ -141,19 +141,35 @@ public class PresetStatusTests
         using var t = new TempTree();
         var onPath = t.Put("bin", "codex.exe");
 
-        var found = PresetService.FindCodexExe(t.Dir("bin"), wingetRoot: "", npmRoots: []);
+        var found = PresetService.FindCodexExe(t.Dir("bin"), installRoots: [], npmRoots: []);
 
         Assert.Equal(onPath, found);
     }
 
     [Fact]
-    public void CodexExe_PuisWinGetEnRecursif()
+    public void CodexExe_PuisLesRacinesDInstallationEnRecursif()
     {
-        // Le dossier WinGet porte un identifiant de version : on cherche dessous, on ne le nomme pas.
+        // WinGet comme l'installateur natif rangent le binaire sous un dossier qui nomme la
+        // version : on cherche dessous, on ne le nomme pas.
         using var t = new TempTree();
         var installed = t.Put("winget", "OpenAI.Codex_1.2.3_x64", "codex.exe");
 
-        var found = PresetService.FindCodexExe(pathVariable: "", wingetRoot: t.Dir("winget"), npmRoots: []);
+        var found = PresetService.FindCodexExe(pathVariable: "", installRoots: [t.Dir("winget")], npmRoots: []);
+
+        Assert.Equal(installed, found);
+    }
+
+    [Fact]
+    public void CodexExe_TrouveMemeQuandLePathDuProcessusEstPerime()
+    {
+        // Le cas vecu : Codex installe pendant que DockPad tourne. Le processus a herite d'un
+        // PATH d'avant l'installation, donc le binaire n'y est pas — mais il est bien sur le
+        // disque, et l'utilisateur ne comprendrait pas que l'icone reste vide.
+        using var t = new TempTree();
+        var installed = t.Put("Programs", "OpenAI", "Codex", "bin", "codex.exe");
+
+        var found = PresetService.FindCodexExe(pathVariable: "",
+                                               installRoots: [t.Dir("Programs", "OpenAI")], npmRoots: []);
 
         Assert.Equal(installed, found);
     }
@@ -166,7 +182,7 @@ public class PresetStatusTests
                              "@openai", "codex-win32-x64", "vendor", "x86_64-pc-windows-msvc",
                              "bin", "codex.exe");
 
-        var found = PresetService.FindCodexExe(pathVariable: "", wingetRoot: "",
+        var found = PresetService.FindCodexExe(pathVariable: "", installRoots: [],
                                                npmRoots: [t.Dir("nodejs")]);
 
         Assert.Equal(vendored, found);
@@ -178,7 +194,7 @@ public class PresetStatusTests
         // C'est le cas d'une machine sans Codex : le predefini reste propose, sans icone.
         using var t = new TempTree();
 
-        Assert.Null(PresetService.FindCodexExe(t.Dir("vide"), t.Dir("vide2"), [t.Dir("vide3")]));
+        Assert.Null(PresetService.FindCodexExe(t.Dir("vide"), [t.Dir("vide2")], [t.Dir("vide3")]));
     }
 
     [Fact]
@@ -188,7 +204,7 @@ public class PresetStatusTests
         using var t = new TempTree();
         var onPath = t.Put("bin", "codex.exe");
 
-        var found = PresetService.FindCodexExe($"C:\ne*existe|pas;{t.Dir("bin")}", "", []);
+        var found = PresetService.FindCodexExe($"C:\\ne*existe|pas;{t.Dir("bin")}", [], []);
 
         Assert.Equal(onPath, found);
     }
