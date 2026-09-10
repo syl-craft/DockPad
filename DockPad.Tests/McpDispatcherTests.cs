@@ -89,4 +89,47 @@ public class McpDispatcherTests
 
         Assert.False(resp.GetProperty("ok").GetBoolean());
     }
+
+    // ── Deplacer d'une grille a l'autre ───────────────────────────────────────
+    //
+    // Ces tests ne font AUCUN transfert reel : le dispatcher travaille sur le profil de la
+    // machine, et deplacer une vraie tuile de l'utilisateur pour verifier un routage serait
+    // indefendable. On verifie donc par les messages, sur des chemins qui n'ecrivent rien.
+
+    [Fact]
+    public void Handle_ShortcutMove_SansToTarget_RestePagePage()
+    {
+        // Sans toPage, un deplacement DANS la grille est une requete invalide. Si le dispatcher
+        // routait a tort vers Transfer, on lirait « la grille de depart et celle d'arrivee sont
+        // la meme » : c'est ce qui distingue les deux chemins sans rien deplacer.
+        var resp = Parse(McpDispatcher.Handle(
+            """{"tool":"dockpad_shortcut_move","args":{"page":0,"row":0,"col":0}}""", new McpConfig()));
+
+        Assert.False(resp.GetProperty("ok").GetBoolean());
+        Assert.Contains("invalide", resp.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public void Handle_ShortcutMove_ToTargetInconnu_RefuseAvantToutDeplacement()
+    {
+        var resp = Parse(McpDispatcher.Handle(
+            """{"tool":"dockpad_shortcut_move","args":{"page":0,"row":0,"col":0,"toTarget":"bookmarks"}}""",
+            new McpConfig()));
+
+        Assert.False(resp.GetProperty("ok").GetBoolean());
+        Assert.Contains("bookmarks", resp.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public void Handle_ShortcutMove_MemeGrilleDesDeuxCotes_EstRefuse()
+    {
+        // target et toTarget identiques mais explicites : le dispatcher part sur Move, qui exige
+        // toPage. Le message le prouve, et rien n'est ecrit.
+        var resp = Parse(McpDispatcher.Handle(
+            """{"tool":"dockpad_shortcut_move","args":{"page":0,"row":0,"col":0,"target":"favorites","toTarget":"favorites"}}""",
+            new McpConfig()));
+
+        Assert.False(resp.GetProperty("ok").GetBoolean());
+        Assert.Contains("invalide", resp.GetProperty("error").GetString());
+    }
 }

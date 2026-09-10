@@ -693,6 +693,12 @@ This cannot be undone.</value>
   <data name="Quick_Tile_Edit" xml:space="preserve">
     <value>✏ Edit</value>
   </data>
+  <data name="Quick_Tile_MoveToFavorites" xml:space="preserve">
+    <value>★ Move to favourites</value>
+  </data>
+  <data name="Quick_Tile_MoveToShortcuts" xml:space="preserve">
+    <value>▦ Move to shortcuts</value>
+  </data>
   <data name="Quick_Tile_MoveToPage" xml:space="preserve">
     <value>↗ Move to page</value>
   </data>

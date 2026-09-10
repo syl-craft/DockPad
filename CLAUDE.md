@@ -197,7 +197,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (724 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (734 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -345,7 +345,7 @@ résidente stabilisée : **322 → 78 ms** au minimum, **412 → 100 ms** en mé
 - **Sauvegarder la configuration** : copie `settings.json`, les **quatre** fichiers des deux grilles (`shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`), `browsers.json`, `mcp.json` et `usage.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
 - Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
 - Config pages stockée dans `%APPDATA%\DockPad\pages.json`
-- **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | 🗑 Supprimer
+- **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | ★ Déplacer vers les favoris (ou ▦ vers les raccourcis) | 🗑 Supprimer
 - **Clic droit sur une tuile OpenFolder** : section supplémentaire avec les entrées `Directory\Background\shell` du registre (substitution `%V` → chemin du dossier)
 - **Clic droit sur une case vide** : ➕ Ajouter
 - **Clic droit sur un bouton de page** : 🖼 Changer l'icône | ← / → Déplacer | 🗑 Supprimer la page
@@ -403,6 +403,39 @@ petite — et c'est la raison de `TileStore`.
   pas. C'était le dernier appelant resté hors du routage. **Le fichier est créé s'il manque** :
   `OpenPath` ne crée que le dossier, et une grille de favoris commence vide
 - L'état vit dans `Services/TileModeState.cs` et non dans le code-behind, comme `TileLockState`
+
+#### Déplacer une tuile d'une grille à l'autre
+
+Une entrée du clic droit, sous « ↗ Déplacer vers la page » : **★ Déplacer vers les favoris** en mode
+Raccourcis, **▦ Déplacer vers les raccourcis** en mode Favoris. Le libellé nomme la
+**destination** et non l'action — « déplacer vers l'autre grille » obligerait à se rappeler dans
+laquelle on est. Le glyphe est celui du bouton de bascule, et il vit **dans la valeur traduite**,
+comme pour les cinq autres entrées du menu.
+
+- **`ShortcutActionService.Transfer`**, enveloppe partagée UI ↔ MCP. La tuile atterrit à la
+  première case libre de la destination, pages balayées dans l'ordre — même règle que l'étoile du
+  popup, via le même `FirstFreeSlot`
+- **C'est l'entrée elle-même qui voyage**, pas une copie reconstruite. Le store d'icônes est commun
+  aux deux grilles et `IconProfilePath` y est relatif : l'icône suit **sans aucun
+  téléchargement**, et les configurations de type — terminal, processus — arrivent intactes. Passer
+  par `AddCore` aurait reconstruit une entrée nue. C'est aussi pourquoi l'opération est
+  **synchrone**, contrairement à l'ajout
+- **On écrit la destination AVANT de retirer de la source.** Si la seconde écriture échoue, la
+  tuile est en double : visible, et rattrapable d'un clic droit. Dans l'ordre inverse elle serait
+  perdue, et personne ne saurait quoi recréer. Les deux écritures sont sous un seul
+  `ConfigLock.Gate`, sinon une requête MCP pourrait voir la tuile nulle part
+- **On reste sur la grille de départ** après le déplacement : la tuile disparaît sous les yeux, ce
+  qui *est* le retour d'information. Basculer de mode déplacerait l'utilisateur sans qu'il l'ait
+  demandé, et lui ferait perdre sa page
+- **Pas de glisser-déposer entre les modes** : on n'en voit qu'un à la fois, il n'y a rien vers
+  quoi glisser
+- **`FirstFreeSlot` vit dans `ShortcutActionService`** et non plus dans `FavoriteToggle` : elle
+  sert deux fonctionnalités, et « Favorite » dans son nom serait devenu un mensonge. `Transfer`
+  lit la case complète (il place lui-même, sous le verrou) ; `FavoriteToggle` n'en lit que la
+  page, parce qu'il délègue la case à `AddCore`
+- **Le contrôle `DialogShot grid` imprime le menu** d'une tuile occupée et exige ses huit
+  entrées : un menu contextuel ne se capture pas en image, ses libellés sont donc la seule chose
+  qu'on puisse relire
 
 #### L'étoile du popup (`FavoriteToggle`)
 
@@ -856,6 +889,10 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
   - Pages : `page_add`, `page_update` (`iconPath` omis = inchangé, `""` = retirer l'icône ; `newIndex` = déplacement par insertion), `page_delete` 🔒
   - Navigateurs & règles : `browser_list`, `browser_update`, `rule_list`, `rule_add`, `rule_delete` 🔒 — `browser_list` expose `parentId`/`profileDirectory` (une entrée avec `parentId` est un profil, visable par une règle) ; `order` se compte dans la fratrie (parmi les navigateurs, ou parmi les profils d'un même navigateur)
   - 🔒 = refusé si `AllowDelete` est désactivé dans `mcp.json`
+- **`toTarget` sur `dockpad_shortcut_move`** : omis — ou égal à `target` — le déplacement reste
+  dans la grille, `toPage` compris, exactement comme avant. Différent, la tuile change de grille
+  et se pose à la première case libre : les deux grilles ayant leurs propres pages, une position
+  d'arrivée n'aurait pas de sens. `toPage` est donc devenu optionnel
 - **`target` sur les huit outils de grille et de pages** : `"shortcuts"` (défaut) ou `"favorites"`.
   Le défaut ne peut pas changer de sens — les appels existants ne connaissent pas le paramètre. Une
   valeur inconnue est un **refus nommé** et non un repli silencieux : écrire dans la mauvaise grille

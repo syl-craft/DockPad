@@ -19,15 +19,6 @@ namespace DockPad.Services;
 /// </remarks>
 public static class FavoriteToggle
 {
-    /// <summary>Sur quelle page atterrit un favori, et faut-il la créer pour ça.</summary>
-    /// <remarks>
-    /// La <b>page</b>, et pas la case : celle-ci est choisie par <c>AddCore</c>, qui sait déjà le
-    /// faire. Décider les deux ici, c'était deux implémentations du même balayage à garder
-    /// d'accord — et une page créée pour rien le jour où la seconde refuse ce que la première a
-    /// promis, par exemple parce qu'une requête MCP a pris la case entre les deux.
-    /// </remarks>
-    public readonly record struct FavoritePlacement(int Page, bool NeedsNewPage);
-
     /// <summary>
     /// Le favori qui vise cette URL, ou <c>null</c>.
     /// </summary>
@@ -40,36 +31,6 @@ public static class FavoriteToggle
     public static ShortcutEntry? Find(List<ShortcutEntry> entries, string url) =>
         entries.FirstOrDefault(s => s.Type == ShortcutType.OpenUrl
                                     && string.Equals(s.Command, url, StringComparison.Ordinal));
-
-    /// <summary>
-    /// La première page qui a une case libre ; toutes pleines, une page est demandée.
-    /// </summary>
-    /// <remarks>
-    /// <b>Règle distincte de celle d'<c>AddCore</c></b>, qui ne regarde que la page 0 et refuse si
-    /// elle est pleine. <c>AddCore</c> n'est pas touché : sa sémantique tout-ou-rien est ce que le
-    /// serveur MCP promet aux modèles, et la changer ici la changerait aussi pour les raccourcis.
-    /// Le popup, lui, ne peut pas refuser — personne n'est devant l'écran pour lire le message.
-    /// </remarks>
-    public static FavoritePlacement Placement(List<ShortcutEntry> entries, List<PageConfig> configs)
-    {
-        int maxUsed = entries.Count > 0 ? entries.Max(s => s.Page) : -1;
-        int maxConfig = configs.Count > 0 ? configs.Max(p => p.Index) : -1;
-        int lastShown = Math.Max(Math.Max(maxUsed, maxConfig), 0);
-
-        // Un balayage des cases, et non un comptage des entrées : deux tuiles peuvent partager une
-        // position dans un fichier édité à la main, et une position peut être hors bornes. Compter
-        // déclarerait alors une page pleine qui ne l'est pas.
-        for (int page = 0; page <= lastShown; page++)
-        {
-            var occupied = entries.Where(s => s.Page == page).Select(s => (s.Row, s.Col)).ToHashSet();
-            for (int row = 0; row < ShortcutActionService.GridRows; row++)
-                for (int col = 0; col < ShortcutActionService.GridCols; col++)
-                    if (!occupied.Contains((row, col)))
-                        return new FavoritePlacement(page, NeedsNewPage: false);
-        }
-
-        return new FavoritePlacement(lastShown + 1, NeedsNewPage: true);
-    }
 
     /// <summary>
     /// Nom de la tuile : le domaine, port compris s'il n'est pas celui du schéma.
@@ -113,12 +74,14 @@ public static class FavoriteToggle
 
         if (existing is not null) return true;
 
-        var placement = Placement(ShortcutService.Load(files.EntriesPath),
-                                  PageConfigService.Load(files.PagesPath));
+        // La case revient a ShortcutActionService : c'est lui qui connait la grille, et deux
+        // balayages a garder d'accord auraient fini par diverger.
+        var slot = ShortcutActionService.FirstFreeSlot(ShortcutService.Load(files.EntriesPath),
+                                                       PageConfigService.Load(files.PagesPath));
 
         // La page est créée d'abord : AddCore refuse une page qui n'existe pas encore, et cette
         // borne sur l'état initial est ce qui rend un lot tout-ou-rien vérifiable.
-        if (placement.NeedsNewPage) PageActionService.Add(null, files);
+        if (slot.NeedsNewPage) PageActionService.Add(null, files);
 
         // Aucune position : AddCore prend la première case libre de la page, sous le verrou et sur
         // l'état du moment. Lui dicter une case calculée avant le verrou, c'est promettre à sa
@@ -126,7 +89,7 @@ public static class FavoriteToggle
         // case était libre, en laissant derrière lui la page qu'on venait de créer pour rien.
         var result = await ShortcutActionService.AddAsync([new ShortcutAddItem
         {
-            Page = placement.Page,
+            Page = slot.Page,
             Name = NameFor(url),
             Type = ShortcutType.OpenUrl,
             Command = url,

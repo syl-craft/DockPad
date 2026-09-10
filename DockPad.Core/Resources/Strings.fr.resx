@@ -693,6 +693,12 @@ Cette action est irréversible.</value>
   <data name="Quick_Tile_Edit" xml:space="preserve">
     <value>✏ Modifier</value>
   </data>
+  <data name="Quick_Tile_MoveToFavorites" xml:space="preserve">
+    <value>★ Déplacer vers les favoris</value>
+  </data>
+  <data name="Quick_Tile_MoveToShortcuts" xml:space="preserve">
+    <value>▦ Déplacer vers les raccourcis</value>
+  </data>
   <data name="Quick_Tile_MoveToPage" xml:space="preserve">
     <value>↗ Déplacer vers la page</value>
   </data>

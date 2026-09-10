@@ -57,12 +57,22 @@ public static class DockPadTools
         => Call("dockpad_shortcut_update", new { page, row, col, changes, target });
 
     [McpServerTool(Name = "dockpad_shortcut_move")]
-    [Description("Déplace une tuile vers une page/case. Sans toRow/toCol : même case si libre, sinon " +
+    [Description("Déplace une tuile vers une page/case de la MÊME grille, ou vers l'autre grille " +
+                 "si toTarget en désigne une autre. Sans toRow/toCol : même case si libre, sinon " +
                  "première case libre de la page cible. " + PosDoc)]
-    public static string ShortcutMove(int page, int row, int col, int toPage,
+    public static string ShortcutMove(int page, int row, int col,
+                                      [Description("Page d'arrivée. Requis pour un déplacement dans la " +
+                                                   "même grille ; ignoré quand toTarget change de grille, " +
+                                                   "les deux grilles ayant leurs propres pages.")]
+                                      int? toPage = null,
                                       int? toRow = null, int? toCol = null,
-                                      [Description(TargetDoc)] string? target = null)
-        => Call("dockpad_shortcut_move", new { page, row, col, toPage, toRow, toCol, target });
+                                      [Description(TargetDoc)] string? target = null,
+                                      [Description("Grille d'arrivée. Omise ou égale à target : déplacement " +
+                                                   "dans la grille, comme avant. Différente : la tuile change " +
+                                                   "de grille et se pose à la première case libre, en gardant " +
+                                                   "son icône. \"shortcuts\" ou \"favorites\".")]
+                                      string? toTarget = null)
+        => Call("dockpad_shortcut_move", new { page, row, col, toPage, toRow, toCol, target, toTarget });
 
     [McpServerTool(Name = "dockpad_shortcut_delete")]
     [Description("Supprime une tuile. Requiert l'option « Autoriser la suppression » de DockPad. " + PosDoc)]

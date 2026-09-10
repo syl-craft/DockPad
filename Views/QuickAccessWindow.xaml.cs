@@ -793,6 +793,15 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         menu.Items.Add(duplicate);
         menu.Items.Add(BuildMoveToPageMenu(entry));
 
+        // Vers l'AUTRE grille. Le libellé nomme la destination et non l'action : « déplacer vers
+        // l'autre grille » obligerait à se rappeler dans laquelle on est.
+        var toOther = new MenuItem
+        {
+            Header = Loc.T(_mode.IsFavorites ? "Quick_Tile_MoveToShortcuts" : "Quick_Tile_MoveToFavorites"),
+        };
+        toOther.Click += (_, _) => TransferTile(entry);
+        menu.Items.Add(toOther);
+
         if (entry.Type == ShortcutType.OpenFolder)
             BuildFolderContextMenuSection(menu, entry.Command);
 
@@ -920,6 +929,28 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             moveMenu.IsEnabled = false;
 
         return moveMenu;
+    }
+
+    /// <summary>
+    /// Envoie la tuile dans l'autre grille : raccourcis ↔ favoris.
+    /// </summary>
+    /// <remarks>
+    /// Rien d'asynchrone, contrairement à l'ajout : l'entrée voyage entière avec son
+    /// <c>IconProfilePath</c>, et le store d'icônes est commun aux deux grilles — il n'y a aucune
+    /// icône à retélécharger.
+    /// </remarks>
+    private void TransferTile(ShortcutEntry entry)
+    {
+        var other = _mode.IsFavorites ? TileTarget.Shortcuts : TileTarget.Favorites;
+
+        var r = ShortcutActionService.Transfer(entry.Page, entry.Row, entry.Col,
+                                               Files, TileStore.FilesFor(other));
+        if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
+
+        // On reste sur la grille de départ : la tuile disparaît sous les yeux, ce qui EST le
+        // retour d'information. Basculer de mode déplacerait l'utilisateur sans qu'il l'ait
+        // demandé, et lui ferait perdre la page où il était.
+        PopulateGrid();
     }
 
     private void MoveTileToPage(ShortcutEntry entry, int targetPage)

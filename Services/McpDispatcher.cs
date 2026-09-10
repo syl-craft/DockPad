@@ -61,6 +61,30 @@ public static class McpDispatcher
     private static TileFiles Files(JsonElement args) =>
         TileStore.FilesFor(TileStore.Parse(OptString(args, "target")));
 
+    /// <summary>
+    /// Déplacer dans la grille, ou d'une grille à l'autre : c'est <c>toTarget</c> qui tranche.
+    /// </summary>
+    /// <remarks>
+    /// <c>toTarget</c> absent — ou égal à <c>target</c> — vaut le comportement d'avant, <c>toPage</c>
+    /// compris. Différent, la tuile change de grille et se pose à la première case libre : les
+    /// deux grilles ont leurs propres pages, donc une position d'arrivée n'aurait pas de sens.
+    /// </remarks>
+    private static ActionResult MoveOrTransfer(JsonElement args)
+    {
+        var from = TileStore.Parse(OptString(args, "target"));
+        var to = OptString(args, "toTarget") is { } named ? TileStore.Parse(named) : from;
+
+        if (to == from)
+            return ShortcutActionService.Move(
+                ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
+                ReqInt(args, "toPage"), OptInt(args, "toRow"), OptInt(args, "toCol"),
+                TileStore.FilesFor(from));
+
+        return ShortcutActionService.Transfer(
+            ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
+            TileStore.FilesFor(from), TileStore.FilesFor(to));
+    }
+
     private static ActionResult Execute(string tool, JsonElement args) => tool switch
     {
         "dockpad_grid_get"        => ShortcutActionService.GetGrid(OptInt(args, "page"), Files(args)),
@@ -71,10 +95,7 @@ public static class McpDispatcher
                                          ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
                                          Deserialize<ShortcutUpdate>(args, "changes") ?? new ShortcutUpdate(),
                                          Files(args)),
-        "dockpad_shortcut_move"   => ShortcutActionService.Move(
-                                         ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
-                                         ReqInt(args, "toPage"), OptInt(args, "toRow"), OptInt(args, "toCol"),
-                                         Files(args)),
+        "dockpad_shortcut_move"   => MoveOrTransfer(args),
         "dockpad_shortcut_delete" => ShortcutActionService.Delete(
                                          ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
                                          Files(args)),

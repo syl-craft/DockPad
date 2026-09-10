@@ -108,6 +108,9 @@ le lien.
   téléchargée comme pour toute tuile web (réglage Options → *Réseau*)
 - Il atterrit à la **première case libre**, pages balayées dans l'ordre ; si tout est plein, une page
   est créée
+- **Une tuile passe d'une grille à l'autre** par le clic droit : « ★ Déplacer vers les favoris »,
+  ou « ▦ Déplacer vers les raccourcis » depuis les favoris. Elle garde son icône et sa
+  configuration, et atterrit à la première case libre
 - **Le mode ne survit pas au rangement de la fenêtre** : masquer ou réduire ramène aux raccourcis.
   C'est un détour, pas un réglage — rien n'est écrit sur le disque
 - Les favoris vivent dans `%APPDATA%\DockPad\favorites.json` et `favorite-pages.json`, **même
@@ -167,6 +170,8 @@ DockPad expose un serveur [MCP](https://modelcontextprotocol.io) : depuis Claude
 | Grille | `grid_get` · `shortcut_add` (lot tout-ou-rien) · `shortcut_update` · `shortcut_move` · `shortcut_delete` 🔒 |
 | Pages | `page_add` · `page_update` (icône, position) · `page_delete` 🔒 |
 | Navigateurs | `browser_list` · `browser_update` · `rule_list` · `rule_add` · `rule_delete` 🔒 |
+
+`dockpad_shortcut_move` accepte en plus un **`toTarget`** : omis, le déplacement reste dans la grille comme avant ; différent de `target`, la tuile change de grille et se pose à la première case libre, en gardant son icône.
 
 Les huit outils de grille et de pages acceptent un **`target`** optionnel — `"shortcuts"` (défaut) ou `"favorites"` — pour travailler sur l’une ou l’autre grille. Une valeur inconnue est refusée plutôt que ramenée aux raccourcis : écrire dans la mauvaise grille sans le dire serait pire.
 

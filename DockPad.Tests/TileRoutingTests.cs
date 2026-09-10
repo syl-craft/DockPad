@@ -185,4 +185,47 @@ public class TileRoutingTests : IDisposable
         Assert.Equal(ShortcutService.FilePath, defaults.EntriesPath);
         Assert.Equal(PageConfigService.FilePath, defaults.PagesPath);
     }
+
+    // ── D'une grille a l'autre ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task Transfer_LaTuileChangeDeFichier()
+    {
+        await ShortcutActionService.AddAsync([Item("Voyageuse")], _a);
+        await ShortcutActionService.AddAsync([Item("Reste")], _b);
+
+        var r = ShortcutActionService.Transfer(0, 0, 0, _a, _b);
+
+        Assert.True(r.Ok);
+        Assert.Empty(ShortcutService.Load(_a.EntriesPath));
+        var arrivee = ShortcutService.Load(_b.EntriesPath);
+        Assert.Equal(2, arrivee.Count);
+        Assert.Contains(arrivee, s => s.Name == "Voyageuse");
+        Assert.Contains(arrivee, s => s.Name == "Reste");
+    }
+
+    [Fact]
+    public async Task Transfer_DansLesDeuxSens()
+    {
+        // Le geste doit revenir sur ses pas : c'est ce qui le rend sans risque a essayer.
+        await ShortcutActionService.AddAsync([Item("Aller-retour")], _a);
+
+        Assert.True(ShortcutActionService.Transfer(0, 0, 0, _a, _b).Ok);
+        Assert.True(ShortcutActionService.Transfer(0, 0, 0, _b, _a).Ok);
+
+        Assert.Equal("Aller-retour", Assert.Single(ShortcutService.Load(_a.EntriesPath)).Name);
+        Assert.Empty(ShortcutService.Load(_b.EntriesPath));
+    }
+
+    [Fact]
+    public async Task Transfer_CaseVide_NEcritNiDansLuneNiDansLautre()
+    {
+        await ShortcutActionService.AddAsync([Item("Intacte")], _a);
+
+        var r = ShortcutActionService.Transfer(0, 2, 2, _a, _b);
+
+        Assert.False(r.Ok);
+        Assert.Single(ShortcutService.Load(_a.EntriesPath));
+        Assert.Empty(ShortcutService.Load(_b.EntriesPath));
+    }
 }

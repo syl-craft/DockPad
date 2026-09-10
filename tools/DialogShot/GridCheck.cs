@@ -38,6 +38,7 @@ internal static class GridCheck
         if (grid is null) { Console.WriteLine("ECHEC : ShortcutsGrid introuvable"); return 2; }
 
         var problems = new List<string>();
+        var printed = false;
 
         if (grid.Items.Count != 24)
             problems.Add($"24 cases attendues, {grid.Items.Count} rendues");
@@ -82,9 +83,23 @@ internal static class GridCheck
                     .GetMethod(handler, BindingFlags.NonPublic | BindingFlags.Instance)!
                     .Invoke(window, [button, null]);
 
-                var expected = cell.IsEmpty ? 1 : 7; // libre : Ajouter ; occupee : 5 entrees + 2 separateurs
+                // libre : Ajouter. Occupee : 6 entrees + 2 separateurs — dont « deplacer vers
+                // l'autre grille », qui disparaitrait sans bruit si le compte restait a 7.
+                var expected = cell.IsEmpty ? 1 : 8;
                 if (menu.Items.Count < expected)
                     problems.Add($"case {i} : menu a {menu.Items.Count} entree(s), au moins {expected} attendue(s)");
+
+                // Le menu de la premiere tuile occupee est imprime : un menu contextuel ne se
+                // capture pas en image, ses libelles sont donc la seule chose qu'on puisse relire.
+                if (!cell.IsEmpty && !printed)
+                {
+                    printed = true;
+                    Console.WriteLine($"  menu d'une tuile occupee ({menu.Items.Count} entrees) :");
+                    foreach (var item in menu.Items)
+                        Console.WriteLine(item is System.Windows.Controls.MenuItem mi
+                            ? $"    - {mi.Header}"
+                            : "    - ---");
+                }
             }
 
             if (!cell.IsEmpty)

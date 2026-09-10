@@ -171,6 +171,45 @@ public static class ShortcutActionService
         }
     }
 
+    /// <summary>
+    /// Déplace une tuile d'une grille vers l'autre — raccourcis ↔ favoris.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Les deux écritures vivent sous un seul verrou</b>, sinon une requête MCP pourrait
+    /// s'intercaler entre le retrait et l'ajout, et voir la tuile nulle part.
+    /// </para>
+    /// <para>
+    /// <b>On écrit la destination AVANT de retirer de la source.</b> Si la seconde écriture
+    /// échoue — disque plein, fichier verrouillé — la tuile se retrouve en double : c'est visible
+    /// et ça se rattrape d'un clic droit. Dans l'ordre inverse, elle serait perdue, et personne ne
+    /// saurait quoi recréer.
+    /// </para>
+    /// <para>
+    /// Rien d'asynchrone ici, contrairement à l'ajout : l'entrée voyage entière, avec son
+    /// <c>IconProfilePath</c>, donc aucune icône n'est à retélécharger.
+    /// </para>
+    /// </remarks>
+    public static ActionResult Transfer(int page, int row, int col, TileFiles from, TileFiles to)
+    {
+        if (from.EntriesPath == to.EntriesPath)
+            return ActionResult.Fail("La grille de départ et celle d'arrivée sont la même.");
+
+        lock (ConfigLock.Gate)
+        {
+            var source = ShortcutService.Load(from.EntriesPath);
+            var dest = ShortcutService.Load(to.EntriesPath);
+            var destPages = PageConfigService.Load(to.PagesPath);
+
+            var result = TransferCore(source, dest, destPages, page, row, col);
+            if (!result.Ok) return result;
+
+            ShortcutService.Save(dest, to.EntriesPath);
+            ShortcutService.Save(source, from.EntriesPath);
+            return result;
+        }
+    }
+
     /// <summary>Utilisée par l'UI uniquement (⧉ Dupliquer) — non exposée côté MCP.</summary>
     public static ActionResult Duplicate(int page, int row, int col, TileFiles? files = null)
     {
@@ -353,6 +392,81 @@ public static class ShortcutActionService
 
         s.Page = toPage; s.Row = dest.row; s.Col = dest.col;
         return ActionResult.Success(new { s.Name, page = s.Page, row = s.Row, col = s.Col });
+    }
+
+    /// <summary>Une case libre dans une grille, et s'il a fallu inventer la page pour l'avoir.</summary>
+    public readonly record struct GridSlot(int Page, int Row, int Col, bool NeedsNewPage);
+
+    /// <summary>
+    /// Première case libre d'une grille entière, pages balayées dans l'ordre ; toutes pleines, la
+    /// case (0, 0) d'une page qui n'existe pas encore.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Règle distincte de celle d'<see cref="AddCore"/></b>, qui ne regarde qu'une page et
+    /// refuse si elle est pleine. Celle-là ne peut pas refuser : ses appelants sont des gestes
+    /// d'un seul clic — l'étoile du popup, le déplacement d'une grille à l'autre — devant lesquels
+    /// personne n'est là pour lire un message d'erreur.
+    /// </para>
+    /// <para>
+    /// Un balayage des cases, et non un comptage des entrées : deux tuiles peuvent partager une
+    /// position dans un fichier édité à la main, et une position peut être hors bornes. Compter
+    /// déclarerait alors une page pleine qui ne l'est pas.
+    /// </para>
+    /// </remarks>
+    public static GridSlot FirstFreeSlot(List<ShortcutEntry> entries, List<PageConfig> pages)
+    {
+        int maxUsed = entries.Count > 0 ? entries.Max(s => s.Page) : -1;
+        int maxConfig = pages.Count > 0 ? pages.Max(p => p.Index) : -1;
+        int lastShown = Math.Max(Math.Max(maxUsed, maxConfig), 0);
+
+        for (int page = 0; page <= lastShown; page++)
+        {
+            var occupied = entries.Where(s => s.Page == page).Select(s => (s.Row, s.Col)).ToHashSet();
+            for (int row = 0; row < GridRows; row++)
+                for (int col = 0; col < GridCols; col++)
+                    if (!occupied.Contains((row, col)))
+                        return new GridSlot(page, row, col, NeedsNewPage: false);
+        }
+
+        return new GridSlot(lastShown + 1, 0, 0, NeedsNewPage: true);
+    }
+
+    /// <summary>
+    /// Déplace une tuile d'une grille vers l'autre : elle quitte <paramref name="source"/> et
+    /// atterrit à la première case libre de <paramref name="dest"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>C'est l'entrée elle-même qui voyage</b>, pas une copie reconstruite. Le store d'icônes
+    /// est commun aux deux grilles et <c>IconProfilePath</c> y est relatif : l'icône suit donc sans
+    /// qu'on retélécharge quoi que ce soit, et les configurations de type — terminal, processus —
+    /// arrivent intactes. Passer par <see cref="AddCore"/> aurait reconstruit une entrée nue.
+    /// </para>
+    /// <para>
+    /// <b>Aucune page n'est déclarée</b> quand la destination est pleine : une tuile posée sur la
+    /// page suivante suffit à la faire exister, la pagination lisant le maximum des pages
+    /// utilisées. Un <c>PageConfig</c> ne sert qu'à porter une icône de bouton.
+    /// </para>
+    /// </remarks>
+    public static ActionResult TransferCore(List<ShortcutEntry> source, List<ShortcutEntry> dest,
+                                            List<PageConfig> destPages, int page, int row, int col)
+    {
+        var entry = source.FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
+        if (entry is null) return ActionResult.Fail($"Aucune tuile en page {page}, ligne {row}, colonne {col}.");
+
+        var slot = FirstFreeSlot(dest, destPages);
+
+        source.Remove(entry);
+        entry.Page = slot.Page;
+        entry.Row = slot.Row;
+        entry.Col = slot.Col;
+        dest.Add(entry);
+
+        return ActionResult.Success(new
+        {
+            moved = entry.Name, page = slot.Page, row = slot.Row, col = slot.Col,
+        });
     }
 
     public static ActionResult DeleteCore(List<ShortcutEntry> all, int page, int row, int col)

@@ -18,15 +18,6 @@ public class FavoriteToggleTests
         new() { Page = page, Row = row, Col = col, Name = "x",
                 Type = ShortcutType.OpenUrl, Command = url };
 
-    private static List<ShortcutEntry> FullPage(int page)
-    {
-        var list = new List<ShortcutEntry>();
-        for (int r = 0; r < ShortcutActionService.GridRows; r++)
-            for (int c = 0; c < ShortcutActionService.GridCols; c++)
-                list.Add(Url($"https://p{page}-{r}-{c}.test", page, r, c));
-        return list;
-    }
-
     // ── Trouver ──────────────────────────────────────────────────────────────
 
     [Fact]
@@ -56,84 +47,6 @@ public class FavoriteToggleTests
         };
 
         Assert.Null(FavoriteToggle.Find(all, "https://github.com"));
-    }
-
-    // ── Placer ────────────────────────────────────────────────────────────────
-    //
-    // Placement choisit la PAGE ; c'est AddCore qui choisit la case dans cette page. Une seule
-    // règle par endroit : dupliquer le balayage des cases ici, c'était deux implémentations à
-    // garder d'accord, et une page créée pour rien quand la seconde refusait ce que la première
-    // avait promis.
-
-    [Fact]
-    public void Placement_GrilleVide_PremierePage()
-    {
-        var p = FavoriteToggle.Placement([], []);
-
-        Assert.Equal(0, p.Page);
-        Assert.False(p.NeedsNewPage);
-    }
-
-    [Fact]
-    public void Placement_PageEntamee_YReste()
-    {
-        var all = new List<ShortcutEntry> { Url("https://a.test", 0, 0, 0), Url("https://b.test", 0, 0, 1) };
-
-        var p = FavoriteToggle.Placement(all, []);
-
-        Assert.Equal(0, p.Page);
-        Assert.False(p.NeedsNewPage);
-    }
-
-    [Fact]
-    public void Placement_TrouLaisseParUneSuppression_LaPageCompteCommeLibre()
-    {
-        var all = FullPage(0);
-        all.RemoveAll(s => s is { Row: 2, Col: 3 });
-
-        var p = FavoriteToggle.Placement(all, []);
-
-        Assert.Equal(0, p.Page);
-        Assert.False(p.NeedsNewPage);
-    }
-
-    [Fact]
-    public void Placement_PremierePagePleine_PasseALaSuivante()
-    {
-        // C'est ce qui distingue cette règle de celle d'AddCore, qui ne regarde que la page 0
-        // et refuse. Le popup ne peut pas refuser : personne n'est là pour lire le message.
-        var all = FullPage(0);
-        all.Add(Url("https://x.test", 1, 0, 0));
-
-        var p = FavoriteToggle.Placement(all, []);
-
-        Assert.Equal(1, p.Page);
-        Assert.False(p.NeedsNewPage);
-    }
-
-    [Fact]
-    public void Placement_PageDeclareeVide_YAtterrit()
-    {
-        // Une page peut exister sans aucune tuile : elle est déclarée dans le fichier des pages.
-        var all = FullPage(0);
-        var configs = new List<PageConfig> { new() { Index = 1 } };
-
-        var p = FavoriteToggle.Placement(all, configs);
-
-        Assert.Equal(1, p.Page);
-        Assert.False(p.NeedsNewPage);
-    }
-
-    [Fact]
-    public void Placement_ToutesLesPagesPleines_EnDemandeUneNouvelle()
-    {
-        var all = FullPage(0);
-        all.AddRange(FullPage(1));
-
-        var p = FavoriteToggle.Placement(all, []);
-
-        Assert.Equal(2, p.Page);
-        Assert.True(p.NeedsNewPage);
     }
 
     // ── Nommer ───────────────────────────────────────────────────────────────
