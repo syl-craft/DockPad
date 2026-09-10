@@ -208,4 +208,81 @@ public class PresetStatusTests
 
         Assert.Equal(onPath, found);
     }
+
+    // -- Le logo ChatGPT ------------------------------------------------------
+
+    [Fact]
+    public void ChatGptExe_PrefereCeluiQuiPorteLeNom()
+    {
+        // Le paquet n'expose qu'un exe aujourd'hui, mais rien ne le garantit demain : un
+        // utilitaire de mise a jour pose a cote, et on extrairait SON icone sans le voir.
+        var pick = PresetService.PickChatGptExe(
+            [@"C:\app\updater.exe", @"C:\app\ChatGPT Classic.exe", @"C:\app\crashpad.exe"]);
+
+        Assert.Equal(@"C:\app\ChatGPT Classic.exe", pick);
+    }
+
+    [Fact]
+    public void ChatGptExe_AucunNomReconnu_PrendLePremier()
+    {
+        // Mieux vaut une icone plausible que pas d'icone : le dossier « app » d'un paquet
+        // ChatGPT ne contient pas grand-chose d'autre.
+        var pick = PresetService.PickChatGptExe([@"C:\app\a.exe", @"C:\app\b.exe"]);
+
+        Assert.Equal(@"C:\app\a.exe", pick);
+    }
+
+    [Fact]
+    public void ChatGptExe_AucunExe_RendNull()
+    {
+        // ChatGPT absent : le predefini retombe sur codex.exe, puis sur aucune icone.
+        Assert.Null(PresetService.PickChatGptExe([]));
+    }
+
+    // -- L'encodage du .ico ---------------------------------------------------
+    //
+    // Icon.Save abime l'alpha : mesure sur le logo ChatGPT, 0 frange bleutee a l'extraction
+    // et 45 apres l'aller-retour. On ecrit donc le conteneur soi-meme, avec un PNG dedans —
+    // format que le shell lit depuis Vista et qui preserve la transparence exactement.
+
+    [Fact]
+    public void Ico_PorteLenTeteDUnIconeAUneSeuleImage()
+    {
+        var png = new byte[] { 1, 2, 3, 4, 5 };
+
+        var ico = PresetService.BuildIco(png, 64);
+
+        Assert.Equal(0, BitConverter.ToUInt16(ico, 0));   // reserve
+        Assert.Equal(1, BitConverter.ToUInt16(ico, 2));   // type : icone
+        Assert.Equal(1, BitConverter.ToUInt16(ico, 4));   // une seule image
+        Assert.Equal(64, ico[6]);                          // largeur
+        Assert.Equal(64, ico[7]);                          // hauteur
+        Assert.Equal(32, BitConverter.ToUInt16(ico, 12));  // bits par pixel
+    }
+
+    [Fact]
+    public void Ico_PointeLesDonneesJusteApresLenTete()
+    {
+        // 6 octets d'ICONDIR + 16 d'ICONDIRENTRY : une erreur ici et le shell lit du vide.
+        var png = new byte[] { 9, 8, 7 };
+
+        var ico = PresetService.BuildIco(png, 32);
+
+        // Disposition d'ICONDIRENTRY : largeur, hauteur, palette, réservé, plans (2),
+        // bits (2), puis la taille en 14 et le pointeur en 18.
+        Assert.Equal(png.Length, BitConverter.ToInt32(ico, 14));
+        Assert.Equal(22, BitConverter.ToInt32(ico, 18));
+        Assert.Equal(png, ico[22..]);
+    }
+
+    [Fact]
+    public void Ico_LaTaille256SEcritZero()
+    {
+        // Un octet ne peut pas porter 256 : le format code cette taille par zero. Sans ca,
+        // une icone 256 s'annoncerait de taille nulle et ne s'afficherait pas.
+        var ico = PresetService.BuildIco([0], 256);
+
+        Assert.Equal(0, ico[6]);
+        Assert.Equal(0, ico[7]);
+    }
 }

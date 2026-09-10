@@ -98,10 +98,160 @@ public static class PresetService
             DisplayName = Loc.T("Preset_CodexTerminal_Name"),
             RegistryKey = "OpenCodexTerminal",
             Command = command,
-            IconPath = FindCodexExe() ?? "",
+            // Le logo ChatGPT d'abord : c'est le seul visuel qui identifie vraiment l'entrée.
+            // À défaut, le binaire de Codex — qui n'embarque aucune icône, donc celle d'un
+            // exécutable quelconque. À défaut encore, rien.
+            IconPath = ChatGptIconPath() ?? FindCodexExe() ?? "",
             Target = ContextMenuTarget.FolderBackground,
             Description = Loc.T("Preset_CodexTerminal_Desc")
         };
+    }
+
+    /// <summary>
+    /// Le logo ChatGPT, extrait <b>une seule fois</b> dans le store d'icônes du profil.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Pourquoi une copie, et pas le paquet directement.</b> Le seul exécutable qui porte le
+    /// logo vit sous <c>C:\Program Files\WindowsApps\OpenAI.ChatGPT-Desktop_<i>version</i>_…</c> :
+    /// ce chemin part dans le registre, et deviendrait faux à la prochaine mise à jour de ChatGPT —
+    /// laissant une icône cassée dans le menu contextuel de Windows. Le fichier du profil, lui, ne
+    /// bouge jamais, et survit même à la désinstallation de l'application.
+    /// </para>
+    /// <para>
+    /// <b>Un <c>.ico</c> et non un <c>.png</c></b>, contrairement au store des tuiles : le shell
+    /// Windows ne sait pas lire un PNG pour l'icône d'une entrée de menu.
+    /// </para>
+    /// <para>
+    /// L'extraction a lieu au premier appel et pas ensuite. <c>GetPresets</c> écrit donc un fichier,
+    /// ce qui n'est pas anodin pour un accesseur — mais le geste est unique, gardé par un
+    /// <c>File.Exists</c>, et le faire à l'installation obligerait le statut affiché à mentir
+    /// jusque-là.
+    /// </para>
+    /// </remarks>
+    private static string? ChatGptIconPath()
+    {
+        var target = Path.Combine(AppPaths.ProfileRoot, "icons", "chatgpt.ico");
+        if (File.Exists(target)) return target;
+
+        if (FindChatGptExe() is not { } exe) return null;
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+
+            // 64 px : le menu contextuel affiche 16 ou 24 px selon la mise à l'échelle, et
+            // réduire une image nette vaut mieux qu'agrandir une petite.
+            using var icon = Icon.ExtractIcon(exe, 0, IconSize) ?? Icon.ExtractAssociatedIcon(exe);
+            if (icon is null) return null;
+
+            using var bitmap = icon.ToBitmap();
+            using var png = new MemoryStream();
+            bitmap.Save(png, System.Drawing.Imaging.ImageFormat.Png);
+
+            File.WriteAllBytes(target, BuildIco(png.ToArray(), bitmap.Width));
+            return target;
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Extraction du logo ChatGPT");
+            return null;
+        }
+    }
+
+    private const int IconSize = 64;
+
+    /// <summary>
+    /// Un fichier <c>.ico</c> contenant une seule image, au format PNG.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b><c>Icon.Save</c> abîme la transparence</b>, et ce n'est pas une supposition : mesuré sur
+    /// le logo ChatGPT, <b>zéro</b> pixel bleuté à l'extraction, <b>quarante-cinq</b> après
+    /// l'aller-retour — un halo visible autour du dessin. On écrit donc le conteneur soi-même.
+    /// </para>
+    /// <para>
+    /// Le shell lit les icônes à image PNG depuis Vista, et ce format préserve l'alpha exactement,
+    /// là où le DIB classique le reconstruit à partir d'un masque.
+    /// </para>
+    /// </remarks>
+    public static byte[] BuildIco(byte[] png, int size)
+    {
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+
+        w.Write((ushort)0);   // réservé
+        w.Write((ushort)1);   // type : icône
+        w.Write((ushort)1);   // une seule image
+
+        // Un octet ne peut pas porter 256 : le format code cette taille par zéro.
+        w.Write((byte)(size >= 256 ? 0 : size));
+        w.Write((byte)(size >= 256 ? 0 : size));
+        w.Write((byte)0);     // couleurs de palette
+        w.Write((byte)0);     // réservé
+        w.Write((ushort)1);   // plans
+        w.Write((ushort)32);  // bits par pixel
+        w.Write(png.Length);
+        w.Write(6 + 16);      // les données suivent l'en-tête et l'unique entrée
+
+        w.Write(png);
+        w.Flush();
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// L'exécutable du paquet ChatGPT, retrouvé par le registre.
+    /// </summary>
+    /// <remarks>
+    /// <b><c>C:\Program Files\WindowsApps</c> ne s'énumère pas</b> — ses ACL l'interdisent, même en
+    /// lecture. Mais Windows publie la racine de chaque paquet installé sous une clé <b>par
+    /// utilisateur</b>, lisible sans privilège, et dont le nom porte la version : on y lit
+    /// <c>PackageRootFolder</c> plutôt que de deviner un chemin.
+    /// </remarks>
+    private static string? FindChatGptExe()
+    {
+        const string repository =
+            @"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages";
+
+        try
+        {
+            using var packages = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(repository);
+            if (packages is null) return null;
+
+            foreach (var name in packages.GetSubKeyNames()
+                         .Where(n => n.StartsWith("OpenAI.ChatGPT", StringComparison.OrdinalIgnoreCase)))
+            {
+                using var package = packages.OpenSubKey(name);
+                if (package?.GetValue("PackageRootFolder") is not string root) continue;
+
+                // Plusieurs versions peuvent rester déclarées ; seule celle dont le dossier existe
+                // encore est utilisable.
+                var app = Path.Combine(root, "app");
+                if (!Directory.Exists(app)) continue;
+
+                if (PickChatGptExe(Directory.EnumerateFiles(app, "*.exe")) is { } exe) return exe;
+            }
+        }
+        catch (Exception ex) { LogService.Warn(ex, "Recherche du paquet ChatGPT"); }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Lequel des exécutables d'un paquet ChatGPT porte le logo.
+    /// </summary>
+    /// <remarks>
+    /// Le paquet n'en expose qu'un aujourd'hui, mais rien ne le garantit demain : un utilitaire de
+    /// mise à jour posé à côté, et l'on extrairait <b>son</b> icône sans le voir. À défaut de nom
+    /// reconnaissable on prend le premier — une icône plausible vaut mieux qu'aucune.
+    /// </remarks>
+    public static string? PickChatGptExe(IEnumerable<string> exeFiles)
+    {
+        var all = exeFiles.ToList();
+
+        return all.FirstOrDefault(f => Path.GetFileName(f)
+                       .Contains("ChatGPT", StringComparison.OrdinalIgnoreCase))
+               ?? all.FirstOrDefault();
     }
 
     /// <summary>
