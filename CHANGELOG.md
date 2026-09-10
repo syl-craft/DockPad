@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.21.0] — 2026-09-10
+
+### Nouveautés
+
+- **Mode Favoris** : une seconde grille avec ses propres pages, alimentée depuis l’étoile de la popup de choix du navigateur. Le menu contextuel permet de déplacer une tuile entre les raccourcis et les favoris.
+- **Raccourci prédéfini Codex** : détection de l’exécutable installé, lancement par son chemin absolu et icône ChatGPT.
+- **Quotas Codex dans Usage IA** : lecture du dernier relevé local, jauges de session et de semaine selon les fenêtres disponibles, et lien vers la page web des usages Codex. Une jauge seule occupe toute la largeur disponible.
+- **Quotas périmés signalés** : une fenêtre expirée ou un relevé Codex de plus de 15 minutes est masqué ; une notice explique l’absence de jauges. Aucun accès aux identifiants ni appel réseau supplémentaire.
+
+### Corrections
+
+- **Configurations JSON** : sauvegardes atomiques et protection contre l’écrasement d’un fichier illisible ou invalide.
+- **Communications entre processus et MCP** : lectures et écritures annulables, délais bornés et meilleure disponibilité face aux clients bloqués.
+- **Fichiers de secrets** : validation des noms et des doublons avant écriture, protection du fichier `.gitignore` et fichiers temporaires uniques.
+- **Ouverture des liens** : transmission à l’instance active avant l’initialisation WPF pour réduire le délai de lancement.
+- **Navigation des grilles** : corrections du routage des actions, des pages et des sauvegardes pour les favoris.
+
+### Documentation et validation
+
+- README enrichi avec les quotas Codex, le lien de téléchargement et de nouvelles captures du bandeau Usage IA.
+- 804 tests réussis ; captures produites avec des données de démonstration.
+
 ## [1.20.0] — 2026-08-30
 
 > Les versions 1.14.0 à 1.19.0 n'ont jamais été publiées : elles ont vu la même fonctionnalité
