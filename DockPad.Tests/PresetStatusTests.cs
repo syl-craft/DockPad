@@ -91,12 +91,10 @@ public class PresetStatusTests
     public void Codex_LanceCodexDansLeDossierClique()
     {
         // %V est le dossier du clic droit : sans lui le terminal s'ouvrirait n'importe où.
-        // La commande finit par « codex », que ce soit via Windows Terminal ou le repli
-        // PowerShell — c'est le seul invariant qui vaille sur toutes les machines.
         var codex = PresetService.GetPresets().Single(p => p.RegistryKey == "OpenCodexTerminal");
 
         Assert.Contains("%V", codex.Command);
-        Assert.EndsWith("codex", codex.Command);
+        Assert.Contains("codex", codex.Command);
     }
 
     [Fact]
@@ -284,5 +282,41 @@ public class PresetStatusTests
 
         Assert.Equal(0, ico[6]);
         Assert.Equal(0, ico[7]);
+    }
+
+    // -- La commande lancee ---------------------------------------------------
+    //
+    // Cas vecu : « erreur 0x80070002, le fichier specifie est introuvable ». Explorer tournait
+    // depuis des semaines et transmettait a wt.exe un P@H anterieur a l'installation de Codex.
+    // Le nom nu ne se resout que si le P@H du LANCEUR est a jour — ce qu'on ne controle pas.
+
+    [Fact]
+    public void CodexCommande_UtiliseLeCheminAbsoluQuandOnLeConnait()
+    {
+        var cmd = PresetService.CodexCommand(wt: @"C:\wt.exe", powershell: null,
+                                             codexExe: @"C:\OpenAI\bin\codex.exe");
+
+        Assert.Contains(@"-- ""C:\OpenAI\bin\codex.exe""", cmd);
+    }
+
+    [Fact]
+    public void CodexCommande_SansCheminConnu_RetombeSurLeNomNu()
+    {
+        // Machine ou DockPad ne sait pas localiser le binaire : on laisse le P@H decider,
+        // ce qui est le comportement d'avant et vaut mieux que rien.
+        var cmd = PresetService.CodexCommand(wt: @"C:\wt.exe", powershell: null, codexExe: null);
+
+        Assert.EndsWith("-- codex", cmd);
+    }
+
+    [Fact]
+    public void CodexCommande_SansWindowsTerminal_RepliPowerShell()
+    {
+        var cmd = PresetService.CodexCommand(wt: null, powershell: @"C:\powershell.exe",
+                                             codexExe: @"C:\codex.exe");
+
+        Assert.StartsWith(@"""C:\powershell.exe""", cmd);
+        Assert.Contains("Set-Location '%V'", cmd);
+        Assert.Contains(@"C:\codex.exe", cmd);
     }
 }

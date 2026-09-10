@@ -89,9 +89,11 @@ public static class PresetService
         string? wt = FindExe("wt.exe",
             Path.Combine(localAppData, @"Microsoft\WindowsApps\wt.exe"));
 
-        string command = wt != null
-            ? $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- codex"
-            : $"\"{FindExe("powershell.exe", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe")) ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; codex\"";
+        string? powershell = FindExe("powershell.exe",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),
+                @"WindowsPowerShell\v1.0\powershell.exe"));
+
+        string command = CodexCommand(wt, powershell, FindCodexExe());
 
         return new PresetEntry
         {
@@ -105,6 +107,33 @@ public static class PresetService
             Target = ContextMenuTarget.FolderBackground,
             Description = Loc.T("Preset_CodexTerminal_Desc")
         };
+    }
+
+    /// <summary>
+    /// La commande du prédéfini Codex : Windows Terminal si possible, sinon PowerShell.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Le chemin absolu quand on le connaît, et ce n'est pas un raffinement</b> : lancer
+    /// <c>codex</c> par son nom nu a donné <i>« erreur 0x80070002, le fichier spécifié est
+    /// introuvable »</i>. Le nom ne se résout que si le <c>PATH</c> du <b>lanceur</b> est à jour —
+    /// or c'est l'Explorateur qui lance, et il transmet le <c>PATH</c> qu'il avait à son propre
+    /// démarrage. Une installation faite depuis, et le prédéfini échoue jusqu'à la prochaine
+    /// session Windows.
+    /// </para>
+    /// <para>
+    /// C'est le patron que <c>BuildFolderPreset</c> applique déjà à VS Code et SSMS avec son
+    /// <c>fallbackExe</c> : le chemin résolu d'abord, le nom nu en repli — lequel reste utile sur
+    /// une machine où DockPad ne sait pas localiser le binaire.
+    /// </para>
+    /// </remarks>
+    public static string CodexCommand(string? wt, string? powershell, string? codexExe)
+    {
+        string codex = codexExe is null ? "codex" : $"\"{codexExe}\"";
+
+        return wt != null
+            ? $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- {codex}"
+            : $"\"{powershell ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; & {codex}\"";
     }
 
     /// <summary>

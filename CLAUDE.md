@@ -197,7 +197,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (749 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (752 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
@@ -1397,7 +1397,7 @@ ne touche au presse-papier, l'armement appartenant au déroulement et non à l'a
 | Nom | Cible | Commande |
 | ----- | ------- | --------- |
 | Ouvrir un terminal Claude | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- claude` |
-| Ouvrir un terminal Codex | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- codex` (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône : **le logo ChatGPT**, extrait une seule fois en `.ico` dans `%APPDATA%\DockPad\icons\`. Le seul exécutable qui le porte vit sous `WindowsApps\OpenAI.ChatGPT-Desktop_<version>_…`, chemin qui deviendrait faux à la prochaine mise à jour de ChatGPT et laisserait une icône cassée dans le menu de Windows ; la copie du profil, elle, survit aux mises à jour **et** à la désinstallation. `WindowsApps` ne s'énumère pas (ACL), mais Windows publie `PackageRootFolder` sous une clé HKCU lisible sans privilège. À défaut de ChatGPT, on retombe sur `codex.exe` — cherché comme `bw.exe` l'est : `PATH`, puis les racines d'installation en récursif (`%LOCALAPPDATA%\Programs\OpenAI`, `Microsoft\WinGet\Packages`), puis le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`. **Le disque est consulté même quand le `PATH` échoue** : celui d'un processus est figé à son démarrage, donc Codex installé pendant que DockPad tourne n'y apparaît pas — cas vécu. Ni `codex.exe` ni son équivalent npm n'embarquent d'icône, mesuré |
+| Ouvrir un terminal Codex | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- "<chemin absolu de codex.exe>"` (nom nu `codex` en repli) (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône : **le logo ChatGPT**, extrait une seule fois en `.ico` dans `%APPDATA%\DockPad\icons\`. Le seul exécutable qui le porte vit sous `WindowsApps\OpenAI.ChatGPT-Desktop_<version>_…`, chemin qui deviendrait faux à la prochaine mise à jour de ChatGPT et laisserait une icône cassée dans le menu de Windows ; la copie du profil, elle, survit aux mises à jour **et** à la désinstallation. `WindowsApps` ne s'énumère pas (ACL), mais Windows publie `PackageRootFolder` sous une clé HKCU lisible sans privilège. À défaut de ChatGPT, on retombe sur `codex.exe` — cherché comme `bw.exe` l'est : `PATH`, puis les racines d'installation en récursif (`%LOCALAPPDATA%\Programs\OpenAI`, `Microsoft\WinGet\Packages`), puis le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`. **Le disque est consulté même quand le `PATH` échoue** : celui d'un processus est figé à son démarrage, donc Codex installé pendant que DockPad tourne n'y apparaît pas — cas vécu. Ni `codex.exe` ni son équivalent npm n'embarquent d'icône, mesuré |
 | Ouvrir dans PowerShell | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V"` (pwsh/powershell fallback) |
 | Ouvrir dans Visual Studio Code | FolderBackground | `code "%V"` |
 | Ouvrir dans SQL Server Management Studio | FolderBackground | `ssms.exe "%V"` |
@@ -1661,6 +1661,15 @@ quarante-cinq clés dont trente ne serviraient qu'une fois, du bruit et pas de l
   threads, et ne peut plus être modifiée par accident depuis ailleurs
 - `Color="#…"` n'est **pas** une brosse : un `DropShadowEffect` ou un `GradientStop` attendent une
   couleur, ces occurrences restent telles quelles
+
+> **Un prédéfini lance par CHEMIN ABSOLU, pas par nom.** Vécu : `-- codex` a donné *« erreur
+> 0x80070002, le fichier spécifié est introuvable »* alors que le binaire existait et que le `PATH`
+> du registre le contenait. Le nom nu ne se résout que si le `PATH` du **lanceur** est à jour — or
+> c'est l'Explorateur qui lance, et il transmet celui qu'il avait à son propre démarrage,
+> plusieurs semaines plus tôt. C'est le patron que `BuildFolderPreset` applique déjà à VS Code et
+> SSMS avec son `fallbackExe`. **`Preset_ClaudeTerminal` porte encore la même fragilité** : il
+> lance `claude` par son nom, et échouera pareil le jour d'une réinstallation — laissé tel quel,
+> le corriger ferait afficher « à mettre à jour » sur une entrée qui fonctionne.
 
 > **`Icon.Save` abîme la transparence.** Mesuré en écrivant le logo ChatGPT : **0** pixel
 > bleuté à l'extraction, **45** après l'aller-retour `.ico` — un halo visible autour du
