@@ -1,3 +1,4 @@
+using System.IO;
 using DockPad.Models;
 using DockPad.Services;
 
@@ -105,5 +106,90 @@ public class PresetStatusTests
         var keys = PresetService.GetPresets().Select(p => p.RegistryKey).ToList();
 
         Assert.Equal(keys.Count, keys.Distinct().Count());
+    }
+
+    // ── Ou vit codex.exe ─────────────────────────────────────────────────────
+    //
+    // Codex s'installe de plusieurs facons, et elles ne posent pas le binaire au meme endroit.
+    // Meme patron que la localisation de bw.exe : PATH, puis WinGet, puis — en dernier — le
+    // paquet npm, ou codex.exe est enfoui et ABSENT du PATH (celui-ci ne porte que codex.cmd).
+
+    private sealed class TempTree : IDisposable
+    {
+        public string Root { get; } = Path.Combine(Path.GetTempPath(), $"codex_{Guid.NewGuid():N}");
+        public TempTree() => Directory.CreateDirectory(Root);
+
+        public string Put(params string[] segments)
+        {
+            var full = Path.Combine([Root, .. segments]);
+            Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+            File.WriteAllText(full, "");
+            return full;
+        }
+
+        public string Dir(params string[] segments) => Path.Combine([Root, .. segments]);
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CodexExe_LePathDabord()
+    {
+        using var t = new TempTree();
+        var onPath = t.Put("bin", "codex.exe");
+
+        var found = PresetService.FindCodexExe(t.Dir("bin"), wingetRoot: "", npmRoots: []);
+
+        Assert.Equal(onPath, found);
+    }
+
+    [Fact]
+    public void CodexExe_PuisWinGetEnRecursif()
+    {
+        // Le dossier WinGet porte un identifiant de version : on cherche dessous, on ne le nomme pas.
+        using var t = new TempTree();
+        var installed = t.Put("winget", "OpenAI.Codex_1.2.3_x64", "codex.exe");
+
+        var found = PresetService.FindCodexExe(pathVariable: "", wingetRoot: t.Dir("winget"), npmRoots: []);
+
+        Assert.Equal(installed, found);
+    }
+
+    [Fact]
+    public void CodexExe_EnDernierRecoursLePaquetNpm()
+    {
+        using var t = new TempTree();
+        var vendored = t.Put("nodejs", "node_modules", "@openai", "codex", "node_modules",
+                             "@openai", "codex-win32-x64", "vendor", "x86_64-pc-windows-msvc",
+                             "bin", "codex.exe");
+
+        var found = PresetService.FindCodexExe(pathVariable: "", wingetRoot: "",
+                                               npmRoots: [t.Dir("nodejs")]);
+
+        Assert.Equal(vendored, found);
+    }
+
+    [Fact]
+    public void CodexExe_NullePart_RendNull()
+    {
+        // C'est le cas d'une machine sans Codex : le predefini reste propose, sans icone.
+        using var t = new TempTree();
+
+        Assert.Null(PresetService.FindCodexExe(t.Dir("vide"), t.Dir("vide2"), [t.Dir("vide3")]));
+    }
+
+    [Fact]
+    public void CodexExe_UneEntreeDePathInvalideNInterromptPas()
+    {
+        // Le PATH d'une machine reelle porte des entrees mortes et des caracteres illegaux.
+        using var t = new TempTree();
+        var onPath = t.Put("bin", "codex.exe");
+
+        var found = PresetService.FindCodexExe($"C:\ne*existe|pas;{t.Dir("bin")}", "", []);
+
+        Assert.Equal(onPath, found);
     }
 }

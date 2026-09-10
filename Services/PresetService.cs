@@ -105,45 +105,79 @@ public static class PresetService
     }
 
     /// <summary>
-    /// Le binaire natif de Codex, dont l'icône du prédéfini est tirée.
+    /// Le binaire natif de Codex, dont l'icône du prédéfini est tirée : le <c>PATH</c>, puis
+    /// l'arborescence WinGet, puis — en dernier — le paquet npm.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b><c>FindExe</c> ne suffit pas ici</b> : le <c>PATH</c> ne porte que <c>codex.cmd</c>, un
-    /// script. Le vrai exécutable vit dans le paquet natif du module npm, sous un dossier qui nomme
-    /// la plateforme (<c>x86_64-pc-windows-msvc</c>) — d'où la recherche sous <c>vendor</c> plutôt
-    /// qu'un chemin complet, qui mentirait au premier changement de cible.
+    /// <b>Codex s'installe de plusieurs façons, et elles ne posent pas le binaire au même
+    /// endroit.</b> Une installation native l'ajoute au <c>PATH</c> ; par WinGet il vit sous un
+    /// dossier qui nomme la version, donc on cherche <b>dessous</b> plutôt que de le nommer. Même
+    /// patron que la localisation de <c>bw.exe</c>, pour la même raison : un chemin complet devient
+    /// faux à la première mise à jour.
     /// </para>
     /// <para>
-    /// <b>Il n'embarque aujourd'hui aucune icône</b> : Windows affiche celle d'un exécutable
-    /// quelconque. On le pointe quand même — le jour où OpenAI en posera une, elle apparaîtra sans
-    /// qu'on touche à ce code. Introuvable, l'icône reste vide, et l'entrée s'affiche sans visuel.
+    /// <b>Le paquet npm vient en dernier, et il est le seul cas où le <c>PATH</c> ne suffit
+    /// pas</b> : il n'y met que <c>codex.cmd</c>, un script, et cache le vrai exécutable sous un
+    /// <c>vendor</c> qui nomme la plateforme.
+    /// </para>
+    /// <para>
+    /// <b>L'exécutable n'embarque aujourd'hui aucune icône</b> : Windows affiche celle d'un
+    /// exécutable quelconque. On le pointe quand même — le jour où OpenAI en posera une, elle
+    /// apparaîtra sans qu'on touche à ce code. Introuvable, l'icône reste vide et l'entrée
+    /// s'affiche sans visuel.
     /// </para>
     /// </remarks>
-    private static string? FindCodexExe()
+    public static string? FindCodexExe(string pathVariable, string wingetRoot, IEnumerable<string> npmRoots)
     {
-        string[] roots =
+        foreach (var dir in pathVariable.Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            try
+            {
+                var candidate = Path.Combine(dir.Trim(), "codex.exe");
+                if (File.Exists(candidate)) return candidate;
+            }
+            catch (ArgumentException)
+            {
+                // Le PATH d'une machine réelle porte des entrées mortes et des caractères illégaux.
+            }
+        }
+
+        if (Search(wingetRoot) is { } fromWinget) return fromWinget;
+
+        foreach (var root in npmRoots)
+            if (Search(Path.Combine(root,
+                    @"node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor"))
+                is { } fromNpm)
+                return fromNpm;
+
+        return null;
+
+        static string? Search(string root)
+        {
+            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return null;
+            try
+            {
+                return Directory.EnumerateFiles(root, "codex.exe", SearchOption.AllDirectories)
+                                .FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                LogService.Warn(ex, $"Recherche de codex.exe sous {root}");
+                return null;
+            }
+        }
+    }
+
+    /// <summary>Les emplacements réels de cette machine.</summary>
+    private static string? FindCodexExe() => FindCodexExe(
+        Environment.GetEnvironmentVariable("PATH") ?? "",
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                     @"Microsoft\WinGet\Packages"),
         [
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs"),
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "npm"),
-        ];
-
-        foreach (var root in roots)
-        {
-            var vendor = Path.Combine(root,
-                @"node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor");
-            try
-            {
-                if (!Directory.Exists(vendor)) continue;
-                var hit = Directory.EnumerateFiles(vendor, "codex.exe", SearchOption.AllDirectories)
-                                   .FirstOrDefault();
-                if (hit != null) return hit;
-            }
-            catch (Exception ex) { LogService.Warn(ex, $"Recherche de codex.exe sous {vendor}"); }
-        }
-
-        return null;
-    }
+        ]);
 
     /// <summary>
     /// Statut d'un prédéfini face à ce que porte le registre.
