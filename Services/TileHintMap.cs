@@ -7,17 +7,7 @@ namespace DockPad.Services;
 /// modificateurs déclenchent quelle moitié de la grille.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Sorti du code-behind parce que c'est du <b>calcul</b>, pas de l'affichage : le rendu de l'overlay
-/// reste dans la fenêtre, la table et les règles vivent ici et se testent. C'était la partie la plus
-/// subtile du fichier — remappage du pavé numérique, mode Auto — et la seule façon de vérifier une
-/// modification était d'ouvrir l'application et de presser des touches.
-/// </para>
-/// <para>
-/// <see cref="KeyNumberFor"/> prend le drapeau « touche étendue » en <b>paramètre</b> plutôt que de
-/// le lire lui-même : sa source est le message clavier en cours, un état global de WPF que la vue
-/// est seule à pouvoir consulter au bon moment.
-/// </para>
+/// <see cref="KeyNumberFor"/> reçoit le drapeau « touche étendue » du message clavier WPF.
 /// </remarks>
 public static class TileHintMap
 {

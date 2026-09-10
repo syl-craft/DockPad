@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -61,7 +61,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private readonly TileLockState _tileLock = new();
     private ShortcutEntry? _dragSource;
 
-    private readonly List<UIElement> _hintElements = [];
+    private readonly TileHintOverlay _hintOverlay;
     private bool? _hintIsCtrl; // null = caché, true = premier trigger, false = second trigger
     private ModifierKeys _triggerFirst  = ModifierKeys.Control;
     private ModifierKeys _triggerSecond = ModifierKeys.Shift;
@@ -69,6 +69,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     public QuickAccessWindow()
     {
         InitializeComponent();
+        _hintOverlay = new TileHintOverlay(HintOverlay);
 
         Commands = new QuickAccessCommands(this);
         // La fenêtre est son propre contexte de liaison : « {Binding Commands.Refresh} » suffit
@@ -1089,8 +1090,6 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         new[] { BandRunCommand, BandOpenFolder, BandOpenUrl, BandOpenTerminal, BandSwitchToProcess }
             .ToDictionary(b => b, b => Frozen(Color.FromArgb(60, b.Color.R, b.Color.G, b.Color.B)));
 
-    private static readonly SolidColorBrush HintVeil  = Frozen(Color.FromArgb(0x55, 0x60, 0x60, 0x60));
-    private static readonly SolidColorBrush HintBadge = Frozen(Color.FromArgb(0xBB, 0x55, 0x55, 0x55));
 
     private static SolidColorBrush TypeBandBrush(ShortcutType t) => t switch
     {
@@ -1396,93 +1395,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     // Mapping : 1-9 en lecture (gauche→droite, haut→bas) dans une zone 3×3 (rows 0-2) ;
     // ligne du bas (row 3) : 0, ↑ (keyNum 10), ↓ (keyNum 11)
     // Ctrl → cols 0-2 (gauche), Shift → cols 3-5 (droite)
-    private void ShowHintOverlay(bool isCtrl)
-    {
-        HideHintOverlay();
-        // La grille de l'overlay est repliée au repos : masquée, elle ne participe pas à la mesure
-        // de la zone des tuiles.
-        HintOverlay.Visibility = Visibility.Visible;
+    private void ShowHintOverlay(bool isCtrl) => _hintOverlay.Show(isCtrl);
 
-        for (int row = 0; row < ShortcutActionService.GridRows; row++)
-        {
-            for (int col = 0; col < ShortcutActionService.GridCols; col++)
-            {
-                if (isCtrl ? col >= 3 : col < 3) continue; // côté inactif
-
-                // Rows 0-2 : chiffres 1-9 ; row 3 : 0, ↑, ↓
-                string label = row < 3
-                    ? (row * 3 + col % 3 + 1).ToString()
-                    : (col % 3) switch { 0 => "0", 1 => "↑", _ => "↓" };
-
-                AddHintOverlayElement(row, col, new Border
-                {
-                    Margin = new Thickness(5),
-                    Background = HintVeil,
-                    IsHitTestVisible = false,
-                    CornerRadius = new CornerRadius(6),
-                    SnapsToDevicePixels = true, UseLayoutRounding = true,
-                });
-
-                AddHintOverlayElement(row, col, new Border
-                {
-                    Width = 20, Height = 20,
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Top,
-                    Margin = new Thickness(12, 12, 0, 0),
-                    Background = HintBadge,
-                    CornerRadius = new CornerRadius(4),
-                    IsHitTestVisible = false,
-                    SnapsToDevicePixels = true, UseLayoutRounding = true,
-                    Child = new TextBlock
-                    {
-                        Text = label,
-                        FontSize = 11, FontWeight = FontWeights.SemiBold,
-                        Foreground = Brushes.White,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    }
-                });
-            }
-        }
-    }
-
-    /// <summary>
-    /// Place un element de l'overlay dans sa case.
-    /// </summary>
-    /// <remarks>
-    /// L'overlay a sa propre grille, superposee a celle des tuiles : ses elements etaient auparavant
-    /// ajoutes DANS la grille des tuiles, ce qui liait leur position a la facon dont les tuiles
-    /// etaient construites. Un UniformGrid range ses enfants dans l'ordre : chaque case recoit donc
-    /// un conteneur, meme vide, pour que les indices correspondent.
-    /// </remarks>
-    private void AddHintOverlayElement(int row, int col, UIElement element)
-    {
-        EnsureHintCells();
-
-        if (HintOverlay.Children[row * ShortcutActionService.GridCols + col] is Grid cell)
-            cell.Children.Add(element);
-
-        _hintElements.Add(element);
-    }
-
-    /// <summary>Un conteneur par case, cree une seule fois.</summary>
-    private void EnsureHintCells()
-    {
-        if (HintOverlay.Children.Count > 0) return;
-
-        for (int i = 0; i < ShortcutActionService.GridRows * ShortcutActionService.GridCols; i++)
-            HintOverlay.Children.Add(new Grid());
-    }
-
-    private void HideHintOverlay()
-    {
-        foreach (var element in _hintElements)
-            if (VisualTreeHelper.GetParent(element) is Grid cell)
-                cell.Children.Remove(element);
-
-        _hintElements.Clear();
-        HintOverlay.Visibility = Visibility.Collapsed;
-    }
+    private void HideHintOverlay() => _hintOverlay.Hide();
 
     /// <summary>Premiere tuile reellement rendue, pour aligner le bandeau sur sa geometrie.</summary>
     private FrameworkElement? FirstTile()

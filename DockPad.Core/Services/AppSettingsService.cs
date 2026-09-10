@@ -72,9 +72,11 @@ public static class AppSettingsService
     {
         lock (ConfigLock.Gate)
         {
-            var settings = _cached ??= LoadFrom(FilePath, ReadRegistry);
+            var current = _cached ??= LoadFrom(FilePath, ReadRegistry);
+            var settings = JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(current, JsonOpts), JsonOpts)!;
             change(settings);
             SaveTo(FilePath, settings);
+            _cached = settings;
         }
     }
 
@@ -95,21 +97,9 @@ public static class AppSettingsService
     /// </param>
     public static AppSettings LoadFrom(string path, Func<string, object?> registry)
     {
-        if (File.Exists(path))
+        if (File.Exists(path) || JsonConfigFile.IsReadOnly(path))
         {
-            try
-            {
-                var json = File.ReadAllText(path);
-                if (JsonSerializer.Deserialize<AppSettings>(json, JsonOpts) is { } settings)
-                    return settings;
-            }
-            catch (Exception ex)
-            {
-                // Fichier abîmé : on repart des défauts plutôt que d'empêcher le démarrage, comme
-                // le font déjà les autres configs du profil.
-                LogService.Warn(ex, $"Lecture de {Path.GetFileName(path)}");
-            }
-            return new AppSettings();
+            return JsonConfigFile.Load<AppSettings>(path, JsonOpts);
         }
 
         var migrated = FromRegistry(registry);
@@ -138,8 +128,7 @@ public static class AppSettingsService
 
     public static void SaveTo(string path, AppSettings settings)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(settings, JsonOpts));
+        JsonConfigFile.Save(path, settings, JsonOpts);
     }
 
     // ───────────── Registre réel ─────────────

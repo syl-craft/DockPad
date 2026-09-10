@@ -140,7 +140,7 @@ Services/Usage/
     ClaudeUsageReader.cs                  Scan des JSONL, déduplication, agrégation session/jour/mois
     ClaudeLimitsClient.cs                 Quota officiel via oauth/usage + lecture du jeton
     ClaudePricing.cs                      Tarifs par modèle → coût estimé en USD
-    CodexUsageProvider.cs                 Fournisseur Codex (rollouts locaux, sans quota ni coût)
+    CodexUsageProvider.cs                 Fournisseur Codex (jetons et quotas locaux, sans coût)
     CodexUsageReader.cs                   Scan des rollout-*.jsonl, événements token_count
     GeminiUsageProvider.cs                Fournisseur Gemini CLI (sessions locales, sans quota ni coût)
     GeminiUsageReader.cs                  Scan des sessions sous chats/, compteurs input/cached/thoughts/tool
@@ -770,12 +770,12 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 - **Sablier pendant la lecture** : la pastille du fournisseur cède la place à un rond gris tournant, et les valeurs précédentes restent affichées — un rafraîchissement réel prend le temps de parcourir les transcripts (mesuré 1,7 s), et l'attente doit se voir. Le `RotateTransform` vit dans un `ControlTemplate` et non dans un `Setter` de `Style` : une valeur de `Setter` est une instance unique partagée, et l'animer lève une exception si elle est gelée. L'animation ne tourne que pendant l'attente (`EnterActions`/`ExitActions`)
 - **Libellés courts (« session », « semaine ») et infobulle explicite** : le libellé seul ne dit pas si le chiffre est le consommé ou le restant, l'infobulle donne les deux. Le mot « utilisée » dans le libellé coûtait la largeur des barres
 - **Un seul fournisseur visible → aucun onglet** : nom et pastille en libellé statique. Un onglet unique et cliquable suggère un choix qui n'existe pas. Le seuil est le nombre de fournisseurs visibles, pas une constante
-- **La barre suit le restant, pas le consommé** : elle doit s'accorder avec le nombre affiché juste au-dessus. Une barre remplie à 62 % sous un « 38 % » se lit comme un défaut (vu à la capture). Jauge de carburant : elle se vide quand on consomme
+- **La barre et le pourcentage affichent la part consommée.** Une jauge seule occupe toute la largeur disponible ; deux jauges se partagent cet espace.
 - **Les onglets ont leur propre ligne** : au-delà de deux fournisseurs, onglets et jauges ne tiennent pas côte à côte à 850 px, et le texte de reset se tronquait
 - **Aucun calcul dans le XAML** : tout vient de `UsageViewModel`, testé sans WPF. Les couleurs voyagent en chaînes (`#34A853`) converties par `StringToBrushConverter` — la décision de couleur appartient à la logique
 - **Valeur inconnue → `—`, jamais `0`.** Une session à zéro signifie « aucun bloc actif », pas « rien consommé »
 - **Quota inconnu → la jauge entière disparaît**, pas seulement sa barre. `UsedPct` vaudrait 0 et afficherait « 0 % session », soit une mesure affirmée là où il n'y a pas de donnée. Un vide ne prétend rien. C'est l'état courant au démarrage, avant que la première lecture ait abouti
-- **Mais un vide ne dit pas non plus ce qu'il se passe.** Quand le quota est *refusé* (429, jeton expiré, forme de réponse inconnue), la place des jauges porte une notice `⚠ Quota indisponible — nouvelle tentative dans N min`, avec la cause technique en infobulle. Le texte vient du fournisseur (`AiUsage.QuotaNotice` / `QuotaNoticeNote`), comme la devise du coût : un quota **absent par nature** — Codex, Gemini, Copilot n'en exposent aucun — n'est pas une panne et ne dit rien. Sans cette notice, la seule trace de l'indisponibilité vivait dans le fichier de log, où personne ne va regarder
+- **Mais un vide ne dit pas non plus ce qu'il se passe.** Quand le quota est *refusé* (429, jeton expiré, forme de réponse inconnue), la place des jauges porte une notice `⚠ Quota indisponible — nouvelle tentative dans N min`, avec la cause technique en infobulle. Le texte vient du fournisseur (`AiUsage.QuotaNotice` / `QuotaNoticeNote`), comme la devise du coût : un quota **absent par nature** — Gemini et Copilot n'en exposent aucun — n'est pas une panne et ne dit rien. Sans cette notice, la seule trace de l'indisponibilité vivait dans le fichier de log, où personne ne va regarder
 - **Géométrie calée sur les tuiles** : largeur = largeur du bloc de tuiles moins les marges horizontales d'une tuile (pour affleurer leurs bords visibles), hauteur = hauteur d'une tuile. Les deux sont lues **sur une tuile réelle** au premier `LayoutUpdated`, jamais recopiées depuis le style — une seule source de vérité, qui suit un changement de taille de tuile. `LayoutUpdated` et non `Loaded` : la mise en page a lieu même sans fenêtre affichée, ce dont l'outil de capture a besoin ; se désabonner après le premier passage évite la boucle
 - **La fenêtre prend la hauteur de son contenu** (`SizeToContent="Height"`, toutes les lignes en `Auto`, `MaxHeight` clampé sur la zone de travail) : c'est le patron documenté pour un contenu statique, et la grille 4 × 6 à tuiles fixes en est un. Une hauteur fixe ne tient pas — à 630 px la ligne de la grille recevait 432 px pour 425 nécessaires, et une pagination un peu plus haute (boutons de page avec icône) suffisait à faire apparaître une barre de défilement. Sans mou dans les lignes, l'écart grille → bandeau est déterminé par les seules marges, sans avoir à ancrer la grille
 - **Conséquence** : la fenêtre ne se redimensionne plus en hauteur (rien à y gagner, la grille a un nombre de rangées fixe). La largeur reste ajustable
@@ -790,12 +790,12 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 | Fournisseur | Source | Quota | Coût |
 |---|---|---|---|
 | `ClaudeUsageProvider` | `~/.claude/projects/**/*.jsonl` | oui, via `oauth/usage` | oui, `ClaudePricing` |
-| `CodexUsageProvider` | `~/.codex/{sessions,archived_sessions}/**/rollout-*.jsonl` | non | non |
+| `CodexUsageProvider` | `~/.codex/{sessions,archived_sessions}/**/rollout-*.jsonl` | oui, relevé local | non |
 | `GeminiUsageProvider` | `~/.gemini/tmp/<hash>/chats/session-*.json{,l}` | non | non |
 | `CopilotUsageProvider` | `~/.copilot/session-store.db` (SQLite) | non | non |
 | `DemoUsageProvider` | valeurs fixes paramétrables | oui | oui |
 
-- **Seul Claude a un quota et un coût.** Les trois autres n'exposent pas de pourcentage de limite lisible localement, et aucun tarif public fiable ne leur est appliqué : leurs deux jauges restent masquées et la colonne de coût affiche un tiret. **Inventer un tarif serait pire qu'afficher un tiret** — un montant faux se lit comme un montant
+- **Quotas et coûts** : Claude expose les deux ; Codex expose ses quotas dans les relevés locaux, sans estimation de coût. Gemini et Copilot restent sans jauges ni coût.
 - **L'identité visuelle est déclarée une seule fois par fournisseur** (une constante privée, lue par `Probe()` et par l'instantané) et voyage jusqu'à la fenêtre de réglages via `AiProbe`. Une seconde table de littéraux dans le dialogue aurait montré un rond gris au prochain assistant ajouté, alors que le bandeau lui affichait sa vraie couleur
 - **La précision affichée au survol du coût vient du fournisseur** (`AiUsage.CostNote`), pour la même raison que la devise : lui seul sait comment sa source facture. « Un abonnement Max ou Pro ne facture pas au jeton » n'a aucun sens sur un onglet Codex ou Gemini
 - **Le dossier de départ est injectable** sur les quatre providers réels (repli sur `%USERPROFILE%`) : c'est ce qui rend détection et scan testables sur un dossier temporaire, sans toucher au profil réel
@@ -824,7 +824,7 @@ Lignes `type:"event_msg"` avec `payload.type:"token_count"` ; le delta du tour e
 - **Correspondance des compteurs** : `input_tokens` est le prompt entier, `cached_input_tokens` en est un sous-ensemble — soustrait pour ne pas compter deux fois. `output_tokens` inclut déjà le raisonnement, `reasoning_output_tokens` n'est donc pas ajouté
 - **Filtre textuel avant l'analyse JSON** : l'essentiel d'un gros rollout est de la conversation, qui ne contient pas le marqueur `token_count`
 - **Limite connue : une session dérivée peut être comptée deux fois.** Un fork rejoue l'historique du parent dans un nouveau rollout, qui réémet ses événements `token_count`. Contrairement à Claude, ces événements ne portent pas d'identifiant de message : il n'y a rien à dédupliquer entre fichiers. L'implémentation de référence résout le cas en comparant les rollouts entre eux, avec plusieurs centaines de lignes de machinerie — hors de proportion tant que personne n'a constaté l'écart
-- **Le quota existe mais n'est pas lu** : il faudrait lancer `codex app-server --stdio` et dialoguer en JSON-RPC, soit un processus enfant chaque minute pour deux nombres
+- **Les quotas sont lus dans `payload.rate_limits`**, par `CodexQuotaReader`, pendant le scan des jetons. Le dernier horodatage d'événement gagne entre sessions et archives. `primary` peut être hebdomadaire : seule `window_minutes` décide (300 → session, 10080 → semaine). Relevés de plus de 15 minutes et fenêtres expirées masqués, avec notice si aucune jauge ne reste. Aucun processus enfant ni accès aux identifiants.
 
 #### Lecture de Gemini (`GeminiUsageReader`)
 Un document par session sous `chats/`, avec un tableau `messages` dont les réponses portent un objet `tokens` (`input`, `cached`, `output`, `thoughts`, `tool`, `total`). La variante `.jsonl` existe aussi, un objet par ligne.
@@ -1579,7 +1579,7 @@ UsageShot.exe window-favorites docs/screenshots/window-favorites.png # mode Favo
 ```
 
 - **Les cibles `window*` écrivent aussi une grille de démonstration** dans le profil de fixture : sans elle la fenêtre se juge sur une grille vide, qui ne montre ni les icônes, ni les bandes de couleur des types, ni la pagination — donc rien de ce qui fait l'application. Dix-neuf tuiles des cinq types sur trois pages, et quelques cases laissées vides parce que le `+` grisé fait partie de ce qu'il faut montrer. Les icônes viennent de deux sources, dans cet ordre : le jeu de PNG du projet (`C:\dev\Dock-icons`, surchargeable par `DOCKPAD_DEMO_ICONS`) puis l'icône de l'exécutable, quand il est réellement installé — même patron de candidats que `PresetService`. **Rien n'est embarqué dans le dépôt** : ce sont des logos de produits, qu'on ne redistribue pas dans un dépôt public. Sur une machine sans ce dossier ni ces applications, la tuile s'affiche sans icône : la capture est moins jolie, elle n'est pas cassée. Les tuiles `OpenUrl` sans logo retombent sur l'icône du navigateur, ce qui est exactement le comportement de l'application. L'icône dossier par défaut étant une ressource **embarquée**, donc absente du disque, le csproj de l'outil la copie à côté de l'exe : sans ça les tuiles `OpenFolder` s'affichaient sans icône
-- **Fixture exclusivement `DemoUsageProvider`** (quatre instances), `ClaudeUsageProvider` délibérément absent : les vrais chiffres de consommation sont des données personnelles, et une capture doit être reproductible. C'est la raison d'être de la liste injectable de `UsageService` — le registre de production reste intact
+- **Données de démonstration uniquement** : `DemoUsageProvider` et fournisseurs de fixture pour les quotas absents, les comptes inactifs et la fenêtre hebdomadaire Codex. Aucun fournisseur réel ne lit les données personnelles.
 - La fixture déclare un fournisseur masqué et un non détecté, pour que les badges apparaissent sur la capture de la fenêtre de réglages : la machine de développement ne produit pas ces états d'elle-même
 - **Les cibles `panel` et `window` sont rendues hors écran** (`Measure`/`Arrange` explicites, sans afficher de fenêtre) : une fenêtre à `SizeToContent` mesure avant que les données arrivent et ne reprend pas la hauteur ensuite, et `Show()` sur `QuickAccessWindow` déclenche la boucle décrite plus bas
 - **Deux passages de mise en page pour `window`** : la géométrie du bandeau est posée au premier `LayoutUpdated`, donc après la première mesure. Avec un seul passage, la hauteur retenue est celle d'avant et la barre de pagination sort de l'image
@@ -1933,3 +1933,5 @@ Le publish via `FolderProfile` :
 4. Supprime le dossier `publish\` intermédiaire
 
 Après publish, vider `C:\DockPad\` et extraire le zip dedans.
+
+La cible `UsageShot.exe panel-codex docs/screenshots/usage-panel-codex.png` montre une jauge hebdomadaire Codex avec des données de démonstration.

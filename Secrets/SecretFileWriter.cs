@@ -48,6 +48,9 @@ public static class SecretFileWriter
     public static bool IsWritableName(string name) =>
         !string.IsNullOrWhiteSpace(name)
         && name != "." && name != ".."
+        && !name.EndsWith('.') && !name.EndsWith(' ')
+        && !name.Equals(".gitignore", StringComparison.OrdinalIgnoreCase)
+        && !name.EndsWith(".dockpad-tmp", StringComparison.OrdinalIgnoreCase)
         && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0
         && !name.Contains('/') && !name.Contains('\\');
 
@@ -77,6 +80,12 @@ public static class SecretFileWriter
     /// </remarks>
     public static IReadOnlyList<string> Write(string folder, IReadOnlyList<SecretFile> files)
     {
+        // Valide les noms et leur unicité avant toute écriture.
+        if (files.Any(f => !IsWritableName(f.Name)))
+            throw new ArgumentException("Nom de fichier de secret invalide ou réservé.", nameof(files));
+        if (files.Select(f => f.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != files.Count)
+            throw new ArgumentException("Plusieurs secrets visent le même fichier.", nameof(files));
+
         var target = Path.Combine(folder, FolderName);
         Directory.CreateDirectory(target);
 
@@ -89,9 +98,12 @@ public static class SecretFileWriter
             foreach (var file in files)
             {
                 var final = Path.Combine(target, file.Name);
-                var temp = final + ".dockpad-tmp";
-                File.WriteAllText(temp, file.Value, NoBom);
+                var temp = Path.Combine(target, Guid.NewGuid().ToString("N") + ".dockpad-tmp");
+                using var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                // Enregistre le temporaire créé pour le nettoyage dans finally.
                 staged.Add((temp, final));
+                var bytes = NoBom.GetBytes(file.Value);
+                stream.Write(bytes);
             }
 
             // Toutes les destinations sont eprouvees AVANT d'en basculer une seule. Sans cela, un

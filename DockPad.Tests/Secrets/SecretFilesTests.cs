@@ -104,6 +104,49 @@ public class SecretFilesTests : IDisposable
 
     // ───────────── L'écriture ─────────────
 
+    [Theory]
+    [InlineData(".gitignore")]
+    [InlineData(".GiTiGnOrE")]
+    [InlineData(".gitignore.")]
+    [InlineData(".gitignore ")]
+    [InlineData("token.dockpad-tmp")]
+    [InlineData("token.DOCKPAD-TMP")]
+    [InlineData("token.dockpad-tmp ")]
+    public void ReservedNames_AreRejectedBeforeAnyWrite(string name)
+    {
+        SecretFileWriter.Write(_dir, [new SecretFile("token", "original")]);
+        var target = Path.Combine(_dir, "secrets");
+        var ignore = File.ReadAllText(Path.Combine(target, ".gitignore"));
+
+        Assert.False(SecretFileWriter.IsWritableName(name));
+        Assert.Throws<ArgumentException>(() => SecretFileWriter.Write(_dir,
+            [new SecretFile("token", "changed"), new SecretFile(name, "sensitive")]));
+
+        Assert.Equal("original", File.ReadAllText(Path.Combine(target, "token")));
+        Assert.Equal(ignore, File.ReadAllText(Path.Combine(target, ".gitignore")));
+        Assert.Equal(2, Directory.GetFiles(target).Length);
+        Assert.Empty(SecretFileWriter.Delete(_dir, [name]));
+    }
+
+    [Fact]
+    public void DirectWrite_RejectsDuplicateNames()
+    {
+        Assert.Throws<ArgumentException>(() => SecretFileWriter.Write(_dir,
+            [new SecretFile("token", "one"), new SecretFile("TOKEN", "two")]));
+        Assert.False(Directory.Exists(Path.Combine(_dir, "secrets")));
+    }
+
+    [Fact]
+    public void ExistingLegacyTemp_IsNotOverwrittenOrDeleted()
+    {
+        SecretFileWriter.Write(_dir, [new SecretFile("token", "old")]);
+        var existing = Path.Combine(_dir, "secrets", "token.dockpad-tmp");
+        File.WriteAllText(existing, "other operation");
+        SecretFileWriter.Write(_dir, [new SecretFile("token", "new")]);
+        Assert.Equal("other operation", File.ReadAllText(existing));
+        Assert.Equal("new", File.ReadAllText(Path.Combine(_dir, "secrets", "token")));
+    }
+
     [Fact]
     public void EcritLaValeurSansSautDeLigneFinal()
     {

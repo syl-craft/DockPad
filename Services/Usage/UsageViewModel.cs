@@ -94,9 +94,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     public UsageGaugeItem? WeekGauge { get; private set; }
 
     /// <summary>
-    /// Explication affichée à la place des jauges quand le quota est indisponible, vide s'il n'y a
-    /// rien à signaler. Le texte vient du fournisseur : lui seul sait pourquoi sa source se tait, et
-    /// un quota absent par nature — Codex, Gemini, Copilot — n'est pas une panne.
+    /// Notice du fournisseur affichée lorsque le quota est indisponible.
     /// </summary>
     public string QuotaNotice { get; private set; } = "";
 

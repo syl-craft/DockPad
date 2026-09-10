@@ -1344,4 +1344,13 @@ C3tt3 4ct10n 35t 1rrév3r51bl3.</value>
   <data name="Inject_Files_Delete" xml:space="preserve">
     <value>5uppr1m3r l35 f1ch13r5 généré5</value>
   </data>
+  <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
+    <value>Qu0t4 C0d3x 1nd15p0n1bl3</value>
+  </data>
+  <data name="Usage_Codex_QuotaMissing" xml:space="preserve">
+    <value>4ucun r3l3v3 d3 qu0t4 d4n5 l35 535510n5 l0c4l35 C0d3x. Ut1l153z C0d3x p0ur 4ctu4l153r l35 d0nn335 ; l35 m3tr1qu35 d3 j3t0n5 r35t3nt d15p0n1bl35.</value>
+  </data>
+  <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
+    <value>D3rn13r r3l3v3 l0c4l : {0:g}. 4ucun3 f3n3tr3 d3 qu0t4 4ctu3ll3 3xpl01t4bl3. Ut1l153z C0d3x p0ur l'4ctu4l153r ; l35 r3l3v35 d3 plu5 d3 15 m1nut35 3t l35 f3n3tr35 3xp1r335 50nt m45qu35.</value>
+  </data>
 </root>

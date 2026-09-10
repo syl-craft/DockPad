@@ -18,20 +18,13 @@ public static class McpConfigService
 
     public static McpConfig Load(string path)
     {
-        if (!File.Exists(path)) return new McpConfig();
-        try
-        {
-            var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<McpConfig>(json, JsonOptions) ?? new McpConfig();
-        }
-        catch (Exception ex) { LogService.Warn(ex, "Chargement de mcp.json (config par défaut utilisée)"); return new McpConfig(); }
+        return JsonConfigFile.Load<McpConfig>(path, JsonOptions);
     }
 
     public static void Save(McpConfig config) => Save(config, FilePath);
 
     public static void Save(McpConfig config, string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(config, JsonOptions));
+        JsonConfigFile.Save(path, config, JsonOptions);
     }
 }

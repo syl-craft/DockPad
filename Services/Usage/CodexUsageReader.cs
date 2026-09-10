@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
 
 namespace DockPad.Services.Usage;
 
@@ -50,9 +51,16 @@ public static class CodexUsageReader
     }
 
     /// <summary>Toutes les consommations postérieures à <paramref name="since"/> (heure locale).</summary>
-    public static List<UsageAggregator.UsageEntry> Read(string home, DateTime since)
+    public static List<UsageAggregator.UsageEntry> Read(string home, DateTime since) =>
+        ReadSnapshot(home, since).Entries;
+
+    public sealed record Snapshot(List<UsageAggregator.UsageEntry> Entries, CodexQuotaSnapshot? Quota);
+
+    /// <summary>Un seul parcours pour les jetons et le relevé de quota le plus récent.</summary>
+    public static Snapshot ReadSnapshot(string home, DateTime since, CancellationToken token = default)
     {
         var entries = new List<UsageAggregator.UsageEntry>();
+        CodexQuotaSnapshot? quota = null;
 
         foreach (var root in ScanRoots(home).Distinct(StringComparer.OrdinalIgnoreCase))
         {
@@ -64,11 +72,13 @@ public static class CodexUsageReader
 
             foreach (var file in files)
             {
+                token.ThrowIfCancellationRequested();
                 try
                 {
                     if (File.GetLastWriteTime(file) < since) continue;
-                    ReadFile(file, since, entries);
+                    ReadFile(file, since, entries, ref quota, token);
                 }
+                catch (OperationCanceledException) { throw; }
                 catch (Exception ex)
                 {
                     LogService.Warn(ex, $"Lecture de la session Codex {Path.GetFileName(file)}");
@@ -76,10 +86,11 @@ public static class CodexUsageReader
             }
         }
 
-        return entries;
+        return new Snapshot(entries, quota);
     }
 
-    private static void ReadFile(string file, DateTime since, List<UsageAggregator.UsageEntry> entries)
+    private static void ReadFile(string file, DateTime since, List<UsageAggregator.UsageEntry> entries,
+        ref CodexQuotaSnapshot? quota, CancellationToken token)
     {
         using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         using var reader = new StreamReader(stream);
@@ -89,12 +100,18 @@ public static class CodexUsageReader
 
         while (reader.ReadLine() is { } line)
         {
+            token.ThrowIfCancellationRequested();
             index++;
             if (line.Length == 0) continue;
 
             // Filtre à bas prix avant de payer l'analyse JSON : l'essentiel d'un gros rollout est
             // fait de lignes de conversation, qui ne contiennent pas ce marqueur.
             if (!line.Contains("token_count", StringComparison.Ordinal)) continue;
+
+            // Sélectionne le quota selon l'horodatage de l'événement.
+            var candidate = CodexQuotaReader.ParseLine(line);
+            if (candidate is not null && (quota is null || candidate.ObservedAt >= quota.ObservedAt))
+                quota = candidate;
 
             var entry = ParseLine(line, name, index);
             if (entry is null || entry.Timestamp < since) continue;
@@ -118,14 +135,17 @@ public static class CodexUsageReader
             using var doc = JsonDocument.Parse(line);
             var root = doc.RootElement;
 
-            if (!root.TryGetProperty("payload", out var payload)
+            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("payload", out var payload)
                 || payload.ValueKind != JsonValueKind.Object) return null;
-            if (!payload.TryGetProperty("type", out var kind) || kind.GetString() != "token_count") return null;
+            if (!payload.TryGetProperty("type", out var kind) || kind.ValueKind != JsonValueKind.String
+                || kind.GetString() != "token_count") return null;
             if (!payload.TryGetProperty("info", out var info)
+                || info.ValueKind != JsonValueKind.Object
                 || !info.TryGetProperty("last_token_usage", out var usage)
                 || usage.ValueKind != JsonValueKind.Object) return null;
 
             if (!root.TryGetProperty("timestamp", out var ts)
+                || ts.ValueKind != JsonValueKind.String
                 || !DateTimeOffset.TryParse(ts.GetString(), CultureInfo.InvariantCulture,
                                             DateTimeStyles.AdjustToUniversal, out var utc)) return null;
 
@@ -138,7 +158,7 @@ public static class CodexUsageReader
                 // un tour rejoué dans un fork.
                 Key: $"codex|{file}|{index}",
                 Timestamp: utc.LocalDateTime,
-                Model: info.TryGetProperty("model", out var m) ? m.GetString() ?? "" : "",
+                Model: info.TryGetProperty("model", out var m) && m.ValueKind == JsonValueKind.String ? m.GetString() ?? "" : "",
                 Input: Math.Max(0, input - cached),
                 Output: Number(usage, "output_tokens"),
                 CacheWrite: Number(usage, "cache_write_input_tokens"),
@@ -151,5 +171,6 @@ public static class CodexUsageReader
     }
 
     private static long Number(JsonElement parent, string name) =>
-        parent.TryGetProperty(name, out var value) && value.TryGetInt64(out var n) ? n : 0;
+        parent.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
+        && value.TryGetInt64(out var n) ? n : 0;
 }

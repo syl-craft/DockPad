@@ -152,9 +152,10 @@ public static class DockPadTools
         }
         catch (Exception ex)
         {
-            Services.LogService.Warn(ex, $"Relais MCP : pipe injoignable ({tool})");
+            Services.LogService.Warn(ex, $"Relais MCP : échange interrompu ({tool})");
             throw new McpException(
-                "DockPad n'est pas lancé — démarre l'application pour utiliser ce serveur MCP.");
+                "Communication avec DockPad interrompue. Vérifie que l'application est ouverte et consulte son journal. " +
+                "Une action déjà reçue peut avoir été exécutée : relis l'état avant de la relancer.");
         }
 
         using var doc = JsonDocument.Parse(response);

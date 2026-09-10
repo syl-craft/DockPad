@@ -19,20 +19,13 @@ public static class PageConfigService
     /// <summary>Les pages d'un fichier donné — celles des raccourcis, ou celles des favoris.</summary>
     public static List<PageConfig> Load(string path)
     {
-        if (!File.Exists(path)) return [];
-        try
-        {
-            var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<List<PageConfig>>(json, JsonOptions) ?? [];
-        }
-        catch (Exception ex) { LogService.Warn(ex, $"Chargement de {Path.GetFileName(path)} (liste vide utilisée)"); return []; }
+        return JsonConfigFile.Load<List<PageConfig>>(path, JsonOptions);
     }
 
     public static void Save(List<PageConfig> pages) => Save(pages, FilePath);
 
     public static void Save(List<PageConfig> pages, string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(pages, JsonOptions));
+        JsonConfigFile.Save(path, pages, JsonOptions);
     }
 }

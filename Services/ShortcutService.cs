@@ -27,21 +27,14 @@ public static class ShortcutService
     /// </remarks>
     public static List<ShortcutEntry> Load(string path)
     {
-        if (!File.Exists(path)) return [];
-        try
-        {
-            var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<List<ShortcutEntry>>(json, JsonOptions) ?? [];
-        }
-        catch (Exception ex) { LogService.Warn(ex, $"Chargement de {Path.GetFileName(path)} (liste vide utilisée)"); return []; }
+        return JsonConfigFile.Load<List<ShortcutEntry>>(path, JsonOptions);
     }
 
     public static void Save(List<ShortcutEntry> entries) => Save(entries, FilePath);
 
     public static void Save(List<ShortcutEntry> entries, string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(entries, JsonOptions));
+        JsonConfigFile.Save(path, entries, JsonOptions);
     }
 
     public static void OpenInEditor()
@@ -67,6 +60,6 @@ public static class ShortcutService
                     IconPath = @"C:\Windows\System32\calc.exe" },
         };
 
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(defaults, JsonOptions));
+        Save(defaults);
     }
 }

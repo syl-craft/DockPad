@@ -2,6 +2,8 @@
 
 Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du menu contextuel Windows.
 
+[Télécharger la dernière version](https://github.com/syl-craft/DockPad/releases/latest) · [Historique des versions](CHANGELOG.md)
+
 ## Fonctionnalités
 
 - **Grille de tuiles** multi-pages (4 × 6) avec raccourci clavier global configurable
@@ -131,11 +133,25 @@ Quatre assistants sont lus, chacun dans ses fichiers locaux, sans réseau :
 | Assistant | Source | Quota | Coût |
 |---|---|---|---|
 | **Claude Code** | `%USERPROFILE%\.claude\projects` | oui | estimé |
-| **Codex** | `%USERPROFILE%\.codex\sessions` et `archived_sessions` | non | non |
+| **Codex** | `%USERPROFILE%\.codex\sessions` et `archived_sessions` | oui, dernier relevé local | non |
 | **Gemini CLI** | `%USERPROFILE%\.gemini\tmp\<hash>\chats` | non | non |
 | **Copilot CLI** | `%USERPROFILE%\.copilot\session-store.db` | non | non |
 
-Seul Claude expose des pourcentages de quota : ils viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine. Pour les trois autres, il n'existe pas de limite lisible localement — leurs deux jauges restent donc masquées, et seules les métriques de jetons s'affichent.
+Les quotas Claude viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine.
+Les quotas **Codex** sont lus dans les événements `token_count` des sessions locales : aucun
+processus supplémentaire ni accès aux identifiants n'est nécessaire. Le relevé le plus récent
+est retenu parmi les sessions et les archives, selon sa date d'observation.
+
+Chaque jauge Codex suit la durée annoncée : 5 h pour la session, 7 jours pour la semaine. Un compte
+qui n'expose qu'une limite hebdomadaire affiche uniquement cette jauge, même si Codex la place
+dans le champ `primary`. Une fenêtre expirée ou un relevé de plus de **15 minutes** est masqué ;
+si aucune jauge n'est disponible, une notice explique l'absence. Utiliser Codex actualise les
+relevés, que DockPad relit au prochain rafraîchissement. Gemini et Copilot restent sans jauges.
+
+Une seule jauge occupe toute la largeur disponible ; deux jauges se partagent cet espace.
+La pastille à droite ouvre la page web des usages de Claude ou de Codex.
+
+![Quota hebdomadaire Codex — données de démonstration](docs/screenshots/usage-panel-codex.png)
 
 Si le quota Claude n'est pas joignable — l'API limite le débit, le jeton a expiré, la réponse change de forme — **les jauges cèdent la place à une explication** qui annonce la prochaine tentative, avec la cause technique au survol. Les jetons, eux, sont lus en local : ils restent exacts et affichés.
 
@@ -271,6 +287,10 @@ secrets:
 Chaque entrée annotée doit porter un `file:` : **son nom de base** devient le nom du fichier produit
 (`ts-authkey`, et non la clé du secret). Le chemin complet vise le NAS et n'est pas exploitable ici.
 
+Les noms `.gitignore` et ceux se terminant par `.dockpad-tmp` sont réservés, sans distinction de
+casse. Les noms terminés par un point ou une espace sont également refusés. Un nom réservé ou deux
+destinations de même nom font refuser le lot avant toute écriture.
+
 `item` + `field` et `template` sont **exclusifs** — les deux ensemble sont un refus, il n'y a qu'un
 fichier à produire ; aucun des deux également.
 
@@ -315,7 +335,7 @@ Les fichiers dont la clé a disparu du coffre sont **signalés, jamais supprimé
 
 ## Installation
 
-1. Télécharger `DockPad-{version}.zip` depuis `release\`
+1. Télécharger `DockPad-{version}.zip` dans les fichiers joints à la [dernière release GitHub](https://github.com/syl-craft/DockPad/releases/latest)
 2. Extraire dans `C:\DockPad\`
 3. Lancer `DockPad.exe`
 
@@ -341,12 +361,22 @@ Les fichiers de configuration sont dans `%APPDATA%\DockPad\` :
 |---------|---------|
 | `shortcuts.json` | Tuiles de la grille de raccourcis |
 | `pages.json` | Configuration des boutons de pagination |
+| `favorites.json`, `favorite-pages.json` | Tuiles et pages de la grille des favoris |
+| `settings.json` | Paramètres de l'application : raccourci clavier, langue, thème, etc. |
+| `mcp.json` | Activation du serveur MCP et autorisation de suppression |
 | `browsers.json` | Navigateurs du sélecteur + règles de domaine |
 | `usage.json` | Bandeau Usage IA : réglages + fournisseurs détectés |
 | `icons\` | Cache d'icônes (PNG, déduplication SHA1) |
 | `.backup\` | Sauvegardes horodatées |
 
-Les paramètres (hotkey, démarrage auto) sont stockés dans `HKCU\Software\DockPad\Settings`.
+Les sauvegardes JSON remplacent le fichier après écriture complète d'un temporaire dans le même
+dossier. Si une configuration est illisible, DockPad utilise des valeurs de repli pour l'affichage
+et refuse de les enregistrer par-dessus le fichier existant. Après réparation ou restauration du
+fichier, rafraîchir la vue concernée ou redémarrer DockPad permet de le relire et de reprendre les
+modifications. Le journal indique le fichier en cause.
+
+Les anciens paramètres de `HKCU\Software\DockPad\Settings` sont repris dans `settings.json`
+à sa création. Le démarrage automatique reste une inscription dans le registre Windows.
 
 ## Raccourci clavier par défaut
 

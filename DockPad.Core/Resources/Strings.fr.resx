@@ -1344,4 +1344,13 @@ Cette action est irréversible.</value>
   <data name="Inject_Files_Delete" xml:space="preserve">
     <value>Supprimer les fichiers générés</value>
   </data>
+  <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
+    <value>Quota Codex indisponible</value>
+  </data>
+  <data name="Usage_Codex_QuotaMissing" xml:space="preserve">
+    <value>Aucun relevé de quota dans les sessions locales Codex. Utilisez Codex pour actualiser les données ; les métriques de jetons restent disponibles.</value>
+  </data>
+  <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
+    <value>Dernier relevé local : {0:g}. Aucune fenêtre de quota actuelle exploitable. Utilisez Codex pour l'actualiser ; les relevés de plus de 15 minutes et les fenêtres expirées sont masqués.</value>
+  </data>
 </root>

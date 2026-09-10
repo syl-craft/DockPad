@@ -269,12 +269,18 @@
                     </Border>
                 </StackPanel>
 
-                <ContentControl Grid.Column="1" Content="{Binding SessionGauge}"
-                                ContentTemplate="{StaticResource GaugeTemplate}"
-                                Margin="16,0,0,0"/>
-                <ContentControl Grid.Column="2" Content="{Binding WeekGauge}"
-                                ContentTemplate="{StaticResource GaugeTemplate}"
-                                Margin="16,0,0,0"/>
+                <UniformGrid Grid.Column="1" Grid.ColumnSpan="2" Rows="1">
+                    <ContentControl Content="{Binding SessionGauge}"
+                                    ContentTemplate="{StaticResource GaugeTemplate}"
+                                    HorizontalContentAlignment="Stretch"
+                                    Visibility="{Binding SessionGauge.HasQuota, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Margin="16,0,0,0"/>
+                    <ContentControl Content="{Binding WeekGauge}"
+                                    ContentTemplate="{StaticResource GaugeTemplate}"
+                                    HorizontalContentAlignment="Stretch"
+                                    Visibility="{Binding WeekGauge.HasQuota, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Margin="16,0,0,0"/>
+                </UniformGrid>
 
                 <!-- Les deux jauges masquées laissent un vide, et un vide ne dit pas ce qu'il se
                      passe : le quota de Claude peut être refusé (429, jeton expiré, endpoint qui

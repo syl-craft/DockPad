@@ -208,10 +208,9 @@ public class CodexUsageReaderTests : IDisposable
     }
 
     [Fact]
-    public async Task ReadAsync_NiQuotaNiCout()
+    public async Task ReadAsync_SansReleveDeQuota_GardeLesJetonsEtExpliqueLesJaugesAbsentes()
     {
-        // Le quota Codex existe, mais il faut lancer « codex app-server --stdio » en JSON-RPC :
-        // un processus enfant chaque minute pour deux nombres, hors de proportion ici.
+        // Un relevé de jetons sans rate_limits ne permet pas de calculer un pourcentage de quota.
         WriteRollout("sessions", "rollout-1.jsonl",
             TokenCountLine(DateTime.UtcNow.AddMinutes(-5), "gpt-5-codex", 100, 0, 20));
 
@@ -222,6 +221,7 @@ public class CodexUsageReaderTests : IDisposable
         Assert.Null(usage.Session);
         Assert.Null(usage.Week);
         Assert.Equal("", usage.Cost);
+        Assert.NotEmpty(usage.QuotaNotice);
     }
 
     [Fact]

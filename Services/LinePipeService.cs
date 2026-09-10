@@ -1,6 +1,7 @@
 using System.IO;
 using System.IO.Pipes;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace DockPad.Services;
 
@@ -24,36 +25,36 @@ public sealed class LinePipeService(string pipeName)
 {
     public string PipeName { get; } = pipeName;
 
-    private bool _faulted;
-
     /// <summary>Démarre le serveur (instance principale). Le rappel a lieu sur un thread de pool.</summary>
-    public void StartServer(Action<string> onLine)
+    public void StartServer(Action<string> onLine) => _ = RunServerAsync(onLine, CancellationToken.None);
+
+    public async Task RunServerAsync(Action<string> onLine, CancellationToken token, int timeoutMs = 2000)
     {
-        var thread = new Thread(() =>
+        bool faulted = false;
+        while (!App.IsExiting && !token.IsCancellationRequested)
         {
-            while (!App.IsExiting)
+            try
             {
-                try
-                {
-                    using var server = new NamedPipeServerStream(
-                        PipeName, PipeDirection.In, maxNumberOfServerInstances: 1);
-                    server.WaitForConnection();
-                    _faulted = false;
-                    using var reader = new StreamReader(server);
-                    var line = reader.ReadLine();
-                    if (!string.IsNullOrWhiteSpace(line)) onLine(line);
-                }
-                catch (Exception ex)
-                {
-                    // Pipe cassé ou fermeture : on retente. Un seul WRN par série d'échecs, et
-                    // backoff pour ne pas spinner si l'échec est persistant.
-                    if (!_faulted) { LogService.Warn(ex, $"Pipe {PipeName} interrompu, réécoute"); _faulted = true; }
-                    Thread.Sleep(1000);
-                }
+                using var server = new NamedPipeServerStream(PipeName, PipeDirection.In, 1,
+                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                await server.WaitForConnectionAsync(token).ConfigureAwait(false);
+                using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+                deadline.CancelAfter(timeoutMs);
+                using var reader = PipeTransport.Reader(server);
+                var line = await reader.ReadLineAsync(deadline.Token).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(line)) onLine(line);
+                faulted = false;
             }
-        })
-        { IsBackground = true, Name = $"DockPad_{PipeName}Server" };
-        thread.Start();
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                if (!faulted) LogService.Warn(ex, $"Pipe {PipeName} interrompu, réécoute");
+                faulted = true;
+                try { await Task.Delay(1000, token).ConfigureAwait(false); }
+                catch (OperationCanceledException) { break; }
+            }
+        }
     }
 
     /// <summary>Envoie une ligne à l'instance principale. Faux si échec ou dépassement du délai.</summary>
@@ -80,10 +81,7 @@ public sealed class LinePipeService(string pipeName)
     {
         try
         {
-            using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-            client.Connect(timeoutMs);
-            using var writer = new StreamWriter(client) { AutoFlush = true };
-            writer.WriteLine(line);
+            SendAsync(line, timeoutMs).GetAwaiter().GetResult();
             error = null;
             return true;
         }
@@ -92,5 +90,13 @@ public sealed class LinePipeService(string pipeName)
             error = ex;
             return false;
         }
+    }
+
+    private async Task SendAsync(string line, int timeoutMs)
+    {
+        using var deadline = new CancellationTokenSource(timeoutMs);
+        using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out, PipeOptions.Asynchronous);
+        await client.ConnectAsync(deadline.Token).ConfigureAwait(false);
+        await PipeTransport.WriteLineAsync(client, line, deadline.Token).ConfigureAwait(false);
     }
 }

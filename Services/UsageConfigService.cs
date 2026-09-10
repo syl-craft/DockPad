@@ -19,11 +19,8 @@ public static class UsageConfigService
 
     public static UsageConfig Load(string path)
     {
-        if (!File.Exists(path)) return new UsageConfig();
-        try
+        return JsonConfigFile.Load<UsageConfig>(path, JsonOptions, config =>
         {
-            var json = File.ReadAllText(path);
-            var config = JsonSerializer.Deserialize<UsageConfig>(json, JsonOptions) ?? new UsageConfig();
             // Une entrée sans id n'a pas de clé de fusion : inexploitable, mais elle ne doit pas
             // emporter le reste du fichier avec elle.
             config.Providers.RemoveAll(p => string.IsNullOrWhiteSpace(p.Id));
@@ -36,21 +33,13 @@ public static class UsageConfigService
                 .GroupBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .ToList();
-
-            return config;
-        }
-        catch (Exception ex)
-        {
-            LogService.Warn(ex, "Chargement de usage.json (config par défaut utilisée)");
-            return new UsageConfig();
-        }
+        });
     }
 
     public static void Save(UsageConfig config) => Save(config, FilePath);
 
     public static void Save(UsageConfig config, string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(config, JsonOptions));
+        JsonConfigFile.Save(path, config, JsonOptions);
     }
 }

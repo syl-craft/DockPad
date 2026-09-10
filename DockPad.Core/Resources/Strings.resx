@@ -1344,4 +1344,13 @@ This cannot be undone.</value>
   <data name="Inject_Files_Delete" xml:space="preserve">
     <value>Delete the generated files</value>
   </data>
+  <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
+    <value>Codex quota unavailable</value>
+  </data>
+  <data name="Usage_Codex_QuotaMissing" xml:space="preserve">
+    <value>No quota snapshot in local Codex sessions. Use Codex to refresh the data; token metrics remain available.</value>
+  </data>
+  <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
+    <value>Last local snapshot: {0:g}. No usable current quota window. Use Codex to refresh it; snapshots older than 15 minutes and expired windows are hidden.</value>
+  </data>
 </root>

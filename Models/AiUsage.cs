@@ -41,11 +41,7 @@ public sealed class AiUsage
     public int Requests { get; init; }
 
     /// <summary>
-    /// Pourquoi les jauges sont masquées, en une ligne affichable, ou vide s'il n'y a rien à
-    /// signaler. Portée par le fournisseur, comme <see cref="CostNote"/> : un quota absent par
-    /// nature — Codex, Gemini, Copilot n'en exposent aucun — n'est pas une panne et ne dit rien,
-    /// alors qu'un refus de l'endpoint de Claude doit se voir. Sans elle, la seule trace de
-    /// l'indisponibilité vit dans le fichier de log.
+    /// Motif d'indisponibilité du quota fourni par le provider. Vide = aucune notice.
     /// </summary>
     public string QuotaNotice { get; init; } = "";
 
