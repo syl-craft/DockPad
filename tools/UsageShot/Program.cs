@@ -219,6 +219,12 @@ internal static class Program
         frame.Arrange(new Rect(0, 0, width, frame.DesiredSize.Height));
         frame.UpdateLayout();
 
+        // Recalcule la géométrie après la création des gabarits.
+        frame.InvalidateMeasure();
+        frame.Measure(new Size(width, double.PositiveInfinity));
+        frame.Arrange(new Rect(0, 0, width, frame.DesiredSize.Height));
+        frame.UpdateLayout();
+
         Save(frame, frame.ActualWidth, frame.ActualHeight, outPath, "panel");
     }
 
