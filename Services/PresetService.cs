@@ -12,6 +12,7 @@ public static class PresetService
         PresetEntry?[] presets =
         [
             BuildClaudeTerminal(),
+            BuildCodexTerminal(),
             BuildPowerShell(),
             BuildVSCode(),
             BuildSSMS(),
@@ -64,6 +65,84 @@ public static class PresetService
             Target = ContextMenuTarget.FolderBackground,
             Description = Loc.T("Preset_ClaudeTerminal_Desc")
         };
+    }
+
+    /// <summary>
+    /// Décalque du prédéfini Claude, pour Codex.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Proposé sans condition</b>, comme celui de Claude et contrairement à GitHub Desktop : le
+    /// prédéfini pose une entrée de menu, il n'installe rien. Une machine sans Codex verra la
+    /// commande échouer à l'usage, ce qui est le comportement déjà accepté pour Claude.
+    /// </para>
+    /// <para>
+    /// <b>Pas de réglage d'arguments supplémentaires</b>, contrairement à Claude : celui-ci existe
+    /// parce qu'un besoin réel l'a demandé. Un champ vide de plus dans les Options n'aiderait
+    /// personne tant que rien n'a à y être écrit.
+    /// </para>
+    /// </remarks>
+    private static PresetEntry BuildCodexTerminal()
+    {
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        string? wt = FindExe("wt.exe",
+            Path.Combine(localAppData, @"Microsoft\WindowsApps\wt.exe"));
+
+        string command = wt != null
+            ? $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- codex"
+            : $"\"{FindExe("powershell.exe", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe")) ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; codex\"";
+
+        return new PresetEntry
+        {
+            DisplayName = Loc.T("Preset_CodexTerminal_Name"),
+            RegistryKey = "OpenCodexTerminal",
+            Command = command,
+            IconPath = FindCodexExe() ?? "",
+            Target = ContextMenuTarget.FolderBackground,
+            Description = Loc.T("Preset_CodexTerminal_Desc")
+        };
+    }
+
+    /// <summary>
+    /// Le binaire natif de Codex, dont l'icône du prédéfini est tirée.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b><c>FindExe</c> ne suffit pas ici</b> : le <c>PATH</c> ne porte que <c>codex.cmd</c>, un
+    /// script. Le vrai exécutable vit dans le paquet natif du module npm, sous un dossier qui nomme
+    /// la plateforme (<c>x86_64-pc-windows-msvc</c>) — d'où la recherche sous <c>vendor</c> plutôt
+    /// qu'un chemin complet, qui mentirait au premier changement de cible.
+    /// </para>
+    /// <para>
+    /// <b>Il n'embarque aujourd'hui aucune icône</b> : Windows affiche celle d'un exécutable
+    /// quelconque. On le pointe quand même — le jour où OpenAI en posera une, elle apparaîtra sans
+    /// qu'on touche à ce code. Introuvable, l'icône reste vide, et l'entrée s'affiche sans visuel.
+    /// </para>
+    /// </remarks>
+    private static string? FindCodexExe()
+    {
+        string[] roots =
+        [
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "npm"),
+        ];
+
+        foreach (var root in roots)
+        {
+            var vendor = Path.Combine(root,
+                @"node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor");
+            try
+            {
+                if (!Directory.Exists(vendor)) continue;
+                var hit = Directory.EnumerateFiles(vendor, "codex.exe", SearchOption.AllDirectories)
+                                   .FirstOrDefault();
+                if (hit != null) return hit;
+            }
+            catch (Exception ex) { LogService.Warn(ex, $"Recherche de codex.exe sous {vendor}"); }
+        }
+
+        return null;
     }
 
     /// <summary>

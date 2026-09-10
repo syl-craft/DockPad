@@ -72,4 +72,38 @@ public class PresetStatusTests
 
         Assert.Equal(PresetStatus.UpdateAvailable, status);
     }
+
+    // ── Le catalogue ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Codex_EstProposeCommeClaude()
+    {
+        // Décalque du prédéfini Claude : proposé sur toute machine, sans condition
+        // d'installation — comme lui, et contrairement à GitHub Desktop.
+        var presets = PresetService.GetPresets();
+
+        var codex = Assert.Single(presets, p => p.RegistryKey == "OpenCodexTerminal");
+        Assert.Equal(ContextMenuTarget.FolderBackground, codex.Target);
+    }
+
+    [Fact]
+    public void Codex_LanceCodexDansLeDossierClique()
+    {
+        // %V est le dossier du clic droit : sans lui le terminal s'ouvrirait n'importe où.
+        // La commande finit par « codex », que ce soit via Windows Terminal ou le repli
+        // PowerShell — c'est le seul invariant qui vaille sur toutes les machines.
+        var codex = PresetService.GetPresets().Single(p => p.RegistryKey == "OpenCodexTerminal");
+
+        Assert.Contains("%V", codex.Command);
+        Assert.EndsWith("codex", codex.Command);
+    }
+
+    [Fact]
+    public void Codex_EtClaude_NePartagentPasLeurCleDeRegistre()
+    {
+        // Deux clés identiques et le second prédéfini écraserait le premier, en silence.
+        var keys = PresetService.GetPresets().Select(p => p.RegistryKey).ToList();
+
+        Assert.Equal(keys.Count, keys.Distinct().Count());
+    }
 }

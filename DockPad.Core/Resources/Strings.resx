@@ -507,6 +507,12 @@ This cannot be undone.</value>
   <data name="Preset_PowerShell_Desc" xml:space="preserve">
     <value>Opens a PowerShell tab in this folder</value>
   </data>
+  <data name="Preset_CodexTerminal_Desc" xml:space="preserve">
+    <value>Opens a terminal in this folder and starts Codex</value>
+  </data>
+  <data name="Preset_CodexTerminal_Name" xml:space="preserve">
+    <value>Open a Codex terminal</value>
+  </data>
   <data name="Preset_PowerShell_Name" xml:space="preserve">
     <value>Open in PowerShell</value>
   </data>

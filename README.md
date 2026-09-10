@@ -15,7 +15,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Overlay numérique** (Ctrl/Shift + 1–9) pour exécution rapide au clavier
 - **Store d'icônes** portable dans `%APPDATA%\DockPad\icons\`
 - **Gestionnaire de menu contextuel** Windows (HKCU / HKLM / HKCR)
-- **Raccourcis prédéfinis** : Claude Code, PowerShell, VS Code, SSMS, GitHub Desktop
+- **Raccourcis prédéfinis** : Claude Code, Codex, PowerShell, VS Code, SSMS, GitHub Desktop
 - **Sélecteur de navigateur** : popup de choix au clic sur une URL + règles par domaine
 - **Serveur MCP** : Claude (Claude Code / Claude Desktop) peut gérer la grille, les pages et les navigateurs
 - **Bandeau Usage IA** : consommation de jetons de Claude Code, Codex, Gemini et Copilot, sous la grille

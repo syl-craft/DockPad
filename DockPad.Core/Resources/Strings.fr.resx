@@ -507,6 +507,12 @@ Cette action est irréversible.</value>
   <data name="Preset_PowerShell_Desc" xml:space="preserve">
     <value>Ouvre un onglet PowerShell dans ce dossier</value>
   </data>
+  <data name="Preset_CodexTerminal_Desc" xml:space="preserve">
+    <value>Ouvre un terminal dans ce dossier et lance Codex</value>
+  </data>
+  <data name="Preset_CodexTerminal_Name" xml:space="preserve">
+    <value>Ouvrir un terminal Codex</value>
+  </data>
   <data name="Preset_PowerShell_Name" xml:space="preserve">
     <value>Ouvrir dans PowerShell</value>
   </data>

@@ -507,6 +507,12 @@ C3tt3 4ct10n 35t 1rrév3r51bl3.</value>
   <data name="Preset_PowerShell_Desc" xml:space="preserve">
     <value>0uvr3 un 0ngl3t P0w3r5h3ll d4n5 c3 d05513r</value>
   </data>
+  <data name="Preset_CodexTerminal_Desc" xml:space="preserve">
+    <value>0uvr3 un t3rm1n4l d4n5 c3 d05513r 3t l4nc3 C0d3x</value>
+  </data>
+  <data name="Preset_CodexTerminal_Name" xml:space="preserve">
+    <value>0uvr1r un t3rm1n4l C0d3x</value>
+  </data>
   <data name="Preset_PowerShell_Name" xml:space="preserve">
     <value>0uvr1r d4n5 P0w3r5h3ll</value>
   </data>
