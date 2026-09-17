@@ -119,6 +119,7 @@ public class UsageViewModelTests
 
         Assert.False(vm.ShowTabs);
         Assert.Empty(vm.Tabs);
+        Assert.Equal("a", vm.SoloProviderId);
         Assert.Equal("Claude Code", vm.SoloName);
     }
 
@@ -157,6 +158,7 @@ public class UsageViewModelTests
         vm.Select("b");
 
         Assert.Equal("2k", vm.Metrics[1].Value);
+        Assert.Equal("b", vm.SoloProviderId);
         Assert.Equal(90, vm.SessionGauge!.UsedPct);
         Assert.True(vm.Tabs.Single(t => t.ProviderId == "b").IsSelected);
         Assert.False(vm.Tabs.Single(t => t.ProviderId == "a").IsSelected);

@@ -28,6 +28,7 @@
   <ItemGroup>
     <Resource Include="app.ico" />
     <Resource Include="Assets\folder.png" />
+    <Content Include="Assets\ProviderLogos.LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

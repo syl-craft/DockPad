@@ -51,6 +51,13 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsMoveTarget}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="EmptyTileButton" TargetType="Button" BasedOn="{StaticResource TileButton}">
@@ -96,7 +103,7 @@
              exactement comme sur une tuile occupee. -->
         <DataTemplate x:Key="EmptyTileTemplate">
             <Button Style="{StaticResource EmptyTileButton}"
-                    AutomationProperties.Name="{loc:T Quick_Tile_Add}"
+                    AutomationProperties.Name="{loc:T Quick_Tile_Add}" Click="GroupChild_Click"
                     AllowDrop="True" DragOver="TileDrop_DragOver" DragLeave="TileDrop_DragLeave"
                     Drop="TileDrop_Drop"
                     ContextMenuOpening="EmptyTile_ContextMenuOpening">
@@ -107,9 +114,138 @@
             </Button>
         </DataTemplate>
 
+        <Style x:Key="GroupChildButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}"/>
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                </Trigger>
+                <DataTrigger Binding="{Binding IsMoveTarget}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate x:Key="GroupTileTemplate">
+            <Border Width="108" Height="90" Margin="5" CornerRadius="6" ClipToBounds="True"
+                    Background="{DynamicResource Brush.SurfaceCard}"
+                    ContextMenuOpening="Group_ContextMenuOpening">
+                <Border.Clip><RectangleGeometry Rect="0,0,108,90" RadiusX="6" RadiusY="6"/></Border.Clip>
+                <Border.ContextMenu><ContextMenu/></Border.ContextMenu>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMoveTarget}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                <Setter Property="BorderThickness" Value="2"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                <ItemsControl Grid.Row="0" Margin="0,0,4,0" ItemsSource="{Binding Children}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><views:TileGroupPanel Layout="{Binding Entry.Layout}"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource GroupChildButton}" ToolTip="{Binding Tooltip}"
+                                    AutomationProperties.Name="{Binding Tooltip}"
+                                    Click="GroupChild_Click" ContextMenuOpening="GroupChild_ContextMenuOpening"
+                                    PreviewMouseLeftButtonDown="TileDrag_MouseDown" PreviewMouseMove="TileDrag_MouseMove"
+                                    AllowDrop="True" DragOver="TileDrop_DragOver" DragLeave="TileDrop_DragLeave" Drop="TileDrop_Drop">
+                                <Button.ContextMenu><ContextMenu/></Button.ContextMenu>
+                                <Grid>
+                                    <Image Source="{Binding Icon}" Width="{Binding ChildIconSize}" Height="{Binding ChildIconSize}" Stretch="Uniform"/>
+                                    <TextBlock Text="{Binding Initial}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="+" Foreground="{DynamicResource Brush.TextFaint}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                    <Button x:Name="GroupTitle" Grid.Row="1" Margin="0,0,4,0" Padding="4,1" Cursor="{DynamicResource Cursor.GroupTitle}"
+                            AutomationProperties.Name="{Binding GroupName}" ToolTip="{loc:T Group_DragTip}"
+                            Click="GroupTitle_Click" ContextMenuOpening="Group_ContextMenuOpening"
+                            PreviewMouseLeftButtonDown="TileDrag_MouseDown" PreviewMouseMove="TileDrag_MouseMove"
+                            AllowDrop="True" DragOver="TileDrop_DragOver" DragLeave="TileDrop_DragLeave" Drop="TileDrop_Drop"
+                            VerticalAlignment="Bottom" HorizontalContentAlignment="Stretch">
+                        <Button.ContextMenu><ContextMenu/></Button.ContextMenu>
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource Brush.AccentSoft}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <TextBlock x:Name="GroupName" Text="{Binding GroupName}" ToolTip="{Binding GroupName}"
+                                   Foreground="{DynamicResource Brush.Text}" FontSize="11"
+                                   TextAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    </Button>
+                    <Border x:Name="GroupBand" Grid.RowSpan="2" Width="4" HorizontalAlignment="Right"
+                            Background="{Binding GroupBand}" CornerRadius="0,6,6,0" IsHitTestVisible="False"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
         <views:TileTemplateSelector x:Key="TileSelector"
                                     Tile="{StaticResource TileTemplate}"
-                                    Empty="{StaticResource EmptyTileTemplate}"/>
+                                    Empty="{StaticResource EmptyTileTemplate}"
+                                    Group="{StaticResource GroupTileTemplate}"/>
 
         <Style x:Key="PageButton" TargetType="Button">
             <Setter Property="Width" Value="30"/>
@@ -367,7 +503,13 @@
                 <!-- Les tuiles. Les cases ont une taille fixe : un UniformGrid 4 x 6 donne la meme
                      geometrie que les rangees et colonnes Auto d'avant, sans avoir a poser
                      Grid.Row et Grid.Column sur chaque enfant depuis le code. -->
-                <ItemsControl x:Name="ShortcutsGrid"
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <DockPanel x:Name="MoveBanner" Visibility="Collapsed" Margin="5,0,5,8">
+                    <Button DockPanel.Dock="Right" Content="{loc:T Group_Cancel}" Click="CancelMove_Click"
+                            Style="{StaticResource SecondaryButton}" Padding="8,3"/>
+                    <TextBlock Text="{loc:T Group_MoveHint}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="570"/>
+                </DockPanel>
+                <ItemsControl x:Name="ShortcutsGrid" Grid.Row="1"
                               ItemTemplateSelector="{StaticResource TileSelector}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -380,7 +522,7 @@
                      meme grille de cases, ce qui le rend independant de la facon dont les tuiles
                      sont construites. Avant, ses elements etaient ajoutes DANS la grille des
                      tuiles. -->
-                <UniformGrid x:Name="HintOverlay" Rows="4" Columns="6"
+                <UniformGrid x:Name="HintOverlay" Grid.Row="1" Rows="4" Columns="6"
                              IsHitTestVisible="False" Visibility="Collapsed"/>
             </Grid>
         </ScrollViewer>

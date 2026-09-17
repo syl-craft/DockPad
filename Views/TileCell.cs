@@ -25,6 +25,13 @@ public sealed class TileCell
 {
     public required int Row { get; init; }
     public required int Col { get; init; }
+    public int Page { get; init; }
+    public int? Slot { get; init; }
+    public TileAddress Address => new(Page, Row, Col, Slot);
+    public bool IsGroup => Entry?.IsGroup == true;
+    public List<TileCell> Children { get; init; } = [];
+    public bool IsMoveTarget { get; set; }
+    public double ChildIconSize { get; init; } = 24;
 
     /// <summary>Le raccourci, ou <c>null</c> pour une case libre.</summary>
     public ShortcutEntry? Entry { get; init; }
@@ -32,6 +39,10 @@ public sealed class TileCell
     public bool IsEmpty => Entry is null;
 
     public string Name => Entry?.Name ?? "";
+    public string GroupName => string.IsNullOrWhiteSpace(Name) ? Loc.T("Group_Actions") : Name;
+    public Brush GroupBand => new SolidColorBrush((Color)ColorConverter.ConvertFromString(
+        Services.TileGroupService.EffectiveColor(Entry?.GroupColor)));
+    public string Initial => Name.Length == 0 ? "" : System.Globalization.StringInfo.GetNextTextElement(Name);
     public ImageSource? Icon { get; init; }
     public string Tooltip { get; init; } = "";
 
@@ -51,7 +62,8 @@ public sealed class TileTemplateSelector : DataTemplateSelector
 {
     public DataTemplate? Tile { get; set; }
     public DataTemplate? Empty { get; set; }
+    public DataTemplate? Group { get; set; }
 
     public override DataTemplate? SelectTemplate(object item, DependencyObject container) =>
-        item is TileCell { IsEmpty: true } ? Empty : Tile;
+        item is TileCell { IsGroup: true } ? Group : item is TileCell { IsEmpty: true } ? Empty : Tile;
 }

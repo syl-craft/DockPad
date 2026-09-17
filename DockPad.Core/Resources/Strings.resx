@@ -1353,4 +1353,64 @@ This cannot be undone.</value>
   <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
     <value>Last local snapshot: {0:g}. No usable current quota window. Use Codex to refresh it; snapshots older than 15 minutes and expired windows are hidden.</value>
   </data>
+  <data name="Group_InvalidDestination" xml:space="preserve">
+    <value>Choose an empty slot or a shortcut to swap. Groups cannot be nested.</value>
+  </data>
+  <data name="Group_TooMany" xml:space="preserve">
+    <value>Move {0} shortcut(s) out of the group to use this layout.</value>
+  </data>
+  <data name="Group_EditChild" xml:space="preserve">
+    <value>Select a shortcut inside the group.</value>
+  </data>
+  <data name="Group_Layout" xml:space="preserve">
+    <value>Layout</value>
+  </data>
+  <data name="Group_Layout_Simple" xml:space="preserve">
+    <value>Single — 1 shortcut</value>
+  </data>
+  <data name="Group_Layout_Quad" xml:space="preserve">
+    <value>2 × 2 grid — 4 shortcuts</value>
+  </data>
+  <data name="Group_Layout_TwoPlusFour" xml:space="preserve">
+    <value>2 + 4 grid — 6 shortcuts</value>
+  </data>
+  <data name="Group_Move" xml:space="preserve">
+    <value>Move</value>
+  </data>
+  <data name="Group_ChooseDestination" xml:space="preserve">
+    <value>Choose a slot…</value>
+  </data>
+  <data name="Group_Actions" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="Group_MoveWhole" xml:space="preserve">
+    <value>Move the entire group…</value>
+  </data>
+  <data name="Group_Delete" xml:space="preserve">
+    <value>Delete group…</value>
+  </data>
+  <data name="Group_ConfirmDelete" xml:space="preserve">
+    <value>Delete this group and its {0} shortcut(s)?</value>
+  </data>
+  <data name="Group_Empty" xml:space="preserve">
+    <value>Empty group</value>
+  </data>
+  <data name="Group_MoveHint" xml:space="preserve">
+    <value>Choose an outlined destination. Occupied slot: swap. Escape to cancel.</value>
+  </data>
+  <data name="Group_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Group_Rename" xml:space="preserve">
+    <value>Edit group…</value>
+  </data>
+  <data name="Group_Name" xml:space="preserve">
+    <value>Group name</value>
+  </data>
+  <data name="Group_DragTip" xml:space="preserve">
+    <value>Drag the name to move the entire group (padlock unlocked).</value>
+  </data>
+  <data name="Group_Edit" xml:space="preserve"><value>Edit group</value></data>
+  <data name="Group_Color" xml:space="preserve"><value>Group color</value></data>
+  <data name="Group_InvalidColor" xml:space="preserve"><value>Choose a color in #RRGGBB format.</value></data>
 </root>

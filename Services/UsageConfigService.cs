@@ -33,6 +33,16 @@ public static class UsageConfigService
                 .GroupBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .ToList();
+
+            // Raccourcir l'ancien libellé par défaut sans écraser les noms personnalisés.
+            foreach (var provider in config.Providers.Where(p =>
+                         string.Equals(p.Id, "claude", StringComparison.OrdinalIgnoreCase)
+                         && p.DetectedName == "Claude Code"))
+            {
+                if (provider.Name == provider.DetectedName)
+                    provider.Name = "Claude";
+                provider.DetectedName = "Claude";
+            }
         });
     }
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## À paraître
+
+- **Menus contextuels** : le nom du raccourci ou du groupe apparaît en tête du menu au clic droit.
+- **Nom et couleur des groupes** : libellé compact en bas de carte, nom et couleur modifiables au clic droit. Une seule bande colorée identifie le groupe entier, violette par défaut. Glisser le nom déplace le groupe entier ; le curseur de déplacement apparaît uniquement quand le cadenas est déverrouillé. Le dépôt sur une autre carte échange les groupes sans déplacer leurs enfants séparément.
+- **Tuiles composées** : dispositions simple, 2 × 2 et 2 + 4, avec une icône et une action par sous-case, dans les raccourcis et les favoris.
+- **Réorganisation des groupes** : déplacement par clic ou glisser-déposer, échanges entre raccourcis et déplacement d'un groupe entier. Les changements de disposition sont bloqués si trop de raccourcis restent dans le groupe.
+- **Recherche et clavier** : les raccourcis des groupes sont recherchables ; la touche d'une tuile composée ouvre le choix de son raccourci.
+- **Logos des fournisseurs** : le bandeau Usage IA affiche les logos vectoriels de Claude et de Codex à la place de la pastille colorée, et ses onglets prennent un fond de carte avec un état sélectionné explicite. Les fournisseurs sans logo gardent leur pastille.
+- **Fournisseur « Claude »** : le libellé par défaut « Claude Code » est raccourci en « Claude ». Un nom personnalisé n'est jamais écrasé.
+- **Relevé Codex sans fenêtre exploitable** : une notice donne la date du dernier relevé local et la marche à suivre pour le rafraîchir, au lieu de laisser la place des jauges vide.
+
 ## [1.21.0] — 2026-09-10
 
 ### Nouveautés

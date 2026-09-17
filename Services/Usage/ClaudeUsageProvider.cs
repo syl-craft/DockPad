@@ -60,7 +60,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
     private DateTime _lastAttempt;
 
     public string Id => "claude";
-    public string Name => "Claude Code";
+    public string Name => "Claude";
 
     /// <summary>
     /// Identité visuelle, déclarée une seule fois : la sonde et l'instantané la lisent ici.

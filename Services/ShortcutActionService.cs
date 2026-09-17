@@ -68,6 +68,27 @@ public static class ShortcutActionService
     public static ActionResult Add(List<ShortcutAddItem> items, TileFiles? files = null) =>
         AddAsync(items, files).GetAwaiter().GetResult();
 
+    public static async Task<ActionResult> AddInGroupAsync(ShortcutAddItem item, int slot, TileFiles files)
+    {
+        var favicons = await ResolveFaviconsAsync([item]).ConfigureAwait(false);
+        return TileGroupService.Mutate(files, all =>
+        {
+            var address = new TileAddress(item.Page ?? 0, item.Row ?? -1, item.Col ?? -1, slot);
+            if (!TileGroupService.IsValidDestination(all, address) || TileGroupService.Get(all, address) is not null)
+                return ActionResult.Fail(Loc.T("Group_InvalidDestination"));
+            var staged = new List<ShortcutEntry>();
+            var result = AddCore(staged, PageConfigService.Load(files.PagesPath)
+                .Concat([new PageConfig { Index = address.Page }]).ToList(), [item]);
+            if (!result.Ok) return result;
+            var entry = staged.Single();
+            if (favicons.TryGetValue(0, out var stored) && string.IsNullOrEmpty(entry.IconPath))
+                entry.IconProfilePath = stored;
+            ApplyIcon(entry);
+            TileGroupService.Put(all, address, entry);
+            return ActionResult.Success();
+        });
+    }
+
     /// <summary>
     /// Icône de site pour les items qui la méritent, indexée par leur position dans le lot.
     /// </summary>
@@ -98,19 +119,19 @@ public static class ShortcutActionService
     /// réseau sous le verrou global. Le compromis est vite vu.
     /// </remarks>
     public static async Task<ActionResult> UpdateAsync(int page, int row, int col, ShortcutUpdate changes,
-                                                       TileFiles? files = null)
+                                                       TileFiles? files = null, int? slot = null)
     {
         files ??= TileStore.FilesFor(TileTarget.Shortcuts);
-        string? favicon = await ResolveFaviconForUpdateAsync(page, row, col, changes, files).ConfigureAwait(false);
+        string? favicon = await ResolveFaviconForUpdateAsync(page, row, col, changes, files, slot).ConfigureAwait(false);
 
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load(files.EntriesPath);
-            var result = UpdateCore(all, page, row, col, changes);
+            var result = UpdateCore(all, page, row, col, changes, slot);
             if (!result.Ok) return result;
             if (changes.IconPath != null || changes.Command != null || changes.Type != null)
             {
-                var s = all.First(s => s.Page == page && s.Row == row && s.Col == col);
+                var s = TileGroupService.Get(all, new(page, row, col, slot))!;
                 if (changes.IconPath != null) { s.IconPath = changes.IconPath; s.IconProfilePath = null; }
                 if (favicon != null && string.IsNullOrEmpty(s.IconPath)) s.IconProfilePath = favicon;
                 ApplyIcon(s);
@@ -126,12 +147,11 @@ public static class ShortcutActionService
         UpdateAsync(page, row, col, changes, files).GetAwaiter().GetResult();
 
     private static async Task<string?> ResolveFaviconForUpdateAsync(
-        int page, int row, int col, ShortcutUpdate changes, TileFiles files)
+        int page, int row, int col, ShortcutUpdate changes, TileFiles files, int? slot)
     {
         ShortcutEntry? existing;
         lock (ConfigLock.Gate)
-            existing = ShortcutService.Load(files.EntriesPath)
-                .FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
+            existing = TileGroupService.Get(ShortcutService.Load(files.EntriesPath), new(page, row, col, slot));
 
         if (existing is null) return null;
 
@@ -146,26 +166,26 @@ public static class ShortcutActionService
     }
 
     public static ActionResult Move(int page, int row, int col, int toPage, int? toRow = null,
-                                    int? toCol = null, TileFiles? files = null)
+                                    int? toCol = null, TileFiles? files = null, int? slot = null)
     {
         files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load(files.EntriesPath);
             var configs = PageConfigService.Load(files.PagesPath);
-            var result = MoveCore(all, configs, page, row, col, toPage, toRow, toCol);
+            var result = MoveCore(all, configs, page, row, col, toPage, toRow, toCol, slot);
             if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
     }
 
-    public static ActionResult Delete(int page, int row, int col, TileFiles? files = null)
+    public static ActionResult Delete(int page, int row, int col, TileFiles? files = null, int? slot = null)
     {
         files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load(files.EntriesPath);
-            var result = DeleteCore(all, page, row, col);
+            var result = DeleteCore(all, page, row, col, slot);
             if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
@@ -190,7 +210,7 @@ public static class ShortcutActionService
     /// <c>IconProfilePath</c>, donc aucune icône n'est à retélécharger.
     /// </para>
     /// </remarks>
-    public static ActionResult Transfer(int page, int row, int col, TileFiles from, TileFiles to)
+    public static ActionResult Transfer(int page, int row, int col, TileFiles from, TileFiles to, int? childSlot = null)
     {
         if (from.EntriesPath == to.EntriesPath)
             return ActionResult.Fail("La grille de départ et celle d'arrivée sont la même.");
@@ -201,7 +221,7 @@ public static class ShortcutActionService
             var dest = ShortcutService.Load(to.EntriesPath);
             var destPages = PageConfigService.Load(to.PagesPath);
 
-            var result = TransferCore(source, dest, destPages, page, row, col);
+            var result = TransferCore(source, dest, destPages, page, row, col, childSlot);
             if (!result.Ok) return result;
 
             ShortcutService.Save(dest, to.EntriesPath);
@@ -211,13 +231,13 @@ public static class ShortcutActionService
     }
 
     /// <summary>Utilisée par l'UI uniquement (⧉ Dupliquer) — non exposée côté MCP.</summary>
-    public static ActionResult Duplicate(int page, int row, int col, TileFiles? files = null)
+    public static ActionResult Duplicate(int page, int row, int col, TileFiles? files = null, int? slot = null)
     {
         files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load(files.EntriesPath);
-            var result = DuplicateCore(all, page, row, col);
+            var result = DuplicateCore(all, page, row, col, slot);
             if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
@@ -252,7 +272,7 @@ public static class ShortcutActionService
             .Select(s => new { page = s.Page, row = s.Row, col = s.Col, name = s.Name,
                                type = s.Type.ToString(), command = s.Command,
                                iconPath = s.IconPath,
-                               iconProfilePath = s.IconProfilePath })
+                               iconProfilePath = s.IconProfilePath, layout = s.Layout.ToString(), children = s.Children })
             .ToList();
 
         return ActionResult.Success(new { gridRows = GridRows, gridCols = GridCols, pages, shortcuts });
@@ -327,10 +347,12 @@ public static class ShortcutActionService
         });
     }
 
-    public static ActionResult UpdateCore(List<ShortcutEntry> all, int page, int row, int col, ShortcutUpdate changes)
+    public static ActionResult UpdateCore(List<ShortcutEntry> all, int page, int row, int col, ShortcutUpdate changes, int? slot = null)
     {
-        var s = all.FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
+        var s = TileGroupService.Get(all, new(page, row, col, slot));
         if (s is null) return ActionResult.Fail($"Aucune tuile en page {page}, ligne {row}, colonne {col}.");
+
+        if (s.IsGroup) return ActionResult.Fail(Loc.T("Group_EditChild"));
 
         if (changes.Name is { } n)
         {
@@ -351,9 +373,9 @@ public static class ShortcutActionService
     }
 
     public static ActionResult MoveCore(List<ShortcutEntry> all, List<PageConfig> configs, int page, int row, int col,
-                                        int toPage, int? toRow, int? toCol)
+                                        int toPage, int? toRow, int? toCol, int? slot = null)
     {
-        var s = all.FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
+        var s = TileGroupService.Get(all, new(page, row, col, slot));
         if (s is null) return ActionResult.Fail($"Aucune tuile en page {page}, ligne {row}, colonne {col}.");
         if (toPage < 0) return ActionResult.Fail("Page cible invalide.");
         int lastShown = LastShown(all, configs);
@@ -390,7 +412,9 @@ public static class ShortcutActionService
                 return ActionResult.Fail($"Page {toPage} pleine ({GridRows * GridCols} cases).");
         }
 
-        s.Page = toPage; s.Row = dest.row; s.Col = dest.col;
+        TileGroupService.Put(all, new(page, row, col, slot), null);
+        TileGroupService.Put(all, new(toPage, dest.row, dest.col), s);
+        TileGroupService.Normalize(all);
         return ActionResult.Success(new { s.Name, page = s.Page, row = s.Row, col = s.Col });
     }
 
@@ -450,18 +474,20 @@ public static class ShortcutActionService
     /// </para>
     /// </remarks>
     public static ActionResult TransferCore(List<ShortcutEntry> source, List<ShortcutEntry> dest,
-                                            List<PageConfig> destPages, int page, int row, int col)
+                                            List<PageConfig> destPages, int page, int row, int col, int? childSlot = null)
     {
-        var entry = source.FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
+        var entry = TileGroupService.Get(source, new(page, row, col, childSlot));
         if (entry is null) return ActionResult.Fail($"Aucune tuile en page {page}, ligne {row}, colonne {col}.");
 
         var slot = FirstFreeSlot(dest, destPages);
 
-        source.Remove(entry);
+        TileGroupService.Put(source, new(page, row, col, childSlot), null);
         entry.Page = slot.Page;
         entry.Row = slot.Row;
         entry.Col = slot.Col;
         dest.Add(entry);
+        TileGroupService.Normalize(source);
+        TileGroupService.Normalize(dest);
 
         return ActionResult.Success(new
         {
@@ -469,17 +495,17 @@ public static class ShortcutActionService
         });
     }
 
-    public static ActionResult DeleteCore(List<ShortcutEntry> all, int page, int row, int col)
+    public static ActionResult DeleteCore(List<ShortcutEntry> all, int page, int row, int col, int? slot = null)
     {
-        var s = all.FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
+        var s = TileGroupService.Get(all, new(page, row, col, slot));
         if (s is null) return ActionResult.Fail($"Aucune tuile en page {page}, ligne {row}, colonne {col}.");
-        all.Remove(s);
+        TileGroupService.Put(all, new(page, row, col, slot), null);
         return ActionResult.Success(new { deleted = s.Name });
     }
 
-    public static ActionResult DuplicateCore(List<ShortcutEntry> all, int page, int row, int col)
+    public static ActionResult DuplicateCore(List<ShortcutEntry> all, int page, int row, int col, int? slot = null)
     {
-        var s = all.FirstOrDefault(s => s.Page == page && s.Row == row && s.Col == col);
+        var s = TileGroupService.Get(all, new(page, row, col, slot));
         if (s is null) return ActionResult.Fail($"Aucune tuile en page {page}, ligne {row}, colonne {col}.");
 
         var occupied = all.Where(x => x.Page == page).Select(x => (x.Row, x.Col)).ToHashSet();
@@ -494,23 +520,9 @@ public static class ShortcutActionService
             }
         if (nearest is null) return ActionResult.Fail("Page pleine. Naviguez vers une autre page pour dupliquer.");
 
-        all.Add(new ShortcutEntry
-        {
-            Page = page, Row = nearest.Value.row, Col = nearest.Value.col,
-            Name = s.Name, Type = s.Type, Command = s.Command, IconPath = s.IconPath,
-            IconProfilePath = s.IconProfilePath,
-            Terminal = s.Terminal is null ? null : new TerminalConfig
-            {
-                ExePath = s.Terminal.ExePath, StartingDirectory = s.Terminal.StartingDirectory,
-                RunCommand = s.Terminal.RunCommand, NewTab = s.Terminal.NewTab, ExtraArgs = s.Terminal.ExtraArgs,
-            },
-            ProcessSwitch = s.ProcessSwitch is null ? null : new ProcessSwitchConfig
-            {
-                SearchMode = s.ProcessSwitch.SearchMode,
-                ProcessName = s.ProcessSwitch.ProcessName, Executable = s.ProcessSwitch.Executable,
-                Parameters = s.ProcessSwitch.Parameters,
-            },
-        });
+        var copy = TileGroupService.Clone(s);
+        TileGroupService.Put(all, new(page, nearest.Value.row, nearest.Value.col), copy);
+        TileGroupService.Normalize(all);
         return ActionResult.Success(new { page, row = nearest.Value.row, col = nearest.Value.col });
     }
 
