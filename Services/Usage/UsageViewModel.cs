@@ -59,6 +59,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     /// </summary>
     public bool ShowTabs { get; private set; }
 
+    public string SoloProviderId { get; private set; } = "";
     public string SoloName { get; private set; } = "";
     public string SoloGlyph { get; private set; } = "";
     public string SoloAccent { get; private set; } = "#000000";
@@ -267,6 +268,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         UsageUrlTooltip = UsageUrl.Length > 0 ? Loc.F("Usage_OpenPage_Tooltip", UsageUrl) : "";
         QuotaNoticeTooltip = selected?.QuotaNoticeNote ?? "";
 
+        SoloProviderId = selected?.ProviderId ?? "";
         SoloName = selected?.Name ?? "";
         SoloGlyph = selected?.Glyph ?? "";
         SoloAccent = selected?.AccentColor ?? "#000000";
@@ -382,7 +384,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     {
         foreach (var name in new[]
                  {
-                     nameof(IsVisible), nameof(ShowTabs), nameof(SoloName), nameof(SoloGlyph),
+                     nameof(IsVisible), nameof(ShowTabs), nameof(SoloProviderId), nameof(SoloName), nameof(SoloGlyph),
                      nameof(SoloAccent), nameof(IsDemo), nameof(SessionGauge), nameof(WeekGauge),
                      nameof(UsageUrl), nameof(HasUsageUrl),
                      nameof(QuotaNotice), nameof(QuotaNoticeTooltip), nameof(HasQuotaNotice),

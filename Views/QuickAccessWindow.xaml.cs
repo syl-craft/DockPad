@@ -60,6 +60,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// </summary>
     private readonly TileLockState _tileLock = new();
     private ShortcutEntry? _dragSource;
+    private List<ShortcutEntry>? _dragEntries;
 
     private readonly TileHintOverlay _hintOverlay;
     private bool? _hintIsCtrl; // null = caché, true = premier trigger, false = second trigger
@@ -172,6 +173,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             return;
         }
 
+        CancelMove();
         UsageBanner.Stop();
         // Ranger la fenêtre repose le verrou : on ne peut pas oublier de le refermer.
         _tileLock.Lock();
@@ -206,6 +208,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// <summary>Reporte l'état du verrou sur le bouton de la toolbar.</summary>
     private void ApplyTileLock()
     {
+        Resources["Cursor.GroupTitle"] = _tileLock.IsUnlocked ? Cursors.SizeAll : Cursors.Arrow;
         TileLockButton.Content = _tileLock.Glyph;
         TileLockButton.ToolTip = _tileLock.Tooltip;
         // Le glyphe seul n'est pas lu par un lecteur d'ecran, et l'infobulle ne le supplee pas.
@@ -279,6 +282,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     public void ToggleTileMode()
     {
         ClearSearch();   // la recherche filtre le mode courant : ses résultats ne valent plus rien
+        CancelMove();
         _mode.Toggle();
         ApplyTileMode();
         PopulateGrid();
@@ -377,6 +381,15 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
+        if (_moveSource is not null)
+        {
+            if (e.Key == Key.Escape) { CancelMove(); PopulateGrid(); e.Handled = true; return; }
+            if (e.Key is Key.Left or Key.Right && Keyboard.Modifiers == ModifierKeys.None)
+            { GoToAdjacentPage(e.Key == Key.Right ? 1 : -1); e.Handled = true; return; }
+            // Garder la navigation Tab/Entrée vers les cases, mais suspendre les lancements par numéro.
+            if (e.Key != Key.Tab && e.Key != Key.Enter && e.Key != Key.Space) e.Handled = true;
+            return;
+        }
 
         // SONDE TEMPORAIRE — « Entree ne lance rien, de temps en temps ».
         // Le gestionnaire de la zone de recherche ne s'execute que si le focus clavier y est.
@@ -586,15 +599,19 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             for (int col = 0; col < ShortcutActionService.GridCols; col++)
             {
                 var entry = onPage.FirstOrDefault(s => s.Row == row && s.Col == col);
-                cells.Add(entry is { Name.Length: > 0 } ? Occupied(entry) : new TileCell { Row = row, Col = col });
+                cells.Add(entry?.IsGroup == true ? GroupCell(entry) : entry is { Name.Length: > 0 }
+                    ? Occupied(entry) : new TileCell { Page = CurrentPage, Row = row, Col = col });
             }
         }
 
+        MarkMoveTargets(cells, all);
         ShortcutsGrid.ItemsSource = cells;
     }
 
     private static TileCell Occupied(ShortcutEntry entry) => new()
     {
+        Page = entry.Page,
+        Slot = entry.Slot,
         Row = entry.Row,
         Col = entry.Col,
         Entry = entry,
@@ -779,6 +796,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
         menu.Items.Clear();
 
+        AppendTileMenuTitle(menu, entry.Name);
         var changeIcon = new MenuItem { Header = Loc.T("Quick_Tile_ChangeIcon") };
         changeIcon.Click += (_, _) => ChangeIcon(entry);
         var edit = new MenuItem { Header = Loc.T("Quick_Tile_Edit") };
@@ -808,6 +826,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
         menu.Items.Add(new Separator());
         menu.Items.Add(delete);
+        AppendGroupMenu(menu, CellOf(sender)!);
     }
 
     /// <summary>Menu d'une case libre : ajouter, à l'endroit où l'on a cliqué.</summary>
@@ -819,8 +838,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         menu.Items.Clear();
 
         var add = new MenuItem { Header = Loc.T("Quick_Tile_Add") };
-        add.Click += async (_, _) => await AddTile(cell.Row, cell.Col);
+        add.Click += async (_, _) => await AddTile(cell.Row, cell.Col, cell.Slot);
         menu.Items.Add(add);
+        AppendGroupMenu(menu, cell);
     }
 
     /// <summary>
@@ -831,7 +851,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// centaines de millisecondes d'ordinaire, cinq secondes au pire si le réseau ne répond pas.
     /// Bloquer le thread d'interface pendant ce temps figerait la grille.
     /// </remarks>
-    private async Task AddTile(int row, int col)
+    private async Task AddTile(int row, int col, int? slot = null)
     {
         var dlg = new ShortcutDialog(row: row, col: col) { Owner = this };
         if (dlg.ShowDialog() != true) return;
@@ -843,7 +863,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             IconPath = string.IsNullOrEmpty(dlg.Entry.IconPath) ? null : dlg.Entry.IconPath,
             Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
         };
-        var r = await ShortcutActionService.AddAsync([item], Files);
+        var r = slot is { } childSlot
+            ? await ShortcutActionService.AddInGroupAsync(item, childSlot, Files)
+            : await ShortcutActionService.AddAsync([item], Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
@@ -857,14 +879,14 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         {
             Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
             IconPath = dlg.Entry.IconPath, Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
-        }, Files);
+        }, Files, entry.Slot);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
 
     private void DuplicateTile(ShortcutEntry entry)
     {
-        var r = ShortcutActionService.Duplicate(entry.Page, entry.Row, entry.Col, Files);
+        var r = ShortcutActionService.Duplicate(entry.Page, entry.Row, entry.Col, Files, entry.Slot);
         if (!r.Ok) { AppDialog.Info(r.Error!, "Dupliquer", this); return; }
         PopulateGrid();
     }
@@ -945,7 +967,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         var other = _mode.IsFavorites ? TileTarget.Shortcuts : TileTarget.Favorites;
 
         var r = ShortcutActionService.Transfer(entry.Page, entry.Row, entry.Col,
-                                               Files, TileStore.FilesFor(other));
+                                               Files, TileStore.FilesFor(other), entry.Slot);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
 
         // On reste sur la grille de départ : la tuile disparaît sous les yeux, ce qui EST le
@@ -956,7 +978,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     private void MoveTileToPage(ShortcutEntry entry, int targetPage)
     {
-        var r = ShortcutActionService.Move(entry.Page, entry.Row, entry.Col, targetPage, files: Files);
+        var r = ShortcutActionService.Move(entry.Page, entry.Row, entry.Col, targetPage, files: Files, slot: entry.Slot);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
     }
@@ -1001,13 +1023,13 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     {
         if (!AppDialog.Confirm(Loc.F("Quick_Tile_ConfirmDelete", entry.Name), owner: this)) return;
 
-        ShortcutActionService.Delete(entry.Page, entry.Row, entry.Col, Files);
+        ShortcutActionService.Delete(entry.Page, entry.Row, entry.Col, Files, entry.Slot);
         PopulateGrid();
     }
 
     private void Tile_Click(object sender, RoutedEventArgs e)
     {
-        if (CellOf(sender)?.Entry is not { } entry) return;
+        if (CellOf(sender) is not { } cell || CompleteMove(cell) || cell.Entry is not { } entry) return;
         ExecuteEntry(entry);
     }
 
@@ -1017,6 +1039,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// </summary>
     private void ExecuteEntry(ShortcutEntry entry)
     {
+        if (entry.IsGroup) { OpenGroupLauncher(entry); return; }
         try
         {
             ShortcutLauncher.Launch(entry);
@@ -1119,7 +1142,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         entry.IconProfilePath = profilePath;
 
         var all = ShortcutService.Load(Files.EntriesPath);
-        var existing = all.FirstOrDefault(s => s.Page == entry.Page && s.Row == entry.Row && s.Col == entry.Col);
+        var existing = TileGroupService.Get(all, TileAddress.Of(entry));
         if (existing != null)
         {
             existing.IconPath        = dlg.FileName;
@@ -1142,7 +1165,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // La seule porte que le verrou ferme : le glissement d'une tuile vers une autre. Le clic
         // simple continue de lancer l'action dans les deux états, et les dépôts venus de
         // l'Explorateur passent par TileDrop_Drop, qui n'est pas concerné.
-        if (!_tileLock.IsUnlocked) return;
+        if (!_tileLock.IsUnlocked || _moveSource is not null) return;
         if (e.LeftButton != MouseButtonState.Pressed) return;
         if (sender is not Button dragBtn || CellOf(dragBtn)?.Entry is not { } entry) return;
 
@@ -1152,8 +1175,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             Math.Abs(diff.Y) < SystemParameters.MinimumVerticalDragDistance) return;
 
         _dragSource = entry;
-        DragDrop.DoDragDrop((Button)sender, entry, DragDropEffects.Move);
-        _dragSource = null;
+        _dragEntries = ShortcutService.Load(Files.EntriesPath);
+        try { DragDrop.DoDragDrop((Button)sender, entry, DragDropEffects.Move); }
+        finally { _dragSource = null; _dragEntries = null; }
     }
 
     // Ces deux-la existent deja dans la palette d'App.xaml : les redeclarer en dur, c'etait deux
@@ -1168,7 +1192,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private void TileDrop_DragOver(object sender, DragEventArgs e)
     {
         if (_dragSource != null)
-            e.Effects = DragDropEffects.Move;
+            e.Effects = CellOf(sender) is { } cell && TileGroupService.CanMove(
+                _dragEntries ?? [], TileAddress.Of(_dragSource), _dragSource.IsGroup ? cell.Address.Root : cell.Address)
+                ? DragDropEffects.Move : DragDropEffects.None;
         else if (IsExplorerDrop(e))
             e.Effects = DragDropEffects.Copy;
         else
@@ -1201,30 +1227,19 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             if (files?.Length > 0)
             {
                 if (Directory.Exists(files[0]))
-                    CreateFolderShortcutFromDrop(files[0], targetRow, targetCol);
+                    CreateFolderShortcutFromDrop(files[0], targetRow, targetCol, cell.Slot);
                 else if (Path.GetExtension(files[0]).Equals(".url", StringComparison.OrdinalIgnoreCase))
-                    CreateUrlShortcutFromDrop(files[0], targetRow, targetCol);
+                    CreateUrlShortcutFromDrop(files[0], targetRow, targetCol, cell.Slot);
             }
             return;
         }
 
-        // Drag & drop interne entre tuiles
+        // La même règle d'échange s'applique aux cases et aux sous-cases.
         if (_dragSource == null) return;
-        if (_dragSource.Row == targetRow && _dragSource.Col == targetCol) return;
-
-        var all    = ShortcutService.Load(Files.EntriesPath);
-        var source = all.FirstOrDefault(s => s.Page == CurrentPage && s.Row == _dragSource.Row && s.Col == _dragSource.Col);
-        var target = all.FirstOrDefault(s => s.Page == CurrentPage && s.Row == targetRow       && s.Col == targetCol);
-
-        if (source == null) return;
-
-        if (target != null)
-            (source.Row, source.Col, target.Row, target.Col) =
-            (target.Row, target.Col, source.Row, source.Col);
-        else
-            (source.Row, source.Col) = (targetRow, targetCol);
-
-        ShortcutService.Save(all, Files.EntriesPath);
+        e.Handled = true;
+        var result = TileGroupService.Mutate(Files,
+            all => TileGroupService.MoveCore(all, TileAddress.Of(_dragSource), _dragSource.IsGroup ? cell.Address.Root : cell.Address));
+        if (!result.Ok) AppDialog.Info(result.Error!, owner: this);
         PopulateGrid();
     }
 
@@ -1237,7 +1252,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         return files?.Length > 0 && DroppedShortcut.IsAcceptable(files[0]);
     }
 
-    private void CreateFolderShortcutFromDrop(string folderPath, int row, int col)
+    private void CreateFolderShortcutFromDrop(string folderPath, int row, int col, int? slot = null)
     {
         var entry = new ShortcutEntry
         {
@@ -1250,10 +1265,10 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             IconProfilePath = EnsureDefaultFolderIcon(),
         };
 
-        SaveDroppedEntry(entry, row, col);
+        SaveDroppedEntry(entry, row, col, slot);
     }
 
-    private void CreateUrlShortcutFromDrop(string urlFilePath, int row, int col)
+    private void CreateUrlShortcutFromDrop(string urlFilePath, int row, int col, int? slot = null)
     {
         // La lecture du format .url vit dans DroppedShortcut : null = pas d'URL, donc rien à créer.
         if (DroppedShortcut.FromUrlFile(urlFilePath) is not { } dropped) return;
@@ -1267,29 +1282,29 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             Type            = ShortcutType.OpenUrl,
             Command         = dropped.Url,
             IconProfilePath = EnsureDefaultBrowserIcon(),
-        }, row, col);
+        }, row, col, slot);
     }
 
-    private void SaveDroppedEntry(ShortcutEntry entry, int row, int col)
+    private void SaveDroppedEntry(ShortcutEntry entry, int row, int col, int? slot = null)
     {
-        var all      = ShortcutService.Load(Files.EntriesPath);
-        var existing = all.FirstOrDefault(s => s.Page == CurrentPage && s.Row == row && s.Col == col);
-
-        if (existing != null)
+        var files = Files;
+        var address = new TileAddress(CurrentPage, row, col, slot);
+        var existing = TileGroupService.Get(ShortcutService.Load(files.EntriesPath), address);
+        if (existing?.IsGroup == true) { AppDialog.Info(Loc.T("Group_EditChild"), owner: this); return; }
+        if (existing is not null)
         {
-            // Case occupée : ouvrir le dialog pré-rempli
-            entry.Page = CurrentPage;
             var dlg = new ShortcutDialog(entry) { Owner = this };
             if (dlg.ShowDialog() != true) return;
-            all.Remove(existing);
-            all.Add(dlg.Entry);
+            entry = dlg.Entry;
         }
-        else
+        var result = TileGroupService.Mutate(files, all =>
         {
-            all.Add(entry);
-        }
-
-        ShortcutService.Save(all, Files.EntriesPath);
+            if (!TileGroupService.IsValidDestination(all, address) || TileGroupService.Get(all, address)?.IsGroup == true)
+                return ActionResult.Fail(Loc.T("Group_InvalidDestination"));
+            TileGroupService.Put(all, address, entry);
+            return ActionResult.Success();
+        });
+        if (!result.Ok) AppDialog.Error(result.Error!, owner: this);
         PopulateGrid();
     }
 

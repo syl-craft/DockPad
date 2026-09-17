@@ -72,7 +72,7 @@ public class UsageConfigServiceTests : IDisposable
         var claude = cfg.Providers[0];
         Assert.Equal("claude", claude.Id);
         Assert.Equal("Mon Claude", claude.Name);
-        Assert.Equal("Claude Code", claude.DetectedName);
+        Assert.Equal("Claude", claude.DetectedName);
         Assert.False(claude.Hidden);
         Assert.Equal(@"C:\x", claude.DataPath);
         Assert.True(claude.Detected);
@@ -81,6 +81,23 @@ public class UsageConfigServiceTests : IDisposable
         Assert.Equal("demo", demo.Id);
         Assert.True(demo.Hidden);
         Assert.Equal(1, demo.Order);
+    }
+
+    [Fact]
+    public void Load_AncienNomClaude_RaccourcitLeLibelle()
+    {
+        File.WriteAllText(_path, """
+        {
+          "providers": [
+            { "id": "claude", "name": "Claude Code", "detectedName": "Claude Code" }
+          ]
+        }
+        """);
+
+        var provider = Assert.Single(UsageConfigService.Load(_path).Providers);
+
+        Assert.Equal("Claude", provider.Name);
+        Assert.Equal("Claude", provider.DetectedName);
     }
 
     [Fact]

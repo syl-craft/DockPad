@@ -27,13 +27,14 @@ public static class ShortcutService
     /// </remarks>
     public static List<ShortcutEntry> Load(string path)
     {
-        return JsonConfigFile.Load<List<ShortcutEntry>>(path, JsonOptions);
+        return JsonConfigFile.Load<List<ShortcutEntry>>(path, JsonOptions, TileGroupService.Normalize);
     }
 
     public static void Save(List<ShortcutEntry> entries) => Save(entries, FilePath);
 
     public static void Save(List<ShortcutEntry> entries, string path)
     {
+        TileGroupService.Normalize(entries);
         JsonConfigFile.Save(path, entries, JsonOptions);
     }
 

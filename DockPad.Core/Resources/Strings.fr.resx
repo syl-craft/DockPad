@@ -1353,4 +1353,64 @@ Cette action est irréversible.</value>
   <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
     <value>Dernier relevé local : {0:g}. Aucune fenêtre de quota actuelle exploitable. Utilisez Codex pour l'actualiser ; les relevés de plus de 15 minutes et les fenêtres expirées sont masqués.</value>
   </data>
+  <data name="Group_InvalidDestination" xml:space="preserve">
+    <value>Choisissez une case libre ou un raccourci à échanger. Un groupe ne peut pas être imbriqué dans un autre.</value>
+  </data>
+  <data name="Group_TooMany" xml:space="preserve">
+    <value>Déplacez {0} raccourci(s) hors du groupe pour utiliser cette disposition.</value>
+  </data>
+  <data name="Group_EditChild" xml:space="preserve">
+    <value>Sélectionnez un raccourci à l’intérieur du groupe.</value>
+  </data>
+  <data name="Group_Layout" xml:space="preserve">
+    <value>Disposition</value>
+  </data>
+  <data name="Group_Layout_Simple" xml:space="preserve">
+    <value>Simple — 1 raccourci</value>
+  </data>
+  <data name="Group_Layout_Quad" xml:space="preserve">
+    <value>Grille 2 × 2 — 4 raccourcis</value>
+  </data>
+  <data name="Group_Layout_TwoPlusFour" xml:space="preserve">
+    <value>Grille 2 + 4 — 6 raccourcis</value>
+  </data>
+  <data name="Group_Move" xml:space="preserve">
+    <value>Déplacer</value>
+  </data>
+  <data name="Group_ChooseDestination" xml:space="preserve">
+    <value>Choisir une case…</value>
+  </data>
+  <data name="Group_Actions" xml:space="preserve">
+    <value>Groupe</value>
+  </data>
+  <data name="Group_MoveWhole" xml:space="preserve">
+    <value>Déplacer le groupe entier…</value>
+  </data>
+  <data name="Group_Delete" xml:space="preserve">
+    <value>Supprimer le groupe…</value>
+  </data>
+  <data name="Group_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer ce groupe et ses {0} raccourci(s) ?</value>
+  </data>
+  <data name="Group_Empty" xml:space="preserve">
+    <value>Groupe vide</value>
+  </data>
+  <data name="Group_MoveHint" xml:space="preserve">
+    <value>Choisissez une destination encadrée. Case occupée : échange. Échap pour annuler.</value>
+  </data>
+  <data name="Group_Cancel" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="Group_Rename" xml:space="preserve">
+    <value>Modifier le groupe…</value>
+  </data>
+  <data name="Group_Name" xml:space="preserve">
+    <value>Nom du groupe</value>
+  </data>
+  <data name="Group_DragTip" xml:space="preserve">
+    <value>Glissez le nom pour déplacer le groupe entier (cadenas déverrouillé).</value>
+  </data>
+  <data name="Group_Edit" xml:space="preserve"><value>Modifier le groupe</value></data>
+  <data name="Group_Color" xml:space="preserve"><value>Couleur du groupe</value></data>
+  <data name="Group_InvalidColor" xml:space="preserve"><value>Choisissez une couleur au format #RRGGBB.</value></data>
 </root>

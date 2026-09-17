@@ -15,6 +15,19 @@ public enum ShortcutType
 
 public class ShortcutEntry
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public TileLayout Layout { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<ShortcutEntry?>? Children { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? GroupColor { get; set; }
+
+    [JsonIgnore] public bool IsGroup => Layout != TileLayout.Simple;
+    // Adresse calculée au chargement : les coordonnées des enfants suivent leur groupe.
+    [JsonIgnore] public int? Slot { get; set; }
+
     public int Page { get; set; } = 0;
     public int Row  { get; set; }
     public int Col  { get; set; }

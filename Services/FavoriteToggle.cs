@@ -29,7 +29,7 @@ public static class FavoriteToggle
     /// qui est le comportement juste, les deux ne rouvrent pas la même chose.
     /// </remarks>
     public static ShortcutEntry? Find(List<ShortcutEntry> entries, string url) =>
-        entries.FirstOrDefault(s => s.Type == ShortcutType.OpenUrl
+        TileGroupService.Leaves(entries).FirstOrDefault(s => s.Type == ShortcutType.OpenUrl
                                     && string.Equals(s.Command, url, StringComparison.Ordinal));
 
     /// <summary>
@@ -68,7 +68,7 @@ public static class FavoriteToggle
         if (!favorite)
         {
             if (existing is not null)
-                ShortcutActionService.Delete(existing.Page, existing.Row, existing.Col, files);
+                ShortcutActionService.Delete(existing.Page, existing.Row, existing.Col, files, existing.Slot);
             return false;
         }
 

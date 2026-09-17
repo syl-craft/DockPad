@@ -58,7 +58,7 @@ public static class IconStoreService
     public static bool SyncAll(List<ShortcutEntry> entries)
     {
         bool changed = false;
-        foreach (var entry in entries)
+        foreach (var entry in TileGroupService.Leaves(entries))
         {
             // Copier vers le profil si iconProfilePath absent
             if (!string.IsNullOrEmpty(entry.IconPath) && string.IsNullOrEmpty(entry.IconProfilePath))

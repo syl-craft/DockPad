@@ -7,6 +7,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 ## Fonctionnalités
 
 - **Grille de tuiles** multi-pages (4 × 6) avec raccourci clavier global configurable
+- **Tuiles composées** : un emplacement peut contenir un raccourci, quatre icônes en grille 2 × 2, ou deux grandes cases au-dessus de quatre petites
 - **Types de raccourcis** : lancer une commande, ouvrir un dossier, URL, terminal, basculer vers un processus
 - **Drag & drop** depuis l'Explorateur Windows (dossier → OpenFolder, fichier .url → OpenUrl)
 - **Thème clair et sombre**, lié à Windows ou choisi — bascule immédiate, barre de titre comprise
@@ -26,6 +27,44 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Démarrage automatique** avec Windows configurable
 
 ![La fenêtre d'accès rapide](docs/screenshots/window-fr.png)
+
+## Tuiles composées
+
+| Clair | Sombre |
+|---|---|
+| ![Tuiles composées en thème clair](docs/screenshots/tile-groups.png) | ![Tuiles composées en thème sombre](docs/screenshots/tile-groups-dark.png) |
+
+De gauche à droite : une tuile simple, une grille **2 × 2**, une grille **2 + 4** avec une couleur
+de groupe personnalisée, puis les mêmes dispositions à sous-cases partiellement vides.
+
+Clic droit sur une tuile ou une case vide → **Disposition** : simple, grille **2 × 2**,
+ou grille **2 + 4** (deux tiers de la hauteur en haut, un tiers en bas). Chaque icône lance
+son propre raccourci ; son nom et sa commande restent accessibles au survol. Une sous-case
+vide permet d'ajouter un raccourci. Les groupes fonctionnent aussi dans les favoris.
+
+Le nom du groupe est affiché en bas de la carte. **Groupe → Modifier le groupe…** permet
+de modifier son nom et la couleur de sa bande droite, violette par défaut. Cette bande est
+commune au groupe : les icônes internes n'ont plus de bande individuelle.
+Une fois le cadenas déverrouillé, glisser ce nom déplace le groupe entier ;
+glisser une icône déplace uniquement son raccourci.
+
+- **Déplacer → Choisir une case…** : les destinations possibles sont encadrées. Cliquer sur
+  une case vide déplace le raccourci ; cliquer sur un raccourci l'échange avec la source.
+  La pagination reste disponible et **Échap** annule le déplacement.
+- Le **glisser-déposer**, une fois le cadenas déverrouillé, fonctionne aussi entre la grille
+  et les sous-cases, ainsi qu'entre deux groupes.
+- **Groupe → Déplacer le groupe entier…** déplace tous ses raccourcis ensemble. Le même
+  sous-menu permet de dupliquer le groupe, de changer de page ou de le transférer dans les favoris.
+- Pour passer de six à quatre cases, il faut d'abord sortir les raccourcis en trop.
+  Pour revenir à une tuile simple, il doit en rester au maximum un. Aucun raccourci n'est
+  déplacé automatiquement hors du groupe. Les raccourcis conservés suivent l'ordre de lecture.
+- La recherche inclut les raccourcis des groupes. Le raccourci clavier d'une tuile composée
+  ouvre un menu permettant de choisir lequel lancer. Les groupes ne peuvent pas être imbriqués.
+
+Les anciens fichiers de raccourcis restent lisibles. Les groupes ajoutent les champs `layout`
+(`Quad` ou `TwoPlusFour`), `children` et une couleur optionnelle `groupColor` ; une valeur `null` dans `children` conserve une sous-case vide.
+L'outil MCP de lecture de la grille expose également ces informations ; les actions MCP qui
+visent uniquement une case entière déplacent ou suppriment le groupe entier.
 
 ## Thème clair et sombre
 

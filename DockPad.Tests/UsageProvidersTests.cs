@@ -162,7 +162,7 @@ public class ClaudeUsageProviderTests : IDisposable
         var probe = new ClaudeUsageProvider(_home).Probe();
 
         Assert.False(probe.Available);
-        Assert.Equal("Claude Code", probe.DisplayName);
+        Assert.Equal("Claude", probe.DisplayName);
     }
 
     [Fact]

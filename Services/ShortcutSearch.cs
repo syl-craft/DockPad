@@ -25,7 +25,7 @@ public static class ShortcutSearch
         query = query.Trim();
         if (query.Length == 0) return [];
 
-        return entries
+        return TileGroupService.Leaves(entries)
             .Where(e => e.Name.Length > 0
                         && e.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
             .OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase)
