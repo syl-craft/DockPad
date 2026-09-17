@@ -1,6 +1,8 @@
 # Changelog
 
-## À paraître
+## [1.22.0] — 2026-09-17
+
+### Nouveautés
 
 - **Menus contextuels** : le nom du raccourci ou du groupe apparaît en tête du menu au clic droit.
 - **Nom et couleur des groupes** : libellé compact en bas de carte, nom et couleur modifiables au clic droit. Une seule bande colorée identifie le groupe entier, violette par défaut. Glisser le nom déplace le groupe entier ; le curseur de déplacement apparaît uniquement quand le cadenas est déverrouillé. Le dépôt sur une autre carte échange les groupes sans déplacer leurs enfants séparément.
