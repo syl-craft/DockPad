@@ -25,12 +25,18 @@ public static class DockPadTools
         "Grille visée : \"shortcuts\" (défaut) ou \"favorites\". Les favoris ont leurs propres pages " +
         "et leurs propres positions ; les deux grilles ne se mélangent jamais.";
 
+    /// <summary>La géométrie des sous-cases, dite une fois pour tous les outils qui prennent un slot.</summary>
+    private const string SlotDoc =
+        "Sous-case d'une tuile groupée (0-based), omise = la case entière. Quad : 0-3, gauche→droite " +
+        "puis haut→bas. TwoPlusFour : 0-1 = les deux grandes du haut, 2-5 = les quatre petites du bas.";
+
     // ───── Grille ─────
 
     [McpServerTool(Name = "dockpad_grid_get")]
     [Description("État de la grille DockPad : pages, tuiles (nom, type, commande, icônes) et cases " +
                  "libres. iconProfilePath est relatif à %APPDATA%\\DockPad\\ ; iconPath est le chemin " +
-                 "source d'origine. " + PosDoc)]
+                 "source d'origine. Une tuile groupée a un layout Quad (4) ou TwoPlusFour (6), un " +
+                 "groupColor, des children (children[i] = sous-case i, null = libre) et ses freeSlots. " + PosDoc)]
     public static string GridGet(
         [Description("Limiter à une page (0-based). Omis = toutes les pages.")] int? page = null,
         [Description(TargetDoc)] string? target = null)
@@ -43,23 +49,28 @@ public static class DockPadTools
         [Description("Tuiles à créer. Champs par item : name (requis), command (requis), type " +
                      "(RunCommand|OpenFolder|OpenUrl|OpenTerminal|SwitchToProcess, défaut RunCommand), " +
                      "page/row/col (optionnels), iconPath (optionnel — sinon icône de l'exe), " +
-                     "terminal (pour OpenTerminal), processSwitch (pour SwitchToProcess).")]
+                     "terminal (pour OpenTerminal), processSwitch (pour SwitchToProcess), slot (pour poser " +
+                     "la tuile dans une sous-case libre du groupe situé en page/row/col, qui deviennent " +
+                     "alors requis — " + SlotDoc + ")")]
         List<ShortcutAddItem> items,
         [Description(TargetDoc)] string? target = null)
         => Call("dockpad_shortcut_add", new { items, target });
 
     [McpServerTool(Name = "dockpad_shortcut_update")]
-    [Description("Modifie une tuile identifiée par (page, row, col). Seuls les champs fournis changent. " + PosDoc)]
+    [Description("Modifie une tuile identifiée par (page, row, col[, slot]). Seuls les champs fournis " +
+                 "changent. Le nom, la disposition et la couleur d'un groupe passent par dockpad_group_set. " + PosDoc)]
     public static string ShortcutUpdate(int page, int row, int col,
         [Description("Champs à modifier : name, type, command, iconPath, terminal, processSwitch.")]
         ShortcutUpdate changes,
-        [Description(TargetDoc)] string? target = null)
-        => Call("dockpad_shortcut_update", new { page, row, col, changes, target });
+        [Description(TargetDoc)] string? target = null,
+        [Description(SlotDoc)] int? slot = null)
+        => Call("dockpad_shortcut_update", new { page, row, col, changes, target, slot });
 
     [McpServerTool(Name = "dockpad_shortcut_move")]
     [Description("Déplace une tuile vers une page/case de la MÊME grille, ou vers l'autre grille " +
                  "si toTarget en désigne une autre. Sans toRow/toCol : même case si libre, sinon " +
-                 "première case libre de la page cible. " + PosDoc)]
+                 "première case libre de la page cible. slot sort une tuile d'un groupe ; toSlot (avec " +
+                 "toRow/toCol) la range dans une sous-case LIBRE d'un groupe. " + PosDoc)]
     public static string ShortcutMove(int page, int row, int col,
                                       [Description("Page d'arrivée. Requis pour un déplacement dans la " +
                                                    "même grille ; ignoré quand toTarget change de grille, " +
@@ -71,14 +82,35 @@ public static class DockPadTools
                                                    "dans la grille, comme avant. Différente : la tuile change " +
                                                    "de grille et se pose à la première case libre, en gardant " +
                                                    "son icône. \"shortcuts\" ou \"favorites\".")]
-                                      string? toTarget = null)
-        => Call("dockpad_shortcut_move", new { page, row, col, toPage, toRow, toCol, target, toTarget });
+                                      string? toTarget = null,
+                                      [Description("Sous-case de départ. " + SlotDoc)] int? slot = null,
+                                      [Description("Sous-case d'arrivée, dans le groupe en (toPage, toRow, " +
+                                                   "toCol) ; toPage omis = page de départ. Refusée si " +
+                                                   "occupée. Ignorée quand toTarget change de grille.")]
+                                      int? toSlot = null)
+        => Call("dockpad_shortcut_move", new { page, row, col, toPage, toRow, toCol, target, toTarget, slot, toSlot });
 
     [McpServerTool(Name = "dockpad_shortcut_delete")]
-    [Description("Supprime une tuile. Requiert l'option « Autoriser la suppression » de DockPad. " + PosDoc)]
+    [Description("Supprime une tuile — un groupe entier avec ses tuiles si slot est omis sur un groupe. " +
+                 "Requiert l'option « Autoriser la suppression » de DockPad. " + PosDoc)]
     public static string ShortcutDelete(int page, int row, int col,
-                                       [Description(TargetDoc)] string? target = null)
-        => Call("dockpad_shortcut_delete", new { page, row, col, target });
+                                       [Description(TargetDoc)] string? target = null,
+                                       [Description(SlotDoc)] int? slot = null)
+        => Call("dockpad_shortcut_delete", new { page, row, col, target, slot });
+
+    [McpServerTool(Name = "dockpad_group_set")]
+    [Description("Crée, transforme ou habille une tuile groupée en (page, row, col), tout ou rien. " +
+                 "layout : une case vide devient un groupe vide, une tuile simple en devient la sous-case " +
+                 "0, un groupe change de disposition (refusé s'il perdait des tuiles), Simple défait un " +
+                 "groupe d'au plus une tuile. name et color s'appliquent au groupe. Les sous-cases se " +
+                 "remplissent ensuite avec dockpad_shortcut_add (slot). " + PosDoc)]
+    public static string GroupSet(int page, int row, int col,
+        [Description("Simple, Quad (2×2) ou TwoPlusFour (2 grandes + 4 petites). Omis = inchangé.")]
+        string? layout = null,
+        [Description("Nom du groupe. Omis = inchangé.")] string? name = null,
+        [Description("Couleur du bandeau, #RRGGBB. Omise = inchangée.")] string? color = null,
+        [Description(TargetDoc)] string? target = null)
+        => Call("dockpad_group_set", new { page, row, col, layout, name, color, target });
 
     // ───── Pages ─────
 

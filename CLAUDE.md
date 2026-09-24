@@ -155,7 +155,7 @@ Services/Usage/
     UsageViewModel.cs                     État affichable du bandeau (onglets, jauges, métriques)
 
 Mcp/
-    DockPadTools.cs                        Les 13 outils dockpad_* exposés au SDK MCP (relais vers le pipe)
+    DockPadTools.cs                        Les 14 outils dockpad_* exposés au SDK MCP (relais vers le pipe)
     McpRelay.cs                            Hôte MCP stdio du mode --mcp (SDK ModelContextProtocol, aucune UI/mutex)
 
 Secrets/                                 PERIMETRE D'AUDIT — tout ce qui voit un secret, et rien d'autre
@@ -884,16 +884,25 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
 - DockPad expose un serveur MCP permettant à Claude Code / Claude Desktop de piloter la grille, les pages et les navigateurs
 - **Architecture** : Claude lance `DockPad.exe --mcp` — mode relais stdio (SDK officiel `ModelContextProtocol`), **aucune UI ni mutex**, détecté dans `App.xaml.cs` avant l'acquisition du mutex → chaque appel d'outil sérialise `{tool, args}` en JSON et l'envoie sur le named pipe `DockPad_McpPipe` (`McpPipeService`, multi-instances : Claude Code + Claude Desktop simultanés) → l'instance principale (déjà lancée par l'utilisateur) reçoit la requête : vérifie les options (`mcp.json`), exécute via les services d'actions **partagés avec l'UI** (`ShortcutActionService`, `PageActionService`, `BrowserActionService`), journalise (`McpLogService`), déclenche `RefreshGrid()` sur la grille si mutation, puis répond `{ok, data, error}` en une ligne
 - **DockPad doit être lancé** — sinon le pipe est injoignable et l'outil renvoie une erreur explicite (« DockPad n'est pas lancé — démarre l'application pour utiliser ce serveur MCP »)
-- **13 outils** `dockpad_<domaine>_<action>` (`Mcp/DockPadTools.cs`), positions **0-based** (page 0 = première page, lignes 0-3, colonnes 0-5) :
-  - Grille : `grid_get`, `shortcut_add` (lot tout-ou-rien, position omise = première case libre), `shortcut_update`, `shortcut_move`, `shortcut_delete` 🔒
+- **14 outils** `dockpad_<domaine>_<action>` (`Mcp/DockPadTools.cs`), positions **0-based** (page 0 = première page, lignes 0-3, colonnes 0-5) :
+  - Grille : `grid_get`, `shortcut_add` (lot tout-ou-rien, position omise = première case libre), `shortcut_update`, `shortcut_move`, `shortcut_delete` 🔒, `group_set`
   - Pages : `page_add`, `page_update` (`iconPath` omis = inchangé, `""` = retirer l'icône ; `newIndex` = déplacement par insertion), `page_delete` 🔒
   - Navigateurs & règles : `browser_list`, `browser_update`, `rule_list`, `rule_add`, `rule_delete` 🔒 — `browser_list` expose `parentId`/`profileDirectory` (une entrée avec `parentId` est un profil, visable par une règle) ; `order` se compte dans la fratrie (parmi les navigateurs, ou parmi les profils d'un même navigateur)
   - 🔒 = refusé si `AllowDelete` est désactivé dans `mcp.json`
+- **Tuiles groupées** : `dockpad_group_set` passe par `TileGroupService.ChangeLayoutCore`, le même
+  cœur que le menu de l'interface — une tuile simple devient la sous-case 0, un groupe qui
+  perdrait des tuiles est refusé. `slot` sur `shortcut_add/update/delete/move`, `toSlot` sur
+  `shortcut_move`. **Deux écarts assumés avec le glisser-déposer** : une sous-case occupée est
+  refusée au lieu d'échangée (un modèle ne voit pas l'échange, et c'est la règle du serveur partout
+  ailleurs), et `group_set` n'est **pas** derrière `allowDelete` — défaire un groupe n'est permis
+  qu'à une tuile au plus, donc rien ne se perd. `AddCore` rend ses entrées créées en interne :
+  `AddAsync` y posait les icônes par `all.TakeLast(n)`, faux dès qu'une tuile entre dans une
+  sous-case au lieu d'être ajoutée à la liste
 - **`toTarget` sur `dockpad_shortcut_move`** : omis — ou égal à `target` — le déplacement reste
   dans la grille, `toPage` compris, exactement comme avant. Différent, la tuile change de grille
   et se pose à la première case libre : les deux grilles ayant leurs propres pages, une position
   d'arrivée n'aurait pas de sens. `toPage` est donc devenu optionnel
-- **`target` sur les huit outils de grille et de pages** : `"shortcuts"` (défaut) ou `"favorites"`.
+- **`target` sur les neuf outils de grille et de pages** : `"shortcuts"` (défaut) ou `"favorites"`.
   Le défaut ne peut pas changer de sens — les appels existants ne connaissent pas le paramètre. Une
   valeur inconnue est un **refus nommé** et non un repli silencieux : écrire dans la mauvaise grille
   sans le dire est le pire des deux comportements. Le verrou `allowDelete` est posé sur le **nom de

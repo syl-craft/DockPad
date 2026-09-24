@@ -75,15 +75,27 @@ public static class McpDispatcher
         var to = OptString(args, "toTarget") is { } named ? TileStore.Parse(named) : from;
 
         if (to == from)
+        {
+            int? toSlot = OptInt(args, "toSlot");
+            // toPage reste requis hors sous-case ; vers une sous-case, il vaut par défaut la page de départ.
+            int toPage = toSlot is null ? ReqInt(args, "toPage") : OptInt(args, "toPage") ?? ReqInt(args, "page");
             return ShortcutActionService.Move(
                 ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
-                ReqInt(args, "toPage"), OptInt(args, "toRow"), OptInt(args, "toCol"),
-                TileStore.FilesFor(from));
+                toPage, OptInt(args, "toRow"), OptInt(args, "toCol"),
+                TileStore.FilesFor(from), OptInt(args, "slot"), toSlot);
+        }
 
         return ShortcutActionService.Transfer(
             ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
-            TileStore.FilesFor(from), TileStore.FilesFor(to));
+            TileStore.FilesFor(from), TileStore.FilesFor(to), OptInt(args, "slot"));
     }
+
+    private static TileLayout? OptLayout(JsonElement args) =>
+        OptString(args, "layout") is not { } raw ? null
+        : Enum.TryParse<TileLayout>(raw, ignoreCase: true, out var layout) && Enum.IsDefined(layout)
+            && !int.TryParse(raw, out _)
+            ? layout
+            : throw new JsonException($"layout inconnu « {raw} » : Simple, Quad ou TwoPlusFour");
 
     private static ActionResult Execute(string tool, JsonElement args) => tool switch
     {
@@ -94,10 +106,14 @@ public static class McpDispatcher
         "dockpad_shortcut_update" => ShortcutActionService.Update(
                                          ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
                                          Deserialize<ShortcutUpdate>(args, "changes") ?? new ShortcutUpdate(),
-                                         Files(args)),
+                                         Files(args), OptInt(args, "slot")),
         "dockpad_shortcut_move"   => MoveOrTransfer(args),
         "dockpad_shortcut_delete" => ShortcutActionService.Delete(
                                          ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
+                                         Files(args), OptInt(args, "slot")),
+        "dockpad_group_set"       => ShortcutActionService.GroupSet(
+                                         ReqInt(args, "page"), ReqInt(args, "row"), ReqInt(args, "col"),
+                                         OptLayout(args), OptString(args, "name"), OptString(args, "color"),
                                          Files(args)),
         "dockpad_page_add"        => PageActionService.Add(OptString(args, "iconPath"), Files(args)),
         // iconPath : propriété absente = inchangé ; "" = retirer (mappé vers null) ; chemin = nouvelle icône
