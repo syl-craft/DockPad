@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.23.0] — 2026-09-24
+
+### Nouveautés
+
+- **Tuiles groupées pilotables par le serveur MCP** : le nouvel outil `dockpad_group_set` crée un groupe 2 × 2 ou 2 + 4 sur une case vide ou autour d'une tuile existante, change sa disposition, son nom ou sa couleur. Les sous-cases se remplissent avec `dockpad_shortcut_add` et un `slot` ; `shortcut_update`, `shortcut_delete` et `shortcut_move` visent une sous-case avec `slot`, et `shortcut_move` range une tuile dans une sous-case libre avec `toSlot`. `dockpad_grid_get` expose la couleur des groupes et leurs sous-cases libres.
+
+### Corrections
+
+- **Icônes à l'ajout par MCP** : elles sont posées sur les tuiles réellement créées, et non plus sur les dernières de la liste.
+
 ## [1.22.0] — 2026-09-17
 
 ### Nouveautés
