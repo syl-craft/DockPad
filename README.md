@@ -218,17 +218,19 @@ DockPad expose un serveur [MCP](https://modelcontextprotocol.io) : depuis Claude
 |:---:|:---:|
 | ![Options du serveur MCP](docs/screenshots/mcp-options.png) | ![Journal des actions MCP](docs/screenshots/mcp-journal.png) |
 
-**13 outils** `dockpad_<domaine>_<action>` (positions 0-based : page 0, lignes 0-3, colonnes 0-5) :
+**14 outils** `dockpad_<domaine>_<action>` (positions 0-based : page 0, lignes 0-3, colonnes 0-5) :
 
 | Domaine | Outils |
 |---|---|
-| Grille | `grid_get` · `shortcut_add` (lot tout-ou-rien) · `shortcut_update` · `shortcut_move` · `shortcut_delete` 🔒 |
+| Grille | `grid_get` · `shortcut_add` (lot tout-ou-rien) · `shortcut_update` · `shortcut_move` · `shortcut_delete` 🔒 · `group_set` |
 | Pages | `page_add` · `page_update` (icône, position) · `page_delete` 🔒 |
 | Navigateurs | `browser_list` · `browser_update` · `rule_list` · `rule_add` · `rule_delete` 🔒 |
 
 `dockpad_shortcut_move` accepte en plus un **`toTarget`** : omis, le déplacement reste dans la grille comme avant ; différent de `target`, la tuile change de grille et se pose à la première case libre, en gardant son icône.
 
-Les huit outils de grille et de pages acceptent un **`target`** optionnel — `"shortcuts"` (défaut) ou `"favorites"` — pour travailler sur l’une ou l’autre grille. Une valeur inconnue est refusée plutôt que ramenée aux raccourcis : écrire dans la mauvaise grille sans le dire serait pire.
+**Tuiles groupées** : `dockpad_group_set` crée un groupe (`Quad` ou `TwoPlusFour`) sur une case vide ou autour d’une tuile existante, change sa disposition, son nom ou sa couleur. Les sous-cases se remplissent avec `shortcut_add` et un **`slot`** ; `shortcut_update`, `shortcut_delete` et `shortcut_move` acceptent aussi `slot`, et `shortcut_move` un `toSlot` pour ranger une tuile dans une sous-case **libre** — le serveur refuse une sous-case occupée au lieu d’échanger, comme partout ailleurs. `grid_get` expose `groupColor` et `freeSlots`.
+
+Les neuf outils de grille et de pages acceptent un **`target`** optionnel — `"shortcuts"` (défaut) ou `"favorites"` — pour travailler sur l’une ou l’autre grille. Une valeur inconnue est refusée plutôt que ramenée aux raccourcis : écrire dans la mauvaise grille sans le dire serait pire.
 
 **Sécurité par défaut** : les outils 🔒 de suppression sont refusés tant que la case « Autoriser Claude à supprimer » n'est pas cochée — Claude peut construire, pas détruire. Chaque action (exécutée ✅, refusée 🚫 ou en erreur ❌) est visible dans l'onglet **Journal** et tracée dans les logs. Configuration dans `%APPDATA%\DockPad\mcp.json`, incluse dans 💾 Sauvegarder la configuration.
 
@@ -239,7 +241,7 @@ Les huit outils de grille et de pages acceptent un **`target`** optionnel — `"
 - [ ] Copier la commande d'enregistrement (⧉) et l'exécuter dans un terminal :
   `claude mcp add dockpad -s user -- "C:\DockPad\DockPad.exe" --mcp`
   (décocher « Pour tous les projets » pour un enregistrement limité au projet courant ; snippet `claude_desktop_config.json` fourni pour Claude Desktop)
-- [ ] Ouvrir une session Claude Code → `/mcp` liste le serveur `dockpad` et ses 13 outils
+- [ ] Ouvrir une session Claude Code → `/mcp` liste le serveur `dockpad` et ses 14 outils
 - [ ] Demander par exemple : *« montre-moi ma grille DockPad »* ou *« ajoute un raccourci Bloc-notes »*
 - [ ] En cas de changement de chemin de l'exe : `claude mcp remove dockpad` puis ré-ajouter (bloc « Mise à jour du chemin » de la fenêtre)
 

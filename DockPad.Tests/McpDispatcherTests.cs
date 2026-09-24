@@ -54,6 +54,19 @@ public class McpDispatcherTests
         Assert.Contains("suppression", resp.GetProperty("error").GetString(), StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("Hexa")]
+    [InlineData("1")]   // Enum.TryParse accepterait un nombre : un modèle ne doit pas deviner l'ordre de l'enum
+    public void Handle_GroupSet_LayoutInconnu_RefuseEnNommantLesValeurs(string layout)
+    {
+        var resp = Parse(McpDispatcher.Handle(
+            $$$"""{"tool":"dockpad_group_set","args":{"page":0,"row":0,"col":0,"layout":"{{{layout}}}"}}""",
+            new McpConfig()));
+
+        Assert.False(resp.GetProperty("ok").GetBoolean());
+        Assert.Contains("TwoPlusFour", resp.GetProperty("error").GetString());
+    }
+
     // ── La cible : shortcuts (défaut) ou favorites ────────────────────────────
 
     [Fact]

@@ -44,13 +44,15 @@ public static class ShortcutActionService
         {
             var all = ShortcutService.Load(files.EntriesPath);
             var configs = PageConfigService.Load(files.PagesPath);
-            var result = AddCore(all, configs, items);
+            var staged = new List<ShortcutEntry>();
+            var result = AddCore(all, configs, items, staged);
             if (!result.Ok) return result;
 
             // Icônes : fournie → copie profil ; absente → favicon du site, puis icône de l'exe
-            // associé (comme les dialogs). AddCore ajoute dans l'ordre des items, d'où l'index.
+            // associé (comme les dialogs). staged suit l'ordre des items, d'où l'index — et non la
+            // fin de la liste : une tuile posée dans une sous-case n'y est pas ajoutée.
             int i = 0;
-            foreach (var s in all.TakeLast(items.Count))
+            foreach (var s in staged)
             {
                 if (favicons.TryGetValue(i++, out var stored) && string.IsNullOrEmpty(s.IconPath))
                     s.IconProfilePath = stored;
@@ -143,8 +145,8 @@ public static class ShortcutActionService
 
     /// <summary>Variante bloquante — voir <see cref="Add"/>.</summary>
     public static ActionResult Update(int page, int row, int col, ShortcutUpdate changes,
-                                      TileFiles? files = null) =>
-        UpdateAsync(page, row, col, changes, files).GetAwaiter().GetResult();
+                                      TileFiles? files = null, int? slot = null) =>
+        UpdateAsync(page, row, col, changes, files, slot).GetAwaiter().GetResult();
 
     private static async Task<string?> ResolveFaviconForUpdateAsync(
         int page, int row, int col, ShortcutUpdate changes, TileFiles files, int? slot)
@@ -166,14 +168,15 @@ public static class ShortcutActionService
     }
 
     public static ActionResult Move(int page, int row, int col, int toPage, int? toRow = null,
-                                    int? toCol = null, TileFiles? files = null, int? slot = null)
+                                    int? toCol = null, TileFiles? files = null, int? slot = null,
+                                    int? toSlot = null)
     {
         files ??= TileStore.FilesFor(TileTarget.Shortcuts);
         lock (ConfigLock.Gate)
         {
             var all = ShortcutService.Load(files.EntriesPath);
             var configs = PageConfigService.Load(files.PagesPath);
-            var result = MoveCore(all, configs, page, row, col, toPage, toRow, toCol, slot);
+            var result = MoveCore(all, configs, page, row, col, toPage, toRow, toCol, slot, toSlot);
             if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
@@ -186,6 +189,21 @@ public static class ShortcutActionService
         {
             var all = ShortcutService.Load(files.EntriesPath);
             var result = DeleteCore(all, page, row, col, slot);
+            if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
+            return result;
+        }
+    }
+
+    /// <summary>Crée, transforme ou habille une tuile groupée — voir <see cref="GroupSetCore"/>.</summary>
+    public static ActionResult GroupSet(int page, int row, int col, TileLayout? layout, string? name,
+                                        string? color, TileFiles? files = null)
+    {
+        files ??= TileStore.FilesFor(TileTarget.Shortcuts);
+        lock (ConfigLock.Gate)
+        {
+            var all = ShortcutService.Load(files.EntriesPath);
+            var configs = PageConfigService.Load(files.PagesPath);
+            var result = GroupSetCore(all, configs, page, row, col, layout, name, color);
             if (result.Ok) ShortcutService.Save(all, files.EntriesPath);
             return result;
         }
@@ -272,13 +290,25 @@ public static class ShortcutActionService
             .Select(s => new { page = s.Page, row = s.Row, col = s.Col, name = s.Name,
                                type = s.Type.ToString(), command = s.Command,
                                iconPath = s.IconPath,
-                               iconProfilePath = s.IconProfilePath, layout = s.Layout.ToString(), children = s.Children })
+                               iconProfilePath = s.IconProfilePath, layout = s.Layout.ToString(),
+                               groupColor = s.IsGroup ? s.GroupColor : null,
+                               // children[i] est la sous-case i ; freeSlots évite au modèle de compter les null.
+                               freeSlots = s.IsGroup
+                                   ? Enumerable.Range(0, s.Children?.Count ?? 0).Where(i => s.Children![i] is null).ToList()
+                                   : null,
+                               children = s.Children })
             .ToList();
 
         return ActionResult.Success(new { gridRows = GridRows, gridCols = GridCols, pages, shortcuts });
     }
 
-    public static ActionResult AddCore(List<ShortcutEntry> all, List<PageConfig> configs, List<ShortcutAddItem> items)
+    public static ActionResult AddCore(List<ShortcutEntry> all, List<PageConfig> configs, List<ShortcutAddItem> items) =>
+        AddCore(all, configs, items, []);
+
+    /// <param name="staged">Reçoit les entrées créées, dans l'ordre des items — une tuile posée
+    /// dans une sous-case n'est pas ajoutée à <paramref name="all"/>, qui ne la montre donc pas.</param>
+    private static ActionResult AddCore(List<ShortcutEntry> all, List<PageConfig> configs,
+                                        List<ShortcutAddItem> items, List<ShortcutEntry> staged)
     {
         if (items is not { Count: > 0 })
             return ActionResult.Fail("Aucun raccourci à ajouter.");
@@ -288,9 +318,9 @@ public static class ShortcutActionService
         int lastShown = LastShown(all, configs);
 
         var errors = new List<string>();
-        var staged = new List<ShortcutEntry>();
         // occupation simulée : existant + items déjà placés dans ce lot
         var occupied = all.Select(s => (s.Page, s.Row, s.Col)).ToHashSet();
+        var occupiedSlots = new HashSet<TileAddress>();
 
         for (int i = 0; i < items.Count; i++)
         {
@@ -305,6 +335,18 @@ public static class ShortcutActionService
             if (page < 0) { errors.Add($"{id} : page invalide."); continue; }
             if (page > lastShown) { errors.Add($"{id} : page {page} inexistante (pages 0 à {lastShown}). Crée-la d'abord avec dockpad_page_add."); continue; }
 
+            if (it.Slot is { } slot)
+            {
+                if (it.Row is not { } gr || it.Col is not { } gc)
+                { errors.Add($"{id} : slot demande la position (row, col) du groupe."); continue; }
+                var address = new TileAddress(page, gr, gc, slot);
+                if (SlotError(all, address) is { } slotError) { errors.Add($"{id} : {slotError}"); continue; }
+                if (!occupiedSlots.Add(address))
+                { errors.Add($"{id} : sous-case {slot} déjà visée par un autre item du lot."); continue; }
+                staged.Add(NewEntry(it, page, gr, gc, slot));
+                continue;
+            }
+
             (int row, int col)? dest = null;
             if (it.Row is { } r0 && it.Col is { } c0)
             {
@@ -313,7 +355,7 @@ public static class ShortcutActionService
                 if (occupied.Contains((page, r0, c0)))
                 {
                     var occ = all.FirstOrDefault(s => s.Page == page && s.Row == r0 && s.Col == c0)?.Name
-                              ?? staged.First(s => s.Page == page && s.Row == r0 && s.Col == c0).Name;
+                              ?? staged.First(s => s.Page == page && s.Row == r0 && s.Col == c0 && s.Slot is null).Name;
                     errors.Add($"{id} : case (page {page}, ligne {r0}, colonne {c0}) occupée par « {occ} ». " +
                                $"Cases libres : {FreeCellsText(occupied, page)}");
                     continue;
@@ -326,25 +368,53 @@ public static class ShortcutActionService
                 if (dest is null) { errors.Add($"{id} : page {page} pleine ({GridRows * GridCols} cases)."); continue; }
             }
 
-            var entry = new ShortcutEntry
-            {
-                Page = page, Row = dest.Value.row, Col = dest.Value.col,
-                Name = it.Name, Type = it.Type, Command = it.Command,
-                IconPath = it.IconPath ?? "",
-                Terminal = it.Terminal, ProcessSwitch = it.ProcessSwitch,
-            };
+            var entry = NewEntry(it, page, dest.Value.row, dest.Value.col, slot: null);
             staged.Add(entry);
             occupied.Add((page, entry.Row, entry.Col));
         }
 
         if (errors.Count > 0)
+        {
+            staged.Clear();
             return ActionResult.Fail("Lot refusé (tout ou rien) :\n- " + string.Join("\n- ", errors));
+        }
 
-        all.AddRange(staged);
+        foreach (var entry in staged)
+            TileGroupService.Put(all, TileAddress.Of(entry), entry);
         return ActionResult.Success(new
         {
-            added = staged.Select(s => new { s.Name, page = s.Page, row = s.Row, col = s.Col }).ToList()
+            added = staged.Select(s => new { s.Name, page = s.Page, row = s.Row, col = s.Col, slot = s.Slot }).ToList()
         });
+    }
+
+    private static ShortcutEntry NewEntry(ShortcutAddItem it, int page, int row, int col, int? slot) => new()
+    {
+        Page = page, Row = row, Col = col, Slot = slot,
+        Name = it.Name, Type = it.Type, Command = it.Command,
+        IconPath = it.IconPath ?? "",
+        Terminal = it.Terminal, ProcessSwitch = it.ProcessSwitch,
+    };
+
+    /// <summary>Pourquoi une sous-case ne peut pas recevoir de tuile, ou null si elle est libre.</summary>
+    private static string? SlotError(List<ShortcutEntry> all, TileAddress address)
+    {
+        var root = TileGroupService.Get(all, address.Root);
+        if (root?.IsGroup != true)
+            return $"aucune tuile groupée en page {address.Page}, ligne {address.Row}, colonne {address.Col}. " +
+                   "Crée-la d'abord avec dockpad_group_set.";
+        int capacity = TileGroupService.Capacity(root.Layout);
+        if (address.Slot is not { } slot || slot < 0 || slot >= capacity)
+            return $"sous-case {address.Slot} hors du groupe « {root.Name} » (0 à {capacity - 1}).";
+        if (root.Children![slot] is { } occupant)
+            return $"sous-case {slot} du groupe « {root.Name} » occupée par « {occupant.Name} ». " +
+                   $"Sous-cases libres : {FreeSlotsText(root)}";
+        return null;
+    }
+
+    private static string FreeSlotsText(ShortcutEntry group)
+    {
+        var free = Enumerable.Range(0, group.Children!.Count).Where(i => group.Children[i] is null).ToList();
+        return free.Count == 0 ? "aucune" : string.Join(", ", free);
     }
 
     public static ActionResult UpdateCore(List<ShortcutEntry> all, int page, int row, int col, ShortcutUpdate changes, int? slot = null)
@@ -373,10 +443,11 @@ public static class ShortcutActionService
     }
 
     public static ActionResult MoveCore(List<ShortcutEntry> all, List<PageConfig> configs, int page, int row, int col,
-                                        int toPage, int? toRow, int? toCol, int? slot = null)
+                                        int toPage, int? toRow, int? toCol, int? slot = null, int? toSlot = null)
     {
         var s = TileGroupService.Get(all, new(page, row, col, slot));
         if (s is null) return ActionResult.Fail($"Aucune tuile en page {page}, ligne {row}, colonne {col}.");
+        if (toSlot is not null) return MoveIntoSlot(all, s, new(toPage, toRow ?? -1, toCol ?? -1, toSlot), toRow.HasValue && toCol.HasValue);
         if (toPage < 0) return ActionResult.Fail("Page cible invalide.");
         int lastShown = LastShown(all, configs);
         if (toPage > lastShown)
@@ -416,6 +487,69 @@ public static class ShortcutActionService
         TileGroupService.Put(all, new(toPage, dest.row, dest.col), s);
         TileGroupService.Normalize(all);
         return ActionResult.Success(new { s.Name, page = s.Page, row = s.Row, col = s.Col });
+    }
+
+    /// <summary>
+    /// Vers une sous-case LIBRE : l'interface échange au glisser-déposer, MCP refuse une case
+    /// occupée — même règle que partout ailleurs côté serveur, un modèle ne voit pas l'échange.
+    /// </summary>
+    private static ActionResult MoveIntoSlot(List<ShortcutEntry> all, ShortcutEntry s, TileAddress to, bool hasPosition)
+    {
+        if (!hasPosition) return ActionResult.Fail("toSlot demande toRow et toCol, la position du groupe d'arrivée.");
+        if (s.IsGroup) return ActionResult.Fail("Un groupe ne se range pas dans la sous-case d'un autre groupe.");
+        if (SlotError(all, to) is { } error) return ActionResult.Fail(char.ToUpperInvariant(error[0]) + error[1..]);
+
+        var result = TileGroupService.MoveCore(all, TileAddress.Of(s), to);
+        return result.Ok
+            ? ActionResult.Success(new { s.Name, page = s.Page, row = s.Row, col = s.Col, slot = s.Slot })
+            : result;
+    }
+
+    /// <summary>
+    /// Crée, transforme ou habille une tuile groupée, tout ou rien. <paramref name="layout"/> :
+    /// une case vide devient un groupe vide, une tuile simple en devient la sous-case 0, un groupe
+    /// change de disposition (refusé s'il perdrait des tuiles), Simple défait un groupe d'au plus une
+    /// tuile. <paramref name="name"/> et <paramref name="color"/> s'appliquent au groupe résultant.
+    /// </summary>
+    public static ActionResult GroupSetCore(List<ShortcutEntry> all, List<PageConfig> configs, int page, int row, int col,
+                                            TileLayout? layout, string? name, string? color)
+    {
+        if (layout is null && name is null && color is null)
+            return ActionResult.Fail("Rien à modifier : fournir layout, name ou color.");
+        if (page < 0 || page > LastShown(all, configs))
+            return ActionResult.Fail($"Page {page} inexistante (pages 0 à {LastShown(all, configs)}).");
+        if (row < 0 || row >= GridRows || col < 0 || col >= GridCols)
+            return ActionResult.Fail($"Position hors bornes (lignes 0-{GridRows - 1}, colonnes 0-{GridCols - 1}).");
+        if (color is not null && !TileGroupService.IsValidColor(color))
+            return ActionResult.Fail("Couleur invalide : format #RRGGBB attendu.");
+        if (name is not null && string.IsNullOrWhiteSpace(name))
+            return ActionResult.Fail("Le nom ne peut pas être vide.");
+
+        // Tout refus est décidé avant la première mutation : ChangeLayoutCore refuse sans rien toucher.
+        var address = new TileAddress(page, row, col);
+        var resulting = layout ?? TileGroupService.Get(all, address)?.Layout ?? TileLayout.Simple;
+        if ((name is not null || color is not null) && resulting == TileLayout.Simple)
+            return ActionResult.Fail($"Aucune tuile groupée en page {page}, ligne {row}, colonne {col} : " +
+                                     "fournir layout (Quad ou TwoPlusFour) pour en créer une.");
+
+        if (layout is { } l)
+        {
+            var changed = TileGroupService.ChangeLayoutCore(all, address, l);
+            if (!changed.Ok) return changed;
+        }
+        var group = TileGroupService.Get(all, address);
+        if (group?.IsGroup == true)
+        {
+            if (name is not null) group.Name = name.Trim();
+            if (color is not null) group.GroupColor = color.ToUpperInvariant();
+        }
+
+        return ActionResult.Success(group is null ? null : new
+        {
+            name = group.Name, page, row, col, layout = group.Layout.ToString(),
+            groupColor = group.IsGroup ? group.GroupColor : null,
+            freeSlots = group.IsGroup ? Enumerable.Range(0, group.Children!.Count).Where(i => group.Children[i] is null).ToList() : null,
+        });
     }
 
     /// <summary>Une case libre dans une grille, et s'il a fallu inventer la page pour l'avoir.</summary>
