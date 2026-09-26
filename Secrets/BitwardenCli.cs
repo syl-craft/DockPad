@@ -15,6 +15,16 @@ public sealed class BwOrganization
     public string Name { get; set; } = "";
 }
 
+/// <summary>Une collection d'organisation, telle que <c>bw list collections</c> la rend.</summary>
+public sealed class BwCollection
+{
+    public string Id { get; set; } = "";
+
+    public string Name { get; set; } = "";
+
+    public string? OrganizationId { get; set; }
+}
+
 /// <summary>Ce qu'un appel à la CLI a produit.</summary>
 public sealed record CliResult(int ExitCode, string Stdout, string Stderr)
 {
@@ -155,6 +165,9 @@ public static class BitwardenCli
     public static IReadOnlyList<BwOrganization> ParseOrganizations(string stdout) =>
         ParseArray<BwOrganization>(stdout);
 
+    public static IReadOnlyList<BwCollection> ParseCollections(string stdout) =>
+        ParseArray<BwCollection>(stdout);
+
     private static IReadOnlyList<T> ParseArray<T>(string stdout)
     {
         var json = FromFirstBrace(stdout, '[');
@@ -174,18 +187,25 @@ public static class BitwardenCli
 
     /// <summary>
     /// Lance la CLI. <paramref name="secretEnvironment"/> est le <b>seul</b> chemin par lequel un
-    /// mot de passe ou une clé de session atteint le processus.
+    /// mot de passe ou une clé de session atteint le processus, et <paramref name="stdin"/> le seul
+    /// par lequel une fiche l'atteint.
     /// </summary>
+    /// <param name="stdin">
+    /// Une fiche encodée pour <c>bw create</c> ou <c>bw edit</c>. Jamais en argument : une ligne de
+    /// commande est lisible de tout processus de la machine.
+    /// </param>
     public static async Task<CliResult> RunAsync(
         string exe,
         IReadOnlyList<string> arguments,
         IReadOnlyDictionary<string, string> secretEnvironment,
-        CancellationToken token)
+        CancellationToken token,
+        string? stdin = null)
     {
         var psi = new ProcessStartInfo(exe)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
+            RedirectStandardInput = stdin is not null,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8,
@@ -197,6 +217,13 @@ public static class BitwardenCli
 
         using var process = Process.Start(psi)
             ?? throw new InvalidOperationException("The Bitwarden CLI could not be started.");
+
+        if (stdin is not null)
+        {
+            // Base64 : pur ASCII, donc indifférent à l'encodage de la console.
+            await process.StandardInput.WriteAsync(stdin.AsMemory(), token).ConfigureAwait(false);
+            process.StandardInput.Close();
+        }
 
         // Lecture asynchrone des deux flux : `bw list items` remplit largement le tampon d'un pipe,
         // et attendre la fin du processus avant de lire l'interbloquerait.

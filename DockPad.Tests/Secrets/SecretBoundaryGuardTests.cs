@@ -167,6 +167,39 @@ public class SecretBoundaryGuardTests
         return line;
     }
 
+    /// <summary>
+    /// Une collection littérale qui porte la charge utile d'un item — le JSON d'une fiche, ou son
+    /// encodage.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ArgumentShape"/> ne suffit pas : il exige un <c>"--</c>, et <c>["create", "item", …]</c>
+    /// n'en porte aucun. On regarde donc le <b>contenu</b> des crochets.
+    /// </remarks>
+    private static readonly Regex PayloadInCollection = new(
+        @"\[[^\]]*(payload|encoded|json|base64|Encode\(|NewItem\(|AddFields\()[^\]]*\]",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>Une instruction qui construit ou passe des arguments de processus.</summary>
+    private static readonly Regex LaunchShape =
+        new(@"RunAsync\(|ArgumentList|string\[\]", RegexOptions.Compiled);
+
+    [Fact]
+    public void LaChargeUtileDUnItemPasseParLEntreeStandard()
+    {
+        // `bw create item <json>` accepte la fiche en argument : ce serait les valeurs saisies,
+        // en clair, lisibles de tout processus. Elle passe par stdin, et seulement par là.
+        var fautifs = new List<string>();
+
+        foreach (var (file, statement, number) in SecretStatements())
+        {
+            if (!LaunchShape.IsMatch(statement)) continue;
+            if (PayloadInCollection.IsMatch(statement))
+                fautifs.Add($"{Path.GetFileName(file)}:{number} → {statement.Trim()}");
+        }
+
+        Assert.Empty(fautifs);
+    }
+
     // ───────────── Parcours ─────────────
 
     /// <summary>Les types déclarés dans le dossier — ce que la frontière protège.</summary>
