@@ -473,17 +473,32 @@ public partial class SecretInjectionWindow : Window
             await SecretInjectionService.CreateAsync(session, creations, collectionId, _cancellation.Token)
                 .ConfigureAwait(true);
         }
-        catch (OperationCanceledException) when (Timeout()) { ShowTimeout(); return; }
-        catch (OperationCanceledException) { return; }
+        // Aucune clé de session ne survit à une injection — y compris celle-ci, annulée ou en
+        // échec. Les trois branches qui n'atteignent pas Finish() (qui la referme déjà) doivent
+        // donc la refermer elles-mêmes ; sinon le SecretWriter, et la clé qu'il tient, vivrait
+        // jusqu'à la fermeture de la fenêtre.
+        catch (OperationCanceledException) when (Timeout()) { AbandonSession(); ShowTimeout(); return; }
+        catch (OperationCanceledException) { AbandonSession(); return; }
         catch (Exception ex)
         {
             // La relecture a échoué : ce qui a été écrit l'est, mais on ne peut pas le prouver.
             LogService.Warn(ex, "Création de secrets dans le coffre");
+            AbandonSession();
             ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), ex.GetType().Name));
             return;
         }
 
         Finish();
+    }
+
+    /// <summary>
+    /// Referme la session hors du chemin de <see cref="Finish"/> — annulation ou échec de
+    /// <see cref="Create_Click"/> — pour que la clé de session ne lui survive pas.
+    /// </summary>
+    private void AbandonSession()
+    {
+        _session?.Close();
+        _session = null;
     }
 
     /// <summary>Les valeurs saisies ne restent pas dans les contrôles une fois parties.</summary>
