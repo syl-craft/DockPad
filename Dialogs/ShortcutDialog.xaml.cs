@@ -442,6 +442,14 @@ public partial class ShortcutDialog : Window
 
     private void TryAutoFillIcon()
     {
+        // Un dossier n'a pas d'exécutable : il prend l'icône que pose déjà son dépôt depuis
+        // l'Explorateur, plutôt que de rester la seule tuile sans icône.
+        if (Entry.Type == ShortcutType.OpenFolder)
+        {
+            Entry.IconProfilePath = IconStoreService.StoreDefaultFolderIcon();
+            return;
+        }
+
         string? exePath = Entry.Type switch
         {
             ShortcutType.RunCommand      => ParseExe(Entry.Command),

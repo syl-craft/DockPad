@@ -231,6 +231,32 @@ public static class IconStoreService
     }
 
     /// <summary>
+    /// L'icône dossier par défaut (<c>Assets/folder.png</c>), ou <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// Lue dans les ressources de l'assembly et non par <c>Application.GetResourceStream</c> : un
+    /// pack URI se résout dans l'assembly <b>hôte</b>, qui n'est pas DockPad sous un outil de
+    /// capture ou un test.
+    /// </remarks>
+    public static byte[]? DefaultFolderIconBytes()
+    {
+        try
+        {
+            var resources = new System.Resources.ResourceManager("DockPad.g", typeof(IconStoreService).Assembly);
+            using var stream = resources.GetStream("assets/folder.png");
+            if (stream is null) return null;
+            using var ms = new MemoryStream();
+            stream.CopyTo(ms);
+            return ms.ToArray();
+        }
+        catch (Exception ex) { LogService.Warn(ex, "Lecture de l'icône dossier par défaut"); return null; }
+    }
+
+    /// <summary>L'icône dossier par défaut, mise en store. Chemin relatif au profil, ou <c>null</c>.</summary>
+    public static string? StoreDefaultFolderIcon() =>
+        DefaultFolderIconBytes() is { } data ? StoreBytes(data, ".png") : null;
+
+    /// <summary>
     /// Enregistre des bytes d'icône dans le store (déduplication SHA1).
     /// Retourne le chemin relatif au profil, ou null si échec.
     /// </summary>

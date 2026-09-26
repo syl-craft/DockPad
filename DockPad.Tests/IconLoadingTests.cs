@@ -83,4 +83,15 @@ public class IconLoadingTests : IDisposable
 
         Assert.Null(IconStoreService.LoadImage(path));
     }
+
+    [Fact]
+    public void IconeDossierParDefaut_SeLitSansInstanceApplication()
+    {
+        // Le serveur MCP et le dialogue en dépendent pour une tuile OpenFolder sans icône. Un pack
+        // URI se résoudrait dans l'assembly hôte — ici celle des tests — et rendrait null.
+        var data = IconStoreService.DefaultFolderIconBytes();
+
+        Assert.NotNull(data);
+        Assert.Equal(new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G' }, data![..4]);
+    }
 }

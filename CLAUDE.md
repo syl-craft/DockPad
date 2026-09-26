@@ -501,6 +501,7 @@ favori sans jamais ouvrir le lien.
 - À la sauvegarde, l'icône source est copiée dans le store (déduplication SHA1) ; les `.exe`/`.dll` sont extraits et sauvegardés en `.png`
 - `IconProfilePath` (chemin relatif au profil, pointe dans le store) est la source d'affichage ; `IconPath` (chemin absolu d'origine) n'est gardé qu'à titre de provenance
 - À la création/modification : si aucune icône spécifiée, l'icône de l'exe associé est utilisée automatiquement (RunCommand, SwitchToProcess, OpenTerminal)
+- **Une tuile `OpenFolder` sans icône prend l'icône dossier par défaut** (`Assets/folder.png`, `IconStoreService.StoreDefaultFolderIcon`) — par le dialogue, par le serveur MCP (`dockpad_shortcut_add`/`update`) et par le dépôt depuis l'Explorateur, qui était le seul à le faire. Un dossier n'a pas d'exécutable dont tirer une icône, et une tuile créée par MCP restait vide. L'icône est lue dans les ressources de l'assembly, **pas par pack URI** : celui-ci se résout dans l'assembly hôte, et un test le vérifie
 - **↻ Actualiser** : resynchronise le store pour toutes les entrées existantes, **des deux grilles** — ne traiter que le mode affiché laissait un favori sans icône jusqu'à ce qu'on pense à refaire le geste depuis l'autre mode, et rien n'expliquait l'écart
 
 ### Icône automatique des tuiles web (FaviconService)
