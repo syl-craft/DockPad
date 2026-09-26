@@ -107,7 +107,9 @@ public sealed class CodexUsageProvider : IUsageProvider
             Name = Name,
             Glyph = PastilleGlyph,
             AccentColor = PastilleAccent,
-            Model = totals.Model,
+            // Aucun tour dans la fenêtre : le modèle configuré plutôt qu'un tiret, qui laisserait
+            // croire que l'information n'existe pas.
+            Model = totals.Model is { Length: > 0 } used ? used : CodexUsageReader.ConfiguredModel(_home),
             SessionTokens = totals.Session,
             DayTokens = totals.Day,
             MonthTokens = totals.Month,

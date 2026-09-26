@@ -112,6 +112,7 @@ public class UsageFormatTests
         // Le rendu suit la langue de l'application, pas une culture de thread posée par ailleurs :
         // c'est Loc qui décide. Sans cette garantie, un Task.Run parti avant une bascule
         // afficherait des nombres dans l'ancienne langue.
+        Francais();
         var precedente = CultureInfo.CurrentCulture;
         try
         {
@@ -172,5 +173,29 @@ public class UsageFormatTests
             Assert.Equal("lun. 00h", UsageFormat.Reset(new DateTime(2026, 8, 24, 0, 0, 0), now));
         }
         finally { CultureInfo.CurrentCulture = precedente; }
+    }
+
+    // --- Age
+
+    [Theory]
+    [InlineData(0, "il y a 0 min")]
+    [InlineData(59, "il y a 59 min")]
+    [InlineData(60, "il y a 1 h")]
+    [InlineData(119, "il y a 1 h")]     // tronqué : « 2 h » ne sera vrai que dans une minute
+    [InlineData(1440, "il y a 1 j")]
+    [InlineData(-5, "il y a 0 min")]    // horloge décalée : jamais « il y a -5 min »
+    public void Age_TronqueALUniteLaPlusGrande(int minutes, string attendu)
+    {
+        Francais();
+        var now = new DateTime(2026, 9, 26, 12, 0, 0);
+        Assert.Equal(attendu, UsageFormat.Age(now.AddMinutes(-minutes), now));
+    }
+
+    [Fact]
+    public void Age_EnAnglais()
+    {
+        Anglais();
+        var now = new DateTime(2026, 9, 26, 12, 0, 0);
+        Assert.Equal("3 h ago", UsageFormat.Age(now.AddHours(-3), now));
     }
 }

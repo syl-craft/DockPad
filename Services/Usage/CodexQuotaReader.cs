@@ -10,7 +10,13 @@ public sealed record CodexQuotaSnapshot(DateTimeOffset ObservedAt, UsageWindow? 
 /// <summary>Extrait payload.rate_limits des événements token_count.</summary>
 public static class CodexQuotaReader
 {
-    public static readonly TimeSpan MaxAge = TimeSpan.FromMinutes(15);
+    /// <summary>
+    /// Au-delà, le relevé reste affiché mais daté. Codex n'a pas d'API de quota : ce relevé ne se
+    /// renouvelle que quand on s'en sert, et le masquer faisait disparaître la jauge un quart
+    /// d'heure après chaque session, soit la plupart du temps. Un relevé ancien ne peut que
+    /// sous-estimer — le chiffre ne monte que si Codex est utilisé.
+    /// </summary>
+    public static readonly TimeSpan FreshFor = TimeSpan.FromMinutes(15);
 
     public static CodexQuotaSnapshot? ParseLine(string line)
     {
@@ -45,16 +51,27 @@ public static class CodexQuotaReader
         catch (JsonException) { return null; }
     }
 
-    /// <summary>Écarte les relevés futurs ou trop anciens et les fenêtres expirées.</summary>
+    /// <summary>Écarte les relevés futurs et les fenêtres expirées ; date les relevés anciens.</summary>
     public static CodexQuotaSnapshot? Current(CodexQuotaSnapshot? snapshot, DateTime now)
     {
         if (snapshot is null) return null;
         var utc = new DateTimeOffset(now.ToUniversalTime());
         var age = utc - snapshot.ObservedAt;
-        if (age < TimeSpan.Zero || age > MaxAge) return null;
+        if (age < TimeSpan.Zero) return null;
+        DateTime? observed = age > FreshFor ? snapshot.ObservedAt.LocalDateTime : null;
 
-        UsageWindow? Fresh(UsageWindow? window) =>
-            window?.ResetsAt is { } reset && reset.ToUniversalTime() <= utc.UtcDateTime ? null : window;
+        // Une fenêtre sans heure de remise à zéro ne dit pas si elle court encore : ancienne,
+        // elle affirmerait un chiffre qui a peut-être déjà repassé à zéro.
+        UsageWindow? Fresh(UsageWindow? window) => window switch
+        {
+            null => null,
+            { ResetsAt: { } reset } when reset.ToUniversalTime() <= utc.UtcDateTime => null,
+            { ResetsAt: null } when observed is not null => null,
+            _ => observed is null ? window : new UsageWindow
+            {
+                UsedPct = window.UsedPct, ResetsAt = window.ResetsAt, ObservedAt = observed,
+            },
+        };
         return snapshot with { Session = Fresh(snapshot.Session), Week = Fresh(snapshot.Week) };
     }
 

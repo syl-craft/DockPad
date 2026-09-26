@@ -73,6 +73,19 @@ public static class UsageFormat
             : reset.ToString(Loc.T("Usage_DayTimeFormat"), Display);
     }
 
+    /// <summary>
+    /// Âge d'un relevé : « il y a 12 min », « il y a 3 h », « il y a 2 j ». Tronqué et non
+    /// arrondi : « il y a 1 h » pour 1 h 50 reste vrai, « il y a 2 h » ne l'est pas encore.
+    /// </summary>
+    public static string Age(DateTime observedAt, DateTime now)
+    {
+        var age = now - observedAt;
+        if (age < TimeSpan.Zero) age = TimeSpan.Zero;
+        if (age.TotalHours < 1) return Loc.F("Usage_Age_Minutes", (int)age.TotalMinutes);
+        if (age.TotalDays < 1) return Loc.F("Usage_Age_Hours", (int)age.TotalHours);
+        return Loc.F("Usage_Age_Days", (int)age.TotalDays);
+    }
+
     /// <summary>Une décimale, mais pas de « ,0 » inutile : 1 000 → « 1 », 1 050 → « 1,1 ».</summary>
     private static string Trim(double value)
     {

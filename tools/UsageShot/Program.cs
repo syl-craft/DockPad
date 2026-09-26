@@ -46,7 +46,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-codex|panel-idle|panel-loading|panel-quota|window|window-off|window-unlocked|window-favorites|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-codex|panel-codex-stale|panel-idle|panel-loading|panel-quota|window|window-off|window-unlocked|window-favorites|config> <cheminPng>");
             return;
         }
 
@@ -61,8 +61,8 @@ internal static class Program
 
         // « panel-tabs » rend un second fournisseur visible : le cas par défaut n'a qu'un seul
         // fournisseur, et c'est celui qu'il faut montrer en premier.
-        var fixture = FixtureConfig(secondVisible: target is "panel-tabs" or "panel-idle" or "panel-codex",
-                                    idle: target is "panel-idle" or "panel-codex");
+        var fixture = FixtureConfig(secondVisible: target is "panel-tabs" or "panel-idle" or "panel-codex" or "panel-codex-stale",
+                                    idle: target is "panel-idle" or "panel-codex" or "panel-codex-stale");
         // « window-off » : bandeau désactivé, pour vérifier qu'il ne laisse aucune place derrière lui.
         if (target == "window-off") fixture.Enabled = false;
         UsageConfigService.Save(fixture);
@@ -111,10 +111,11 @@ internal static class Program
         // Le bandeau seul est rendu hors écran : une fenêtre à SizeToContent mesure avant que les
         // données arrivent et n'en reprend pas la hauteur, ce qui rognait la capture. Measure et
         // Arrange explicites donnent des dimensions déterministes.
-        if (target is "panel" or "panel-tabs" or "panel-codex" or "panel-idle" or "panel-loading" or "panel-quota")
+        if (target is "panel" or "panel-tabs" or "panel-codex" or "panel-codex-stale" or "panel-idle" or "panel-loading" or "panel-quota")
         {
             CapturePanel(outPath, loading: target == "panel-loading", idle: target == "panel-idle",
-                         quotaLost: target == "panel-quota", codexQuota: target == "panel-codex");
+                         quotaLost: target == "panel-quota", codexQuota: target is "panel-codex" or "panel-codex-stale",
+                         codexStale: target == "panel-codex-stale");
             return;
         }
 
@@ -195,12 +196,12 @@ internal static class Program
 
     /// <summary>Rend le bandeau seul, sur le fond de la grille, sans passer par une fenêtre.</summary>
     private static void CapturePanel(string outPath, bool loading = false, bool idle = false,
-                                     bool quotaLost = false, bool codexQuota = false)
+                                     bool quotaLost = false, bool codexQuota = false, bool codexStale = false)
     {
         // Largeur du bandeau et marges extérieures de la capture.
         const double width = 698 + 2 * 24;
 
-        var panel = new UsagePanel { ViewModel = FixtureViewModel(loading, idle, quotaLost, codexQuota) };
+        var panel = new UsagePanel { ViewModel = FixtureViewModel(loading, idle, quotaLost, codexQuota, codexStale) };
         var frame = new Border
         {
             Padding = new Thickness(24),
@@ -233,10 +234,11 @@ internal static class Program
     /// la liste injectable de <see cref="UsageService"/> : le registre de production reste intact.
     /// </summary>
     private static UsageViewModel FixtureViewModel(bool loading = false, bool idle = false,
-                                                   bool quotaLost = false, bool codexQuota = false)
+                                                   bool quotaLost = false, bool codexQuota = false,
+                                                   bool codexStale = false)
     {
         var providers = FixtureProviders(idle, quotaLost);
-        if (codexQuota) providers[1] = new CodexQuotaDemoProvider();
+        if (codexQuota) providers[1] = new CodexQuotaDemoProvider(codexStale);
         if (loading) providers = providers.Select(p => (IUsageProvider)new SlowAfterFirstRead(p)).ToList();
         return new UsageViewModel(new UsageService(providers), UsageConfigService.Load);
     }
@@ -272,7 +274,8 @@ internal static class Program
     }
 
     /// <summary>Quotas Codex de démonstration avec une seule fenêtre hebdomadaire.</summary>
-    private sealed class CodexQuotaDemoProvider : IUsageProvider
+    /// <param name="stale">Relevé vieux de 70 min : la jauge reste, datée.</param>
+    private sealed class CodexQuotaDemoProvider(bool stale = false) : IUsageProvider
     {
         public string Id => "codex";
         public string Name => "Codex";
@@ -287,7 +290,11 @@ internal static class Program
             ProviderId = Id, Name = Name, Glyph = "C", AccentColor = "#10A37F", IsDemo = true,
             Model = "gpt-5-codex", SessionTokens = 8_100, DayTokens = 54_000,
             MonthTokens = 760_000, Requests = 31,
-            Week = new UsageWindow { UsedPct = 27, ResetsAt = DateTime.Now.AddDays(4) },
+            Week = new UsageWindow
+            {
+                UsedPct = 27, ResetsAt = DateTime.Now.AddDays(4),
+                ObservedAt = stale ? DateTime.Now.AddMinutes(-70) : null,
+            },
             UsageUrl = "https://chatgpt.com/codex/settings/usage",
         });
     }

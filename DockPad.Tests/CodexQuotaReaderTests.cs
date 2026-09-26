@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using DockPad.Models;
 using DockPad.Services.Usage;
+using DockPad.Services.Localization;
 
 namespace DockPad.Tests;
 
@@ -121,13 +122,39 @@ public class CodexQuotaReaderTests : IDisposable
         Assert.Null(CodexQuotaReader.ParseLine(Line(Now, invalid))!.Session);
     }
 
-    [Theory]
-    [InlineData(-16)]
-    [InlineData(1)]
-    public void StaleOrFutureSnapshot_IsHidden(int minutes)
+    [Fact]
+    public void FutureSnapshot_IsHidden()
     {
-        var quota = CodexQuotaReader.ParseLine(Line(Now.AddMinutes(minutes), Window(10, 300)));
+        var quota = CodexQuotaReader.ParseLine(Line(Now.AddMinutes(1), Window(10, 300)));
         Assert.Null(CodexQuotaReader.Current(quota, Now.LocalDateTime));
+    }
+
+    [Fact]
+    public void FreshSnapshot_IsNotDated()
+    {
+        var quota = CodexQuotaReader.ParseLine(Line(Now.AddMinutes(-14), Window(10, 300)));
+        Assert.Null(CodexQuotaReader.Current(quota, Now.LocalDateTime)!.Session!.ObservedAt);
+    }
+
+    [Fact]
+    public void OldSnapshot_IsKeptWhileItsWindowRuns_AndDated()
+    {
+        // Codex n'a pas d'API de quota : le relevé ne se renouvelle qu'en s'en servant. Le masquer
+        // au bout d'un quart d'heure faisait disparaître la jauge la plupart du temps.
+        var quota = CodexQuotaReader.ParseLine(Line(Now.AddHours(-3), Window(99, 10080, Now.AddDays(2))));
+        var current = CodexQuotaReader.Current(quota, Now.LocalDateTime);
+
+        Assert.Equal(99, current!.Week!.UsedPct);
+        Assert.Equal(Now.AddHours(-3).LocalDateTime, current.Week.ObservedAt);
+    }
+
+    [Fact]
+    public void OldSnapshot_WithoutResetTime_IsHidden()
+    {
+        // Sans heure de remise à zéro, rien ne dit que la fenêtre court encore.
+        var window = new { used_percent = 40, window_minutes = 300 };
+        var quota = CodexQuotaReader.ParseLine(Line(Now.AddHours(-1), window));
+        Assert.Null(CodexQuotaReader.Current(quota, Now.LocalDateTime)!.Session);
     }
 
     [Fact]
@@ -186,14 +213,46 @@ public class CodexQuotaReaderTests : IDisposable
     }
 
     [Fact]
-    public async Task Provider_HidesStaleSnapshotAndExplainsWhy()
+    public async Task Provider_KeepsOldSnapshotWithoutNotice()
     {
-        Write("sessions", "stale", Line(Now.AddMinutes(-16), Window(5, 10080)));
+        Write("sessions", "old", Line(Now.AddHours(-1), Window(5, 10080)));
+        var usage = await new CodexUsageProvider(_home, () => Now.LocalDateTime).ReadAsync(CancellationToken.None);
+        Assert.Equal(5, usage!.Week!.UsedPct);
+        Assert.Empty(usage.QuotaNotice);
+    }
+
+    [Fact]
+    public async Task Provider_HidesExpiredWindowsAndExplainsWhy()
+    {
+        Write("sessions", "expired", Line(Now.AddDays(-8), Window(5, 10080, Now.AddDays(-1))));
         var usage = await new CodexUsageProvider(_home, () => Now.LocalDateTime).ReadAsync(CancellationToken.None);
         Assert.NotNull(usage);
         Assert.Null(usage.Week);
         Assert.NotEmpty(usage.QuotaNotice);
         Assert.NotEmpty(usage.QuotaNoticeNote);
+    }
+
+    [Fact]
+    public async Task ViewModel_DatesAnOldReading()
+    {
+        Write("sessions", "old", Line(Now.AddMinutes(-90), Window(99, 10080)));
+        var service = new UsageService([new CodexUsageProvider(_home, () => Now.LocalDateTime)]);
+        var vm = new UsageViewModel(service, () => new UsageConfig(), () => Now.LocalDateTime);
+        await vm.RefreshAsync();
+
+        Assert.Equal(" · " + UsageFormat.Age(Now.AddMinutes(-90).LocalDateTime, Now.LocalDateTime), vm.WeekGauge!.Age);
+        Assert.NotEqual(Loc.F("Usage_Gauge_Tooltip", 99, 1), vm.WeekGauge.Tooltip);
+    }
+
+    [Fact]
+    public async Task ViewModel_FreshReadingHasNoAge()
+    {
+        Write("sessions", "fresh", Line(Now, Window(5, 10080)));
+        var service = new UsageService([new CodexUsageProvider(_home, () => Now.LocalDateTime)]);
+        var vm = new UsageViewModel(service, () => new UsageConfig(), () => Now.LocalDateTime);
+        await vm.RefreshAsync();
+
+        Assert.Equal("", vm.WeekGauge!.Age);
     }
 
     [Fact]

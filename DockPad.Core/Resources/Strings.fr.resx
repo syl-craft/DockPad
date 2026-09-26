@@ -1351,7 +1351,7 @@ Cette action est irréversible.</value>
     <value>Aucun relevé de quota dans les sessions locales Codex. Utilisez Codex pour actualiser les données ; les métriques de jetons restent disponibles.</value>
   </data>
   <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
-    <value>Dernier relevé local : {0:g}. Aucune fenêtre de quota actuelle exploitable. Utilisez Codex pour l'actualiser ; les relevés de plus de 15 minutes et les fenêtres expirées sont masqués.</value>
+    <value>Dernier relevé local : {0:g}. Ses fenêtres de quota sont expirées. Utilisez Codex pour l'actualiser ; les métriques de jetons restent disponibles.</value>
   </data>
   <data name="Group_InvalidDestination" xml:space="preserve">
     <value>Choisissez une case libre ou un raccourci à échanger. Un groupe ne peut pas être imbriqué dans un autre.</value>
@@ -1413,4 +1413,16 @@ Cette action est irréversible.</value>
   <data name="Group_Edit" xml:space="preserve"><value>Modifier le groupe</value></data>
   <data name="Group_Color" xml:space="preserve"><value>Couleur du groupe</value></data>
   <data name="Group_InvalidColor" xml:space="preserve"><value>Choisissez une couleur au format #RRGGBB.</value></data>
+  <data name="Usage_Age_Minutes" xml:space="preserve">
+    <value>il y a {0} min</value>
+  </data>
+  <data name="Usage_Age_Hours" xml:space="preserve">
+    <value>il y a {0} h</value>
+  </data>
+  <data name="Usage_Age_Days" xml:space="preserve">
+    <value>il y a {0} j</value>
+  </data>
+  <data name="Usage_Gauge_StaleTooltip" xml:space="preserve">
+    <value>{0} % utilisés, {1} % restants — dernier relevé : {2:g}. La valeur se met à jour à la prochaine utilisation de l'outil.</value>
+  </data>
 </root>

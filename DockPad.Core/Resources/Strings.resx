@@ -1351,7 +1351,7 @@ This cannot be undone.</value>
     <value>No quota snapshot in local Codex sessions. Use Codex to refresh the data; token metrics remain available.</value>
   </data>
   <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
-    <value>Last local snapshot: {0:g}. No usable current quota window. Use Codex to refresh it; snapshots older than 15 minutes and expired windows are hidden.</value>
+    <value>Last local snapshot: {0:g}. Its quota windows have expired. Use Codex to refresh it; token metrics remain available.</value>
   </data>
   <data name="Group_InvalidDestination" xml:space="preserve">
     <value>Choose an empty slot or a shortcut to swap. Groups cannot be nested.</value>
@@ -1413,4 +1413,16 @@ This cannot be undone.</value>
   <data name="Group_Edit" xml:space="preserve"><value>Edit group</value></data>
   <data name="Group_Color" xml:space="preserve"><value>Group color</value></data>
   <data name="Group_InvalidColor" xml:space="preserve"><value>Choose a color in #RRGGBB format.</value></data>
+  <data name="Usage_Age_Minutes" xml:space="preserve">
+    <value>{0} min ago</value>
+  </data>
+  <data name="Usage_Age_Hours" xml:space="preserve">
+    <value>{0} h ago</value>
+  </data>
+  <data name="Usage_Age_Days" xml:space="preserve">
+    <value>{0} d ago</value>
+  </data>
+  <data name="Usage_Gauge_StaleTooltip" xml:space="preserve">
+    <value>{0} % used, {1} % left — last reading: {2:g}. The value updates the next time the tool is used.</value>
+  </data>
 </root>

@@ -340,7 +340,10 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             Color = UsageFormat.GaugeColor(window.UsedPct, _config.AlertThreshold),
             // Le libellé est court par choix, mais « 62 % session » ne dit pas si le chiffre est le
             // consommé ou le restant. L'infobulle lève le doute sans coûter de place.
-            Tooltip = Loc.F("Usage_Gauge_Tooltip", window.UsedPct, window.RemainingPct),
+            Tooltip = window.ObservedAt is { } observed
+                ? Loc.F("Usage_Gauge_StaleTooltip", window.UsedPct, window.RemainingPct, observed)
+                : Loc.F("Usage_Gauge_Tooltip", window.UsedPct, window.RemainingPct),
+            Age = window.ObservedAt is { } at ? " · " + UsageFormat.Age(at, _clock()) : "",
         };
     }
 
