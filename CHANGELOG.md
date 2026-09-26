@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.23.1] — 2026-09-26
+
+### Corrections
+
+- **Quota Codex** : un relevé de plus de 15 minutes reste affiché tant que sa fenêtre court, daté (« 27 % semaine · il y a 1 h »), au lieu de disparaître derrière « Quota Codex indisponible ». Codex n'expose pas d'API de quota : le relevé local ne se renouvelle qu'en utilisant Codex, et la jauge était donc masquée la plupart du temps. La notice ne s'affiche plus que pour une fenêtre expirée ou en l'absence de tout relevé.
+- **Modèle Codex** : la colonne Modèle du bandeau Usage IA affiche le modèle réellement utilisé, lu au début de chaque tour ; elle restait vide. Sans activité sur la période, elle affiche le modèle configuré dans `config.toml`.
+- **Icône des tuiles dossier** : une tuile `OpenFolder` créée sans icône — par le serveur MCP ou par la fenêtre d'ajout — reçoit l'icône dossier par défaut, comme celles déposées depuis l'Explorateur.
+
 ## [1.23.0] — 2026-09-24
 
 ### Nouveautés
