@@ -192,7 +192,9 @@ public static class BitwardenCli
     /// </summary>
     /// <param name="stdin">
     /// Une fiche encodée pour <c>bw create</c> ou <c>bw edit</c>. Jamais en argument : une ligne de
-    /// commande est lisible de tout processus de la machine.
+    /// commande est lisible de tout processus de la machine. L'écriture est couverte par le même
+    /// délai et le même arrêt forcé que le reste de l'appel — une annulation pendant l'écriture ne
+    /// doit pas laisser bw.exe vivant avec une clé de session déverrouillée.
     /// </param>
     public static async Task<CliResult> RunAsync(
         string exe,
@@ -218,23 +220,29 @@ public static class BitwardenCli
         using var process = Process.Start(psi)
             ?? throw new InvalidOperationException("The Bitwarden CLI could not be started.");
 
-        if (stdin is not null)
-        {
-            // Base64 : pur ASCII, donc indifférent à l'encodage de la console.
-            await process.StandardInput.WriteAsync(stdin.AsMemory(), token).ConfigureAwait(false);
-            process.StandardInput.Close();
-        }
-
         // Lecture asynchrone des deux flux : `bw list items` remplit largement le tampon d'un pipe,
-        // et attendre la fin du processus avant de lire l'interbloquerait.
+        // et attendre la fin du processus avant de lire l'interbloquerait. Démarrée avant l'écriture
+        // sur l'entrée standard, pour la même raison : un `bw create item` qui écrirait déjà sur sa
+        // sortie pendant qu'on lui envoie la fiche interbloquerait sans ces lectures en vol.
         var stdout = process.StandardOutput.ReadToEndAsync(token);
         var stderr = process.StandardError.ReadToEndAsync(token);
 
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
         deadline.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
 
+        // L'écriture sur l'entrée standard vit dans CE `try` : une annulation pendant l'écriture —
+        // le délai comme la fermeture de la fenêtre d'injection — doit tuer bw.exe comme une
+        // annulation pendant l'attente de fin. Sans ça, un processus tenant une clé de session
+        // déverrouillée survivrait à l'exception, sans que rien ne le referme.
         try
         {
+            if (stdin is not null)
+            {
+                // Base64 : pur ASCII, donc indifférent à l'encodage de la console.
+                await process.StandardInput.WriteAsync(stdin.AsMemory(), deadline.Token).ConfigureAwait(false);
+                process.StandardInput.Close();
+            }
+
             await process.WaitForExitAsync(deadline.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
