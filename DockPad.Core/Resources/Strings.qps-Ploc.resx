@@ -1353,6 +1353,45 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_Create_Failed" xml:space="preserve">
     <value>{0} : l3 c0ffr3 4 r3fu53 l'3cr1tur3</value>
   </data>
+  <data name="Inject_Create_Title" xml:space="preserve">
+    <value>53cr3t5 4b53nt5 du c0ffr3</value>
+  </data>
+  <data name="Inject_Create_IntroOrg" xml:space="preserve">
+    <value>C35 v4l3ur5 53r0nt 3cr1t35 d4n5 l'0rg4n154t10n « {0} ».</value>
+  </data>
+  <data name="Inject_Create_IntroVault" xml:space="preserve">
+    <value>C35 v4l3ur5 53r0nt 3cr1t35 d4n5 t0n c0ffr3 p3r50nn3l.</value>
+  </data>
+  <data name="Inject_Create_NewItem" xml:space="preserve">
+    <value>n0uv3l 1t3m</value>
+  </data>
+  <data name="Inject_Create_ExistingItem" xml:space="preserve">
+    <value>1t3m 3x15t4nt</value>
+  </data>
+  <data name="Inject_Create_Collection" xml:space="preserve">
+    <value>C0ll3ct10n</value>
+  </data>
+  <data name="Inject_Create_CollectionMissing" xml:space="preserve">
+    <value>L4 c0ll3ct10n « {0} » n'3x15t3 p45 d4n5 l'0rg4n154t10n : l4 pr3m13r3 35t pr0p0533.</value>
+  </data>
+  <data name="Inject_Create_NoCollection" xml:space="preserve">
+    <value>L'0rg4n154t10n n'4 4ucun3 c0ll3ct10n : l35 1t3m5 4b53nt5 n3 p3uv3nt p45 3tr3 cr335.</value>
+  </data>
+  <data name="Inject_Create_EmptyHint" xml:space="preserve">
+    <value>Un ch4mp l41553 v1d3 n3 53r4 p45 cr33.</value>
+  </data>
+  <data name="Inject_Create_Show" xml:space="preserve">
+    <value>4ff1ch3r l4 v4l3ur</value>
+  </data>
+  <data name="Inject_Create_Button" xml:space="preserve">
+    <value>Cr33r 3t c0nt1nu3r</value>
+  </data>
+  <data name="Inject_Create_Skip" xml:space="preserve">
+    <value>C0nt1nu3r 54n5 cr33r</value>
+  </data>
+  <data name="Inject_State_Creating" xml:space="preserve">
+    <value>Cr34t10n d35 53cr3t5, pu15 l3ctur3…</value>
+  </data>
   <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
     <value>Qu0t4 C0d3x 1nd15p0n1bl3</value>
   </data>

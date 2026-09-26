@@ -1353,6 +1353,45 @@ Cette action est irréversible.</value>
   <data name="Inject_Create_Failed" xml:space="preserve">
     <value>{0} : le coffre a refusé l'écriture</value>
   </data>
+  <data name="Inject_Create_Title" xml:space="preserve">
+    <value>Secrets absents du coffre</value>
+  </data>
+  <data name="Inject_Create_IntroOrg" xml:space="preserve">
+    <value>Ces valeurs seront écrites dans l'organisation « {0} ».</value>
+  </data>
+  <data name="Inject_Create_IntroVault" xml:space="preserve">
+    <value>Ces valeurs seront écrites dans ton coffre personnel.</value>
+  </data>
+  <data name="Inject_Create_NewItem" xml:space="preserve">
+    <value>nouvel item</value>
+  </data>
+  <data name="Inject_Create_ExistingItem" xml:space="preserve">
+    <value>item existant</value>
+  </data>
+  <data name="Inject_Create_Collection" xml:space="preserve">
+    <value>Collection</value>
+  </data>
+  <data name="Inject_Create_CollectionMissing" xml:space="preserve">
+    <value>La collection « {0} » n'existe pas dans l'organisation : la première est proposée.</value>
+  </data>
+  <data name="Inject_Create_NoCollection" xml:space="preserve">
+    <value>L'organisation n'a aucune collection : les items absents ne peuvent pas être créés.</value>
+  </data>
+  <data name="Inject_Create_EmptyHint" xml:space="preserve">
+    <value>Un champ laissé vide ne sera pas créé.</value>
+  </data>
+  <data name="Inject_Create_Show" xml:space="preserve">
+    <value>Afficher la valeur</value>
+  </data>
+  <data name="Inject_Create_Button" xml:space="preserve">
+    <value>Créer et continuer</value>
+  </data>
+  <data name="Inject_Create_Skip" xml:space="preserve">
+    <value>Continuer sans créer</value>
+  </data>
+  <data name="Inject_State_Creating" xml:space="preserve">
+    <value>Création des secrets, puis lecture…</value>
+  </data>
   <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
     <value>Quota Codex indisponible</value>
   </data>

@@ -1353,6 +1353,45 @@ This cannot be undone.</value>
   <data name="Inject_Create_Failed" xml:space="preserve">
     <value>{0}: the vault refused the write</value>
   </data>
+  <data name="Inject_Create_Title" xml:space="preserve">
+    <value>Secrets missing from the vault</value>
+  </data>
+  <data name="Inject_Create_IntroOrg" xml:space="preserve">
+    <value>These values will be written to the organization '{0}'.</value>
+  </data>
+  <data name="Inject_Create_IntroVault" xml:space="preserve">
+    <value>These values will be written to your personal vault.</value>
+  </data>
+  <data name="Inject_Create_NewItem" xml:space="preserve">
+    <value>new item</value>
+  </data>
+  <data name="Inject_Create_ExistingItem" xml:space="preserve">
+    <value>existing item</value>
+  </data>
+  <data name="Inject_Create_Collection" xml:space="preserve">
+    <value>Collection</value>
+  </data>
+  <data name="Inject_Create_CollectionMissing" xml:space="preserve">
+    <value>The collection '{0}' does not exist in the organization: the first one is proposed.</value>
+  </data>
+  <data name="Inject_Create_NoCollection" xml:space="preserve">
+    <value>The organization has no collection: missing items cannot be created.</value>
+  </data>
+  <data name="Inject_Create_EmptyHint" xml:space="preserve">
+    <value>A field left empty will not be created.</value>
+  </data>
+  <data name="Inject_Create_Show" xml:space="preserve">
+    <value>Show the value</value>
+  </data>
+  <data name="Inject_Create_Button" xml:space="preserve">
+    <value>Create and continue</value>
+  </data>
+  <data name="Inject_Create_Skip" xml:space="preserve">
+    <value>Continue without creating</value>
+  </data>
+  <data name="Inject_State_Creating" xml:space="preserve">
+    <value>Creating secrets, then reading…</value>
+  </data>
   <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
     <value>Codex quota unavailable</value>
   </data>
