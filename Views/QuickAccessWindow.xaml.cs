@@ -1262,7 +1262,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             Name            = DroppedShortcut.FolderName(folderPath),
             Type            = ShortcutType.OpenFolder,
             Command         = folderPath,
-            IconProfilePath = EnsureDefaultFolderIcon(),
+            IconProfilePath = IconStoreService.StoreDefaultFolderIcon(),
         };
 
         SaveDroppedEntry(entry, row, col, slot);
@@ -1306,19 +1306,6 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         });
         if (!result.Ok) AppDialog.Error(result.Error!, owner: this);
         PopulateGrid();
-    }
-
-    private static string? EnsureDefaultFolderIcon()
-    {
-        try
-        {
-            var info = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/folder.png"));
-            if (info == null) return null;
-            using var ms = new System.IO.MemoryStream();
-            info.Stream.CopyTo(ms);
-            return IconStoreService.StoreBytes(ms.ToArray(), ".png");
-        }
-        catch (Exception ex) { Services.LogService.Warn(ex, "Stockage de l'icône dossier par défaut"); return null; }
     }
 
     private static string? EnsureDefaultBrowserIcon()

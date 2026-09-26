@@ -686,12 +686,21 @@ public static class ShortcutActionService
         return free.Count > 0 ? string.Join(" ", free) : "aucune";
     }
 
-    /// <summary>Icône fournie → copie profil ; absente → icône de l'exe associé (RunCommand/SwitchToProcess/OpenTerminal).</summary>
+    /// <summary>
+    /// Icône fournie → copie profil ; absente → icône de l'exe associé
+    /// (RunCommand/SwitchToProcess/OpenTerminal), ou l'icône dossier par défaut (OpenFolder) —
+    /// celle que pose déjà le dépôt d'un dossier depuis l'Explorateur.
+    /// </summary>
     private static void ApplyIcon(ShortcutEntry s)
     {
         if (!string.IsNullOrEmpty(s.IconPath))
         {
             s.IconProfilePath ??= IconStoreService.CopyToProfile(s.IconPath);
+            return;
+        }
+        if (s.Type == ShortcutType.OpenFolder)
+        {
+            s.IconProfilePath ??= IconStoreService.StoreDefaultFolderIcon();
             return;
         }
         string? exe = s.Type switch
