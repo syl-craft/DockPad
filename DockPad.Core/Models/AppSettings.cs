@@ -67,6 +67,16 @@ public class AppSettings
     public string VaultOrganization { get; set; } = "";
 
     /// <summary>
+    /// Collection où ranger un item créé depuis l'injection, par nom ou par identifiant. Vide = la
+    /// première de l'organisation.
+    /// </summary>
+    /// <remarks>
+    /// Texte libre et non liste : lister les collections demande le mot de passe maître, qui n'a
+    /// rien à faire dans les Options.
+    /// </remarks>
+    public string VaultCollection { get; set; } = "";
+
+    /// <summary>
     /// Synchroniser le cache de la CLI juste avant de lire le coffre.
     /// </summary>
     /// <remarks>

@@ -164,6 +164,12 @@
                     <TextBlock Text="{loc:T Settings_Inject_OrgHint}" Margin="0,6,0,14"
                                Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
+                    <TextBlock Text="{loc:T Settings_Inject_Collection}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                    <TextBox x:Name="TxtVaultCollection" Padding="6,5" FontSize="12"
+                             BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
+                    <TextBlock Text="{loc:T Settings_Inject_CollectionHint}" Margin="0,6,0,14"
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                         <TextBlock Text="{loc:T Settings_Inject_ClearAfter}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,10,0"/>

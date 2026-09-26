@@ -1242,6 +1242,12 @@ This cannot be undone.</value>
   <data name="Settings_Inject_OrgHint" xml:space="preserve">
     <value>Empty = search the whole vault. A dedicated organisation avoids a personal item of the same name making the lookup ambiguous.</value>
   </data>
+  <data name="Settings_Inject_Collection" xml:space="preserve">
+    <value>Default collection</value>
+  </data>
+  <data name="Settings_Inject_CollectionHint" xml:space="preserve">
+    <value>Where items created during an injection are stored. Empty = the organization's first collection.</value>
+  </data>
   <data name="Settings_Inject_ClearAfter" xml:space="preserve">
     <value>Clear the clipboard after</value>
   </data>

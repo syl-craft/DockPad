@@ -1242,6 +1242,12 @@ Cette action est irréversible.</value>
   <data name="Settings_Inject_OrgHint" xml:space="preserve">
     <value>Vide = chercher dans tout le coffre. Une organisation dédiée évite qu'un item personnel du même nom rende la résolution ambiguë.</value>
   </data>
+  <data name="Settings_Inject_Collection" xml:space="preserve">
+    <value>Collection par défaut</value>
+  </data>
+  <data name="Settings_Inject_CollectionHint" xml:space="preserve">
+    <value>Où ranger les items créés pendant une injection. Vide = la première collection de l'organisation.</value>
+  </data>
   <data name="Settings_Inject_ClearAfter" xml:space="preserve">
     <value>Effacer le presse-papier après</value>
   </data>

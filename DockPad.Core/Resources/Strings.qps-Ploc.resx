@@ -1242,6 +1242,12 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Settings_Inject_OrgHint" xml:space="preserve">
     <value>V1d3 = ch3rch3r d4n5 t0ut l3 c0ffr3. Un3 0rg4n154t10n d3d133 3v1t3 qu'un 1t3m p3r50nn3l du m3m3 n0m r3nd3 l4 r350lut10n 4mb1gu3.</value>
   </data>
+  <data name="Settings_Inject_Collection" xml:space="preserve">
+    <value>C0ll3ct10n p4r d3f4ut</value>
+  </data>
+  <data name="Settings_Inject_CollectionHint" xml:space="preserve">
+    <value>0ù r4ng3r l35 1t3m5 cr335 p3nd4nt un3 1nj3ct10n. V1d3 = l4 pr3m13r3 c0ll3ct10n d3 l'0rg4n154t10n.</value>
+  </data>
   <data name="Settings_Inject_ClearAfter" xml:space="preserve">
     <value>3ff4c3r l3 pr3553-p4p13r 4pr35</value>
   </data>

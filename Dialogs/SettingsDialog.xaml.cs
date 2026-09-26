@@ -68,6 +68,7 @@ public partial class SettingsDialog : Window
 
         TxtBwPath.Text = SettingsService.LoadBitwardenCliPath();
         TxtVaultOrg.Text = SettingsService.LoadVaultOrganization();
+        TxtVaultCollection.Text = SettingsService.LoadVaultCollection();
         TxtClearSeconds.Text = SettingsService.LoadClipboardClearSeconds().ToString();
         // L'état vient du registre, pas d'un réglage : c'est la présence des clés qui fait foi, et
         // elle peut avoir changé hors de DockPad.
@@ -266,6 +267,7 @@ public partial class SettingsDialog : Window
 
         SettingsService.SaveBitwardenCliPath(TxtBwPath.Text);
         SettingsService.SaveVaultOrganization(TxtVaultOrg.Text);
+        SettingsService.SaveVaultCollection(TxtVaultCollection.Text);
         // Une saisie illisible retombe sur le défaut plutôt que de désactiver l'effacement en
         // silence : zéro se demande explicitement.
         // Le négatif compte comme illisible : `-1` se parse, et Math.Clamp le ramènerait à 0,
