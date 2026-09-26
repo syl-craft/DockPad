@@ -162,7 +162,10 @@
                          Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"/><Run
                          Text="%" FontSize="13" FontWeight="Bold"
                          Foreground="{Binding Color, Converter={StaticResource StringToBrushConverter}}"/><Run
-                         Text=" "/><Run Text="{Binding Label, Mode=OneWay}"/>
+                         Text=" "/><Run Text="{Binding Label, Mode=OneWay}"/><Run
+                         Text="{Binding Age, Mode=OneWay}" FontStyle="Italic"/>
+                    <!-- Age : relevé ancien, affiché mais daté ; vide quand la valeur est fraîche.
+                         Collé à la Run précédente : un saut de ligne entre deux Run est un espace. -->
                 </TextBlock>
 
                 <ProgressBar Grid.Column="1" Margin="8,0,0,0"

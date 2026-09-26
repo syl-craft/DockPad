@@ -12,6 +12,13 @@ public sealed class UsageWindow
     /// </summary>
     public DateTime? ResetsAt { get; init; }
 
+    /// <summary>
+    /// Heure locale du relevé quand la valeur n'est pas fraîche, <c>null</c> sinon. Un relevé
+    /// ancien reste affiché tant que sa fenêtre court — c'est parfois la seule source —, mais il
+    /// doit le dire.
+    /// </summary>
+    public DateTime? ObservedAt { get; init; }
+
     /// <summary>Pourcentage restant, ce que l'utilisateur lit réellement sur la jauge.</summary>
     public int RemainingPct => 100 - UsedPct;
 }

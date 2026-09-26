@@ -86,6 +86,11 @@ public sealed class UsageGaugeItem
     public string Tooltip { get; init; } = "";
 
     /// <summary>
+    /// Âge du relevé, séparateur compris (« · il y a 1 h »), vide quand la valeur est fraîche.
+    /// </summary>
+    public string Age { get; init; } = "";
+
+    /// <summary>
     /// Le fournisseur expose-t-il un quota ? Faux → la barre est remplacée par « quota inconnu »
     /// plutôt que par une barre vide, qui se lirait comme « rien consommé ».
     /// </summary>

@@ -27,9 +27,11 @@ public class CodexUsageReaderTests : IDisposable
         return dir;
     }
 
-    /// <summary>Une ligne token_count telle que Codex les écrit dans un rollout.</summary>
-    private static string TokenCountLine(DateTime utc, string model,
-                                         long input, long cached, long output) =>
+    /// <summary>
+    /// Une ligne token_count telle que Codex les écrit dans un rollout — <b>sans</b> modèle : il
+    /// n'y en a pas, il vit dans le <c>turn_context</c> du tour.
+    /// </summary>
+    private static string TokenCountLine(DateTime utc, long input, long cached, long output) =>
         JsonSerializer.Serialize(new
         {
             type = "event_msg",
@@ -39,7 +41,7 @@ public class CodexUsageReaderTests : IDisposable
                 type = "token_count",
                 info = new
                 {
-                    model,
+                    model_context_window = 258400,
                     last_token_usage = new
                     {
                         input_tokens = input,
@@ -50,6 +52,21 @@ public class CodexUsageReaderTests : IDisposable
                 },
             },
         });
+
+    /// <summary>L'ouverture d'un tour, qui porte le modèle effectivement utilisé.</summary>
+    private static string TurnContextLine(DateTime utc, string model) =>
+        JsonSerializer.Serialize(new
+        {
+            timestamp = utc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture),
+            type = "turn_context",
+            payload = new { turn_id = Guid.NewGuid().ToString(), cwd = @"C:\dev", model, effort = "medium" },
+        });
+
+    private void WriteConfig(string content)
+    {
+        Directory.CreateDirectory(Path.Combine(_home, ".codex"));
+        File.WriteAllText(Path.Combine(_home, ".codex", "config.toml"), content);
+    }
 
     private string WriteRollout(string root, string name, params string[] lines)
     {
@@ -97,7 +114,9 @@ public class CodexUsageReaderTests : IDisposable
     {
         // input_tokens est le prompt entier, cached_input_tokens en est un sous-ensemble.
         var utc = DateTime.UtcNow.AddMinutes(-10);
-        WriteRollout("sessions", "rollout-1.jsonl", TokenCountLine(utc, "gpt-5-codex", 1000, 400, 60));
+        WriteRollout("sessions", "rollout-1.jsonl",
+            TurnContextLine(utc, "gpt-5-codex"),
+            TokenCountLine(utc, 1000, 400, 60));
 
         var e = Assert.Single(CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1)));
 
@@ -112,8 +131,8 @@ public class CodexUsageReaderTests : IDisposable
     public void Read_LesDeuxRacinesSontLues()
     {
         var utc = DateTime.UtcNow.AddMinutes(-10);
-        WriteRollout("sessions", "rollout-1.jsonl", TokenCountLine(utc, "m", 100, 0, 0));
-        WriteRollout("archived_sessions", "rollout-2.jsonl", TokenCountLine(utc, "m", 50, 0, 0));
+        WriteRollout("sessions", "rollout-1.jsonl", TokenCountLine(utc, 100, 0, 0));
+        WriteRollout("archived_sessions", "rollout-2.jsonl", TokenCountLine(utc, 50, 0, 0));
 
         Assert.Equal(2, CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1)).Count);
     }
@@ -125,7 +144,7 @@ public class CodexUsageReaderTests : IDisposable
         WriteRollout("sessions", "rollout-1.jsonl",
             """{"type":"session_meta","payload":{"id":"s1"}}""",
             """{"type":"response_item","payload":{"type":"message","content":"bonjour"}}""",
-            TokenCountLine(utc, "m", 10, 0, 5));
+            TokenCountLine(utc, 10, 0, 5));
 
         Assert.Single(CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1)));
     }
@@ -136,7 +155,7 @@ public class CodexUsageReaderTests : IDisposable
         var utc = DateTime.UtcNow.AddMinutes(-10);
         var path = Path.Combine(Dir("sessions"), "rollout-1.jsonl");
         File.WriteAllText(path,
-            TokenCountLine(utc, "m", 10, 0, 5) + "\n" +
+            TokenCountLine(utc, 10, 0, 5) + "\n" +
             """{"type":"event_msg","payload":{"type":"token_count","in""");
 
         Assert.Single(CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1)));
@@ -146,11 +165,11 @@ public class CodexUsageReaderTests : IDisposable
     public void Read_FichierModifieAvantLaFenetre_NEstPasLu()
     {
         var vieux = WriteRollout("sessions", "rollout-vieux.jsonl",
-            TokenCountLine(DateTime.UtcNow.AddDays(-40), "m", 10, 0, 0));
+            TokenCountLine(DateTime.UtcNow.AddDays(-40), 10, 0, 0));
         File.SetLastWriteTime(vieux, DateTime.Now.AddDays(-40));
 
         WriteRollout("sessions", "rollout-recent.jsonl",
-            TokenCountLine(DateTime.UtcNow.AddMinutes(-5), "m", 5, 0, 0));
+            TokenCountLine(DateTime.UtcNow.AddMinutes(-5), 5, 0, 0));
 
         var e = Assert.Single(CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1)));
         Assert.Equal(5, e.Input);
@@ -160,8 +179,8 @@ public class CodexUsageReaderTests : IDisposable
     public void Read_FichierQuiNEstPasUnRollout_Ignore()
     {
         var utc = DateTime.UtcNow.AddMinutes(-10);
-        File.WriteAllText(Path.Combine(Dir("sessions"), "autre-chose.jsonl"), TokenCountLine(utc, "m", 999, 0, 0));
-        WriteRollout("sessions", "rollout-1.jsonl", TokenCountLine(utc, "m", 10, 0, 0));
+        File.WriteAllText(Path.Combine(Dir("sessions"), "autre-chose.jsonl"), TokenCountLine(utc, 999, 0, 0));
+        WriteRollout("sessions", "rollout-1.jsonl", TokenCountLine(utc, 10, 0, 0));
 
         var e = Assert.Single(CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1)));
         Assert.Equal(10, e.Input);
@@ -174,13 +193,100 @@ public class CodexUsageReaderTests : IDisposable
         // remplacent pas.
         var utc = DateTime.UtcNow.AddMinutes(-10);
         WriteRollout("sessions", "rollout-1.jsonl",
-            TokenCountLine(utc, "m", 100, 0, 10),
-            TokenCountLine(utc.AddMinutes(1), "m", 200, 0, 20));
+            TokenCountLine(utc, 100, 0, 10),
+            TokenCountLine(utc.AddMinutes(1), 200, 0, 20));
 
         var entries = CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1));
 
         Assert.Equal(2, entries.Count);
         Assert.Equal(330, entries.Sum(e => e.Total));
+    }
+
+    [Fact]
+    public void Read_ChaqueReleveDeJetonsPrendLeModeleDuTourQuiLePrecede()
+    {
+        // Un changement de modèle en cours de session (/model) ouvre un tour avec le nouveau.
+        var utc = DateTime.UtcNow.AddMinutes(-10);
+        WriteRollout("sessions", "rollout-1.jsonl",
+            TurnContextLine(utc, "gpt-6-sol"),
+            TokenCountLine(utc, 100, 0, 10),
+            TurnContextLine(utc.AddMinutes(1), "gpt-6-astra"),
+            TokenCountLine(utc.AddMinutes(1), 200, 0, 20));
+
+        var entries = CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1));
+
+        Assert.Equal(["gpt-6-sol", "gpt-6-astra"], entries.Select(e => e.Model));
+    }
+
+    [Fact]
+    public void Read_TourOuvertAvantLaFenetre_DonneQuandMemeSonModele()
+    {
+        // Le tour a commencé hier, son relevé tombe aujourd'hui : la borne filtre les jetons, pas
+        // ce qu'on sait du tour.
+        var now = DateTime.UtcNow;
+        WriteRollout("sessions", "rollout-1.jsonl",
+            TurnContextLine(now.AddDays(-2), "gpt-6-sol"),
+            TokenCountLine(now.AddMinutes(-5), 10, 0, 0));
+
+        var e = Assert.Single(CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1)));
+        Assert.Equal("gpt-6-sol", e.Model);
+    }
+
+    [Fact]
+    public void Read_LeModeleNeTraversePasLesFichiers()
+    {
+        // Deux sessions distinctes : un relevé sans tour connu reste sans modèle plutôt que
+        // d'hériter de celui d'une autre session.
+        var utc = DateTime.UtcNow.AddMinutes(-10);
+        WriteRollout("sessions", "rollout-1.jsonl", TurnContextLine(utc, "gpt-6-sol"), TokenCountLine(utc, 10, 0, 0));
+        WriteRollout("sessions", "rollout-2.jsonl", TokenCountLine(utc, 20, 0, 0));
+
+        var entries = CodexUsageReader.Read(_home, DateTime.Now.AddDays(-1));
+        Assert.Equal("", entries.Single(e => e.Input == 20).Model);
+    }
+
+    // --- ConfiguredModel
+
+    [Fact]
+    public void ConfiguredModel_LitLaCleDeTete()
+    {
+        WriteConfig("""
+            # commentaire
+            model = "gpt-6-astra"
+            model_reasoning_effort = "medium"
+
+            [tui]
+            model = "autre"
+            """);
+
+        Assert.Equal("gpt-6-astra", CodexUsageReader.ConfiguredModel(_home));
+    }
+
+    [Fact]
+    public void ConfiguredModel_CleSeulementDansUneSection_Ignoree()
+    {
+        // Seule la table racine dit le modèle par défaut : un « model » de profil ou de section ne
+        // vaut que là où il est.
+        WriteConfig("""
+            [profiles.rapide]
+            model = "gpt-6-sol"
+            """);
+
+        Assert.Equal("", CodexUsageReader.ConfiguredModel(_home));
+    }
+
+    [Fact]
+    public void ConfiguredModel_ApostrophesEtCommentaireEnFinDeLigne()
+    {
+        WriteConfig("model = 'gpt-6-sol'   # le rapide\n");
+
+        Assert.Equal("gpt-6-sol", CodexUsageReader.ConfiguredModel(_home));
+    }
+
+    [Fact]
+    public void ConfiguredModel_FichierAbsent_Vide()
+    {
+        Assert.Equal("", CodexUsageReader.ConfiguredModel(Path.Combine(_home, "inexistant")));
     }
 
     // --- Provider
@@ -212,7 +318,7 @@ public class CodexUsageReaderTests : IDisposable
     {
         // Un relevé de jetons sans rate_limits ne permet pas de calculer un pourcentage de quota.
         WriteRollout("sessions", "rollout-1.jsonl",
-            TokenCountLine(DateTime.UtcNow.AddMinutes(-5), "gpt-5-codex", 100, 0, 20));
+            TokenCountLine(DateTime.UtcNow.AddMinutes(-5), 100, 0, 20));
 
         var usage = await new CodexUsageProvider(_home).ReadAsync(CancellationToken.None);
 
@@ -235,6 +341,30 @@ public class CodexUsageReaderTests : IDisposable
         Assert.NotNull(usage);
         Assert.Equal(0, usage!.MonthTokens);
         Assert.Equal(0, usage.Requests);
+    }
+
+    [Fact]
+    public async Task ReadAsync_SansActivite_AfficheLeModeleConfigure()
+    {
+        Dir("sessions");
+        WriteConfig("model = \"gpt-6-astra\"\n");
+
+        var usage = await new CodexUsageProvider(_home).ReadAsync(CancellationToken.None);
+
+        Assert.Equal("gpt-6-astra", usage!.Model);
+    }
+
+    [Fact]
+    public async Task ReadAsync_LeModeleUtiliseGagneSurLeModeleConfigure()
+    {
+        // La configuration dit ce qu'on démarrerait ; un --model ou un /model dit ce qu'on a fait.
+        WriteConfig("model = \"gpt-6-astra\"\n");
+        var utc = DateTime.UtcNow.AddMinutes(-5);
+        WriteRollout("sessions", "rollout-1.jsonl", TurnContextLine(utc, "gpt-6-sol"), TokenCountLine(utc, 10, 0, 0));
+
+        var usage = await new CodexUsageProvider(_home).ReadAsync(CancellationToken.None);
+
+        Assert.Equal("gpt-6-sol", usage!.Model);
     }
 
     [Fact]

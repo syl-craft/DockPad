@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace DockPad.Services.Usage;
@@ -13,6 +14,10 @@ namespace DockPad.Services.Usage;
 /// Source : <c>rollout-*.jsonl</c> sous <c>~/.codex/sessions</c> et <c>~/.codex/archived_sessions</c>.
 /// Les lignes utiles portent <c>type:"event_msg"</c> avec <c>payload.type:"token_count"</c> ; le
 /// delta du tour est dans <c>payload.info.last_token_usage</c>.
+/// </para>
+/// <para>
+/// <b>Le modèle n'est pas dans ces lignes</b> : il vit dans le <c>type:"turn_context"</c> qui ouvre
+/// chaque tour, et vaut pour les relevés qui le suivent dans le même fichier.
 /// </para>
 /// <para>
 /// <b>Les deux racines doivent être lues.</b> Codex déplace un rollout de <c>sessions</c> vers
@@ -40,8 +45,7 @@ public static class CodexUsageReader
     /// </summary>
     public static IReadOnlyList<string> ScanRoots(string home)
     {
-        var root = Environment.GetEnvironmentVariable(HomeVariable);
-        var codex = string.IsNullOrWhiteSpace(root) ? Path.Combine(home, ".codex") : root.Trim().Trim('"');
+        var codex = CodexRoot(home);
 
         return
         [
@@ -49,6 +53,47 @@ public static class CodexUsageReader
             Path.Combine(codex, "archived_sessions"),
         ];
     }
+
+    private static string CodexRoot(string home)
+    {
+        var root = Environment.GetEnvironmentVariable(HomeVariable);
+        return string.IsNullOrWhiteSpace(root) ? Path.Combine(home, ".codex") : root.Trim().Trim('"');
+    }
+
+    /// <summary>
+    /// Le modèle par défaut déclaré dans <c>config.toml</c>, ou <c>""</c>.
+    /// </summary>
+    /// <remarks>
+    /// Repli seulement : il dit ce qu'une session <i>démarrerait</i>, pas ce qu'un <c>--model</c> ou
+    /// un <c>/model</c> ont réellement utilisé. Seule la table racine compte — un <c>model</c> sous
+    /// <c>[profiles.x]</c> ne vaut que pour ce profil. Deux lignes de lecture plutôt qu'un parseur
+    /// TOML : une dépendance pour une seule clé serait hors de proportion.
+    /// </remarks>
+    public static string ConfiguredModel(string home)
+    {
+        try
+        {
+            var path = Path.Combine(CodexRoot(home), "config.toml");
+            if (!File.Exists(path)) return "";
+
+            foreach (var line in File.ReadLines(path))
+            {
+                var trimmed = line.TrimStart();
+                if (trimmed.StartsWith('[')) break;   // fin de la table racine
+
+                var match = ModelKey.Match(trimmed);
+                if (match.Success) return match.Groups["value"].Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Lecture du modèle configuré de Codex");
+        }
+        return "";
+    }
+
+    private static readonly Regex ModelKey =
+        new("""^model\s*=\s*["'](?<value>[^"']*)["']""", RegexOptions.CultureInvariant);
 
     /// <summary>Toutes les consommations postérieures à <paramref name="since"/> (heure locale).</summary>
     public static List<UsageAggregator.UsageEntry> Read(string home, DateTime since) =>
@@ -97,6 +142,7 @@ public static class CodexUsageReader
 
         var name = Path.GetFileNameWithoutExtension(file);
         var index = 0;
+        var model = "";   // celui du dernier tour ouvert, propre à ce fichier
 
         while (reader.ReadLine() is { } line)
         {
@@ -105,7 +151,14 @@ public static class CodexUsageReader
             if (line.Length == 0) continue;
 
             // Filtre à bas prix avant de payer l'analyse JSON : l'essentiel d'un gros rollout est
-            // fait de lignes de conversation, qui ne contiennent pas ce marqueur.
+            // fait de lignes de conversation, qui ne contiennent aucun de ces marqueurs.
+            if (line.Contains("turn_context", StringComparison.Ordinal))
+            {
+                // Hors de la borne de temps : un tour ouvert avant elle donne encore son modèle aux
+                // relevés qui y tombent.
+                if (TurnModel(line) is { } turnModel) model = turnModel;
+                continue;
+            }
             if (!line.Contains("token_count", StringComparison.Ordinal)) continue;
 
             // Sélectionne le quota selon l'horodatage de l'événement.
@@ -113,7 +166,7 @@ public static class CodexUsageReader
             if (candidate is not null && (quota is null || candidate.ObservedAt >= quota.ObservedAt))
                 quota = candidate;
 
-            var entry = ParseLine(line, name, index);
+            var entry = ParseLine(line, name, index, model);
             if (entry is null || entry.Timestamp < since) continue;
             entries.Add(entry);
         }
@@ -128,7 +181,7 @@ public static class CodexUsageReader
     /// fois. <c>output_tokens</c> inclut déjà le raisonnement, on n'ajoute donc pas
     /// <c>reasoning_output_tokens</c>.
     /// </remarks>
-    private static UsageAggregator.UsageEntry? ParseLine(string line, string file, int index)
+    private static UsageAggregator.UsageEntry? ParseLine(string line, string file, int index, string model)
     {
         try
         {
@@ -158,7 +211,7 @@ public static class CodexUsageReader
                 // un tour rejoué dans un fork.
                 Key: $"codex|{file}|{index}",
                 Timestamp: utc.LocalDateTime,
-                Model: info.TryGetProperty("model", out var m) && m.ValueKind == JsonValueKind.String ? m.GetString() ?? "" : "",
+                Model: model,
                 Input: Math.Max(0, input - cached),
                 Output: Number(usage, "output_tokens"),
                 CacheWrite: Number(usage, "cache_write_input_tokens"),
@@ -167,6 +220,29 @@ public static class CodexUsageReader
         catch (JsonException)
         {
             return null;   // ligne tronquée : Codex écrit pendant qu'on lit
+        }
+    }
+
+    /// <summary>Le modèle d'une ligne <c>turn_context</c>, ou <c>null</c>.</summary>
+    private static string? TurnModel(string line)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(line);
+            var root = doc.RootElement;
+
+            // Le marqueur peut apparaître dans une ligne de conversation : seul le type fait foi.
+            if (root.ValueKind != JsonValueKind.Object
+                || !root.TryGetProperty("type", out var kind) || kind.ValueKind != JsonValueKind.String
+                || kind.GetString() != "turn_context"
+                || !root.TryGetProperty("payload", out var payload) || payload.ValueKind != JsonValueKind.Object
+                || !payload.TryGetProperty("model", out var m) || m.ValueKind != JsonValueKind.String) return null;
+
+            return m.GetString() is { Length: > 0 } value ? value : null;
+        }
+        catch (JsonException)
+        {
+            return null;
         }
     }
 

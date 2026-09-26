@@ -1351,7 +1351,7 @@ C3tt3 4ct10n 35t 1rrév3r51bl3.</value>
     <value>4ucun r3l3v3 d3 qu0t4 d4n5 l35 535510n5 l0c4l35 C0d3x. Ut1l153z C0d3x p0ur 4ctu4l153r l35 d0nn335 ; l35 m3tr1qu35 d3 j3t0n5 r35t3nt d15p0n1bl35.</value>
   </data>
   <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
-    <value>D3rn13r r3l3v3 l0c4l : {0:g}. 4ucun3 f3n3tr3 d3 qu0t4 4ctu3ll3 3xpl01t4bl3. Ut1l153z C0d3x p0ur l'4ctu4l153r ; l35 r3l3v35 d3 plu5 d3 15 m1nut35 3t l35 f3n3tr35 3xp1r335 50nt m45qu35.</value>
+    <value>D3rn13r r3l3v3 l0c4l : {0:g}. 535 f3n3tr35 d3 qu0t4 50nt 3xp1r335. Ut1l153z C0d3x p0ur l'4ctu4l153r ; l35 m3tr1qu35 d3 j3t0n5 r35t3nt d15p0n1bl35.</value>
   </data>
   <data name="Group_InvalidDestination" xml:space="preserve">
     <value>Ch0151553z un3 c453 l1br3 0u un r4cc0urc1 4 3ch4ng3r. Un gr0up3 n3 p3ut p45 3tr3 1mbr1qu3 d4n5 un 4utr3.</value>
@@ -1413,4 +1413,16 @@ C3tt3 4ct10n 35t 1rrév3r51bl3.</value>
   <data name="Group_Edit" xml:space="preserve"><value>M0d1f13r l3 gr0up3</value></data>
   <data name="Group_Color" xml:space="preserve"><value>C0ul3ur du gr0up3</value></data>
   <data name="Group_InvalidColor" xml:space="preserve"><value>Ch0151553z un3 c0ul3ur 4u f0rm4t #RRGGBB.</value></data>
+  <data name="Usage_Age_Minutes" xml:space="preserve">
+    <value>1l y 4 {0} m1n</value>
+  </data>
+  <data name="Usage_Age_Hours" xml:space="preserve">
+    <value>1l y 4 {0} h</value>
+  </data>
+  <data name="Usage_Age_Days" xml:space="preserve">
+    <value>1l y 4 {0} j</value>
+  </data>
+  <data name="Usage_Gauge_StaleTooltip" xml:space="preserve">
+    <value>{0} % ut1l1535, {1} % r35t4nt5 — d3rn13r r3l3v3 : {2:g}. L4 v4l3ur 53 m3t 4 j0ur 4 l4 pr0ch41n3 ut1l154t10n d3 l'0ut1l.</value>
+  </data>
 </root>
