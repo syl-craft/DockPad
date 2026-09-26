@@ -133,7 +133,9 @@ public sealed class BitwardenSecretSource : ISecretSource
     }
 
     /// <summary>
-    /// Déverrouille, éventuellement synchronise, lit le coffre. La clé de session ne sort pas d'ici.
+    /// Déverrouille, éventuellement synchronise, lit le coffre. La clé de session survit à cette
+    /// méthode — captée dans la fermeture du <see cref="SecretWriter"/> rendu, elle ne s'oublie
+    /// qu'à la fermeture de l'injection.
     /// </summary>
     /// <param name="refreshFirst">
     /// Rafraîchir le cache de la CLI avant de lire. Fait <b>ici</b>, entre le déverrouillage et la
@@ -158,7 +160,9 @@ public sealed class BitwardenSecretSource : ISecretSource
             return new SecretSourceOpening(null,
                 new SecretSourceFailure(Loc.T("Inject_Error_UnlockRefused"), Diagnostic(unlock)));
 
-        // La clé de session suit le même chemin, et ne quitte pas cette méthode.
+        // La clé de session suit le même chemin, et n'est capturée que par la fermeture confiée au
+        // SecretWriter plus bas : elle survit à cette méthode jusqu'à ce que l'injection se ferme,
+        // mais nulle part ailleurs — ni champ, ni journal.
         var session = new Dictionary<string, string> { ["BW_SESSION"] = unlock.Stdout.Trim() };
 
         string? warning = null;

@@ -41,6 +41,7 @@ Vérifiés par mutation — on introduit la violation, on regarde le test tomber
 | **Frontière** | Nommer un type d'ici hors des points d'entrée déclarés | La surface ne grandit pas en douce |
 | **Rien sur disque** | `File.Write*`, `FileStream` en écriture, `StreamWriter` ici | La garantie centrale, par le code et non par relecture |
 | **Rien en ligne de commande** | `--session`, `--password`, et tout identifiant sentant le secret dans une collection d'arguments | Ni le mot de passe ni la clé ne sont lisibles des autres processus |
+| **Charge utile par stdin** | le JSON d'un item dans une collection d'arguments | les valeurs saisies ne sont pas lisibles des autres processus |
 
 La troisième **durcit** le script PowerShell d'origine, qui passait `--session $env:BW_SESSION` en
 argument — donc lisible par tout processus, y compris par la lecture WMI que DockPad fait lui-même
@@ -124,6 +125,46 @@ lui manque.
 Jinja légitime qui cohabiterait dans le fichier. Il ne sait pas distinguer, et il se trompe du bon
 côté.
 
+## Créer ce qui manque
+
+Entre le déverrouillage et le rendu, un item absent ou un champ vide sur un item existant peut être
+**créé**, dans un formulaire unique — un champ de saisie par champ manquant, groupé par item. Le
+formulaire n'apparaît que s'il y a quelque chose à proposer ; sinon on rend directement, comme
+avant.
+
+`SecretVault.Classify` range chaque marqueur dans l'un de quatre cas :
+
+- **trouvé** — rien à proposer ;
+- **item absent** → créable, item **Identifiant** neuf ;
+- **champ absent ou vide** sur un item unique → complétable, **en place** ;
+- **item en double** → **non créable**, reste une erreur affichée comme avant : écrire dans l'un des
+  deux au hasard serait pire que de ne rien proposer.
+
+**Placement des champs** : `password`, `username`, `notes`, `totp` vont dans les champs standards de
+l'item ; tout autre nom devient un champ personnalisé **masqué** (type hidden) — jamais en clair,
+et jamais recopié dans un champ standard qu'il ne visait pas.
+
+**La relecture prouve l'écriture.** Après `create item` ou `get item` + `edit item`, un nouveau
+`list items` alimente le rendu : rendre avec les valeurs saisies ferait croire à un succès même si
+le coffre avait refusé. Un refus n'arrête pas les autres items — chaque écriture est séparée, un
+échec rejoint la liste des manques, même règle qu'un `sync` qui échoue.
+
+**Le piège de `bw edit item`** : il remplace la fiche **entière**. `BwItemPatch` travaille donc sur
+la sortie **complète** de `bw get item`, en JSON, et ne touche qu'aux champs visés — sinon les URLs,
+pièces jointes et l'historique d'un item existant disparaîtraient derrière un modèle volontairement
+partiel.
+
+**Charge utile par stdin.** Le JSON de la fiche — donc les valeurs saisies — est encodé en base64 et
+passé par l'**entrée standard** de `bw create item` / `bw edit item`, jamais en argument : une ligne
+de commande est lisible de tout processus de la machine, y compris par la lecture WMI que DockPad
+fait lui-même pour `SwitchToProcess`. Les arguments se limitent à `create item`, `get item <id>`,
+`edit item <id>` et `--organizationid <id>`.
+
+**Aucune clé de session ne survit à une injection.** Le formulaire s'intercale entre la lecture et
+l'écriture, donc la clé doit survivre à la saisie : elle vit dans la fermeture du `SecretWriter`
+rendu par `OpenAsync`, jamais dans un champ de la fenêtre ni du service, et disparaît à
+`InjectionSession.Close()` — à la fin de l'injection, ou à la fermeture de la fenêtre.
+
 ## Syntaxe des marqueurs
 
 ```
@@ -144,11 +185,13 @@ forme déjà échappée**, chaque `$` doublé, et le dire dans le nom du champ.
 
 ```
 clic droit  →  App  →  SecretInjection.Handle
-                          └─ SecretInjectionWindow    vérification → déverrouillage → travail → compte-rendu
-                               ├─ SecretInjectionService   status · unlock · organizations · items
+                          └─ SecretInjectionWindow    vérification → déverrouillage → [création] → travail → compte-rendu
+                               ├─ SecretInjectionService   status · unlock · organizations · items · collections · create/edit item
                                │    ├─ BitwardenCli        le seul point qui lance bw.exe
-                               │    ├─ SecretVault         PUR — un item, aucun, ou deux
+                               │    ├─ SecretVault         PUR — un item, aucun, ou deux — et Classify, les quatre cas
                                │    │    └─ SecretFieldResolver   PUR — l'ordre des champs
+                               │    ├─ SecretCreationPlan  PUR — ce que le formulaire propose, groupé par item
+                               │    ├─ BwItemPatch         PUR — la fiche envoyée à create/edit, sans rien perdre
                                │    └─ SecretTemplate      PUR — marqueurs, substitution, deux filets
                                └─ ClipboardGuard           copie marquée, empreinte, minuteur
 ```

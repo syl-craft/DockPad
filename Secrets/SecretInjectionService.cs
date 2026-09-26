@@ -318,8 +318,9 @@ public static class SecretInjectionService
         if (opening.Failure is { } refused)
             return (null, InjectionReport.Fail(refused.Message, refused.Diagnostic));
 
-        // La SEULE chose que la source rend : de quoi resoudre un marqueur. Tout ce qui sait
-        // comment le coffre s'appelle, s'authentifie et se lit reste derriere cette fonction.
+        // Ce que la source rend : de quoi resoudre un marqueur, le classer, et l'ecrire si besoin.
+        // Tout ce qui sait comment le coffre s'appelle, s'authentifie et se lit reste derriere ces
+        // trois fonctions — jamais un nom qui sente Bitwarden.
         return (new InjectionSession(content, folder, mode, entries, templates,
             opening.Lookup!, opening.Classify, opening.Writer, opening.Warning), null);
     }

@@ -39,7 +39,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|inject|inject-failed|inject-files|bindings|grid> <fr|en> <chemin.png> [onglet]");
+            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|bindings|grid> <fr|en> <chemin.png> [onglet]");
             return;
         }
 
@@ -131,6 +131,7 @@ internal static class Program
             "inject-files" => InjectionFilesWindow(),
             "inject-partial" => InjectionPartialWindow(),
             "inject-choice" => InjectionChoiceWindow(),
+            "inject-create" => InjectionCreateWindow(),
             _ => throw new ArgumentException($"fenêtre inconnue : {target}"),
         };
 
@@ -257,6 +258,35 @@ internal static class Program
         ]);
 
         Invoke(window, "ShowResult", report);
+        return window;
+    }
+
+    /// <summary>
+    /// Le formulaire de CREATION : un item neuf, un item existant a completer, deux collections.
+    /// </summary>
+    /// <remarks>
+    /// Le redacteur est factice et ne sera jamais appele : l'ecran ne fait qu'afficher, l'ecriture
+    /// appartient au deroulement. Aucun coffre, aucun reseau.
+    /// </remarks>
+    private static Window InjectionCreateWindow()
+    {
+        var window = new DockPad.Secrets.SecretInjectionWindow(
+            Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
+
+        var writer = new DockPad.Secrets.SecretWriter("fezhome-cli",
+            [new("c1", "identifiants"), new("c2", "infra")],
+            (_, _, _) => throw new InvalidOperationException("capture"));
+
+        DockPad.Secrets.SecretPresence Classify(DockPad.Secrets.SecretMarker m) => m.Item == "ntfy-infra"
+            ? new(DockPad.Secrets.SecretPresenceKind.FieldMissing, "n1")
+            : new(DockPad.Secrets.SecretPresenceKind.ItemMissing, null);
+
+        var session = new DockPad.Secrets.InjectionSession(
+            "A={{ bw:ia-requester-infra:db-password }}\nB={{ bw:ia-requester-infra:api-key }}\nC={{ bw:ntfy-infra:admin-hash }}",
+            Path.GetTempPath(), DockPad.Secrets.SecretMode.Clipboard, [], new Dictionary<string, string>(),
+            _ => DockPad.Secrets.SecretLookup.Missing("absent"), Classify, writer, warning: null);
+
+        Invoke(window, "ShowCreate", session);
         return window;
     }
 
