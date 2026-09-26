@@ -14,9 +14,9 @@ Quatre matières ne franchissent jamais cette frontière :
 3. les valeurs lues dans le coffre ;
 4. le texte rendu.
 
-`AppSettings` porte trois réglages de la fonctionnalité (chemin de `bw.exe`, délai d'effacement,
-organisation) et vit **dehors** : ce sont des préférences — un chemin, un nombre, un nom — jamais de
-la matière secrète.
+`AppSettings` porte cinq réglages de la fonctionnalité (chemin de `bw.exe`, délai d'effacement,
+organisation, collection par défaut, synchro avant injection) et vit **dehors** : ce sont des
+préférences — un chemin, un nombre, deux noms, une case — jamais de la matière secrète.
 
 ## La surface d'entrée
 
@@ -142,12 +142,17 @@ avant.
 
 **Placement des champs** : `password`, `username`, `notes`, `totp` vont dans les champs standards de
 l'item ; tout autre nom devient un champ personnalisé **masqué** (type hidden) — jamais en clair,
-et jamais recopié dans un champ standard qu'il ne visait pas.
+et jamais recopié dans un champ standard qu'il ne visait pas. Sur un item existant qui n'est pas un
+Identifiant, `password`, `username` et `totp` deviennent aussi des champs personnalisés masqués : la
+CLI ignore `login` sur ces types.
 
 **La relecture prouve l'écriture.** Après `create item` ou `get item` + `edit item`, un nouveau
 `list items` alimente le rendu : rendre avec les valeurs saisies ferait croire à un succès même si
-le coffre avait refusé. Un refus n'arrête pas les autres items — chaque écriture est séparée, un
-échec rejoint la liste des manques, même règle qu'un `sync` qui échoue.
+le coffre avait refusé. Un refus n'arrête pas les autres items — chaque écriture est séparée, et
+isolée par son propre `try` ; un échec rejoint la liste des manques, même règle qu'un `sync` qui
+échoue. Un champ écrit sans erreur mais introuvable à la relecture est nommé lui aussi (« écrit
+mais non conservé »). Le diagnostic d'un refus va **au journal seulement** : aucune ligne de manque
+ne porte d'infobulle — écart assumé avec la spec.
 
 **Le piège de `bw edit item`** : il remplace la fiche **entière**. `BwItemPatch` travaille donc sur
 la sortie **complète** de `bw get item`, en JSON, et ne touche qu'aux champs visés — sinon les URLs,

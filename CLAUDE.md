@@ -1050,8 +1050,9 @@ matières ne franchissent jamais la frontière : mot de passe maître, clé de s
 coffre, texte rendu. Le dossier porte son propre `README.md`, en tête. La fenêtre y vit aussi, et
 non dans `Dialogs/` — c'est elle qui reçoit le mot de passe.
 
-`AppSettings` reste dehors avec ses trois réglages (`BitwardenCliPath`, `ClipboardClearSeconds`,
-`VaultOrganization`) : ce sont des préférences, jamais de la matière secrète. Elles **n'entrent pas**
+`AppSettings` reste dehors avec ses cinq réglages (`BitwardenCliPath`, `ClipboardClearSeconds`,
+`VaultOrganization`, `VaultCollection`, `SyncVaultBeforeInject`) : ce sont des préférences, jamais
+de la matière secrète. Elles **n'entrent pas**
 dans `FromRegistry` — la reprise ne concerne que les huit réglages qui ont réellement vécu dans le
 registre.
 
@@ -1228,6 +1229,11 @@ sixième état de la fenêtre existante, jamais une seconde fenêtre.
 
 Type de champ : `password`, `username`, `notes`, `totp` → champs standards ; tout autre nom →
 champ personnalisé **masqué** (type hidden). Un item créé est de type **Identifiant** (login).
+**Sur un item existant qui n'est pas un Identifiant** — note sécurisée, carte, identité —
+`password`, `username` et `totp` deviennent eux aussi des champs personnalisés masqués : la CLI
+ignore l'objet `login` sur ces types, et la valeur aurait disparu sans un mot. `SecretFieldResolver`
+lit les champs personnalisés en premier, elle est donc retrouvée. `notes` reste le champ standard
+pour tous les types.
 
 Organisation : celle déjà réglée (`VaultOrganization`), déjà résolue par la lecture.
 
@@ -1246,8 +1252,16 @@ Saisie : masquée, avec 👁 pour afficher. Pas de générateur dans cette versi
 **La relecture prouve l'écriture.** Après `create item` ou `get item` + `edit item`, un nouveau
 `list items` alimente le rendu : rendre avec les valeurs saisies ferait croire à un succès même si
 le coffre avait refusé. Un échec d'écriture **ne bloque pas** l'injection : chaque item est écrit
-séparément, un refus rejoint la liste des manques, les autres sont écrits — même règle qu'un `sync`
-qui échoue.
+séparément, un refus — ou une exception, ou une fiche `get item` illisible — rejoint la liste des
+manques, les autres sont écrits — même règle qu'un `sync` qui échoue. **Une écriture acceptée n'est
+pas une valeur conservée** : après la relecture, tout champ d'un item écrit sans erreur qui n'est
+toujours pas trouvé est nommé à l'écran (« écrit mais non conservé »). Écart assumé avec la spec :
+le diagnostic d'un refus va **au journal seulement** — aucune ligne de manque ne porte d'infobulle.
+
+Sans collection dans l'organisation, aucun item neuf n'est proposable : si rien d'autre ne l'est,
+le formulaire n'apparaît pas, et l'écran ambre le dit (`Inject_Create_NoCollection`) plutôt que de
+laisser le manque paraître oublié. **Continuer sans créer** vide les saisies avant de rendre, et
+une fermeture de la fenêtre pendant l'ouverture ou l'écriture referme la session sans rien rendre.
 
 **Le piège de `bw edit item`** : il remplace la fiche **entière**. `BwItemPatch` travaille donc sur
 la sortie **complète** de `bw get item`, en `JsonNode`, et ne touche qu'aux champs visés — sinon les
