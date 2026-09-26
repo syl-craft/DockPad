@@ -49,6 +49,12 @@ public partial class SecretInjectionWindow : Window
     private bool _armedOnce;
     private readonly bool _syncOnly;
 
+    /// <summary>
+    /// La fenêtre est fermée. Lu au retour d'un appel au coffre : la source d'annulation est déjà
+    /// libérée à ce moment-là, et ce drapeau ne l'est jamais.
+    /// </summary>
+    private bool _closed;
+
     /// <summary>La session ouverte entre le déverrouillage et le rendu — nulle avant, et après.</summary>
     private InjectionSession? _session;
 
@@ -90,6 +96,7 @@ public partial class SecretInjectionWindow : Window
         Loc.LanguageChanged += OnLanguageChanged;
         Closed += (_, _) =>
         {
+            _closed = true;
             ClipboardGuard.Changed -= OnGuardChanged;
             Loc.LanguageChanged -= OnLanguageChanged;
             _cancellation.Cancel();
@@ -203,6 +210,8 @@ public partial class SecretInjectionWindow : Window
 
             if (!synced.Ok)
             {
+                // Un déverrouillage refusé se corrige sur place : on reste sur la saisie plutôt que
+                // de renvoyer vers un écran d'échec qu'il faudrait fermer pour réessayer.
                 if (synced.Failures.Contains(Loc.T("Inject_Error_UnlockRefused")))
                     ShowUnlock(Loc.T("Inject_Error_UnlockRefused"));
                 else
@@ -231,8 +240,13 @@ public partial class SecretInjectionWindow : Window
         }
         finally { TxtPassword.Clear(); }
 
+        // Fenêtre fermée pendant l'ouverture : la session revenue tient une clé que plus rien ne
+        // refermerait — le gestionnaire de Closed est déjà passé, et _session était encore nul.
+        if (_closed) { opened.session?.Close(); return; }
+
         if (opened.failure is { } refused)
         {
+            // Même règle qu'en synchro : un déverrouillage refusé se corrige sur place.
             if (refused.Failures.Contains(Loc.T("Inject_Error_UnlockRefused")))
                 ShowUnlock(Loc.T("Inject_Error_UnlockRefused"));
             else
@@ -243,6 +257,12 @@ public partial class SecretInjectionWindow : Window
         _session = opened.session!;
 
         if (Proposable(_session).Count > 0) { ShowCreate(_session); return; }
+
+        // Rien à proposer, mais pas faute de manque : l'organisation n'a aucune collection où
+        // ranger un item neuf. L'écran ambre doit le dire, sinon le manque paraît oublié plutôt
+        // qu'impossible à combler d'ici.
+        if (_session.Writer is { CanCreateItems: false } && _session.Creatable.Any(r => r.IsNew))
+            _session.Note(Loc.T("Inject_Create_NoCollection"));
 
         Finish();
     }
@@ -266,6 +286,10 @@ public partial class SecretInjectionWindow : Window
         {
             // La CLI a repondu, c'est le disque qui a resiste : annoncer « la CLI a refuse la
             // demande » enverrait chercher le probleme du mauvais cote.
+            //
+            // Restreint au mode FICHIERS : en presse-papier et en synchro, rien n'est jamais
+            // ecrit, et une IOException venue du tuyau de bw.exe se serait vu repondre « le
+            // dossier des secrets n'a pas pu etre ecrit » -- la meme mauvaise direction, inversee.
             LogService.Warn(ex, "Ecriture des fichiers de secrets");
             ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_FileLocked"), ex.GetType().Name));
             return;
@@ -404,7 +428,14 @@ public partial class SecretInjectionWindow : Window
         var label = new TextBlock { Text = field, VerticalAlignment = VerticalAlignment.Center,
             Foreground = (Brush)FindResource("Brush.TextLabel"), TextTrimming = TextTrimming.CharacterEllipsis };
 
-        var hidden = new PasswordBox { Padding = new Thickness(6, 5, 6, 5) };
+        // Mêmes brosses que TxtPassword : sans elles, la PasswordBox garde l'habillage clair
+        // d'Aero2 en thème sombre. SetResourceReference plutôt qu'une brosse lue une fois, pour
+        // qu'une bascule de thème en cours de saisie suive — la sémantique de DynamicResource.
+        var hidden = new PasswordBox { Padding = new Thickness(6, 5, 6, 5), BorderThickness = new Thickness(1) };
+        hidden.SetResourceReference(BackgroundProperty, "Brush.SurfaceCard");
+        hidden.SetResourceReference(ForegroundProperty, "Brush.Text");
+        hidden.SetResourceReference(PasswordBox.CaretBrushProperty, "Brush.Text");
+        hidden.SetResourceReference(BorderBrushProperty, "Brush.BorderStrong");
         var shown = new TextBox { Padding = new Thickness(6, 5, 6, 5), Visibility = Visibility.Collapsed };
         AutomationProperties.SetName(hidden, $"{item} {field}");
         AutomationProperties.SetName(shown, $"{item} {field}");
@@ -419,7 +450,15 @@ public partial class SecretInjectionWindow : Window
             Content = "👁", Width = 30, Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(0),
             FontFamily = new FontFamily("Segoe UI Emoji, Segoe UI Symbol, Segoe UI"),
             ToolTip = Loc.T("Inject_Create_Show"),
+            BorderThickness = new Thickness(1),
+            Template = (ControlTemplate)FindResource("EyeToggleTemplate"),
+            // Hors de la tabulation : Entrée et Tab passent de saisie en saisie, et s'arrêter sur
+            // 👁 puis frapper Entrée ou Espace dévoilait la valeur. La souris l'atteint toujours.
+            IsTabStop = false,
         };
+        eye.SetResourceReference(BackgroundProperty, "Brush.SurfaceCard");
+        eye.SetResourceReference(ForegroundProperty, "Brush.Text");
+        eye.SetResourceReference(BorderBrushProperty, "Brush.BorderStrong");
         AutomationProperties.SetName(eye, Loc.T("Inject_Create_Show"));
         eye.Click += (_, _) =>
         {
@@ -448,15 +487,34 @@ public partial class SecretInjectionWindow : Window
 
     private void RefreshCreateButton() => BtnCreate.IsEnabled = _inputs.Any(i => Value(i).Length > 0);
 
-    /// <summary>Entrée passe au champ suivant, comme dans un formulaire.</summary>
+    /// <summary>Entrée passe à la saisie suivante, comme dans un formulaire, puis au bouton Créer.</summary>
+    /// <remarks>
+    /// Jamais <c>MoveFocus(Next)</c> : l'élément suivant dans l'ordre de tabulation était le 👁 de la
+    /// ligne, et une seconde Entrée le basculait — la valeur apparaissait en clair. On vise donc la
+    /// saisie suivante elle-même, sous la forme qu'elle montre.
+    /// </remarks>
     private void Input_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter) return;
-        ((UIElement)sender).MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
         e.Handled = true;
+
+        var index = _inputs.FindIndex(i => ReferenceEquals(i.Hidden, sender) || ReferenceEquals(i.Shown, sender));
+        if (index < 0) return;
+
+        if (index + 1 < _inputs.Count)
+        {
+            var next = _inputs[index + 1];
+            if (next.Shown.Visibility == Visibility.Visible) next.Shown.Focus(); else next.Hidden.Focus();
+        }
+        else if (BtnCreate.IsEnabled) BtnCreate.Focus();
     }
 
-    private void SkipCreate_Click(object sender, RoutedEventArgs e) => Finish();
+    /// <summary>Passer, c'est aussi oublier ce qui a été tapé : rien ne reste dans les contrôles.</summary>
+    private void SkipCreate_Click(object sender, RoutedEventArgs e)
+    {
+        ClearInputs();
+        Finish();
+    }
 
     private async void Create_Click(object sender, RoutedEventArgs e)
     {
@@ -487,6 +545,10 @@ public partial class SecretInjectionWindow : Window
             ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), ex.GetType().Name));
             return;
         }
+
+        // Fenêtre fermée pendant l'écriture : ne rien rendre — ni fichiers écrits derrière elle, ni
+        // presse-papier armé pour personne.
+        if (_closed) { AbandonSession(); return; }
 
         Finish();
     }
