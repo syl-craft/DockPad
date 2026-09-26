@@ -1353,6 +1353,9 @@ Cette action est irréversible.</value>
   <data name="Inject_Create_Failed" xml:space="preserve">
     <value>{0} : le coffre a refusé l'écriture</value>
   </data>
+  <data name="Inject_Create_NotStored" xml:space="preserve">
+    <value>{0} : « {1} » a été écrit mais le coffre ne l'a pas conservé</value>
+  </data>
   <data name="Inject_Create_Title" xml:space="preserve">
     <value>Secrets absents du coffre</value>
   </data>

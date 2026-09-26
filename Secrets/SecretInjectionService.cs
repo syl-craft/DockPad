@@ -135,6 +135,12 @@ public sealed class InjectionSession
         Creatable = SecretCreationPlan.Build(SecretCreationPlan.Demanded(Content, Mode, Entries, Templates), classify);
     }
 
+    /// <summary>
+    /// Un manque que l'écran doit dire, sans venir ni du coffre ni du rendu — un item qu'on ne
+    /// pouvait pas proposer, par exemple.
+    /// </summary>
+    public void Note(string message) => _missing.Add(message);
+
     public void Close()
     {
         Writer?.Forget();
@@ -154,9 +160,13 @@ public sealed class InjectionSession
 /// chaque injection.
 /// </para>
 /// <para>
-/// <b>Quatre appels au plus</b>, dont un seul <c>list items</c> qui ramène tout. Le script d'origine
-/// lançait une recherche par item ; ramener l'ensemble en un appel est plus rapide, et déplace la
-/// résolution du côté testable de la frontière (voir <see cref="SecretVault"/>).
+/// <b>Pour lire</b> : <c>status</c>, <c>unlock</c>, <c>sync</c> si la case est cochée,
+/// <c>list organizations</c> et <c>list collections</c> si une organisation est configurée, et un
+/// seul <c>list items</c> qui ramène tout. <b>Pour créer</b>, seulement si le formulaire a reçu
+/// quelque chose : <c>create item</c>, ou <c>get item</c> puis <c>edit item</c>, par item, et un
+/// second <c>list items</c> pour relire. Le script d'origine lançait une recherche par item ;
+/// ramener l'ensemble en un appel est plus rapide, et déplace la résolution du côté testable de la
+/// frontière (voir <see cref="SecretVault"/>).
 /// </para>
 /// </remarks>
 public static class SecretInjectionService

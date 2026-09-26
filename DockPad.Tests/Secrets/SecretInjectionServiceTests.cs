@@ -142,4 +142,21 @@ public class SecretInjectionServiceTests
         var report = SecretInjectionService.Render(session);
         Assert.Contains("ia : le coffre a refusé l'écriture", report.Missing);
     }
+
+    [Fact]
+    public void UneNote_RejointLesManques()
+    {
+        // Le cas d'un item neuf qu'on ne peut pas proposer faute de collection : l'écran ambre doit
+        // le dire, sinon le manque paraît oublié plutôt qu'impossible à combler.
+        SecretLookup Lookup(SecretMarker m) => m.Item == "ntfy" ? SecretLookup.Found("tk") : SecretLookup.Missing("ia absent");
+
+        var session = new InjectionSession(
+            "A={{ bw:ntfy:token }}\nB={{ bw:ia:key }}", Path.GetTempPath(), SecretMode.Clipboard,
+            [], new Dictionary<string, string>(), Lookup, classify: null, writer: null, warning: null);
+
+        session.Note("pas de collection");
+
+        var report = SecretInjectionService.Render(session);
+        Assert.Contains("pas de collection", report.Missing);
+    }
 }

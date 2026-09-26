@@ -1353,6 +1353,9 @@ This cannot be undone.</value>
   <data name="Inject_Create_Failed" xml:space="preserve">
     <value>{0}: the vault refused the write</value>
   </data>
+  <data name="Inject_Create_NotStored" xml:space="preserve">
+    <value>{0}: '{1}' was written but the vault did not keep it</value>
+  </data>
   <data name="Inject_Create_Title" xml:space="preserve">
     <value>Secrets missing from the vault</value>
   </data>

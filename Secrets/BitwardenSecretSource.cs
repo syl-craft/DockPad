@@ -254,26 +254,40 @@ public sealed class BitwardenSecretSource : ISecretSource
         IReadOnlyList<SecretItemCreation> creations, string? collectionId, CancellationToken token)
     {
         var failures = new List<string>();
+        var stored = new List<SecretItemCreation>();
 
         foreach (var creation in creations)
         {
-            // La fiche est encodée sur SA ligne, hors de toute collection d'arguments : c'est la
-            // forme que la garde « charge utile par stdin » exige.
-            var sheet = creation.ItemId is null
-                ? BwItemPatch.Encode(BwItemPatch.NewItem(creation.ItemName, organisationId, collectionId, creation.Fields))
-                : null;
-
-            var written = sheet is not null
-                ? await RunAsync(exe, ["create", "item"], session, token, stdin: sheet).ConfigureAwait(false)
-                : await EditAsync(exe, session, creation, token).ConfigureAwait(false);
-
             var names = string.Join(", ", creation.Fields.Select(f => $"{creation.ItemName}:{f.Field}"));
 
-            if (written.Ok)
-                LogService.Info($"Coffre : {names} {(creation.ItemId is null ? "créé" : "complété")}");
-            else
+            // Chaque item est isolé : une fiche illisible ou une exception de la CLI sur l'un ne
+            // doit pas priver les suivants de leur écriture, ni la session de sa relecture.
+            try
             {
-                LogService.Warn(new InvalidOperationException(Diagnostic(written)), $"Écriture dans le coffre de {names}");
+                // La fiche est encodée sur SA ligne, hors de toute collection d'arguments : c'est la
+                // forme que la garde « charge utile par stdin » exige.
+                var sheet = creation.ItemId is null
+                    ? BwItemPatch.Encode(BwItemPatch.NewItem(creation.ItemName, organisationId, collectionId, creation.Fields))
+                    : null;
+
+                var written = sheet is not null
+                    ? await RunAsync(exe, ["create", "item"], session, token, stdin: sheet).ConfigureAwait(false)
+                    : await EditAsync(exe, session, creation, token).ConfigureAwait(false);
+
+                if (written.Ok)
+                {
+                    LogService.Info($"Coffre : {names} {(creation.ItemId is null ? "créé" : "complété")}");
+                    stored.Add(creation);
+                }
+                else
+                {
+                    LogService.Warn(new InvalidOperationException(Diagnostic(written)), $"Écriture dans le coffre de {names}");
+                    failures.Add(Loc.F("Inject_Create_Failed", creation.ItemName));
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                LogService.Warn(ex, $"Écriture dans le coffre de {names}");
                 failures.Add(Loc.F("Inject_Create_Failed", creation.ItemName));
             }
         }
@@ -283,6 +297,20 @@ public sealed class BitwardenSecretSource : ISecretSource
             throw new InvalidOperationException(Diagnostic(items));
 
         var vault = new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured);
+
+        // Une écriture acceptée n'est pas une valeur conservée : la CLI a pu ignorer un champ sans
+        // rien dire. La relecture tranche, et un champ qu'elle ne trouve pas est nommé — des noms,
+        // jamais une valeur.
+        foreach (var creation in stored)
+            foreach (var field in creation.Fields)
+            {
+                if (vault.Classify(new SecretMarker(creation.ItemName, field.Field)).Kind == SecretPresenceKind.Found)
+                    continue;
+
+                LogService.Warn(new InvalidOperationException("field not found after write"), $"Relecture du coffre : {creation.ItemName}:{field.Field} absent");
+                failures.Add(Loc.F("Inject_Create_NotStored", creation.ItemName, field.Field));
+            }
+
         return new SecretWriteOutcome(vault.Lookup, vault.Classify, failures);
     }
 
@@ -293,7 +321,12 @@ public sealed class BitwardenSecretSource : ISecretSource
         var current = await RunAsync(exe, ["get", "item", creation.ItemId!], session, token).ConfigureAwait(false);
         if (!current.Ok) return current;
 
-        var sheet = BwItemPatch.Encode(BwItemPatch.AddFields(current.Stdout, creation.Fields));
+        // Un avertissement devant le JSON le rendrait illisible : on repart de la première accolade,
+        // et sans accolade du tout, il n'y a pas de fiche à compléter.
+        var json = BitwardenCli.ItemJson(current.Stdout)
+            ?? throw new InvalidOperationException("bw get item: no JSON object in output");
+
+        var sheet = BwItemPatch.Encode(BwItemPatch.AddFields(json, creation.Fields));
 
         return await RunAsync(exe, ["edit", "item", creation.ItemId!], session, token, stdin: sheet)
             .ConfigureAwait(false);

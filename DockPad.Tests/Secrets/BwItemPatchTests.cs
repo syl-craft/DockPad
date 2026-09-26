@@ -99,14 +99,32 @@ public class BwItemPatchTests
     }
 
     [Fact]
-    public void UneFicheSansLogin_RecoitUnLogin()
+    public void UneNoteSecurisee_RecoitUnChampMasque_PasUnLogin()
     {
+        // La CLI ignore `login` sur un item qui n'est pas un Identifiant : la valeur serait perdue
+        // sans un mot. Le champ personnalisé, lui, est lu en premier par SecretFieldResolver.
         const string json = """{ "type": 2, "name": "note", "secureNote": { "type": 0 } }""";
+
+        var item = Parse(BwItemPatch.AddFields(json, [new("password", "p"), new("notes", "n")]));
+
+        var field = item["fields"]!.AsArray().Single()!;
+        Assert.Equal("password", (string)field["name"]!);
+        Assert.Equal("p", (string)field["value"]!);
+        Assert.Equal(BwItemPatch.HiddenField, (int)field["type"]!);
+        Assert.Null(item["login"]);
+        Assert.Equal("n", (string)item["notes"]!);
+        Assert.Equal(0, (int)item["secureNote"]!["type"]!);
+    }
+
+    [Fact]
+    public void UnIdentifiantSansLogin_RecoitUnLogin()
+    {
+        const string json = """{ "type": 1, "name": "x" }""";
 
         var item = Parse(BwItemPatch.AddFields(json, [new("password", "p")]));
 
         Assert.Equal("p", (string)item["login"]!["password"]!);
-        Assert.Equal(0, (int)item["secureNote"]!["type"]!);
+        Assert.Null(item["fields"]);
     }
 
     [Fact]

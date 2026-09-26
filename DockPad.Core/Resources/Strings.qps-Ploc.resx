@@ -1353,6 +1353,9 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_Create_Failed" xml:space="preserve">
     <value>{0} : l3 c0ffr3 4 r3fu53 l'3cr1tur3</value>
   </data>
+  <data name="Inject_Create_NotStored" xml:space="preserve">
+    <value>{0} : « {1} » 4 3t3 3cr1t m415 l3 c0ffr3 n3 l'4 p45 c0n53rv3</value>
+  </data>
   <data name="Inject_Create_Title" xml:space="preserve">
     <value>53cr3t5 4b53nt5 du c0ffr3</value>
   </data>

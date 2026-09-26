@@ -63,6 +63,12 @@ public static class BwItemPatch
 
     private static void Apply(JsonObject item, IReadOnlyList<SecretFieldValue> fields)
     {
+        // Sur une note sécurisée, une carte ou une identité, la CLI ignore l'objet `login` : y
+        // écrire un mot de passe le perdrait sans un mot. Il devient donc un champ personnalisé
+        // masqué, que SecretFieldResolver lit de toute façon en premier. Un type absent est traité
+        // comme un Identifiant — c'est ce qu'on crée.
+        var isLogin = item["type"] is not JsonValue type || !type.TryGetValue<int>(out var kind) || kind == LoginItem;
+
         foreach (var (field, value) in fields)
         {
             var custom = (item["fields"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault(f =>
@@ -72,7 +78,7 @@ public static class BwItemPatch
 
             switch (field.ToLowerInvariant())
             {
-                case "password" or "username" or "totp":
+                case "password" or "username" or "totp" when isLogin:
                     Login(item)[field.ToLowerInvariant()] = value;
                     break;
                 case "notes":

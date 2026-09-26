@@ -177,6 +177,15 @@ public static class BitwardenCli
         catch (JsonException) { return []; }
     }
 
+    /// <summary>
+    /// La fiche rendue par <c>bw get item</c>, à partir de sa première accolade, ou <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// Même découpe que les autres lectures : la CLI peut faire précéder son JSON d'un
+    /// avertissement, et <see cref="BwItemPatch.AddFields"/> ne saurait pas le lire.
+    /// </remarks>
+    public static string? ItemJson(string stdout) => FromFirstBrace(stdout, '{');
+
     private static string? FromFirstBrace(string stdout, char brace)
     {
         var start = stdout.IndexOf(brace);
