@@ -32,7 +32,7 @@ Deux types publics, et c'est tout le couplage avec le reste de l'application :
 DockPad est un assembly unique : `internal` ne peut pas poser cette frontière. C'est
 `DockPad.Tests/Secrets/SecretBoundaryGuardTests.cs` qui la tient.
 
-## Les trois gardes
+## Les quatre gardes
 
 Vérifiés par mutation — on introduit la violation, on regarde le test tomber, on la retire.
 

@@ -206,7 +206,7 @@ DockPad.Tests/                           Projet xUnit (909 tests) : ActionResult
                                          + traduction (parité des clés, pluriels, culture par défaut)
                                          + logique sortie de la fenêtre (lancement, overlay, recherche, dépôts, sauvegarde, commandes)
     Secrets/                             + injection de secrets : marqueurs, résolution, presse-papier, menu,
-                                           et les trois gardes du périmètre d'audit (vérifiés par mutation)
+                                           et les quatre gardes du périmètre d'audit (vérifiés par mutation)
 
 tools/
     generate-leet-resx.ps1               Script PowerShell : engendre Strings.qps-Ploc.resx depuis le français
@@ -1056,7 +1056,7 @@ dans `FromRegistry` — la reprise ne concerne que les huit réglages qui ont r�
 registre.
 
 DockPad étant un **assembly unique**, `internal` n'achète rien : la frontière ne peut pas être posée
-par un modificateur d'accès. Trois gardes la tiennent (`SecretBoundaryGuardTests`), **vérifiés par
+par un modificateur d'accès. Quatre gardes la tiennent (`SecretBoundaryGuardTests`), **vérifiés par
 mutation** comme les autres gardes du projet :
 
 | Garde | Interdit | Prouve |
@@ -1064,6 +1064,7 @@ mutation** comme les autres gardes du projet :
 | **Frontière** | Nommer un type du dossier hors des points d'entrée déclarés | La surface ne grandit pas en douce |
 | **Rien sur disque** | `File.Write*`, `FileStream` en écriture, `StreamWriter` dans le dossier | La garantie centrale, par le code et non par relecture |
 | **Rien en ligne de commande** | `--session`, `--password`, et tout identifiant sentant le secret dans une collection d'arguments | Ni le mot de passe ni la clé ne sont lisibles des autres processus |
+| **Charge utile par stdin** | le JSON d'un item dans une collection d'arguments | les valeurs saisies ne sont pas lisibles des autres processus |
 
 La troisième est un **durcissement du script d'origine**, qui passait `--session $env:BW_SESSION` en
 argument — donc lisible de tout processus, y compris par la lecture WMI que DockPad fait lui-même
@@ -1189,12 +1190,19 @@ fermeture de la fenêtre.
 chaîne managée immuable que le GC déplace, donc il ne gagnerait rien de réel et donnerait une fausse
 assurance. Ce qu'on gagne vraiment : jamais la ligne de commande, jamais l'environnement de DockPad.
 
-#### Quatre appels à `bw`, dont un seul `list items`
-`status`, `unlock --passwordenv BW_PASSWORD --raw`, `list organizations` (seulement si une
-organisation est configurée), `list items [--organizationid …]`. Le script d'origine lançait une
-recherche **par item** ; ramener l'organisation entière en un appel est plus rapide, et surtout
-déplace la résolution du côté testable de la frontière — `SecretVault` est pur, et nomme lui-même
-l'ambiguïté là où la CLI répondait « More than one result » sans dire quoi renommer.
+#### Jusqu'à cinq appels pour lire, et un par item pour créer
+`status`, `unlock --passwordenv BW_PASSWORD --raw`, `list organizations` et
+`list collections --organizationid <id>` (ces deux derniers **seulement si une organisation est
+configurée**), puis `list items [--organizationid …]` — cinq appels au plus pour **lire**, et
+toujours un seul `list items` qui ramène tout. Le script d'origine lançait une recherche **par
+item** ; ramener l'organisation entière en un appel est plus rapide, et surtout déplace la
+résolution du côté testable de la frontière — `SecretVault` est pur, et nomme lui-même l'ambiguïté
+là où la CLI répondait « More than one result » sans dire quoi renommer.
+
+La **création** n'ajoute des appels que si l'utilisateur crée effectivement quelque chose : par
+item écrit, un `create item` (item neuf) ou un `get item` + `edit item` (item existant), puis
+**une seule relecture** (`list items`) qui alimente le rendu, quel que soit le nombre d'items
+écrits — voir « Créer ce qui manque ».
 
 `bw status` ne sert qu'à distinguer **un seul** cas, `unauthenticated`, parce que lui seul appelle
 une autre action (`bw login`). Tout le reste mène au déverrouillage : sans clé de session la CLI ne
@@ -1250,6 +1258,10 @@ volontairement partiel.
 passé par l'entrée standard de `bw create item` / `bw edit item`, jamais en argument. Les arguments
 se limitent à `create item`, `get item <id>`, `edit item <id>` et `--organizationid <id>`. Vérifié
 par mutation : la passer en argument fait tomber la suite.
+
+**Le journal ne reçoit que des noms et des comptes** : `ia-requester-infra:db-password créé`, un
+nombre de champs. **Jamais** le JSON envoyé à `create`/`edit`, **jamais** la sortie standard de
+`bw get item` — c'est une fiche complète du coffre.
 
 Cas limites : aucune organisation réglée → coffre personnel, pas de liste de collection ;
 collection réglée introuvable ou réglage vide → première par ordre alphabétique, note ambre si un
