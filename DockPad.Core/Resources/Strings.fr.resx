@@ -1344,6 +1344,9 @@ Cette action est irréversible.</value>
   <data name="Inject_Files_Delete" xml:space="preserve">
     <value>Supprimer les fichiers générés</value>
   </data>
+  <data name="Inject_Create_Failed" xml:space="preserve">
+    <value>{0} : le coffre a refusé l'écriture</value>
+  </data>
   <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
     <value>Quota Codex indisponible</value>
   </data>

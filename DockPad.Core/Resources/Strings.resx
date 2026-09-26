@@ -1344,6 +1344,9 @@ This cannot be undone.</value>
   <data name="Inject_Files_Delete" xml:space="preserve">
     <value>Delete the generated files</value>
   </data>
+  <data name="Inject_Create_Failed" xml:space="preserve">
+    <value>{0}: the vault refused the write</value>
+  </data>
   <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
     <value>Codex quota unavailable</value>
   </data>

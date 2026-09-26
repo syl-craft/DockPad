@@ -15,15 +15,18 @@ namespace DockPad.Secrets;
 /// enchaîne.
 /// </para>
 /// <para>
-/// <b>Aucune clé de session n'est conservée.</b> Elle naît d'un <c>unlock</c>, vit le temps de
-/// <see cref="OpenAsync"/>, et sort de portée avec la méthode. C'est le choix retenu : DockPad
-/// démarre avec Windows et tourne des semaines, une clé de coffre n'a rien à y faire — au prix du
-/// mot de passe maître à chaque injection.
+/// <b>Aucune clé de session ne survit à une injection.</b> Elle naît d'un <c>unlock</c> et vit dans
+/// la fermeture du <see cref="SecretWriter"/> rendu par <see cref="OpenAsync"/> — ni la fenêtre ni
+/// le service ne la voient jamais, et <see cref="SecretWriter.Forget"/> la rend inatteignable dès
+/// que l'injection se termine. C'est le choix retenu : DockPad démarre avec Windows et tourne des
+/// semaines, une clé de coffre n'a rien à y faire — au prix du mot de passe maître à chaque
+/// injection.
 /// </para>
 /// <para>
-/// <b>Quatre appels au plus</b>, dont un seul <c>list items</c> qui ramène tout. Le script d'origine
-/// lançait une recherche par item ; ramener l'ensemble en un appel est plus rapide, et déplace la
-/// résolution du côté testable de la frontière (voir <see cref="SecretVault"/>).
+/// <b>Cinq appels pour lire</b> (<c>list collections</c> en plus avec une organisation), <b>puis</b>
+/// <c>create</c> ou <c>get</c>+<c>edit</c> par item et une relecture, seulement si l'on crée. Le
+/// script d'origine lançait une recherche par item ; ramener l'ensemble en un appel est plus rapide,
+/// et déplace la résolution du côté testable de la frontière (voir <see cref="SecretVault"/>).
 /// </para>
 /// </remarks>
 public sealed class BitwardenSecretSource : ISecretSource
@@ -198,7 +201,98 @@ public sealed class BitwardenSecretSource : ISecretSource
 
         var vault = new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured);
 
-        return new SecretSourceOpening(vault.Lookup, null, warning);
+        IReadOnlyList<SecretCollection> collections = [];
+        if (organisationId is not null)
+        {
+            string[] collectionArguments = ["list", "collections", "--organizationid", organisationId];
+            var listed = await RunAsync(exe, collectionArguments, session, token).ConfigureAwait(false);
+
+            // Des collections illisibles n'empêchent pas de LIRE : seule la création d'items neufs
+            // en dépend, et le formulaire le dira.
+            if (listed.Ok)
+                collections = BitwardenCli.ParseCollections(listed.Stdout)
+                    .Where(c => c.OrganizationId is null || c.OrganizationId == organisationId)
+                    .Select(c => new SecretCollection(c.Id, c.Name))
+                    .ToList();
+            else
+                LogService.Warn(new InvalidOperationException(Diagnostic(listed)), "Lecture des collections du coffre");
+        }
+
+        var writer = new SecretWriter(
+            organisationId is null ? null : configured,
+            collections,
+            (creations, collectionId, ct) => WriteAsync(exe, session, arguments, organisationId, configured,
+                creations, collectionId, ct));
+
+        return new SecretSourceOpening(vault.Lookup, null, warning, vault.Classify, writer);
+    }
+
+    /// <summary>
+    /// Écrit ce qui manque, item par item, puis relit le coffre.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Un refus n'arrête pas les autres</b> : chaque item est une écriture à part, et son échec
+    /// rejoint la liste des manques — même règle qu'une synchro qui échoue.
+    /// </para>
+    /// <para>
+    /// <b>On relit plutôt que de croire ce qu'on a envoyé</b> : rendre avec les valeurs saisies
+    /// ferait croire à un succès même si le coffre avait refusé.
+    /// </para>
+    /// <para>
+    /// Le journal reçoit des noms et des comptes. Jamais la fiche envoyée, jamais la sortie de
+    /// <c>bw get item</c> : c'est une fiche complète.
+    /// </para>
+    /// </remarks>
+    private static async Task<SecretWriteOutcome> WriteAsync(
+        string exe, IReadOnlyDictionary<string, string> session, string[] listArguments,
+        string? organisationId, string configured,
+        IReadOnlyList<SecretItemCreation> creations, string? collectionId, CancellationToken token)
+    {
+        var failures = new List<string>();
+
+        foreach (var creation in creations)
+        {
+            // La fiche est encodée sur SA ligne, hors de toute collection d'arguments : c'est la
+            // forme que la garde « charge utile par stdin » exige.
+            var sheet = creation.ItemId is null
+                ? BwItemPatch.Encode(BwItemPatch.NewItem(creation.ItemName, organisationId, collectionId, creation.Fields))
+                : null;
+
+            var written = sheet is not null
+                ? await RunAsync(exe, ["create", "item"], session, token, stdin: sheet).ConfigureAwait(false)
+                : await EditAsync(exe, session, creation, token).ConfigureAwait(false);
+
+            var names = string.Join(", ", creation.Fields.Select(f => $"{creation.ItemName}:{f.Field}"));
+
+            if (written.Ok)
+                LogService.Info($"Coffre : {names} {(creation.ItemId is null ? "créé" : "complété")}");
+            else
+            {
+                LogService.Warn(new InvalidOperationException(Diagnostic(written)), $"Écriture dans le coffre de {names}");
+                failures.Add(Loc.F("Inject_Create_Failed", creation.ItemName));
+            }
+        }
+
+        var items = await RunAsync(exe, listArguments, session, token).ConfigureAwait(false);
+        if (!items.Ok)
+            throw new InvalidOperationException(Diagnostic(items));
+
+        var vault = new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured);
+        return new SecretWriteOutcome(vault.Lookup, vault.Classify, failures);
+    }
+
+    /// <summary>La fiche complète, les champs en plus, réécrite. Rien d'autre n'est touché.</summary>
+    private static async Task<CliResult> EditAsync(
+        string exe, IReadOnlyDictionary<string, string> session, SecretItemCreation creation, CancellationToken token)
+    {
+        var current = await RunAsync(exe, ["get", "item", creation.ItemId!], session, token).ConfigureAwait(false);
+        if (!current.Ok) return current;
+
+        var sheet = BwItemPatch.Encode(BwItemPatch.AddFields(current.Stdout, creation.Fields));
+
+        return await RunAsync(exe, ["edit", "item", creation.ItemId!], session, token, stdin: sheet)
+            .ConfigureAwait(false);
     }
 
     // ───────────── Détails ─────────────
@@ -209,8 +303,8 @@ public sealed class BitwardenSecretSource : ISecretSource
         BitwardenCli.Locate(AppSettingsService.Current.BitwardenCliPath);
 
     private static Task<CliResult> RunAsync(string exe, string[] arguments,
-        IReadOnlyDictionary<string, string> secrets, CancellationToken token) =>
-        BitwardenCli.RunAsync(exe, arguments, secrets, token);
+        IReadOnlyDictionary<string, string> secrets, CancellationToken token, string? stdin = null) =>
+        BitwardenCli.RunAsync(exe, arguments, secrets, token, stdin);
 
     /// <summary>
     /// Le diagnostic à montrer en infobulle et à journaliser : l'erreur standard et le code de
