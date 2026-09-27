@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.24.0] — 2026-09-27
+
+### Nouveautés
+
+- **Créer les secrets absents pendant l'injection** : quand un fichier demande un item ou un champ que le coffre Vaultwarden n'a pas, un formulaire propose de le créer — un champ de saisie par valeur manquante, groupés par item, avec le même mot de passe maître. DockPad écrit dans le coffre, le relit, puis produit le rendu. *Continuer sans créer* garde le comportement d'avant.
+- **Placement des champs** : `password`, `username`, `notes` et `totp` vont dans les champs standards d'un item Identifiant ; tout autre nom devient un champ personnalisé masqué. Un item existant est complété sans rien perdre de sa fiche.
+- **Collection par défaut** : nouveau réglage dans Options → Secrets, pour ranger les items créés dans une organisation. La liste du formulaire part de ce réglage et reste modifiable.
+
+### Sécurité
+
+- Les valeurs saisies passent à la CLI Bitwarden par l'entrée standard, jamais en ligne de commande ; une nouvelle garde de test le vérifie. La clé de session ne survit pas à l'injection, y compris en cas d'échec, d'annulation ou de fermeture de la fenêtre.
+
 ## [1.23.1] — 2026-09-26
 
 ### Corrections
