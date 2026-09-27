@@ -21,10 +21,10 @@ public class SecretCreationPlanTests
     public void GroupeParItem_EtDistingueNouveauEtExistant()
     {
         var plan = SecretCreationPlan.Build(
-            [new("ia-requester-infra", "db-password"), new("ia-requester-infra", "api-key"), new("ntfy-infra", "admin-hash")],
-            Presence(("ia-requester-infra", "db-password", SecretPresenceKind.ItemMissing, null),
-                     ("ia-requester-infra", "api-key", SecretPresenceKind.ItemMissing, null),
-                     ("ntfy-infra", "admin-hash", SecretPresenceKind.FieldMissing, "n1")));
+            [new("app-infra", "db-password"), new("app-infra", "api-key"), new("notif-infra", "admin-hash")],
+            Presence(("app-infra", "db-password", SecretPresenceKind.ItemMissing, null),
+                     ("app-infra", "api-key", SecretPresenceKind.ItemMissing, null),
+                     ("notif-infra", "admin-hash", SecretPresenceKind.FieldMissing, "n1")));
 
         Assert.Equal(2, plan.Count);
         Assert.True(plan[0].IsNew);
@@ -37,12 +37,12 @@ public class SecretCreationPlanTests
     public void LaCasseDuNomDItem_NeFaitPasDeuxGroupes()
     {
         var plan = SecretCreationPlan.Build(
-            [new("NTFY-infra", "a"), new("ntfy-infra", "b")],
-            Presence(("ntfy-infra", "a", SecretPresenceKind.ItemMissing, null),
-                     ("ntfy-infra", "b", SecretPresenceKind.ItemMissing, null)));
+            [new("NOTIF-infra", "a"), new("notif-infra", "b")],
+            Presence(("notif-infra", "a", SecretPresenceKind.ItemMissing, null),
+                     ("notif-infra", "b", SecretPresenceKind.ItemMissing, null)));
 
         var only = Assert.Single(plan);
-        Assert.Equal("NTFY-infra", only.ItemName);
+        Assert.Equal("NOTIF-infra", only.ItemName);
         Assert.Equal(new[] { "a", "b" }, only.Fields);
     }
 

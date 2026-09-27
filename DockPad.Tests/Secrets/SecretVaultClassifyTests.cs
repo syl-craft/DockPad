@@ -30,7 +30,7 @@ public class SecretVaultClassifyTests
     [Fact]
     public void UnItemAbsent_EstCreable()
     {
-        var presence = Vault().Classify(new("ia-requester-infra", "db-password"));
+        var presence = Vault().Classify(new("app-infra", "db-password"));
 
         Assert.Equal(SecretPresenceKind.ItemMissing, presence.Kind);
         Assert.Null(presence.ItemId);

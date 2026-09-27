@@ -14,11 +14,11 @@ public class BwItemPatchTests
     [Fact]
     public void UnNouvelItem_EstUnIdentifiant_RangeDansSaCollection()
     {
-        var item = Parse(BwItemPatch.NewItem("ia-requester-infra", "org1", "col1",
+        var item = Parse(BwItemPatch.NewItem("app-infra", "org1", "col1",
             [new("password", "p"), new("api-key", "k")]));
 
         Assert.Equal(1, (int)item["type"]!);
-        Assert.Equal("ia-requester-infra", (string)item["name"]!);
+        Assert.Equal("app-infra", (string)item["name"]!);
         Assert.Equal("org1", (string)item["organizationId"]!);
         Assert.Equal("col1", (string)item["collectionIds"]![0]!);
         Assert.Equal("p", (string)item["login"]!["password"]!);
@@ -54,7 +54,7 @@ public class BwItemPatchTests
     private const string FullItem = """
         {
           "id": "n1", "organizationId": "org1", "collectionIds": ["col1"], "type": 1,
-          "name": "ntfy-infra", "notes": null, "favorite": true,
+          "name": "notif-infra", "notes": null, "favorite": true,
           "login": { "username": "admin", "password": null, "totp": null,
                      "uris": [ { "match": null, "uri": "https://ntfy.example" } ] },
           "fields": [ { "name": "token", "value": "", "type": 1 }, { "name": "keep", "value": "k", "type": 0 } ],

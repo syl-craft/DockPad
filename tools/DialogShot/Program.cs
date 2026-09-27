@@ -277,12 +277,12 @@ internal static class Program
             [new("c1", "identifiants"), new("c2", "infra")],
             (_, _, _) => throw new InvalidOperationException("capture"));
 
-        DockPad.Secrets.SecretPresence Classify(DockPad.Secrets.SecretMarker m) => m.Item == "ntfy-infra"
+        DockPad.Secrets.SecretPresence Classify(DockPad.Secrets.SecretMarker m) => m.Item == "notif-infra"
             ? new(DockPad.Secrets.SecretPresenceKind.FieldMissing, "n1")
             : new(DockPad.Secrets.SecretPresenceKind.ItemMissing, null);
 
         var session = new DockPad.Secrets.InjectionSession(
-            "A={{ bw:ia-requester-infra:db-password }}\nB={{ bw:ia-requester-infra:api-key }}\nC={{ bw:ntfy-infra:admin-hash }}",
+            "A={{ bw:app-infra:db-password }}\nB={{ bw:app-infra:api-key }}\nC={{ bw:notif-infra:admin-hash }}",
             Path.GetTempPath(), DockPad.Secrets.SecretMode.Clipboard, [], new Dictionary<string, string>(),
             _ => DockPad.Secrets.SecretLookup.Missing("absent"), Classify, writer, warning: null);
 

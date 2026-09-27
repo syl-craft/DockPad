@@ -1273,7 +1273,7 @@ passé par l'entrée standard de `bw create item` / `bw edit item`, jamais en ar
 se limitent à `create item`, `get item <id>`, `edit item <id>` et `--organizationid <id>`. Vérifié
 par mutation : la passer en argument fait tomber la suite.
 
-**Le journal ne reçoit que des noms et des comptes** : `ia-requester-infra:db-password créé`, un
+**Le journal ne reçoit que des noms et des comptes** : `app-infra:db-password créé`, un
 nombre de champs. **Jamais** le JSON envoyé à `create`/`edit`, **jamais** la sortie standard de
 `bw get item` — c'est une fiche complète du coffre.
 
