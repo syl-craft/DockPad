@@ -282,7 +282,7 @@ internal static class Program
             : new(DockPad.Secrets.SecretPresenceKind.ItemMissing, null);
 
         var session = new DockPad.Secrets.InjectionSession(
-            "A={{ bw:app-infra:db-password }}\nB={{ bw:app-infra:api-key }}\nC={{ bw:notif-infra:admin-hash }}",
+            "A={{ bw:app-infra:db-password }}\nB={{ bw:app-infra:api-key }}\nC={{ bw:notif-infra:webhook-signing-secret-for-offsite-backups }}",
             Path.GetTempPath(), DockPad.Secrets.SecretMode.Clipboard, [], new Dictionary<string, string>(),
             _ => DockPad.Secrets.SecretLookup.Missing("absent"), Classify, writer, warning: null);
 

@@ -417,16 +417,27 @@ public partial class SecretInjectionWindow : Window
         _inputs.FirstOrDefault().Hidden?.Focus();
     }
 
-    /// <summary>Une ligne : le nom du champ, la saisie masquée, et 👁 pour la voir.</summary>
+    /// <summary>Une ligne : le nom du champ au-dessus, la saisie masquée, et 👁 pour la voir.</summary>
     private UIElement Row(string item, string field)
     {
-        var grid = new Grid { Margin = new Thickness(12, 2, 0, 2) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
+        var grid = new Grid { Margin = new Thickness(12, 4, 0, 4) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        var label = new TextBlock { Text = field, VerticalAlignment = VerticalAlignment.Center,
-            Foreground = (Brush)FindResource("Brush.TextLabel"), TextTrimming = TextTrimming.CharacterEllipsis };
+        // Le nom du champ a sa propre ligne, sur toute la largeur : une colonne fixe le coupait
+        // (« restic-server-vps-lite-pa… »), alors que c'est précisément ce qu'on doit lire pour
+        // savoir quoi saisir. Une TextBox en lecture seule plutôt qu'un TextBlock : il se
+        // sélectionne et se copie — pour aller chercher la valeur ailleurs sous ce nom exact.
+        // Hors tabulation : Tab et Entrée vont de saisie en saisie, pas de libellé en libellé.
+        var label = new TextBox
+        {
+            Text = field, IsReadOnly = true, IsTabStop = false, TextWrapping = TextWrapping.Wrap,
+            BorderThickness = new Thickness(0), Padding = new Thickness(0), Margin = new Thickness(0, 0, 0, 3),
+            Background = System.Windows.Media.Brushes.Transparent,
+        };
+        label.SetResourceReference(ForegroundProperty, "Brush.TextLabel");
 
         // Mêmes brosses que TxtPassword : sans elles, la PasswordBox garde l'habillage clair
         // d'Aero2 en thème sombre. SetResourceReference plutôt qu'une brosse lue une fois, pour
@@ -468,10 +479,11 @@ public partial class SecretInjectionWindow : Window
             hidden.Visibility = Vis(!reveal);
         };
 
-        Grid.SetColumn(label, 0);
-        Grid.SetColumn(hidden, 1);
-        Grid.SetColumn(shown, 1);
-        Grid.SetColumn(eye, 2);
+        Grid.SetColumnSpan(label, 2);
+        Grid.SetRow(hidden, 1);
+        Grid.SetRow(shown, 1);
+        Grid.SetRow(eye, 1);
+        Grid.SetColumn(eye, 1);
         grid.Children.Add(label);
         grid.Children.Add(hidden);
         grid.Children.Add(shown);
