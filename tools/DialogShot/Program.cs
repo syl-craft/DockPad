@@ -273,7 +273,7 @@ internal static class Program
         var window = new DockPad.Secrets.SecretInjectionWindow(
             Path.Combine(Path.GetTempPath(), "docker-compose.yml"));
 
-        var writer = new DockPad.Secrets.SecretWriter("fezhome-cli",
+        var writer = new DockPad.Secrets.SecretWriter("Infra maison",
             [new("c1", "identifiants"), new("c2", "infra")],
             (_, _, _) => throw new InvalidOperationException("capture"));
 

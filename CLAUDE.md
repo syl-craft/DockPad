@@ -1289,7 +1289,7 @@ depuis l'écran ambre après coup (second mot de passe), création d'une collect
 organisation.
 
 **Non automatisé, et c'est nommé** : les appels réels à `bw`. Vérification manuelle sur
-`fezhome-cli` avec un item jetable — création d'item, ajout de champ à un item existant, relecture,
+l'organisation de test avec un item jetable — création d'item, ajout de champ à un item existant, relecture,
 rendu complet.
 
 #### Le presse-papier (`ClipboardGuard`)
