@@ -1242,6 +1242,12 @@ This cannot be undone.</value>
   <data name="Settings_Inject_OrgHint" xml:space="preserve">
     <value>Empty = search the whole vault. A dedicated organisation avoids a personal item of the same name making the lookup ambiguous.</value>
   </data>
+  <data name="Settings_Inject_Collection" xml:space="preserve">
+    <value>Default collection</value>
+  </data>
+  <data name="Settings_Inject_CollectionHint" xml:space="preserve">
+    <value>Where items created during an injection are stored. Empty = the organization's first collection.</value>
+  </data>
   <data name="Settings_Inject_ClearAfter" xml:space="preserve">
     <value>Clear the clipboard after</value>
   </data>
@@ -1343,6 +1349,51 @@ This cannot be undone.</value>
   </data>
   <data name="Inject_Files_Delete" xml:space="preserve">
     <value>Delete the generated files</value>
+  </data>
+  <data name="Inject_Create_Failed" xml:space="preserve">
+    <value>{0}: the vault refused the write</value>
+  </data>
+  <data name="Inject_Create_NotStored" xml:space="preserve">
+    <value>{0}: '{1}' was written but the vault did not keep it</value>
+  </data>
+  <data name="Inject_Create_Title" xml:space="preserve">
+    <value>Secrets missing from the vault</value>
+  </data>
+  <data name="Inject_Create_IntroOrg" xml:space="preserve">
+    <value>These values will be written to the organization '{0}'.</value>
+  </data>
+  <data name="Inject_Create_IntroVault" xml:space="preserve">
+    <value>These values will be written to your personal vault.</value>
+  </data>
+  <data name="Inject_Create_NewItem" xml:space="preserve">
+    <value>new item</value>
+  </data>
+  <data name="Inject_Create_ExistingItem" xml:space="preserve">
+    <value>existing item</value>
+  </data>
+  <data name="Inject_Create_Collection" xml:space="preserve">
+    <value>Collection</value>
+  </data>
+  <data name="Inject_Create_CollectionMissing" xml:space="preserve">
+    <value>The collection '{0}' does not exist in the organization: the first one is proposed.</value>
+  </data>
+  <data name="Inject_Create_NoCollection" xml:space="preserve">
+    <value>The organization has no collection: missing items cannot be created.</value>
+  </data>
+  <data name="Inject_Create_EmptyHint" xml:space="preserve">
+    <value>A field left empty will not be created.</value>
+  </data>
+  <data name="Inject_Create_Show" xml:space="preserve">
+    <value>Show the value</value>
+  </data>
+  <data name="Inject_Create_Button" xml:space="preserve">
+    <value>Create and continue</value>
+  </data>
+  <data name="Inject_Create_Skip" xml:space="preserve">
+    <value>Continue without creating</value>
+  </data>
+  <data name="Inject_State_Creating" xml:space="preserve">
+    <value>Creating secrets, then reading…</value>
   </data>
   <data name="Usage_Codex_QuotaNotice" xml:space="preserve">
     <value>Codex quota unavailable</value>

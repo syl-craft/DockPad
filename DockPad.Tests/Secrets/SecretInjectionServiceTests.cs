@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO;
 using DockPad.Secrets;
 using DockPad.Services.Localization;
 
@@ -97,5 +98,65 @@ public class SecretInjectionServiceTests
         var (_, failure) = BitwardenSecretSource.ResolveOrganisation([], "Infra maison");
 
         Assert.Equal(Loc.F("Inject_Error_OrgMissing", "Infra maison", Loc.T("Inject_Error_OrgNone")), failure);
+    }
+
+    // ───────────── La session : proposer, créer, rendre ─────────────
+
+    [Fact]
+    public void UneSession_ProposeCeQuiManque_EtRendApresCreation()
+    {
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["ntfy:token"] = "tk" };
+
+        SecretLookup Lookup(SecretMarker m) => values.TryGetValue(m.ToString(), out var v)
+            ? SecretLookup.Found(v) : SecretLookup.Missing($"{m} absent");
+        SecretPresence Classify(SecretMarker m) => values.ContainsKey(m.ToString())
+            ? new(SecretPresenceKind.Found, "n1") : new(SecretPresenceKind.ItemMissing, null);
+
+        var session = new InjectionSession(
+            "A={{ bw:ntfy:token }}\nB={{ bw:ia:key }}", Path.GetTempPath(), SecretMode.Clipboard,
+            [], new Dictionary<string, string>(), Lookup, Classify, writer: null, warning: null);
+
+        var request = Assert.Single(session.Creatable);
+        Assert.Equal("ia", request.ItemName);
+
+        values["ia:key"] = "k";
+        session.Refresh(Lookup, Classify, failures: []);
+
+        var report = SecretInjectionService.Render(session);
+        Assert.True(report.Complete);
+        Assert.Equal("A=tk\nB=k", report.Render!.Text);
+    }
+
+    [Fact]
+    public void UnRefusDEcriture_RejointLesManques()
+    {
+        SecretLookup Lookup(SecretMarker m) => m.Item == "ntfy" ? SecretLookup.Found("tk") : SecretLookup.Missing("ia absent");
+        SecretPresence Classify(SecretMarker m) => new(SecretPresenceKind.Found, "n1");
+
+        var session = new InjectionSession(
+            "A={{ bw:ntfy:token }}\nB={{ bw:ia:key }}", Path.GetTempPath(), SecretMode.Clipboard,
+            [], new Dictionary<string, string>(), Lookup, Classify, writer: null, warning: null);
+
+        session.Refresh(Lookup, Classify, failures: ["ia : le coffre a refusé l'écriture"]);
+
+        var report = SecretInjectionService.Render(session);
+        Assert.Contains("ia : le coffre a refusé l'écriture", report.Missing);
+    }
+
+    [Fact]
+    public void UneNote_RejointLesManques()
+    {
+        // Le cas d'un item neuf qu'on ne peut pas proposer faute de collection : l'écran ambre doit
+        // le dire, sinon le manque paraît oublié plutôt qu'impossible à combler.
+        SecretLookup Lookup(SecretMarker m) => m.Item == "ntfy" ? SecretLookup.Found("tk") : SecretLookup.Missing("ia absent");
+
+        var session = new InjectionSession(
+            "A={{ bw:ntfy:token }}\nB={{ bw:ia:key }}", Path.GetTempPath(), SecretMode.Clipboard,
+            [], new Dictionary<string, string>(), Lookup, classify: null, writer: null, warning: null);
+
+        session.Note("pas de collection");
+
+        var report = SecretInjectionService.Render(session);
+        Assert.Contains("pas de collection", report.Missing);
     }
 }

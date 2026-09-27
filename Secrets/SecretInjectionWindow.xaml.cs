@@ -3,7 +3,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using DockPad.Services;
 
 namespace DockPad.Secrets;
@@ -46,6 +49,18 @@ public partial class SecretInjectionWindow : Window
     private bool _armedOnce;
     private readonly bool _syncOnly;
 
+    /// <summary>
+    /// La fenêtre est fermée. Lu au retour d'un appel au coffre : la source d'annulation est déjà
+    /// libérée à ce moment-là, et ce drapeau ne l'est jamais.
+    /// </summary>
+    private bool _closed;
+
+    /// <summary>La session ouverte entre le déverrouillage et le rendu — nulle avant, et après.</summary>
+    private InjectionSession? _session;
+
+    /// <summary>Une saisie par champ manquant : l'item et le champ, et les deux contrôles qui le portent.</summary>
+    private readonly List<(string Item, string Field, PasswordBox Hidden, TextBox Shown)> _inputs = [];
+
     /// <summary>Clé du libellé de <c>BtnClose</c>, gardée pour pouvoir le retraduire.</summary>
     /// <remarks>
     /// Le bouton dit « Annuler » tant qu'une action est en cours, « Fermer » une fois le
@@ -81,10 +96,13 @@ public partial class SecretInjectionWindow : Window
         Loc.LanguageChanged += OnLanguageChanged;
         Closed += (_, _) =>
         {
+            _closed = true;
             ClipboardGuard.Changed -= OnGuardChanged;
             Loc.LanguageChanged -= OnLanguageChanged;
             _cancellation.Cancel();
             _cancellation.Dispose();
+            ClearInputs();
+            _session?.Close();
         };
 
         Loaded += async (_, _) => await StartAsync().ConfigureAwait(true);
@@ -176,17 +194,94 @@ public partial class SecretInjectionWindow : Window
         // et un ecran qui annonce « lecture » pendant qu'il telecharge fait croire a un blocage.
         ShowBusy(Loc.T(sync ? "Inject_State_SyncingWorking" : "Inject_State_Working"));
 
-        InjectionReport report;
+        if (_syncOnly)
+        {
+            InjectionReport synced;
+            try { synced = await SecretInjectionService.SyncAsync(password, _cancellation.Token).ConfigureAwait(true); }
+            catch (OperationCanceledException) when (Timeout()) { ShowTimeout(); return; }
+            catch (OperationCanceledException) { return; }
+            catch (Exception ex)
+            {
+                LogService.Warn(ex, "Synchronisation du coffre");
+                ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), ex.GetType().Name));
+                return;
+            }
+            finally { TxtPassword.Clear(); }
+
+            if (!synced.Ok)
+            {
+                // Un déverrouillage refusé se corrige sur place : on reste sur la saisie plutôt que
+                // de renvoyer vers un écran d'échec qu'il faudrait fermer pour réessayer.
+                if (synced.Failures.Contains(Loc.T("Inject_Error_UnlockRefused")))
+                    ShowUnlock(Loc.T("Inject_Error_UnlockRefused"));
+                else
+                    ShowFailure(synced);
+                return;
+            }
+
+            ShowSynced();
+            return;
+        }
+
+        (InjectionSession? session, InjectionReport? failure) opened;
         try
         {
-            report = _syncOnly
-                ? await SecretInjectionService.SyncAsync(password, _cancellation.Token).ConfigureAwait(true)
-                : await SecretInjectionService.InjectAsync(
-                    _content!, Path.GetDirectoryName(_filePath)!, _mode, password, sync,
-                    _cancellation.Token).ConfigureAwait(true);
+            opened = await SecretInjectionService.OpenAsync(
+                _content!, Path.GetDirectoryName(_filePath)!, _mode, password, sync,
+                _cancellation.Token).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (Timeout()) { ShowTimeout(); return; }
         catch (OperationCanceledException) { return; }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Injection de secrets");
+            ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), ex.GetType().Name));
+            return;
+        }
+        finally { TxtPassword.Clear(); }
+
+        // Fenêtre fermée pendant l'ouverture : la session revenue tient une clé que plus rien ne
+        // refermerait — le gestionnaire de Closed est déjà passé, et _session était encore nul.
+        if (_closed) { opened.session?.Close(); return; }
+
+        if (opened.failure is { } refused)
+        {
+            // Même règle qu'en synchro : un déverrouillage refusé se corrige sur place.
+            if (refused.Failures.Contains(Loc.T("Inject_Error_UnlockRefused")))
+                ShowUnlock(Loc.T("Inject_Error_UnlockRefused"));
+            else
+                ShowFailure(refused);
+            return;
+        }
+
+        _session = opened.session!;
+
+        if (Proposable(_session).Count > 0) { ShowCreate(_session); return; }
+
+        // Rien à proposer, mais pas faute de manque : l'organisation n'a aucune collection où
+        // ranger un item neuf. L'écran ambre doit le dire, sinon le manque paraît oublié plutôt
+        // qu'impossible à combler d'ici.
+        if (_session.Writer is { CanCreateItems: false } && _session.Creatable.Any(r => r.IsNew))
+            _session.Note(Loc.T("Inject_Create_NoCollection"));
+
+        Finish();
+    }
+
+    /// <summary>
+    /// Rend, puis montre — après la création, ou directement quand il n'y avait rien à créer.
+    /// </summary>
+    /// <remarks>
+    /// La session est fermée ici, quoi qu'il arrive : la clé de session ne survit pas au rendu.
+    /// </remarks>
+    private void Finish()
+    {
+        var session = _session!;
+        InjectionReport report;
+
+        try
+        {
+            report = SecretInjectionService.Render(session);
+        }
         catch (Exception ex) when (_mode is SecretMode.Files or SecretMode.Both && ex is IOException or UnauthorizedAccessException)
         {
             // La CLI a repondu, c'est le disque qui a resiste : annoncer « la CLI a refuse la
@@ -207,22 +302,11 @@ public partial class SecretInjectionWindow : Window
         }
         finally
         {
-            // La zone de saisie ne garde pas le mot de passe une fois l'appel parti.
-            TxtPassword.Clear();
+            session.Close();
+            _session = null;
         }
 
-        if (!report.Ok)
-        {
-            // Un déverrouillage refusé se corrige sur place : on reste sur la saisie plutôt que de
-            // renvoyer vers un écran d'échec qu'il faudrait fermer pour réessayer.
-            if (report.Failures.Contains(Loc.T("Inject_Error_UnlockRefused")))
-                ShowUnlock(Loc.T("Inject_Error_UnlockRefused"));
-            else
-                ShowFailure(report);
-            return;
-        }
-
-        if (report.DidSync) { ShowSynced(); return; }
+        if (!report.Ok) { ShowFailure(report); return; }
 
         // L'armement appartient au déroulement et non à l'affichage : les écrans ne doivent que
         // montrer. C'est aussi ce qui permet à l'outil de capture de les rendre sans écrire dans le
@@ -260,6 +344,231 @@ public partial class SecretInjectionWindow : Window
         }
 
         ShowResult(report);
+    }
+
+    /// <summary>Ce que le formulaire peut réellement proposer : sans collection, aucun item neuf.</summary>
+    private static IReadOnlyList<SecretItemRequest> Proposable(InjectionSession session) =>
+        session.Writer is null
+            ? []
+            : session.Creatable.Where(r => !r.IsNew || session.Writer.CanCreateItems).ToList();
+
+    /// <summary>
+    /// Un champ de saisie par champ manquant, groupés par item. Construit en code : la fenêtre ne vit
+    /// que le temps d'une injection, une bascule de langue en cours de saisie n'a pas à la retraduire.
+    /// </summary>
+    private void ShowCreate(InjectionSession session)
+    {
+        _inputs.Clear();
+        CreateRows.Children.Clear();
+
+        var writer = session.Writer!;
+        var requests = Proposable(session);
+
+        TxtCreateIntro.Text = writer.Organisation is { } org
+            ? Loc.F("Inject_Create_IntroOrg", org)
+            : Loc.T("Inject_Create_IntroVault");
+
+        foreach (var request in requests)
+        {
+            var header = new DockPanel { Margin = new Thickness(0, 8, 0, 4) };
+            var badge = new TextBlock
+            {
+                Text = Loc.T(request.IsNew ? "Inject_Create_NewItem" : "Inject_Create_ExistingItem"),
+                FontSize = 11, Foreground = (Brush)FindResource("Brush.TextHint"),
+            };
+            DockPanel.SetDock(badge, Dock.Right);
+            header.Children.Add(badge);
+            header.Children.Add(new TextBlock { Text = request.ItemName, FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)FindResource("Brush.Text") });
+            CreateRows.Children.Add(header);
+
+            foreach (var field in request.Fields)
+                CreateRows.Children.Add(Row(request.ItemName, field));
+        }
+
+        var needsCollection = requests.Any(r => r.IsNew) && writer.Organisation is not null;
+        RowCollection.Visibility = Vis(needsCollection);
+        TxtCreateNote.Visibility = Visibility.Collapsed;
+
+        if (needsCollection)
+        {
+            var configured = AppSettingsService.Current.VaultCollection;
+            var (selected, configuredMissing) = SecretCreationPlan.DefaultCollection(writer.Collections, configured);
+
+            CmbCollection.ItemsSource = writer.Collections.OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+            CmbCollection.SelectedItem = selected;
+
+            if (configuredMissing)
+            {
+                TxtCreateNote.Text = Loc.F("Inject_Create_CollectionMissing", configured);
+                TxtCreateNote.Visibility = Visibility.Visible;
+            }
+        }
+
+        if (session.Creatable.Any(r => r.IsNew) && !writer.CanCreateItems)
+        {
+            TxtCreateNote.Text = Loc.T("Inject_Create_NoCollection");
+            TxtCreateNote.Visibility = Visibility.Visible;
+        }
+
+        Show(PanelCreate);
+        Buttons(unlock: false, create: true);
+        RefreshCreateButton();
+        _inputs.FirstOrDefault().Hidden?.Focus();
+    }
+
+    /// <summary>Une ligne : le nom du champ, la saisie masquée, et 👁 pour la voir.</summary>
+    private UIElement Row(string item, string field)
+    {
+        var grid = new Grid { Margin = new Thickness(12, 2, 0, 2) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var label = new TextBlock { Text = field, VerticalAlignment = VerticalAlignment.Center,
+            Foreground = (Brush)FindResource("Brush.TextLabel"), TextTrimming = TextTrimming.CharacterEllipsis };
+
+        // Mêmes brosses que TxtPassword : sans elles, la PasswordBox garde l'habillage clair
+        // d'Aero2 en thème sombre. SetResourceReference plutôt qu'une brosse lue une fois, pour
+        // qu'une bascule de thème en cours de saisie suive — la sémantique de DynamicResource.
+        var hidden = new PasswordBox { Padding = new Thickness(6, 5, 6, 5), BorderThickness = new Thickness(1) };
+        hidden.SetResourceReference(BackgroundProperty, "Brush.SurfaceCard");
+        hidden.SetResourceReference(ForegroundProperty, "Brush.Text");
+        hidden.SetResourceReference(PasswordBox.CaretBrushProperty, "Brush.Text");
+        hidden.SetResourceReference(BorderBrushProperty, "Brush.BorderStrong");
+        var shown = new TextBox { Padding = new Thickness(6, 5, 6, 5), Visibility = Visibility.Collapsed };
+        AutomationProperties.SetName(hidden, $"{item} {field}");
+        AutomationProperties.SetName(shown, $"{item} {field}");
+
+        hidden.PasswordChanged += (_, _) => RefreshCreateButton();
+        shown.TextChanged += (_, _) => RefreshCreateButton();
+        hidden.KeyDown += Input_KeyDown;
+        shown.KeyDown += Input_KeyDown;
+
+        var eye = new ToggleButton
+        {
+            Content = "👁", Width = 30, Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(0),
+            FontFamily = new FontFamily("Segoe UI Emoji, Segoe UI Symbol, Segoe UI"),
+            ToolTip = Loc.T("Inject_Create_Show"),
+            BorderThickness = new Thickness(1),
+            Template = (ControlTemplate)FindResource("EyeToggleTemplate"),
+            // Hors de la tabulation : Entrée et Tab passent de saisie en saisie, et s'arrêter sur
+            // 👁 puis frapper Entrée ou Espace dévoilait la valeur. La souris l'atteint toujours.
+            IsTabStop = false,
+        };
+        eye.SetResourceReference(BackgroundProperty, "Brush.SurfaceCard");
+        eye.SetResourceReference(ForegroundProperty, "Brush.Text");
+        eye.SetResourceReference(BorderBrushProperty, "Brush.BorderStrong");
+        AutomationProperties.SetName(eye, Loc.T("Inject_Create_Show"));
+        eye.Click += (_, _) =>
+        {
+            var reveal = eye.IsChecked == true;
+            if (reveal) shown.Text = hidden.Password; else hidden.Password = shown.Text;
+            shown.Visibility = Vis(reveal);
+            hidden.Visibility = Vis(!reveal);
+        };
+
+        Grid.SetColumn(label, 0);
+        Grid.SetColumn(hidden, 1);
+        Grid.SetColumn(shown, 1);
+        Grid.SetColumn(eye, 2);
+        grid.Children.Add(label);
+        grid.Children.Add(hidden);
+        grid.Children.Add(shown);
+        grid.Children.Add(eye);
+
+        _inputs.Add((item, field, hidden, shown));
+        return grid;
+    }
+
+    /// <summary>La valeur de la ligne, qu'elle soit affichée ou masquée.</summary>
+    private static string Value((string Item, string Field, PasswordBox Hidden, TextBox Shown) input) =>
+        input.Shown.Visibility == Visibility.Visible ? input.Shown.Text : input.Hidden.Password;
+
+    private void RefreshCreateButton() => BtnCreate.IsEnabled = _inputs.Any(i => Value(i).Length > 0);
+
+    /// <summary>Entrée passe à la saisie suivante, comme dans un formulaire, puis au bouton Créer.</summary>
+    /// <remarks>
+    /// Jamais <c>MoveFocus(Next)</c> : l'élément suivant dans l'ordre de tabulation était le 👁 de la
+    /// ligne, et une seconde Entrée le basculait — la valeur apparaissait en clair. On vise donc la
+    /// saisie suivante elle-même, sous la forme qu'elle montre.
+    /// </remarks>
+    private void Input_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        e.Handled = true;
+
+        var index = _inputs.FindIndex(i => ReferenceEquals(i.Hidden, sender) || ReferenceEquals(i.Shown, sender));
+        if (index < 0) return;
+
+        if (index + 1 < _inputs.Count)
+        {
+            var next = _inputs[index + 1];
+            if (next.Shown.Visibility == Visibility.Visible) next.Shown.Focus(); else next.Hidden.Focus();
+        }
+        else if (BtnCreate.IsEnabled) BtnCreate.Focus();
+    }
+
+    /// <summary>Passer, c'est aussi oublier ce qui a été tapé : rien ne reste dans les contrôles.</summary>
+    private void SkipCreate_Click(object sender, RoutedEventArgs e)
+    {
+        ClearInputs();
+        Finish();
+    }
+
+    private async void Create_Click(object sender, RoutedEventArgs e)
+    {
+        var session = _session!;
+        var creations = SecretCreationPlan.WithValues(Proposable(session), (item, field) =>
+            _inputs.Where(i => i.Item == item && i.Field == field).Select(Value).FirstOrDefault());
+        var collectionId = (CmbCollection.SelectedItem as SecretCollection)?.Id;
+
+        ClearInputs();
+        ShowBusy(Loc.T("Inject_State_Creating"));
+
+        try
+        {
+            await SecretInjectionService.CreateAsync(session, creations, collectionId, _cancellation.Token)
+                .ConfigureAwait(true);
+        }
+        // Aucune clé de session ne survit à une injection — y compris celle-ci, annulée ou en
+        // échec. Les trois branches qui n'atteignent pas Finish() (qui la referme déjà) doivent
+        // donc la refermer elles-mêmes ; sinon le SecretWriter, et la clé qu'il tient, vivrait
+        // jusqu'à la fermeture de la fenêtre.
+        catch (OperationCanceledException) when (Timeout()) { AbandonSession(); ShowTimeout(); return; }
+        catch (OperationCanceledException) { AbandonSession(); return; }
+        catch (Exception ex)
+        {
+            // La relecture a échoué : ce qui a été écrit l'est, mais on ne peut pas le prouver.
+            LogService.Warn(ex, "Création de secrets dans le coffre");
+            AbandonSession();
+            ShowFailure(InjectionReport.Fail(Loc.T("Inject_Error_CliFailed"), ex.GetType().Name));
+            return;
+        }
+
+        // Fenêtre fermée pendant l'écriture : ne rien rendre — ni fichiers écrits derrière elle, ni
+        // presse-papier armé pour personne.
+        if (_closed) { AbandonSession(); return; }
+
+        Finish();
+    }
+
+    /// <summary>
+    /// Referme la session hors du chemin de <see cref="Finish"/> — annulation ou échec de
+    /// <see cref="Create_Click"/> — pour que la clé de session ne lui survive pas.
+    /// </summary>
+    private void AbandonSession()
+    {
+        _session?.Close();
+        _session = null;
+    }
+
+    /// <summary>Les valeurs saisies ne restent pas dans les contrôles une fois parties.</summary>
+    private void ClearInputs()
+    {
+        foreach (var input in _inputs) { input.Hidden.Clear(); input.Shown.Clear(); }
+        _inputs.Clear();
+        CreateRows.Children.Clear();
     }
 
     /// <summary>
@@ -579,7 +888,7 @@ public partial class SecretInjectionWindow : Window
 
     private void Show(UIElement panel)
     {
-        foreach (var candidate in new UIElement[] { PanelBusy, PanelChoice, PanelUnlock, PanelResult, PanelFailed })
+        foreach (var candidate in new UIElement[] { PanelBusy, PanelChoice, PanelCreate, PanelUnlock, PanelResult, PanelFailed })
             candidate.Visibility = candidate == panel ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -587,10 +896,12 @@ public partial class SecretInjectionWindow : Window
     /// Le pied ne porte plus que les boutons d'<b>étape</b> — les commandes vivent à côté de ce sur
     /// quoi elles agissent.
     /// </summary>
-    private void Buttons(bool unlock, bool proceed = false)
+    private void Buttons(bool unlock, bool proceed = false, bool create = false)
     {
         BtnUnlock.Visibility = unlock ? Visibility.Visible : Visibility.Collapsed;
         BtnContinue.Visibility = proceed ? Visibility.Visible : Visibility.Collapsed;
+        BtnCreate.Visibility = create ? Visibility.Visible : Visibility.Collapsed;
+        BtnSkipCreate.Visibility = create ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ───────────── Le décompte ─────────────

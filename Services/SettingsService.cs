@@ -126,6 +126,11 @@ public static class SettingsService
     public static void SaveVaultOrganization(string organisation) =>
         AppSettingsService.Update(s => s.VaultOrganization = organisation.Trim());
 
+    public static string LoadVaultCollection() => AppSettingsService.Current.VaultCollection;
+
+    public static void SaveVaultCollection(string collection) =>
+        AppSettingsService.Update(s => s.VaultCollection = collection.Trim());
+
     /// <summary>Ctrl+Shift+M.</summary>
     private static (uint, uint) DefaultHotkey() =>
         (HotkeyService.MOD_CONTROL | HotkeyService.MOD_SHIFT, 0x4D);

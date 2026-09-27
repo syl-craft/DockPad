@@ -14,18 +14,62 @@ public sealed record SecretSourceFailure(string Message, string? Diagnostic = nu
 /// <summary>
 /// Un coffre ouvert : de quoi résoudre un marqueur, ou la raison d'un refus.
 /// </summary>
-/// <param name="Lookup">
-/// La <b>seule</b> chose que la source rend au reste du programme. Tout ce qui sait comment le
-/// coffre s'appelle, s'authentifie et se lit reste derrière cette fonction.
-/// </param>
-/// <param name="Warning">
-/// Ce qui n'empêche pas de travailler mais ne doit pas se taire — un rafraîchissement qui a échoué,
-/// donc des valeurs peut-être datées.
+/// <param name="Lookup">De quoi résoudre un marqueur.</param>
+/// <param name="Warning">Ce qui n'empêche pas de travailler mais ne doit pas se taire.</param>
+/// <param name="Classify">Le tri d'un marqueur — trouvé, item absent, champ absent, ambigu.</param>
+/// <param name="Writer">
+/// De quoi écrire ce qui manque. <c>null</c> pour une source en lecture seule : le formulaire de
+/// création n'apparaît alors jamais.
 /// </param>
 public sealed record SecretSourceOpening(
     Func<SecretMarker, SecretLookup>? Lookup,
     SecretSourceFailure? Failure = null,
-    string? Warning = null);
+    string? Warning = null,
+    Func<SecretMarker, SecretPresence>? Classify = null,
+    SecretWriter? Writer = null);
+
+/// <summary>Le coffre relu après écriture, et ce qui a été refusé.</summary>
+public sealed record SecretWriteOutcome(
+    Func<SecretMarker, SecretLookup> Lookup,
+    Func<SecretMarker, SecretPresence> Classify,
+    IReadOnlyList<string> Failures);
+
+/// <summary>
+/// Ce qui sait écrire dans le coffre ouvert — et qui tient la clé de session le temps d'une injection.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>La clé n'est pas un champ.</b> Elle vit dans la fermeture <c>write</c> fabriquée par la
+/// source ; ni la fenêtre ni le service ne la voient jamais. <see cref="Forget"/> lâche la
+/// fermeture : la clé devient inatteignable, et une écriture tardive lève au lieu d'écrire.
+/// </para>
+/// <para>
+/// C'est le seul assouplissement de « aucune clé conservée » : le formulaire s'intercale entre la
+/// lecture et l'écriture, donc la clé doit survivre à la saisie — et à rien de plus.
+/// </para>
+/// </remarks>
+public sealed class SecretWriter(
+    string? organisation,
+    IReadOnlyList<SecretCollection> collections,
+    Func<IReadOnlyList<SecretItemCreation>, string?, CancellationToken, Task<SecretWriteOutcome>> write)
+{
+    private Func<IReadOnlyList<SecretItemCreation>, string?, CancellationToken, Task<SecretWriteOutcome>>? _write = write;
+
+    /// <summary>L'organisation où les items seront créés, ou <c>null</c> pour le coffre personnel.</summary>
+    public string? Organisation { get; } = organisation;
+
+    /// <summary>Les collections de l'organisation. Vide sans organisation.</summary>
+    public IReadOnlyList<SecretCollection> Collections { get; } = collections;
+
+    /// <summary>Un item neuf peut-il être créé ? Sans collection, une organisation le refuserait.</summary>
+    public bool CanCreateItems => Organisation is null || Collections.Count > 0;
+
+    public Task<SecretWriteOutcome> WriteAsync(
+        IReadOnlyList<SecretItemCreation> creations, string? collectionId, CancellationToken token) =>
+        (_write ?? throw new ObjectDisposedException(nameof(SecretWriter)))(creations, collectionId, token);
+
+    public void Forget() => _write = null;
+}
 
 /// <summary>
 /// D'où viennent les valeurs des marqueurs.

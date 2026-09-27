@@ -38,6 +38,7 @@ public class SecretSettingsTests : IDisposable
         Assert.Equal("", read.BitwardenCliPath);
         Assert.Equal(90, read.ClipboardClearSeconds);
         Assert.Equal("", read.VaultOrganization);
+        Assert.Equal("", read.VaultCollection);
 
         // Celui-ci compte plus que les autres : lu comme « décoché », il rendrait silencieusement
         // le comportement qui a déposé une clé périmée sur le NAS — trois fois.
@@ -76,6 +77,7 @@ public class SecretSettingsTests : IDisposable
             BitwardenCliPath = @"C:\bw\bw.exe",
             ClipboardClearSeconds = 0,
             VaultOrganization = "Infra maison",
+            VaultCollection = "infra",
         });
 
         var read = AppSettingsService.LoadFrom(File_, registry: _ => null);
@@ -83,6 +85,7 @@ public class SecretSettingsTests : IDisposable
         Assert.Equal(@"C:\bw\bw.exe", read.BitwardenCliPath);
         Assert.Equal(0, read.ClipboardClearSeconds);
         Assert.Equal("Infra maison", read.VaultOrganization);
+        Assert.Equal("infra", read.VaultCollection);
     }
 
     [Fact]
@@ -97,5 +100,6 @@ public class SecretSettingsTests : IDisposable
         Assert.DoesNotContain("BitwardenCliPath", lus);
         Assert.DoesNotContain("ClipboardClearSeconds", lus);
         Assert.DoesNotContain("VaultOrganization", lus);
+        Assert.DoesNotContain("VaultCollection", lus);
     }
 }

@@ -15,6 +15,16 @@ public sealed class BwOrganization
     public string Name { get; set; } = "";
 }
 
+/// <summary>Une collection d'organisation, telle que <c>bw list collections</c> la rend.</summary>
+public sealed class BwCollection
+{
+    public string Id { get; set; } = "";
+
+    public string Name { get; set; } = "";
+
+    public string? OrganizationId { get; set; }
+}
+
 /// <summary>Ce qu'un appel à la CLI a produit.</summary>
 public sealed record CliResult(int ExitCode, string Stdout, string Stderr)
 {
@@ -155,6 +165,9 @@ public static class BitwardenCli
     public static IReadOnlyList<BwOrganization> ParseOrganizations(string stdout) =>
         ParseArray<BwOrganization>(stdout);
 
+    public static IReadOnlyList<BwCollection> ParseCollections(string stdout) =>
+        ParseArray<BwCollection>(stdout);
+
     private static IReadOnlyList<T> ParseArray<T>(string stdout)
     {
         var json = FromFirstBrace(stdout, '[');
@@ -163,6 +176,15 @@ public static class BitwardenCli
         try { return JsonSerializer.Deserialize<List<T>>(json, JsonOpts) ?? []; }
         catch (JsonException) { return []; }
     }
+
+    /// <summary>
+    /// La fiche rendue par <c>bw get item</c>, à partir de sa première accolade, ou <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// Même découpe que les autres lectures : la CLI peut faire précéder son JSON d'un
+    /// avertissement, et <see cref="BwItemPatch.AddFields"/> ne saurait pas le lire.
+    /// </remarks>
+    public static string? ItemJson(string stdout) => FromFirstBrace(stdout, '{');
 
     private static string? FromFirstBrace(string stdout, char brace)
     {
@@ -174,18 +196,27 @@ public static class BitwardenCli
 
     /// <summary>
     /// Lance la CLI. <paramref name="secretEnvironment"/> est le <b>seul</b> chemin par lequel un
-    /// mot de passe ou une clé de session atteint le processus.
+    /// mot de passe ou une clé de session atteint le processus, et <paramref name="stdin"/> le seul
+    /// par lequel une fiche l'atteint.
     /// </summary>
+    /// <param name="stdin">
+    /// Une fiche encodée pour <c>bw create</c> ou <c>bw edit</c>. Jamais en argument : une ligne de
+    /// commande est lisible de tout processus de la machine. L'écriture est couverte par le même
+    /// délai et le même arrêt forcé que le reste de l'appel — une annulation pendant l'écriture ne
+    /// doit pas laisser bw.exe vivant avec une clé de session déverrouillée.
+    /// </param>
     public static async Task<CliResult> RunAsync(
         string exe,
         IReadOnlyList<string> arguments,
         IReadOnlyDictionary<string, string> secretEnvironment,
-        CancellationToken token)
+        CancellationToken token,
+        string? stdin = null)
     {
         var psi = new ProcessStartInfo(exe)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
+            RedirectStandardInput = stdin is not null,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8,
@@ -199,15 +230,28 @@ public static class BitwardenCli
             ?? throw new InvalidOperationException("The Bitwarden CLI could not be started.");
 
         // Lecture asynchrone des deux flux : `bw list items` remplit largement le tampon d'un pipe,
-        // et attendre la fin du processus avant de lire l'interbloquerait.
+        // et attendre la fin du processus avant de lire l'interbloquerait. Démarrée avant l'écriture
+        // sur l'entrée standard, pour la même raison : un `bw create item` qui écrirait déjà sur sa
+        // sortie pendant qu'on lui envoie la fiche interbloquerait sans ces lectures en vol.
         var stdout = process.StandardOutput.ReadToEndAsync(token);
         var stderr = process.StandardError.ReadToEndAsync(token);
 
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
         deadline.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
 
+        // L'écriture sur l'entrée standard vit dans CE `try` : une annulation pendant l'écriture —
+        // le délai comme la fermeture de la fenêtre d'injection — doit tuer bw.exe comme une
+        // annulation pendant l'attente de fin. Sans ça, un processus tenant une clé de session
+        // déverrouillée survivrait à l'exception, sans que rien ne le referme.
         try
         {
+            if (stdin is not null)
+            {
+                // Base64 : pur ASCII, donc indifférent à l'encodage de la console.
+                await process.StandardInput.WriteAsync(stdin.AsMemory(), deadline.Token).ConfigureAwait(false);
+                process.StandardInput.Close();
+            }
+
             await process.WaitForExitAsync(deadline.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)

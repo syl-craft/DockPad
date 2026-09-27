@@ -174,10 +174,12 @@ Secrets/                                 PERIMETRE D'AUDIT — tout ce qui voit 
     SecretTemplate.cs                    PUR — marqueurs, substitution, les deux filets
     SecretFieldResolver.cs               PUR — champ personnalise, puis password/username/notes/totp
     SecretVault.cs                       PUR — un item, aucun, ou deux : les trois cas nommes
+    SecretCreationPlan.cs                PUR — ce que le formulaire propose, groupé par item, et ce qu'il écrit
+    BwItemPatch.cs                       PUR — la fiche envoyée à `bw create`/`edit`, sans rien perdre
     BitwardenCli.cs                      Le seul point qui lance bw.exe (secrets par l'environnement)
     SecretInjectionService.cs            Orchestration : status -> unlock -> items -> rendu
     ClipboardGuard.cs                    Copie marquee, empreinte, minuteur, effacement garde
-    SecretInjectionWindow.xaml/.cs       La fenetre a quatre etats
+    SecretInjectionWindow.xaml/.cs       La fenetre a six etats
 
 Views/
     ContextMenuManagerWindow.xaml/.cs    Gestion des entrées de menu contextuel Windows
@@ -197,14 +199,14 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (753 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (909 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
                                          + traduction (parité des clés, pluriels, culture par défaut)
                                          + logique sortie de la fenêtre (lancement, overlay, recherche, dépôts, sauvegarde, commandes)
     Secrets/                             + injection de secrets : marqueurs, résolution, presse-papier, menu,
-                                           et les trois gardes du périmètre d'audit (vérifiés par mutation)
+                                           et les quatre gardes du périmètre d'audit (vérifiés par mutation)
 
 tools/
     generate-leet-resx.ps1               Script PowerShell : engendre Strings.qps-Ploc.resx depuis le français
@@ -1048,13 +1050,14 @@ matières ne franchissent jamais la frontière : mot de passe maître, clé de s
 coffre, texte rendu. Le dossier porte son propre `README.md`, en tête. La fenêtre y vit aussi, et
 non dans `Dialogs/` — c'est elle qui reçoit le mot de passe.
 
-`AppSettings` reste dehors avec ses trois réglages (`BitwardenCliPath`, `ClipboardClearSeconds`,
-`VaultOrganization`) : ce sont des préférences, jamais de la matière secrète. Elles **n'entrent pas**
+`AppSettings` reste dehors avec ses cinq réglages (`BitwardenCliPath`, `ClipboardClearSeconds`,
+`VaultOrganization`, `VaultCollection`, `SyncVaultBeforeInject`) : ce sont des préférences, jamais
+de la matière secrète. Elles **n'entrent pas**
 dans `FromRegistry` — la reprise ne concerne que les huit réglages qui ont réellement vécu dans le
 registre.
 
 DockPad étant un **assembly unique**, `internal` n'achète rien : la frontière ne peut pas être posée
-par un modificateur d'accès. Trois gardes la tiennent (`SecretBoundaryGuardTests`), **vérifiés par
+par un modificateur d'accès. Quatre gardes la tiennent (`SecretBoundaryGuardTests`), **vérifiés par
 mutation** comme les autres gardes du projet :
 
 | Garde | Interdit | Prouve |
@@ -1062,6 +1065,7 @@ mutation** comme les autres gardes du projet :
 | **Frontière** | Nommer un type du dossier hors des points d'entrée déclarés | La surface ne grandit pas en douce |
 | **Rien sur disque** | `File.Write*`, `FileStream` en écriture, `StreamWriter` dans le dossier | La garantie centrale, par le code et non par relecture |
 | **Rien en ligne de commande** | `--session`, `--password`, et tout identifiant sentant le secret dans une collection d'arguments | Ni le mot de passe ni la clé ne sont lisibles des autres processus |
+| **Charge utile par stdin** | le JSON d'un item dans une collection d'arguments | les valeurs saisies ne sont pas lisibles des autres processus |
 
 La troisième est un **durcissement du script d'origine**, qui passait `--session $env:BW_SESSION` en
 argument — donc lisible de tout processus, y compris par la lecture WMI que DockPad fait lui-même
@@ -1174,21 +1178,32 @@ Si le presse-papier est occupé alors que les fichiers sont écrits, les fichier
 l'indisponibilité rejoint la liste des manques. Effacer ce qui a marché pour punir ce qui a raté
 serait le mauvais sens.
 
-#### Aucune clé de session n'est conservée
+#### Aucune clé de session ne survit à une injection
 Mot de passe maître **à chaque injection**. Rien à garder, rien à faire expirer, rien à tester —
 DockPad démarre avec Windows et tourne des semaines, une clé de coffre n'a rien à y faire. La clé
-naît d'un `unlock`, vit le temps de `RenderAsync`, et sort de portée avec la méthode.
+naît d'un `unlock` et vit dans la fermeture du `SecretWriter` rendu par l'ouverture — jamais un champ
+de la fenêtre, jamais un champ du service — le temps de l'injection tout entière, formulaire de
+création compris : celui-ci s'intercale entre la lecture et l'écriture, donc la clé doit survivre à
+la saisie, et à rien de plus. `InjectionSession.Close()` la lâche à la fin de l'injection, ou à la
+fermeture de la fenêtre.
 
 `SecureString` n'est **pas** utilisé, et c'est délibéré : `PasswordBox.Password` matérialise déjà une
 chaîne managée immuable que le GC déplace, donc il ne gagnerait rien de réel et donnerait une fausse
 assurance. Ce qu'on gagne vraiment : jamais la ligne de commande, jamais l'environnement de DockPad.
 
-#### Quatre appels à `bw`, dont un seul `list items`
-`status`, `unlock --passwordenv BW_PASSWORD --raw`, `list organizations` (seulement si une
-organisation est configurée), `list items [--organizationid …]`. Le script d'origine lançait une
-recherche **par item** ; ramener l'organisation entière en un appel est plus rapide, et surtout
-déplace la résolution du côté testable de la frontière — `SecretVault` est pur, et nomme lui-même
-l'ambiguïté là où la CLI répondait « More than one result » sans dire quoi renommer.
+#### Jusqu'à cinq appels pour lire, et un par item pour créer
+`status`, `unlock --passwordenv BW_PASSWORD --raw`, `list organizations` et
+`list collections --organizationid <id>` (ces deux derniers **seulement si une organisation est
+configurée**), puis `list items [--organizationid …]` — cinq appels au plus pour **lire**, et
+toujours un seul `list items` qui ramène tout. Le script d'origine lançait une recherche **par
+item** ; ramener l'organisation entière en un appel est plus rapide, et surtout déplace la
+résolution du côté testable de la frontière — `SecretVault` est pur, et nomme lui-même l'ambiguïté
+là où la CLI répondait « More than one result » sans dire quoi renommer.
+
+La **création** n'ajoute des appels que si l'utilisateur crée effectivement quelque chose : par
+item écrit, un `create item` (item neuf) ou un `get item` + `edit item` (item existant), puis
+**une seule relecture** (`list items`) qui alimente le rendu, quel que soit le nombre d'items
+écrits — voir « Créer ce qui manque ».
 
 `bw status` ne sert qu'à distinguer **un seul** cas, `unauthenticated`, parce que lui seul appelle
 une autre action (`bw login`). Tout le reste mène au déverrouillage : sans clé de session la CLI ne
@@ -1199,6 +1214,83 @@ aucun `powershell`, donc rien à échapper et aucune fenêtre console qui cligno
 par appel — **et le dépassement est distingué de la fermeture par l'utilisateur**, les deux levant la
 même exception : les confondre laissait la fenêtre figée sur sa barre de progression, sans un mot,
 quand Vaultwarden ne répondait pas.
+
+#### Créer ce qui manque
+Quand proposer : **pendant l'injection**, entre le déverrouillage et le rendu — un seul mot de
+passe maître.
+
+Cas couverts : **item absent** (on crée l'item et ses champs) et **champ absent ou vide** sur un
+item existant (on complète la fiche). `SecretVault.Classify` range chaque marqueur dans l'un de
+quatre cas — trouvé, item absent, champ absent, item en double — et un item en double reste **non
+créable** : écrire dans l'un des deux au hasard serait pire que de ne rien proposer.
+
+Présentation : **un formulaire unique**, groupé par item, un champ de saisie par champ manquant —
+sixième état de la fenêtre existante, jamais une seconde fenêtre.
+
+Type de champ : `password`, `username`, `notes`, `totp` → champs standards ; tout autre nom →
+champ personnalisé **masqué** (type hidden). Un item créé est de type **Identifiant** (login).
+**Sur un item existant qui n'est pas un Identifiant** — note sécurisée, carte, identité —
+`password`, `username` et `totp` deviennent eux aussi des champs personnalisés masqués : la CLI
+ignore l'objet `login` sur ces types, et la valeur aurait disparu sans un mot. `SecretFieldResolver`
+lit les champs personnalisés en premier, elle est donc retrouvée. `notes` reste le champ standard
+pour tous les types.
+
+Organisation : celle déjà réglée (`VaultOrganization`), déjà résolue par la lecture.
+
+Collection : réglage **« Collection par défaut »** (`AppSettings.VaultCollection`), Options → onglet
+Secrets, sous l'organisation — liste modifiable dans le formulaire, affichée seulement s'il y a un
+item à créer ; un choix dans le formulaire **ne modifie pas** le réglage, qui fait foi comme
+`DefaultProviderId` pour le bandeau Usage.
+
+Boutons : **Créer et continuer** / **Continuer sans créer** — ce dernier reste le chemin
+d'aujourd'hui, inchangé.
+
+Champ laissé vide : **non créé** — le secret reste manquant, listé sur l'écran ambre.
+
+Saisie : masquée, avec 👁 pour afficher. Pas de générateur dans cette version.
+
+**La relecture prouve l'écriture.** Après `create item` ou `get item` + `edit item`, un nouveau
+`list items` alimente le rendu : rendre avec les valeurs saisies ferait croire à un succès même si
+le coffre avait refusé. Un échec d'écriture **ne bloque pas** l'injection : chaque item est écrit
+séparément, un refus — ou une exception, ou une fiche `get item` illisible — rejoint la liste des
+manques, les autres sont écrits — même règle qu'un `sync` qui échoue. **Une écriture acceptée n'est
+pas une valeur conservée** : après la relecture, tout champ d'un item écrit sans erreur qui n'est
+toujours pas trouvé est nommé à l'écran (« écrit mais non conservé »). Écart assumé avec la spec :
+le diagnostic d'un refus va **au journal seulement** — aucune ligne de manque ne porte d'infobulle.
+
+Sans collection dans l'organisation, aucun item neuf n'est proposable : si rien d'autre ne l'est,
+le formulaire n'apparaît pas, et l'écran ambre le dit (`Inject_Create_NoCollection`) plutôt que de
+laisser le manque paraître oublié. **Continuer sans créer** vide les saisies avant de rendre, et
+une fermeture de la fenêtre pendant l'ouverture ou l'écriture referme la session sans rien rendre.
+
+**Le piège de `bw edit item`** : il remplace la fiche **entière**. `BwItemPatch` travaille donc sur
+la sortie **complète** de `bw get item`, en `JsonNode`, et ne touche qu'aux champs visés — sinon les
+URLs, pièces jointes et l'historique d'un item existant disparaîtraient derrière un modèle
+volontairement partiel.
+
+**Charge utile par stdin.** Le JSON d'un item — donc les valeurs saisies — est encodé en base64 et
+passé par l'entrée standard de `bw create item` / `bw edit item`, jamais en argument. Les arguments
+se limitent à `create item`, `get item <id>`, `edit item <id>` et `--organizationid <id>`. Vérifié
+par mutation : la passer en argument fait tomber la suite.
+
+**Le journal ne reçoit que des noms et des comptes** : `ia-requester-infra:db-password créé`, un
+nombre de champs. **Jamais** le JSON envoyé à `create`/`edit`, **jamais** la sortie standard de
+`bw get item` — c'est une fiche complète du coffre.
+
+Cas limites : aucune organisation réglée → coffre personnel, pas de liste de collection ;
+collection réglée introuvable ou réglage vide → première par ordre alphabétique, note ambre si un
+nom réglé n'existe pas ; organisation sans aucune collection → les items à créer sont retirés du
+formulaire, les champs à compléter restent proposés ; fermeture pendant le formulaire → rien n'est
+écrit, la clé de session disparaît ; tous les champs laissés vides → bouton grisé, seul *Continuer
+sans créer* reste possible.
+
+Hors périmètre : générateur de valeurs aléatoires, choix du type de champ par ligne, création
+depuis l'écran ambre après coup (second mot de passe), création d'une collection ou d'une
+organisation.
+
+**Non automatisé, et c'est nommé** : les appels réels à `bw`. Vérification manuelle sur
+l'organisation de test avec un item jetable — création d'item, ajout de champ à un item existant, relecture,
+rendu complet.
 
 #### Le presse-papier (`ClipboardGuard`)
 Trois formats enregistrés, **vérifiés contre la documentation Microsoft** (*Cloud Clipboard and
@@ -1235,9 +1327,9 @@ préfixe dans la charge utile, les deux flux n'ayant rien à voir.
 > le presse-papier **avant** que l'utilisateur ait pu coller. La sortie est donc **différée jusqu'au
 > désarmement du verrou**.
 
-Fenêtre à cinq états : `Vérification → [Choix] → Déverrouillage → Travail → Compte-rendu`. Un
-déverrouillage refusé revient sur la saisie plutôt que sur un écran d'échec qu'il faudrait fermer
-pour réessayer.
+Fenêtre à six états : `Vérification → [Choix] → Déverrouillage → [Création] → Travail →
+Compte-rendu`. Un déverrouillage refusé revient sur la saisie plutôt que sur un écran d'échec qu'il
+faudrait fermer pour réessayer.
 
 **Le choix n'apparaît que si le fichier porte les deux formats**, et il arrive **avant** le mot de
 passe : réclamer le mot de passe maître puis demander quoi en faire, c'est faire payer avant de
@@ -1376,8 +1468,10 @@ bien plus tard et loin d'ici.
 
 #### Réglages (Options)
 `CLI Bitwarden` (vide = détection : `PATH`, puis `%LOCALAPPDATA%\Microsoft\WinGet\Packages` en
-récursif), `Organisation Vaultwarden` (vide = tout le coffre), `Effacer le presse-papier après N
-secondes`, et la case du menu contextuel.
+récursif), `Organisation Vaultwarden` (vide = tout le coffre), `Collection par défaut` (texte libre,
+vide = première par ordre alphabétique — lister les collections demanderait le mot de passe maître,
+qui n'a rien à faire dans les Options), `Effacer le presse-papier après N secondes`, et la case du
+menu contextuel.
 
 > **Un chemin réglé qui n'existe plus retombe sur la détection**, et ce n'est pas de la complaisance :
 > le dossier d'installation WinGet porte un identifiant de version, donc la valeur enregistrée
@@ -1398,11 +1492,14 @@ première erreur qu'on fait ; le texte d'aide le dit.
 
 #### Captures
 `DialogShot.exe inject <fr|en> <png>` (saisie du mot de passe), `inject-failed` (compte-rendu
-d'échec), `inject-choice` (choix des sorties), `inject-files` (les deux, complet) et `inject-partial` (**rendu incomplet** : clés absentes,
-fichiers écrits, fichiers périmés et leur bouton de suppression) — les états qui valent une
-relecture. Le dernier est le plus important : c'est le seul écran qui demande une décision. Posés **par réflexion**, comme `OverlayShot`
-appelle `ShowHintOverlay` : les exposer ferait entrer du code de test dans la fenêtre. Aucun des deux
-ne touche au presse-papier, l'armement appartenant au déroulement et non à l'affichage.
+d'échec), `inject-choice` (choix des sorties), `inject-files` (les deux, complet), `inject-partial` (**rendu incomplet** : clés absentes,
+fichiers écrits, fichiers périmés et leur bouton de suppression) et `inject-create` (**formulaire de
+création** : un item neuf, un item existant à compléter, choix de collection) — les états qui
+valent une relecture. `inject-partial` est le plus important parmi les comptes-rendus : c'est le
+seul écran qui demande une décision. Posés **par réflexion**, comme `OverlayShot`
+appelle `ShowHintOverlay` : les exposer ferait entrer du code de test dans la fenêtre. Aucun d'eux
+ne touche au presse-papier, l'armement appartenant au déroulement et non à l'affichage — le
+rédacteur d'`inject-create` est d'ailleurs factice et ne sera jamais appelé.
 
 ## Prédéfinis
 
@@ -1507,6 +1604,7 @@ emportait pas.
   "bitwardenCliPath": "",
   "clipboardClearSeconds": 90,
   "vaultOrganization": "Infra maison",
+  "vaultCollection": "infra",
   "hotkeyModifiers": 1,
   "hotkeyKey": 32
 }

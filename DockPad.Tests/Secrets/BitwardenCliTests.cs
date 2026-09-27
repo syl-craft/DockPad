@@ -177,4 +177,21 @@ public class BitwardenCliTests : IDisposable
         Assert.Null(BitwardenCli.ParseLastSync("""{"status":"unauthenticated"}"""));
         Assert.Null(BitwardenCli.ParseLastSync("pas du json"));
     }
+
+    [Fact]
+    public void LitLesCollections()
+    {
+        const string stdout = """[{"id":"c1","organizationId":"o1","name":"infra"},{"id":"c2","organizationId":"o1","name":"identifiants"}]""";
+
+        var collections = BitwardenCli.ParseCollections(stdout);
+
+        Assert.Equal(["infra", "identifiants"], collections.Select(c => c.Name));
+        Assert.Equal("c1", collections[0].Id);
+    }
+
+    [Fact]
+    public void DesCollectionsIllisibles_NeLevePas()
+    {
+        Assert.Empty(BitwardenCli.ParseCollections("not json"));
+    }
 }

@@ -10,6 +10,12 @@ namespace DockPad.Secrets;
 /// </remarks>
 public sealed class BwItem
 {
+    /// <summary>
+    /// L'identifiant de la fiche — nécessaire pour la relire en entier puis la réécrire
+    /// (<c>bw get item</c>, <c>bw edit item</c>). Ce n'est pas un secret.
+    /// </summary>
+    public string Id { get; set; } = "";
+
     public string Name { get; set; } = "";
 
     public string? Notes { get; set; }

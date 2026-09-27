@@ -80,19 +80,93 @@ public sealed record InjectionReport
 }
 
 /// <summary>
+/// Une injection entre l'ouverture du coffre et le rendu : ce que le fichier demande, de quoi le
+/// résoudre, et ce qu'on peut créer.
+/// </summary>
+/// <remarks>
+/// <b>Elle ne porte aucune clé.</b> Celle-ci vit dans la fermeture du <see cref="SecretWriter"/>, et
+/// <see cref="Close"/> la lâche. La fenêtre appelle <see cref="Close"/> quand l'injection se termine
+/// ou quand elle se ferme — la clé ne survit à rien de plus.
+/// </remarks>
+public sealed class InjectionSession
+{
+    private readonly List<string> _missing = [];
+
+    public InjectionSession(
+        string content, string folder, SecretMode mode,
+        IReadOnlyList<ComposeSecret> entries, IReadOnlyDictionary<string, string> templates,
+        Func<SecretMarker, SecretLookup> lookup, Func<SecretMarker, SecretPresence>? classify,
+        SecretWriter? writer, string? warning)
+    {
+        Content = content;
+        Folder = folder;
+        Mode = mode;
+        Entries = entries;
+        Templates = templates;
+        Lookup = lookup;
+        Writer = writer;
+        if (warning is not null) _missing.Add(warning);
+
+        Creatable = classify is null
+            ? []
+            : SecretCreationPlan.Build(SecretCreationPlan.Demanded(content, mode, entries, templates), classify);
+    }
+
+    public string Content { get; }
+    public string Folder { get; }
+    public SecretMode Mode { get; }
+    public IReadOnlyList<ComposeSecret> Entries { get; }
+    public IReadOnlyDictionary<string, string> Templates { get; }
+    public Func<SecretMarker, SecretLookup> Lookup { get; private set; }
+    public SecretWriter? Writer { get; private set; }
+
+    /// <summary>Ce que le formulaire propose. Vide → on rend directement, comme avant.</summary>
+    public IReadOnlyList<SecretItemRequest> Creatable { get; private set; }
+
+    /// <summary>Ce qui manquera quoi qu'il arrive : synchro ratée, écriture refusée.</summary>
+    public IReadOnlyList<string> Missing => _missing;
+
+    /// <summary>Le coffre relu après écriture.</summary>
+    public void Refresh(Func<SecretMarker, SecretLookup> lookup, Func<SecretMarker, SecretPresence> classify,
+        IReadOnlyList<string> failures)
+    {
+        Lookup = lookup;
+        _missing.AddRange(failures);
+        Creatable = SecretCreationPlan.Build(SecretCreationPlan.Demanded(Content, Mode, Entries, Templates), classify);
+    }
+
+    /// <summary>
+    /// Un manque que l'écran doit dire, sans venir ni du coffre ni du rendu — un item qu'on ne
+    /// pouvait pas proposer, par exemple.
+    /// </summary>
+    public void Note(string message) => _missing.Add(message);
+
+    public void Close()
+    {
+        Writer?.Forget();
+        Writer = null;
+    }
+}
+
+/// <summary>
 /// Enchaîne les appels à la CLI, du fichier au texte rendu.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Aucune clé de session n'est conservée.</b> Elle naît d'un <c>unlock</c>, vit le temps de
-/// <see cref="RenderAsync"/>, et sort de portée avec la méthode. C'est le choix retenu : DockPad
-/// démarre avec Windows et tourne des semaines, une clé de coffre n'a rien à y faire — au prix du
-/// mot de passe maître à chaque injection.
+/// <b>Aucune clé de session ne survit à une injection</b> — elle vit dans le <see cref="SecretWriter"/>
+/// de la session. Elle naît d'un <c>unlock</c>, vit le temps de l'injection, et sort de portée à
+/// <see cref="InjectionSession.Close"/>. C'est le choix retenu : DockPad démarre avec Windows et
+/// tourne des semaines, une clé de coffre n'a rien à y faire — au prix du mot de passe maître à
+/// chaque injection.
 /// </para>
 /// <para>
-/// <b>Quatre appels au plus</b>, dont un seul <c>list items</c> qui ramène tout. Le script d'origine
-/// lançait une recherche par item ; ramener l'ensemble en un appel est plus rapide, et déplace la
-/// résolution du côté testable de la frontière (voir <see cref="SecretVault"/>).
+/// <b>Pour lire</b> : <c>status</c>, <c>unlock</c>, <c>sync</c> si la case est cochée,
+/// <c>list organizations</c> et <c>list collections</c> si une organisation est configurée, et un
+/// seul <c>list items</c> qui ramène tout. <b>Pour créer</b>, seulement si le formulaire a reçu
+/// quelque chose : <c>create item</c>, ou <c>get item</c> puis <c>edit item</c>, par item, et un
+/// second <c>list items</c> pour relire. Le script d'origine lançait une recherche par item ;
+/// ramener l'ensemble en un appel est plus rapide, et déplace la résolution du côté testable de la
+/// frontière (voir <see cref="SecretVault"/>).
 /// </para>
 /// </remarks>
 public static class SecretInjectionService
@@ -213,25 +287,21 @@ public static class SecretInjectionService
 
 
     /// <summary>
-    /// Déverrouille une fois, puis produit ce que le fichier demande : le rendu, les fichiers, ou
-    /// les deux.
+    /// Vérifie ce qui bloque, puis ouvre le coffre. Rien n'est encore produit.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Un seul déverrouillage et un seul <c>list items</c> pour les deux sorties.</b> Enchaîner
-    /// les deux méthodes d'avant aurait payé deux fois le prix du coffre pour le même mot de passe.
+    /// <b>Un seul déverrouillage et un seul <c>list items</c></b> pour tout ce que l'injection
+    /// produira ensuite — le rendu, les fichiers, et une éventuelle création. Ouvrir deux fois
+    /// paierait deux fois le prix du coffre pour le même mot de passe.
     /// </para>
     /// <para>
     /// <b>Ce qui bloque est vérifié avant d'ouvrir le coffre</b> : annotations illisibles, deux
     /// annotations visant le même fichier, nom qui sortirait du dossier. Aucune de ces trois ne
     /// produira rien de bon — inutile de réclamer un mot de passe maître pour s'en apercevoir après.
     /// </para>
-    /// <para>
-    /// <b>Ne rien avoir produit du tout est un échec</b>, pas un succès vide : c'est le seul garde
-    /// qui reste de la règle du tout-ou-rien, et c'est celui qui compte.
-    /// </para>
     /// </remarks>
-    public static async Task<InjectionReport> InjectAsync(
+    public static async Task<(InjectionSession? Session, InjectionReport? Failure)> OpenAsync(
         string content, string folder, SecretMode mode, string masterPassword,
         bool syncFirst, CancellationToken token)
     {
@@ -242,7 +312,7 @@ public static class SecretInjectionService
         {
             var (scanned, annotationFailures, yamlError) = ComposeSecrets.Extract(content);
             if (annotationFailures.Count > 0)
-                return InjectionReport.Failed(annotationFailures, yamlError);
+                return (null, InjectionReport.Failed(annotationFailures, yamlError));
 
             var blocking = SecretFileWriter.Conflicts(scanned)
                 .Concat(scanned.Where(e => !SecretFileWriter.IsWritableName(e.FileName))
@@ -250,47 +320,66 @@ public static class SecretInjectionService
                 .Concat(ReadTemplates(scanned, folder, templates))
                 .ToList();
 
-            if (blocking.Count > 0) return InjectionReport.Failed(blocking);
+            if (blocking.Count > 0) return (null, InjectionReport.Failed(blocking));
             entries = scanned;
         }
 
         var opening = await Source.OpenAsync(masterPassword, syncFirst, token).ConfigureAwait(false);
         if (opening.Failure is { } refused)
-            return InjectionReport.Fail(refused.Message, refused.Diagnostic);
+            return (null, InjectionReport.Fail(refused.Message, refused.Diagnostic));
 
-        // La SEULE chose que la source rend : de quoi resoudre un marqueur. Tout ce qui sait
-        // comment le coffre s'appelle, s'authentifie et se lit reste derriere cette fonction.
-        var lookup = opening.Lookup!;
-        var warning = opening.Warning;
+        // Ce que la source rend : de quoi resoudre un marqueur, le classer, et l'ecrire si besoin.
+        // Tout ce qui sait comment le coffre s'appelle, s'authentifie et se lit reste derriere ces
+        // trois fonctions — jamais un nom qui sente Bitwarden.
+        return (new InjectionSession(content, folder, mode, entries, templates,
+            opening.Lookup!, opening.Classify, opening.Writer, opening.Warning), null);
+    }
 
-        var missing = new List<string>();
+    /// <summary>Écrit dans le coffre ce que le formulaire a reçu, puis relit.</summary>
+    public static async Task CreateAsync(
+        InjectionSession session, IReadOnlyList<SecretItemCreation> creations, string? collectionId,
+        CancellationToken token)
+    {
+        if (session.Writer is null || creations.Count == 0) return;
 
+        var outcome = await session.Writer.WriteAsync(creations, collectionId, token).ConfigureAwait(false);
+        session.Refresh(outcome.Lookup, outcome.Classify, outcome.Failures);
+    }
+
+    /// <summary>Produit ce que le fichier demande, à partir du coffre tel que la session le voit.</summary>
+    /// <remarks>
+    /// <b>Ne rien avoir produit du tout est un échec</b>, pas un succès vide : c'est le seul garde
+    /// qui reste de la règle du tout-ou-rien, et c'est celui qui compte.
+    /// </remarks>
+    public static InjectionReport Render(InjectionSession session)
+    {
         // Une synchro qui echoue n'annule PAS l'injection : le cache local reste lisible, et
         // refuser de travailler parce que le reseau est coupe serait pire. Mais elle ne peut pas
         // se taire — travailler sur des valeurs peut-etre datees SANS le dire est exactement le
-        // piege que cette option existe pour fermer.
-        if (warning is not null) missing.Add(warning);
+        // piege que cette option existe pour fermer. (Le warning d'ouverture, comme un refus
+        // d'ecriture, vit deja dans session.Missing.)
+        var missing = new List<string>(session.Missing);
         SecretFilesOutcome? files = null;
         SecretRenderResult? render = null;
 
-        if (entries.Count > 0)
+        if (session.Entries.Count > 0)
         {
-            var bundle = SecretBundle.Resolve(entries, lookup, templates);
+            var bundle = SecretBundle.Resolve(session.Entries, session.Lookup, session.Templates);
             missing.AddRange(bundle.Missing);
 
-            var written = SecretFileWriter.Write(folder, bundle.Files);
-            var target = Path.Combine(folder, SecretFileWriter.FolderName);
+            var written = SecretFileWriter.Write(session.Folder, bundle.Files);
+            var target = Path.Combine(session.Folder, SecretFileWriter.FolderName);
 
             // Les perimes sont ceux qui EXISTENT vraiment : proposer la suppression d'un fichier
             // absent ferait douter de ce que la fenetre sait du disque.
-            var stale = SecretFileWriter.Existing(folder, bundle.Stale);
+            var stale = SecretFileWriter.Existing(session.Folder, bundle.Stale);
 
             files = new SecretFilesOutcome(target, written, bundle.ItemCount, stale);
         }
 
-        if (mode is SecretMode.Clipboard or SecretMode.Both)
+        if (session.Mode is SecretMode.Clipboard or SecretMode.Both)
         {
-            render = SecretTemplate.Render(content, lookup);
+            render = SecretTemplate.Render(session.Content, session.Lookup);
 
             if (render.Ok) missing.AddRange(render.Missing);
             else
@@ -309,6 +398,19 @@ public static class SecretInjectionService
             return InjectionReport.Failed(Fallback(missing));
 
         return InjectionReport.Produced(render, files, missing.Distinct(StringComparer.Ordinal).ToList());
+    }
+
+    /// <summary>Ouvrir puis rendre, sans rien créer : le chemin d'avant, inchangé.</summary>
+    public static async Task<InjectionReport> InjectAsync(
+        string content, string folder, SecretMode mode, string masterPassword,
+        bool syncFirst, CancellationToken token)
+    {
+        var (session, failure) = await OpenAsync(content, folder, mode, masterPassword, syncFirst, token)
+            .ConfigureAwait(false);
+        if (failure is not null) return failure;
+
+        try { return Render(session!); }
+        finally { session!.Close(); }
     }
 
     /// <summary>

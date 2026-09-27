@@ -1,5 +1,17 @@
 namespace DockPad.Secrets;
 
+/// <summary>Ce que le coffre répond à un marqueur, avant toute valeur.</summary>
+public enum SecretPresenceKind { Found, ItemMissing, FieldMissing, Ambiguous }
+
+/// <summary>
+/// La présence d'un marqueur, et l'item qui le porte quand il est unique.
+/// </summary>
+/// <remarks>
+/// <see cref="SecretPresenceKind.Ambiguous"/> ne porte pas d'identifiant : écrire dans l'un des
+/// deux au hasard serait pire que de ne rien proposer.
+/// </remarks>
+public readonly record struct SecretPresence(SecretPresenceKind Kind, string? ItemId);
+
 /// <summary>
 /// L'instantané du coffre, et la seule chose qui répond à un marqueur.
 /// </summary>
@@ -19,11 +31,22 @@ namespace DockPad.Secrets;
 /// </remarks>
 public sealed class SecretVault(IReadOnlyList<BwItem> items, string organisation)
 {
+    public SecretPresence Classify(SecretMarker marker)
+    {
+        var matches = Matches(marker);
+
+        if (matches.Count == 0) return new(SecretPresenceKind.ItemMissing, null);
+        if (matches.Count > 1) return new(SecretPresenceKind.Ambiguous, null);
+
+        var value = SecretFieldResolver.Resolve(matches[0], marker.Field);
+
+        return new(string.IsNullOrEmpty(value) ? SecretPresenceKind.FieldMissing : SecretPresenceKind.Found,
+            matches[0].Id);
+    }
+
     public SecretLookup Lookup(SecretMarker marker)
     {
-        var matches = items
-            .Where(i => string.Equals(i.Name, marker.Item, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var matches = Matches(marker);
 
         if (matches.Count == 0)
             return SecretLookup.Missing(string.IsNullOrWhiteSpace(organisation)
@@ -39,4 +62,8 @@ public sealed class SecretVault(IReadOnlyList<BwItem> items, string organisation
             ? SecretLookup.Missing(Loc.F("Inject_Error_EmptyField", marker.Item, marker.Field))
             : SecretLookup.Found(value);
     }
+
+    private List<BwItem> Matches(SecretMarker marker) => items
+        .Where(i => string.Equals(i.Name, marker.Item, StringComparison.OrdinalIgnoreCase))
+        .ToList();
 }

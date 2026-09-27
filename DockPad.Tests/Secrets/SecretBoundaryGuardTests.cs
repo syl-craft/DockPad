@@ -167,6 +167,68 @@ public class SecretBoundaryGuardTests
         return line;
     }
 
+    /// <summary>
+    /// Une collection littérale qui porte la charge utile d'un item — le JSON d'une fiche, ou son
+    /// encodage.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ArgumentShape"/> ne suffit pas : il exige un <c>"--</c>, et <c>["create", "item", …]</c>
+    /// n'en porte aucun. On regarde donc le <b>contenu</b> des crochets.
+    /// </remarks>
+    private static readonly Regex PayloadInCollection = new(
+        @"\[[^\]]*(payload|encoded|json|base64|Encode\(|NewItem\(|AddFields\()[^\]]*\]",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>Une instruction qui construit ou passe des arguments de processus.</summary>
+    private static readonly Regex LaunchShape =
+        new(@"RunAsync\(|ArgumentList|string\[\]", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Une collection d'arguments d'écriture : celle qui commence par <c>"create"</c> ou
+    /// <c>"edit"</c>, et son contenu après ce premier élément.
+    /// </summary>
+    private static readonly Regex WriteCollection = new(
+        @"\[\s*""(?:create|edit)""\s*(?<rest>[^\]]*)\]", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Ce qu'une collection d'écriture a le droit de porter en plus des littéraux : l'identifiant
+    /// de l'item à compléter, qui n'est pas un secret.
+    /// </summary>
+    private static readonly string[] AllowedWriteArguments = ["creation.ItemId!"];
+
+    /// <summary>Un littéral de chaîne, et rien d'autre.</summary>
+    private static readonly Regex StringLiteral = new(@"^""[^""]*""$", RegexOptions.Compiled);
+
+    [Fact]
+    public void LaChargeUtileDUnItemPasseParLEntreeStandard()
+    {
+        // `bw create item <json>` accepte la fiche en argument : ce serait les valeurs saisies,
+        // en clair, lisibles de tout processus. Elle passe par stdin, et seulement par là.
+        var fautifs = new List<string>();
+
+        foreach (var (file, statement, number) in SecretStatements())
+        {
+            if (LaunchShape.IsMatch(statement) && PayloadInCollection.IsMatch(statement))
+                fautifs.Add($"{Path.GetFileName(file)}:{number} → {statement.Trim()}");
+
+            // Le motif de mots ci-dessus rate la mutation réelle : la fiche vit dans une variable
+            // nommée `sheet`, et `["create", "item", sheet]` ne contient aucun des mots suspects.
+            // Plutôt que de deviner le nom de la prochaine variable, on renverse la règle : une
+            // collection d'écriture ne porte que des littéraux et l'identifiant de l'item.
+            foreach (Match match in WriteCollection.Matches(statement))
+            {
+                var extra = match.Groups["rest"].Value
+                    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                    .Where(e => !StringLiteral.IsMatch(e) && !AllowedWriteArguments.Contains(e));
+
+                if (extra.Any())
+                    fautifs.Add($"{Path.GetFileName(file)}:{number} → {statement.Trim()}");
+            }
+        }
+
+        Assert.Empty(fautifs);
+    }
+
     // ───────────── Parcours ─────────────
 
     /// <summary>Les types déclarés dans le dossier — ce que la frontière protège.</summary>
