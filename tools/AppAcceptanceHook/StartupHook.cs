@@ -68,17 +68,11 @@ public static class StartupHook
                         Write(id, new { ok = true });
                     }
                     if (op == "exit") { _timer.Stop(); Exit(app); }
+                    if (op == "verify-updated-ui") { await UpdateUiAcceptance.VerifyRestartAsync(Root); Write(id, new { ok = true }); }
                     if (op == "update")
                     {
                         _timer.Stop();
-                        var manager = new UpdateManager(Path.Combine(Root, "feed"));
-                        var update = await manager.CheckForUpdatesAsync() ?? throw new IOException("No update in fixture feed");
-                        await manager.DownloadUpdatesAsync(update);
-                        var installation = app.GetType().Assembly.GetType("DockPad.Services.Updates.AppInstallation")!;
-                        installation.GetMethod("BeginUpdate")!.Invoke(null, null);
-                        app.GetType().GetMethod("BeginUpdateHandoff")!.Invoke(app, null);
-                        manager.WaitExitThenApplyUpdates(update.TargetFullRelease, silent: true, restart: true, restartArgs: ["--update-restarted"]);
-                        Exit(app);
+                        await UpdateUiAcceptance.RunAsync(Root);
                     }
                 }
                 catch (Exception ex) { File.WriteAllText(Path.Combine(Root, "error.txt"), ex.ToString()); }

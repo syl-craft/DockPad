@@ -1,4 +1,4 @@
-param([string]$Revision = 'HEAD')
+param([string]$Revision = 'HEAD', [switch]$WorkingTree)
 $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath("$PSScriptRoot/../..")
 $fixture = Join-Path $env:TEMP ('dockpad-app-acceptance-' + [Guid]::NewGuid().ToString('N'))
@@ -6,6 +6,11 @@ New-Item -ItemType Directory -Force "$fixture/profile" | Out-Null
 git -C $repo archive $Revision -o "$fixture/source.zip"
 if ($LASTEXITCODE) { throw 'Cannot snapshot app source' }
 Expand-Archive "$fixture/source.zip" "$fixture/source"
+if ($WorkingTree) {
+    git -C $repo diff --binary $Revision --output="$fixture/working.patch"
+    git -C "$fixture/source" apply "$fixture/working.patch"
+    if ($LASTEXITCODE) { throw 'Cannot apply working changes to fixture' }
+}
 # Isolate OS identities only. Application behavior, updater and hotkey handling are unchanged.
 foreach ($file in @('Services/StartupRelay.cs', 'Services/UrlPipeService.cs', 'Services/McpPipeService.cs')) {
     $path = "$fixture/source/$file"
@@ -22,14 +27,14 @@ Set-Content "$fixture/profile/mcp.json" '{"enabled":true,"allowDelete":false}'
 Set-Content "$fixture/profile/sentinel.json" '{"keep":"NIN-80"}'
 Set-Content "$fixture/fixture.env" 'TOKEN={{vault.test.password}}'
 foreach ($version in @('1.24.0', '1.24.1')) {
-    dotnet publish "$fixture/source/DockPad.csproj" -c Release -r win-x64 --self-contained false -p:SkipLegacyZip=true "-p:Version=$version" -o "$fixture/stage/$version"
+    dotnet publish "$fixture/source/DockPad.csproj" -c Release -r win-x64 --self-contained false -p:SkipLegacyZip=true -p:UseSharedCompilation=false -m:1 "-p:Version=$version" -o "$fixture/stage/$version"
     if ($LASTEXITCODE) { throw 'Actual app build failed' }
     & "$repo/.tools/vpk/vpk.exe" pack --packId DockPad --packTitle DockPad --packVersion $version --packDir "$fixture/stage/$version" --mainExe DockPad.exe --runtime win-x64 --outputDir "$fixture/feed" --shortcuts None --yes
     if ($LASTEXITCODE) { throw 'Actual app packaging failed' }
     if ($version -eq '1.24.0') { Expand-Archive "$fixture/feed/DockPad-win-Portable.zip" "$fixture/app" }
 }
 foreach ($project in @('AppAcceptance', 'AppAcceptanceHook')) {
-    dotnet build "$repo/tools/$project" -c Release -v minimal
+    dotnet build "$repo/tools/$project" -c Release -p:UseSharedCompilation=false -m:1 -v minimal
     if ($LASTEXITCODE) { throw "Acceptance tool build failed: $project" }
 }
 $keys = @('Software\DockPadNIN80', 'Software\Classes\DockPadNIN80URL', 'Software\Classes\*\shell\DockPadNIN80InjectSecrets')

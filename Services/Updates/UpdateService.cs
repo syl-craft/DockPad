@@ -23,7 +23,9 @@ public sealed record UpdateRelease(string Version, string Notes, object Package)
 
 public sealed class VelopackBackend : IUpdateBackend
 {
-    private readonly UpdateManager _manager = new(new GithubSource("https://github.com/syl-craft/DockPad", null, false));
+    private readonly UpdateManager _manager;
+    public VelopackBackend() : this(new UpdateManager(new GithubSource("https://github.com/syl-craft/DockPad", null, false))) { }
+    public VelopackBackend(UpdateManager manager) => _manager = manager;
     public bool IsInstalled => _manager.IsInstalled;
     public string CurrentVersion => _manager.CurrentVersion?.ToString() ?? AppInfo.VersionText;
     public string ContentDirectory => AppContext.BaseDirectory;

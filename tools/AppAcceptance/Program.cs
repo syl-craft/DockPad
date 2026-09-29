@@ -22,12 +22,17 @@ try
     await Wait(() => Read("ready")?.GetProperty("version").GetString() == "1.24.0", "initial app startup");
     var beforeHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(root, "profile", "sentinel.json"))));
     await Verify("1.24.0");
-    var configHashes = new[] { "settings.json", "browsers.json", "mcp.json" }.ToDictionary(name => name,
-        name => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(root, "profile", name)))));
     Command("update");
     await Wait(() => Read("ready")?.GetProperty("version").GetString() == "1.24.1", "actual DockPad update/restart");
+    if (Read("ui-passed") is not { } ui || ui.GetArrayLength() < 30) throw new IOException("UI scenarios did not complete");
+    Console.WriteLine($"PASS: {ui.GetArrayLength()} WPF UI assertions and checkpoints, real update through dialog buttons.");
     VerifyExit("1.24.0");
     await Verify("1.24.1");
+    var updatedUi = Command("verify-updated-ui");
+    await Wait(() => Read(updatedUi) is not null, "updated UI check");
+    // The UI test deliberately toggles a persisted preference. Compare the profile
+    // immediately before installation with the restarted app, not before that edit.
+    var configHashes = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Path.Combine(root, "ui-profile.json")))!;
     foreach (var config in configHashes)
         if (Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(root, "profile", config.Key)))) != config.Value)
             throw new IOException("Configuration changed: " + config.Key);
@@ -96,11 +101,16 @@ string Command(string op)
 JsonElement? Read(string name)
 {
     var path = Path.Combine(root, name + ".json");
-    return File.Exists(path) ? JsonDocument.Parse(File.ReadAllText(path)).RootElement.Clone() : null;
+    if (!File.Exists(path)) return null;
+    // Evidence is atomically replaced by the hook while this reader polls it.
+    // Allow rename/delete on Windows instead of intermittently locking its writer.
+    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+    using var document = JsonDocument.Parse(stream);
+    return document.RootElement.Clone();
 }
 async Task Wait(Func<bool> condition, string what)
 {
-    for (int i = 0; i < 600; i++)
+    for (int i = 0; i < 1800; i++)
     {
         if (File.Exists(Path.Combine(root, "error.txt"))) throw new IOException(File.ReadAllText(Path.Combine(root, "error.txt")));
         if (condition()) return;
