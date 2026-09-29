@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bootstrap application-only policy. Native Velopack binaries need a separate approved policy. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file-set product-name="DockPad" product-version="${version}">
+      <include path="DockPad.exe" />
+      <include path="DockPad.dll" />
+      <include path="DockPad.Core.dll" />
+      <include path="fr/DockPad.Core.resources.dll" />
+      <include path="qps-Ploc/DockPad.Core.resources.dll" />
+      <for-each>
+        <authenticode-sign hash-algorithm="sha256" description="DockPad" description-url="https://github.com/syl-craft/DockPad" />
+      </for-each>
+    </pe-file-set>
+  </zip-file>
+</artifact-configuration>

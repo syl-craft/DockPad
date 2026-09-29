@@ -25,7 +25,7 @@ Ces trois binaires (`setup`, `update`, `stub`) sont construits depuis le commit 
 ./tools/velopack/test-app.ps1
 ```
 
-Le workflow manuel `package.yml` réalise ces opérations et conserve des artefacts **non signés**, sans publier de release. Le script de packaging lit la version du projet ; une branche de feature ne modifie pas cette version. Pour la production, passer `-SignTemplate` à `pack.ps1` avec la commande de signature mise en place dans NIN-9. Le modèle Velopack remplace `{{file}}` par le fichier à signer. Signer les binaires embarqués et le Setup final, puis calculer les hashes.
+Le workflow manuel `package.yml` réalise ces opérations et conserve des artefacts **non signés**, sans publier de release. Le script de packaging lit la version du projet ; une branche de feature ne modifie pas cette version. Pour la production, passer `-RequireSigned`, `-CertificateThumbprint` et `-SignTemplate` à `pack.ps1` avec la commande de signature qui reste à finaliser dans NIN-9. Le modèle Velopack remplace `{{file}}` par le fichier à signer. Signer les binaires embarqués et le Setup final, puis calculer les hashes. Les signatures et les hashes sont vérifiés avant que le script annonce une réussite. Voir la [préparation SignPath et ses prérequis externes](code-signing.md).
 
 Publier dans une même release stable GitHub le Setup, le Portable ZIP, les paquets `full`/`delta` et `releases.win.json` produits ensemble. Le feed doit être publié seulement lorsque tous ses fichiers sont disponibles. Pour des deltas, conserver les paquets précédents dans le répertoire de sortie avant le packaging. Le client conserve la vérification des hashes et le repli vers le paquet complet de Velopack.
 

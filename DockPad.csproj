@@ -12,6 +12,10 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <Version>1.24.0</Version>
+    <Product>DockPad</Product>
+    <Authors>syl-craft</Authors>
+    <Copyright>Copyright (c) 2026 syl-craft</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <!-- Point d'entrée explicite : voir Program.cs. Le Main engendré par WPF commence par
          construire l'Application, ce qui interdit tout raccourci de démarrage. -->
     <StartupObject>DockPad.Program</StartupObject>
@@ -48,6 +52,7 @@
 
   <ItemGroup>
     <None Include="CHANGELOG.md" CopyToPublishDirectory="Always" />
+    <None Update="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>

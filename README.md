@@ -423,3 +423,15 @@ Les anciens paramètres de `HKCU\Software\DockPad\Settings` sont repris dans `se
 
 `Ctrl + Shift + M` — affiche/remet au premier plan la fenêtre principale.
 Configurable via **☰ Menu → Options**.
+
+## Licence
+
+DockPad est distribué sous [licence MIT](LICENSE), copyright 2026 syl-craft.
+Les dépendances et les éléments tiers conservent leurs licences et marques respectives,
+notamment [les logos des fournisseurs](Assets/ProviderLogos.LICENSE.txt) et Velopack
+(notice incluse dans les paquets).
+
+## Code signing policy
+
+La signature de confiance est **en préparation**, sans admission SignPath obtenue à ce jour.
+Voir la [politique de signature et la procédure d'activation](docs/code-signing.md).

@@ -3,9 +3,14 @@ param(
     [string]$Output = "$PSScriptRoot/../../release/velopack",
     [string]$Native = "$PSScriptRoot/../../.tools/velopack-native",
     [string]$ReleaseNotes,
-    [string]$SignTemplate
+    [string]$SignTemplate,
+    [switch]$RequireSigned,
+    [string]$CertificateThumbprint
 )
 $ErrorActionPreference = 'Stop'
+if ($RequireSigned -and (!$SignTemplate -or $CertificateThumbprint -notmatch '^[A-Fa-f0-9]{40}$')) {
+    throw 'Signed release requires a signing command and the expected publisher certificate thumbprint.'
+}
 $repo = [IO.Path]::GetFullPath("$PSScriptRoot/../..")
 if (!$Version) { $Version = ([xml](Get-Content "$repo/DockPad.csproj")).Project.PropertyGroup.Version | Where-Object { $_ } }
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'A stable x.y.z version is required' }
@@ -25,7 +30,7 @@ foreach ($name in @('update', 'setup', 'stub')) {
 }
 # Unique staging directory: no stale binaries or profile files from a previous publish.
 $stage = Join-Path $repo ('.tools/staging-' + [Guid]::NewGuid().ToString('N'))
-dotnet publish "$repo/DockPad.csproj" -c Release -r win-x64 --self-contained false -p:SkipLegacyZip=true "-p:Version=$Version" -o $stage
+dotnet publish "$repo/DockPad.csproj" -c Release -r win-x64 --self-contained false -p:SkipLegacyZip=true -p:UseSharedCompilation=false -m:1 -p:IncludeSourceRevisionInInformationalVersion=false "-p:Version=$Version" -o $stage
 if ($LASTEXITCODE) { throw 'Publish failed' }
 Copy-Item -LiteralPath "$Native/Velopack.LICENSE.txt" -Destination $stage
 if (!$ReleaseNotes) {
@@ -44,4 +49,7 @@ if ($SignTemplate) { $arguments += @('--signTemplate', $SignTemplate) }
 if ($LASTEXITCODE) { throw 'Velopack packaging failed' }
 # WinGet URLs must be immutable. Retain the conventional name too for Velopack feeds.
 Copy-Item -LiteralPath "$Output/DockPad-win-Setup.exe" -Destination "$Output/DockPad-$Version-win-x64-Setup.exe"
+if ($RequireSigned) {
+    & "$PSScriptRoot/../signing/verify-release.ps1" -Directory $Output -Version $Version -CertificateThumbprint $CertificateThumbprint
+}
 Write-Host "Packages ready in $Output. Signing configured: $([bool]$SignTemplate). Nothing uploaded."
