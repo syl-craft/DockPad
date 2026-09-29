@@ -359,9 +359,6 @@
                             <MenuItem Header="{loc:T Quick_Menu_Options}" Command="{Binding Commands.OpenSettings}">
                                 <MenuItem.Icon><TextBlock Text="⚙"/></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:T Update_Title}" Command="{Binding Commands.OpenUpdates}">
-                                <MenuItem.ToolTip><TextBlock Text="{Binding Updates.Status}"/></MenuItem.ToolTip>
-                            </MenuItem>
                             <MenuItem Header="{loc:T Quick_Menu_Browsers}" Command="{Binding Commands.OpenBrowsers}">
                                 <MenuItem.Icon><TextBlock Text="🌐"/></MenuItem.Icon>
                             </MenuItem>
@@ -394,6 +391,9 @@
                                 <MenuItem.Icon><TextBlock Text="📁"/></MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
+                            <MenuItem Header="{loc:T Update_Title}" Command="{Binding Commands.OpenUpdates}">
+                                <MenuItem.ToolTip><TextBlock Text="{Binding Updates.Status}"/></MenuItem.ToolTip>
+                            </MenuItem>
                             <MenuItem Header="{loc:T Quick_Menu_Quit}" Command="{Binding Commands.Quit}">
                                 <MenuItem.Icon><TextBlock Text="✕"/></MenuItem.Icon>
                             </MenuItem>
