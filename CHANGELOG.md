@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.25.0] — 2026-09-29
+
+### Nouveautés
+
+- **Mises à jour intégrées avec Velopack** : menu **Mises à jour**, recherche automatique désactivable, notes de version et progression. Le bouton **Mettre à jour et redémarrer** télécharge puis installe la version disponible. L'annulation et les erreurs permettent de reprendre.
+- **Gestion des applications bloquantes** : nom, PID et chemin des processus utilisant les fichiers de DockPad ; sélection explicite, fermeture douce, confirmation distincte avant un arrêt forcé, possibilité de reporter ou de réessayer. Les sessions MCP ne sont pas arrêtées sans consentement.
+- **Installation et portable Velopack** : lanceur stable, raccourci global, ouverture de liens, démarrage automatique et commandes MCP conservés après une mise à jour. Le profil reste en dehors du dossier de l'application.
+- **Licence MIT** ajoutée au dépôt et aux paquets. La signature SignPath et la publication WinGet restent en préparation ; cette release est non signée.
+
+### Corrections
+
+- Le lien vers l'usage Codex ouvre désormais la page Analytics fonctionnelle.
+- Les chemins longs des applications bloquantes restent lisibles à la taille minimale de la fenêtre.
+
+### Migration
+
+- Depuis un ancien ZIP, fermer DockPad puis installer le Setup ou extraire le nouveau portable dans un dossier vide. Cette première migration est manuelle ; les mises à jour suivantes passent par l'application. Les paramètres du profil sont conservés.
+
 ## [1.24.0] — 2026-09-27
 
 ### Nouveautés

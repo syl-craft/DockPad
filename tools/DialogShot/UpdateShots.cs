@@ -17,10 +17,15 @@ internal static class UpdateShots
     private sealed class Fixture : IUpdateBackend
     {
         public bool IsInstalled => true;
-        public string CurrentVersion => "1.24.0";
+        public string CurrentVersion => DockPad.Services.AppInfo.VersionText;
         public string ContentDirectory => System.IO.Path.GetTempPath();
-        public Task<UpdateRelease?> CheckAsync() => Task.FromResult<UpdateRelease?>(new("1.25.0",
-            "DockPad 1.25.0\n\n• Mise à jour depuis l’application.\n• Conservation des raccourcis et des liens entrants.\n• Compatibilité WinGet.\n\nVos paramètres sont conservés lors du redémarrage.", new object()));
+        public Task<UpdateRelease?> CheckAsync()
+        {
+            var current = Version.Parse(CurrentVersion);
+            var next = new Version(current.Major, current.Minor, current.Build + 1).ToString();
+            return Task.FromResult<UpdateRelease?>(new(next,
+                "Aperçu — données de démonstration\n\n• Mise à jour depuis l’application.\n• Conservation des raccourcis et des liens entrants.\n• Gestion des applications bloquantes.\n\nVos paramètres sont conservés lors du redémarrage.", new object()));
+        }
         public Task DownloadAsync(UpdateRelease release, Action<int> progress, CancellationToken token) => throw new NotSupportedException();
         public void Apply(UpdateRelease release) => throw new NotSupportedException();
     }

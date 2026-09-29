@@ -11,7 +11,7 @@
     <Platforms>x64</Platforms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.24.0</Version>
+    <Version>1.25.0</Version>
     <Product>DockPad</Product>
     <Authors>syl-craft</Authors>
     <Copyright>Copyright (c) 2026 syl-craft</Copyright>

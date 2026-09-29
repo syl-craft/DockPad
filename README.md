@@ -25,8 +25,23 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Injection de secrets** : clic droit sur un fichier → ses marqueurs `{{ bw:… }}` sont remplacés par les valeurs de Vaultwarden, dans le presse-papier ou dans des fichiers de secrets
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
+- **Mises à jour intégrées** : recherche automatique désactivable, téléchargement et redémarrage depuis l'application, gestion des processus bloquants avec consentement
 
 ![La fenêtre d'accès rapide](docs/screenshots/window-fr.png)
+
+## Mises à jour
+
+**☰ Menu → Mises à jour → Rechercher** affiche la version disponible et ses notes.
+**Mettre à jour et redémarrer** télécharge, installe et relance DockPad en conservant le profil.
+La recherche peut être automatique ; l'installation se fait à votre demande.
+
+| Recherche et installation | Applications bloquantes |
+|---|---|
+| ![Mises à jour — données de démonstration](docs/screenshots/updates-fr.png) | ![Choix des applications à fermer — données de démonstration](docs/screenshots/update-blockers-fr.png) |
+
+Les cases ne sont pas cochées par défaut. DockPad demande une fermeture douce, puis une
+confirmation distincte si un arrêt forcé est nécessaire. **Reporter** conserve la session en cours.
+Les versions issues de l'ancien ZIP proposent le lien GitHub jusqu'à la première migration Velopack.
 
 ## Tuiles composées
 
@@ -376,9 +391,14 @@ Les fichiers dont la clé a disparu du coffre sont **signalés, jamais supprimé
 
 ## Installation
 
-1. Télécharger `DockPad-{version}.zip` dans les fichiers joints à la [dernière release GitHub](https://github.com/syl-craft/DockPad/releases/latest)
-2. Extraire dans `C:\DockPad\`
-3. Lancer `DockPad.exe`
+1. Télécharger `DockPad-X.Y.Z-win-x64-Setup.exe` dans les fichiers joints à la [dernière release GitHub](https://github.com/syl-craft/DockPad/releases/latest), puis l'exécuter pour une installation par utilisateur.
+2. Pour le mode portable, extraire `DockPad-win-Portable.zip` dans un dossier vide et lancer `DockPad.exe` à sa racine.
+3. Depuis un ancien ZIP, fermer DockPad avant cette première migration. Les réglages restent dans `%APPDATA%\DockPad`. Les clients MCP qui pointent vers un ancien dossier doivent utiliser le nouveau lanceur stable.
+
+Windows x64 avec .NET Desktop Runtime 8. Le Setup peut installer le runtime manquant.
+La première release Velopack est **non signée** : Windows peut afficher un avertissement concernant
+l'éditeur. SignPath et la publication WinGet sont en préparation. Les paquets `.nupkg` et
+`releases.win.json` sont destinés au système de mise à jour ; pour installer, utiliser le Setup ou le portable.
 
 ## Build
 
