@@ -1,4 +1,5 @@
 diff --git a/src/bins/build.rs b/src/bins/build.rs
+index 1c33e4e..d1c5767 100644
 --- a/src/bins/build.rs
 +++ b/src/bins/build.rs
 @@ -6,10 +6,14 @@ fn main() {
@@ -18,7 +19,7 @@ diff --git a/src/bins/build.rs b/src/bins/build.rs
  
      println!("cargo:rustc-env=NGBV_VERSION={}", version);
  
-@@ -19,7 +23,8 @@ fn main() {
+@@ -19,8 +23,9 @@ fn main() {
          .set_version_info(winres::VersionInfo::PRODUCTVERSION, ver)
          .set_version_info(winres::VersionInfo::FILEVERSION, ver)
          .set("CompanyName", "Velopack")
@@ -28,3 +29,4 @@ diff --git a/src/bins/build.rs b/src/bins/build.rs
 +        .set("FileVersion", version)
          .set("FileDescription", &desc)
          .set("LegalCopyright", "Caelan Sayler (c) 2023, Velopack Ltd. (c) 2024")
+         .compile()
