@@ -17,7 +17,7 @@ internal static class UpdateShots
     private sealed class Fixture : IUpdateBackend
     {
         public bool IsInstalled => true;
-        public string CurrentVersion => DockPad.Services.AppInfo.VersionText;
+        public string CurrentVersion => DockPad.Services.AppInfo.VersionText.TrimStart('v');
         public string ContentDirectory => System.IO.Path.GetTempPath();
         public Task<UpdateRelease?> CheckAsync()
         {
