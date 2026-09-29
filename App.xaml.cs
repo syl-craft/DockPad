@@ -11,9 +11,12 @@ public partial class App : Application
 {
     public static bool IsExiting { get; private set; }
 
-    public static new void Exit()
+    public static new async void Exit()
     {
+        if (IsExiting) return;
         IsExiting = true;
+        await System.Threading.Tasks.Task.WhenAll(Services.UrlPipeService.StopServerAsync(),
+            InjectPipe.StopServerAsync(), ShowPipe.StopServerAsync(), Services.McpPipeService.StopServerAsync());
         Current.Shutdown();
     }
 

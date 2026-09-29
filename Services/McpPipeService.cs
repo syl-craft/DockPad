@@ -12,8 +12,20 @@ public static class McpPipeService
     private const int MaxInstances = 4;
     private const int ExchangeTimeoutMs = 10000;
 
-    public static void StartServer(Func<string, string> handleRequest) =>
-        _ = RunServerAsync(handleRequest, CancellationToken.None);
+    private static CancellationTokenSource? _stop;
+    private static Task? _server;
+    public static void StartServer(Func<string, string> handleRequest)
+    {
+        if (_server is not null) return;
+        _stop = new CancellationTokenSource();
+        _server = RunServerAsync(handleRequest, _stop.Token);
+    }
+    public static async Task StopServerAsync()
+    {
+        _stop?.Cancel();
+        if (_server is not null) await _server.ConfigureAwait(false);
+        _stop?.Dispose(); _stop = null; _server = null;
+    }
 
     /// <summary>Démarre quatre boucles d'écoute annulables.</summary>
     public static Task RunServerAsync(Func<string, string> handleRequest, CancellationToken token,

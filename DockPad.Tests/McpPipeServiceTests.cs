@@ -149,6 +149,17 @@ public class McpPipeServiceTests
     }
 
     [Fact]
+    public async Task LineServer_StopReleasesItsNameBeforeProcessExit()
+    {
+        var name = NewName();
+        var pipe = new LinePipeService(name);
+        pipe.StartServer(_ => { });
+        await pipe.StopServerAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        using var replacement = new NamedPipeServerStream(name, PipeDirection.InOut, 1,
+            PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.FirstPipeInstance);
+        Assert.False(replacement.IsConnected);
+    }
+    [Fact]
     public async Task LineClient_DoesNotReportSuccessBeforeReceiverAccepts()
     {
         var name = NewName();

@@ -24,9 +24,22 @@ namespace DockPad.Services;
 public sealed class LinePipeService(string pipeName)
 {
     public string PipeName { get; } = pipeName;
+    private CancellationTokenSource? _stop;
+    private Task? _server;
 
     /// <summary>Démarre le serveur (instance principale). Le rappel a lieu sur un thread de pool.</summary>
-    public void StartServer(Action<string> onLine) => _ = RunServerAsync(onLine, CancellationToken.None);
+    public void StartServer(Action<string> onLine)
+    {
+        if (_server is not null) return;
+        _stop = new CancellationTokenSource();
+        _server = RunServerAsync(onLine, _stop.Token);
+    }
+    public async Task StopServerAsync()
+    {
+        _stop?.Cancel();
+        if (_server is not null) await _server.ConfigureAwait(false);
+        _stop?.Dispose(); _stop = null; _server = null;
+    }
 
     public async Task RunServerAsync(Action<string> onLine, CancellationToken token, int timeoutMs = 2000)
     {

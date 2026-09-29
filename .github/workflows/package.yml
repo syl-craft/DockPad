@@ -25,6 +25,8 @@ jobs:
         run: ./tools/velopack/pack.ps1
       - name: Exercise packaged updates
         run: ./tools/velopack/test-packages.ps1
+      - name: Exercise DockPad on an isolated Windows desktop
+        run: ./tools/velopack/test-app.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: DockPad-velopack-unsigned
