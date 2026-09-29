@@ -295,7 +295,7 @@ internal static class Program
                 UsedPct = 27, ResetsAt = DateTime.Now.AddDays(4),
                 ObservedAt = stale ? DateTime.Now.AddMinutes(-70) : null,
             },
-            UsageUrl = "https://chatgpt.com/codex/settings/usage",
+            UsageUrl = "https://chatgpt.com/codex/cloud/settings/analytics#usage",
         });
     }
 
@@ -362,7 +362,7 @@ internal static class Program
             : new DemoUsageProvider("codex", "Codex", "C", "#10A37F",
                 new DemoUsageProvider.DemoValues("gpt-5-codex", 8_100, 54_000, 760_000, 31, "$2",
                     38, TimeSpan.FromHours(4), 27, TimeSpan.FromDays(4),
-                    UsageUrl: "https://chatgpt.com/codex/settings/usage")),
+                    UsageUrl: "https://chatgpt.com/codex/cloud/settings/analytics#usage")),
 
         new DemoUsageProvider("gemini", "Gemini", "G", "#4285F4",
             new DemoUsageProvider.DemoValues("gemini-2.5-pro", 3_600, 22_000, 310_000, 14, "$1",

@@ -114,7 +114,7 @@ public sealed class CodexUsageProvider : IUsageProvider
             DayTokens = totals.Day,
             MonthTokens = totals.Month,
             Requests = totals.Requests,
-            UsageUrl = "https://chatgpt.com/codex/settings/usage",
+            UsageUrl = "https://chatgpt.com/codex/cloud/settings/analytics#usage",
             Session = quota?.Session,
             Week = quota?.Week,
             QuotaNotice = hasQuota ? "" : Loc.T("Usage_Codex_QuotaNotice"),
