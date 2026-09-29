@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.25.1] — 2026-09-29
+
+### Interface
+
+- L’entrée **Mises à jour** du menu principal se trouve désormais juste au-dessus de **Quitter l’application**.
+
 ## [1.25.0] — 2026-09-29
 
 ### Nouveautés
