@@ -79,8 +79,12 @@ public static class SecretMenu
 
     /// <summary>Le chemin réel de l'exécutable en cours — celui que l'entrée doit lancer.</summary>
     private static string ExePath =>
-        Environment.ProcessPath
-        ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+        Services.Updates.AppInstallation.Executable;
+
+    public static void RefreshExisting()
+    {
+        if (ReadCommand(KeyPath) is not null) Install();
+    }
 
     private static string? ReadCommand(string keyPath)
     {

@@ -17,6 +17,8 @@ namespace DockPad.Models;
 /// </remarks>
 public class AppSettings
 {
+    public bool CheckForUpdates { get; set; } = true;
+    public DateTimeOffset LastUpdateCheck { get; set; } = DateTimeOffset.MinValue;
     /// <summary>Étiquette de langue, ou vide pour « suivre Windows ».</summary>
     public string Language { get; set; } = "";
 

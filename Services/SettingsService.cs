@@ -58,8 +58,7 @@ public static class SettingsService
 
         if (enabled)
         {
-            var exePath = Environment.ProcessPath
-                          ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+            var exePath = Updates.AppInstallation.Executable;
             key.SetValue(AppName, $"\"{exePath}\"", RegistryValueKind.String);
         }
         else

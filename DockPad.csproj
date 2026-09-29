@@ -73,7 +73,7 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="ZipAfterPublish" AfterTargets="Publish">
+  <Target Name="ZipAfterPublish" AfterTargets="Publish" Condition="'$(SkipLegacyZip)' != 'true'">
     <MakeDir Directories="$(MSBuildProjectDirectory)\release" />
     <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip" Overwrite="true" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md" DestinationFiles="$(MSBuildProjectDirectory)\release\DockPad-$(Version)-Changelog.md" OverwriteReadOnlyFiles="true" />
@@ -82,6 +82,7 @@
   </Target>
 
   <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.161" />
     <!-- Aligne sur le framework cible (net8.0) et non sur la derniere version : le SDK installe
          est un .NET 10, mais l'application est publiee framework-dependent pour .NET 8. -->
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />

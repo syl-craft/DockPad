@@ -23,6 +23,8 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// gestes qu'une fenêtre est seule à pouvoir faire — voir <see cref="QuickAccessCommands"/>.
     /// </summary>
     public QuickAccessCommands Commands { get; }
+    public Services.Updates.UpdateService Updates => Services.Updates.UpdateService.Current;
+    public void ShowUpdates() => new UpdatesDialog { Owner = this }.ShowDialog();
 
     /// <summary>
     /// Laquelle des deux grilles est affichée. Voir <see cref="TileModeState"/> : le mode Favoris

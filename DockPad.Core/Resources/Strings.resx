@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -1476,4 +1476,31 @@ This cannot be undone.</value>
   <data name="Usage_Gauge_StaleTooltip" xml:space="preserve">
     <value>{0} % used, {1} % left — last reading: {2:g}. The value updates the next time the tool is used.</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>Updates</value></data>
+  <data name="Update_Unavailable" xml:space="preserve"><value>Automatic updates are available in the installed or portable release. Download the latest release from GitHub.</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Checking for updates…</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>Version {0} is available.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Downloading… {0}%</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>Update downloaded. Ready to restart.</value></data>
+  <data name="Update_Installing" xml:space="preserve"><value>Closing DockPad to install the update…</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>The update could not be completed. Check your connection and try again. DockPad remains usable.</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>You have the latest version.</value></data>
+  <data name="Update_NotChecked" xml:space="preserve"><value>Check whether a new version is available.</value></data>
+  <data name="Update_Progress" xml:space="preserve"><value>Update download progress</value></data>
+  <data name="Update_Automatic" xml:space="preserve"><value>Check for updates automatically</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Update and restart</value></data>
+  <data name="Update_BlockedTitle" xml:space="preserve"><value>Close apps to continue</value></data>
+  <data name="Update_BlockedHelp" xml:space="preserve"><value>These processes are using DockPad files. Select those you want to close. Closing an MCP or AI session may interrupt work in progress.</value></data>
+  <data name="Update_Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Update_CloseSelected" xml:space="preserve"><value>Close selected and continue</value></data>
+  <data name="Update_Postpone" xml:space="preserve"><value>Postpone</value></data>
+  <data name="Update_ForcePrompt" xml:space="preserve"><value>These processes did not close:
+{0}
+
+Force them to stop? Unsaved work may be lost.</value></data>
+  <data name="Update_LockError" xml:space="preserve"><value>Some files are still in use or access was denied. Close the listed apps yourself, then retry. You can also postpone the update.</value></data>
+  <data name="Update_ProfileInside" xml:space="preserve"><value>Your profile is inside the application folder. Move it outside that folder and update DOCKPAD_PROFILE_DIR before updating.</value></data>
+  <data name="Update_CloseDialogs" xml:space="preserve"><value>Finish your work and close the other DockPad dialogs before updating.</value></data>
+  <data name="Update_DownloadLatest" xml:space="preserve"><value>Download latest release</value></data>
 </root>

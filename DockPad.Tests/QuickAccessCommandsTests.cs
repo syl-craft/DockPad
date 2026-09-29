@@ -21,6 +21,7 @@ public class QuickAccessCommandsTests
         public void ShowContextMenuManager() => Calls.Add(nameof(ShowContextMenuManager));
         public void ShowPresets() => Calls.Add(nameof(ShowPresets));
         public void ShowSettings() => Calls.Add(nameof(ShowSettings));
+        public void ShowUpdates() => Calls.Add(nameof(ShowUpdates));
         public void ShowBrowsers() => Calls.Add(nameof(ShowBrowsers));
         public void ShowMcpConfig() => Calls.Add(nameof(ShowMcpConfig));
         public void ShowUsageConfig() => Calls.Add(nameof(ShowUsageConfig));

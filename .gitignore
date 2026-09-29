@@ -3,6 +3,7 @@ bin/
 obj/
 publish/
 release/
+.tools/
 
 # Visual Studio
 .vs/

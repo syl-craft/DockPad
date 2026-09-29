@@ -359,6 +359,9 @@
                             <MenuItem Header="{loc:T Quick_Menu_Options}" Command="{Binding Commands.OpenSettings}">
                                 <MenuItem.Icon><TextBlock Text="⚙"/></MenuItem.Icon>
                             </MenuItem>
+                            <MenuItem Header="{loc:T Update_Title}" Command="{Binding Commands.OpenUpdates}">
+                                <MenuItem.ToolTip><TextBlock Text="{Binding Updates.Status}"/></MenuItem.ToolTip>
+                            </MenuItem>
                             <MenuItem Header="{loc:T Quick_Menu_Browsers}" Command="{Binding Commands.OpenBrowsers}">
                                 <MenuItem.Icon><TextBlock Text="🌐"/></MenuItem.Icon>
                             </MenuItem>
@@ -460,6 +463,10 @@
 
                 <!-- Boutons droite -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="↻" Style="{StaticResource SecondaryButton}" Padding="10,6" Margin="0,0,8,0" MinWidth="40"
+                            AutomationProperties.Name="{loc:T Update_Title}" ToolTip="{Binding Updates.Status}"
+                            Visibility="{Binding Updates.HasRelease, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Command="{Binding Commands.OpenUpdates}"/>
                     <!-- Verrou du déplacement des tuiles. Le clic sur une tuile lance son action, et
                          le même geste manqué de quelques pixels la déplaçait : la réorganisation
                          devient un mode qu'on demande. Glyphe, infobulle et style sont posés par

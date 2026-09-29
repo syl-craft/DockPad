@@ -1,0 +1,32 @@
+name: Build Velopack packages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Test
+        run: dotnet test DockPad.Tests/DockPad.Tests.csproj -c Release
+      - name: Build adapted native tools
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          & "$vs/Common7/Tools/Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
+          rustup toolchain install 1.98.1 --profile minimal
+          $env:RUSTUP_TOOLCHAIN = '1.98.1'
+          ./tools/velopack/build-native.ps1
+      - name: Package (unsigned verification artifacts)
+        run: ./tools/velopack/pack.ps1
+      - name: Exercise packaged updates
+        run: ./tools/velopack/test-packages.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DockPad-velopack-unsigned
+          path: release/velopack/*
+          if-no-files-found: error

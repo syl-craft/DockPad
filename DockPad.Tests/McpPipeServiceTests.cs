@@ -149,10 +149,27 @@ public class McpPipeServiceTests
     }
 
     [Fact]
+    public async Task LineClient_DoesNotReportSuccessBeforeReceiverAccepts()
+    {
+        var name = NewName();
+        using var server = new NamedPipeServerStream(name, PipeDirection.InOut, 1,
+            PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var connected = server.WaitForConnectionAsync(stop.Token);
+        var sending = Task.Run(() => new LinePipeService(name).TrySendSilently("https://example.test", 3000));
+        await connected;
+        using var reader = new StreamReader(server, leaveOpen: true);
+        Assert.Equal("https://example.test", await reader.ReadLineAsync(stop.Token));
+        Assert.False(sending.IsCompleted);
+        server.Dispose(); // Resident exited before taking responsibility for the URL.
+        Assert.False(await sending.WaitAsync(stop.Token));
+    }
+
+    [Fact]
     public async Task LineClient_NonReadingServerDoesNotBlockWriteForever()
     {
         var name = NewName();
-        using var server = new NamedPipeServerStream(name, PipeDirection.In, 1,
+        using var server = new NamedPipeServerStream(name, PipeDirection.InOut, 1,
             PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
         using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var connected = server.WaitForConnectionAsync(stop.Token);

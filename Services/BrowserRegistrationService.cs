@@ -21,7 +21,13 @@ public static class BrowserRegistrationService
     private const string UserChoicePath   = @"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice";
 
     private static string ExePath =>
-        Environment.ProcessPath ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+        Updates.AppInstallation.Executable;
+
+    public static void RefreshExisting()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(CapabilitiesPath);
+        if (key is not null) Register();
+    }
 
     private static string OpenCommand => $"\"{ExePath}\" --url \"%1\"";
 

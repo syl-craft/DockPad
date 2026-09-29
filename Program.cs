@@ -32,8 +32,19 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        // L'instance résidente a pris la demande : rien à construire, rien à journaliser.
-        if (StartupRelay.TryRelay(args)) return 0;
+        // Lifecycle invocations must reach Velopack even when a resident is running. Ordinary
+        // relays exit before SDK package housekeeping (~50 ms), WPF and profile initialization.
+        var lifecycle = args.Any(a => a.StartsWith("--veloapp-", StringComparison.Ordinal)
+            || a.StartsWith("--squirrel-", StringComparison.Ordinal))
+            || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("VELOPACK_FIRSTRUN"))
+            || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("VELOPACK_RESTART"));
+        if (!lifecycle)
+        {
+            if (Services.Updates.AppInstallation.DeferDuringUpdate(args)) return 0;
+            if (StartupRelay.TryRelay(args)) return 0;
+        }
+        Velopack.VelopackApp.Build().SetAutoApplyOnStartup(false)
+            .OnRestarted(_ => Services.Updates.AppInstallation.EndUpdate()).Run();
 
         var app = new App();
         app.InitializeComponent();
