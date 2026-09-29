@@ -17,6 +17,11 @@ using Velopack;
 internal static class UpdateUiAcceptance
 {
     private static string _root = "";
+    private static string FixtureVersion(string key)
+    {
+        using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(_root, "versions.json")));
+        return json.RootElement.GetProperty(key).GetString()!;
+    }
     private static readonly List<string> Passed = [];
     public static async Task RunAsync(string root)
     {
@@ -114,7 +119,7 @@ internal static class UpdateUiAcceptance
         window = await Open(realService);
         Click(Button(window, "Update_Check"));
         await Until(() => realService.State == UpdateState.Available, "real package discovered");
-        Assert(realService.Release!.Version == "1.24.1", "real next version displayed");
+        Assert(realService.Release!.Version == FixtureVersion("Next"), "real next version displayed");
         using var blocker = StartMcp();
         await Until(() => UpdateBlockers.Find(AppContext.BaseDirectory).Any(b => b.Pid == blocker.Id), "real MCP image lock");
         Click(Button(window, "Update_Install"));
@@ -180,7 +185,7 @@ internal static class UpdateUiAcceptance
         var window = await Open(service);
         Click(Button(window, "Update_Check"));
         await Until(() => service.State == UpdateState.Idle && service.Status == Loc.T("Update_UpToDate"), "updated version reports up to date");
-        Assert(service.CurrentVersion == "1.24.1" && !Button(window, "Update_Install").IsEnabled, "restart UI shows new version without reinstall");
+        Assert(service.CurrentVersion == FixtureVersion("Next") && !Button(window, "Update_Install").IsEnabled, "restart UI shows new version without reinstall");
         Assert(((CheckBox)window.FindName("Automatic")).IsChecked == false, "automatic preference survives restart");
         window.Close();
     }
@@ -249,12 +254,12 @@ internal static class UpdateUiAcceptance
     private sealed class ControlledBackend : IUpdateBackend
     {
         public bool IsInstalled { get; set; } = true;
-        public string CurrentVersion => "1.24.0";
+        public string CurrentVersion => FixtureVersion("Base");
         public string ContentDirectory => AppContext.BaseDirectory;
         public string Mode = "none";
         public string Notes => "Version de test — téléchargement, annulation et reprise.\n" + new string('x', 180);
         public int Applies;
-        public Task<UpdateRelease?> CheckAsync() => Mode == "check-error" ? throw new IOException("fixture offline") : Task.FromResult(Mode == "none" ? null : new UpdateRelease("1.24.1", Notes, new object()));
+        public Task<UpdateRelease?> CheckAsync() => Mode == "check-error" ? throw new IOException("fixture offline") : Task.FromResult(Mode == "none" ? null : new UpdateRelease(FixtureVersion("Next"), Notes, new object()));
         public async Task DownloadAsync(UpdateRelease release, Action<int> progress, CancellationToken token)
         {
             if (Mode == "download-error") throw new IOException("fixture download failure");

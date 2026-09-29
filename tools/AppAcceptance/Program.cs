@@ -7,6 +7,9 @@ using Microsoft.Win32;
 
 if (args.Length != 2) throw new ArgumentException("fixture-root startup-hook-dll");
 string root = Path.GetFullPath(args[0]);
+using var versions = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "versions.json")));
+string baseVersion = versions.RootElement.GetProperty("Base").GetString()!;
+string nextVersion = versions.RootElement.GetProperty("Next").GetString()!;
 Environment.SetEnvironmentVariable("DOCKPAD_APP_ACCEPTANCE", root);
 Environment.SetEnvironmentVariable("DOCKPAD_PROFILE_DIR", Path.Combine(root, "profile"));
 Environment.SetEnvironmentVariable("DOTNET_STARTUP_HOOKS", Path.GetFullPath(args[1]));
@@ -19,15 +22,15 @@ if (!Native.CreateProcess(null, new StringBuilder('"' + exe + '"'), IntPtr.Zero,
 Native.CloseHandle(process.thread); Native.CloseHandle(process.process);
 try
 {
-    await Wait(() => Read("ready")?.GetProperty("version").GetString() == "1.24.0", "initial app startup");
+    await Wait(() => Read("ready")?.GetProperty("version").GetString() == baseVersion, "initial app startup");
     var beforeHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(root, "profile", "sentinel.json"))));
-    await Verify("1.24.0");
+    await Verify(baseVersion);
     Command("update");
-    await Wait(() => Read("ready")?.GetProperty("version").GetString() == "1.24.1", "actual DockPad update/restart");
+    await Wait(() => Read("ready")?.GetProperty("version").GetString() == nextVersion, "actual DockPad update/restart");
     if (Read("ui-passed") is not { } ui || ui.GetArrayLength() < 30) throw new IOException("UI scenarios did not complete");
     Console.WriteLine($"PASS: {ui.GetArrayLength()} WPF UI assertions and checkpoints, real update through dialog buttons.");
-    VerifyExit("1.24.0");
-    await Verify("1.24.1");
+    VerifyExit(baseVersion);
+    await Verify(nextVersion);
     var updatedUi = Command("verify-updated-ui");
     await Wait(() => Read(updatedUi) is not null, "updated UI check");
     // The UI test deliberately toggles a persisted preference. Compare the profile
@@ -37,8 +40,8 @@ try
         if (Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(root, "profile", config.Key)))) != config.Value)
             throw new IOException("Configuration changed: " + config.Key);
     Command("exit");
-    await Wait(() => Read("exit-1.24.1") is not null, "clean exit");
-    VerifyExit("1.24.1");
+    await Wait(() => Read("exit-" + nextVersion) is not null, "clean exit");
+    VerifyExit(nextVersion);
     var afterHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(root, "profile", "sentinel.json"))));
     if (afterHash != beforeHash) throw new IOException("Profile sentinel changed");
     Console.WriteLine("PASS: actual DockPad N -> N+1, restart, hotkey registration/handler, HTTP/HTTPS commands, auto-start command, URL and injection dialogs, MCP pipe, profile, clean mutex/hotkey/pipe release.");

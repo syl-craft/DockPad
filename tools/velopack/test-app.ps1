@@ -1,4 +1,4 @@
-param([string]$Revision = 'HEAD', [switch]$WorkingTree)
+param([string]$Revision = 'HEAD', [switch]$WorkingTree, [string]$BaseVersion)
 $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath("$PSScriptRoot/../..")
 $fixture = Join-Path $env:TEMP ('dockpad-app-acceptance-' + [Guid]::NewGuid().ToString('N'))
@@ -11,6 +11,11 @@ if ($WorkingTree) {
     git -C "$fixture/source" apply "$fixture/working.patch"
     if ($LASTEXITCODE) { throw 'Cannot apply working changes to fixture' }
 }
+if (!$BaseVersion) { $BaseVersion = ([xml](Get-Content "$fixture/source/DockPad.csproj")).Project.PropertyGroup.Version | Where-Object { $_ } }
+if ($BaseVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'Expected stable base version' }
+$base = [Version]$BaseVersion
+$nextVersion = [Version]::new($base.Major, $base.Minor, $base.Build + 1).ToString()
+@{ Base = $BaseVersion; Next = $nextVersion } | ConvertTo-Json | Set-Content "$fixture/versions.json"
 # Isolate OS identities only. Application behavior, updater and hotkey handling are unchanged.
 foreach ($file in @('Services/StartupRelay.cs', 'Services/UrlPipeService.cs', 'Services/McpPipeService.cs')) {
     $path = "$fixture/source/$file"
@@ -26,12 +31,12 @@ Set-Content "$fixture/profile/settings.json" '{"hotkeyModifiers":6,"hotkeyKey":1
 Set-Content "$fixture/profile/mcp.json" '{"enabled":true,"allowDelete":false}'
 Set-Content "$fixture/profile/sentinel.json" '{"keep":"NIN-80"}'
 Set-Content "$fixture/fixture.env" 'TOKEN={{vault.test.password}}'
-foreach ($version in @('1.24.0', '1.24.1')) {
+foreach ($version in @($BaseVersion, $nextVersion)) {
     dotnet publish "$fixture/source/DockPad.csproj" -c Release -r win-x64 --self-contained false -p:SkipLegacyZip=true -p:UseSharedCompilation=false -m:1 "-p:Version=$version" -o "$fixture/stage/$version"
     if ($LASTEXITCODE) { throw 'Actual app build failed' }
-    & "$repo/.tools/vpk/vpk.exe" pack --packId DockPad --packTitle DockPad --packVersion $version --packDir "$fixture/stage/$version" --mainExe DockPad.exe --runtime win-x64 --outputDir "$fixture/feed" --shortcuts None --yes
+    & "$repo/.tools/vpk/vpk.exe" pack --packId DockPad --packTitle DockPad --packAuthors syl-craft --packVersion $version --packDir "$fixture/stage/$version" --mainExe DockPad.exe --runtime win-x64 --framework net8-x64-desktop --outputDir "$fixture/feed" --shortcuts None --yes
     if ($LASTEXITCODE) { throw 'Actual app packaging failed' }
-    if ($version -eq '1.24.0') { Expand-Archive "$fixture/feed/DockPad-win-Portable.zip" "$fixture/app" }
+    if ($version -eq $BaseVersion) { Expand-Archive "$fixture/feed/DockPad-win-Portable.zip" "$fixture/app" }
 }
 foreach ($project in @('AppAcceptance', 'AppAcceptanceHook')) {
     dotnet build "$repo/tools/$project" -c Release -p:UseSharedCompilation=false -m:1 -v minimal
