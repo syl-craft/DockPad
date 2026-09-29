@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.25.2] — 2026-09-29
+
+### Corrections
+
+- L’outil de mise à jour se présente comme **DockPad-Updater 1.25.0**, avec un nom, une description et des versions de fichier cohérents, au lieu de **Velopack 0.0.0-local**. Sa version est indépendante de celle de DockPad. La signature numérique reste en préparation.
+
 ## [1.25.1] — 2026-09-29
 
 ### Interface
