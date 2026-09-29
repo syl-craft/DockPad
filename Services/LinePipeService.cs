@@ -24,9 +24,22 @@ namespace DockPad.Services;
 public sealed class LinePipeService(string pipeName)
 {
     public string PipeName { get; } = pipeName;
+    private CancellationTokenSource? _stop;
+    private Task? _server;
 
     /// <summary>Démarre le serveur (instance principale). Le rappel a lieu sur un thread de pool.</summary>
-    public void StartServer(Action<string> onLine) => _ = RunServerAsync(onLine, CancellationToken.None);
+    public void StartServer(Action<string> onLine)
+    {
+        if (_server is not null) return;
+        _stop = new CancellationTokenSource();
+        _server = RunServerAsync(onLine, _stop.Token);
+    }
+    public async Task StopServerAsync()
+    {
+        _stop?.Cancel();
+        if (_server is not null) await _server.ConfigureAwait(false);
+        _stop?.Dispose(); _stop = null; _server = null;
+    }
 
     public async Task RunServerAsync(Action<string> onLine, CancellationToken token, int timeoutMs = 2000)
     {
@@ -35,7 +48,7 @@ public sealed class LinePipeService(string pipeName)
         {
             try
             {
-                using var server = new NamedPipeServerStream(PipeName, PipeDirection.In, 1,
+                using var server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1,
                     PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
                 await server.WaitForConnectionAsync(token).ConfigureAwait(false);
                 using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -43,6 +56,7 @@ public sealed class LinePipeService(string pipeName)
                 using var reader = PipeTransport.Reader(server);
                 var line = await reader.ReadLineAsync(deadline.Token).ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(line)) onLine(line);
+                await PipeTransport.WriteLineAsync(server, "ok", deadline.Token).ConfigureAwait(false);
                 faulted = false;
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
@@ -95,8 +109,11 @@ public sealed class LinePipeService(string pipeName)
     private async Task SendAsync(string line, int timeoutMs)
     {
         using var deadline = new CancellationTokenSource(timeoutMs);
-        using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out, PipeOptions.Asynchronous);
+        using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         await client.ConnectAsync(deadline.Token).ConfigureAwait(false);
         await PipeTransport.WriteLineAsync(client, line, deadline.Token).ConfigureAwait(false);
+        using var reader = PipeTransport.Reader(client);
+        if (await reader.ReadLineAsync(deadline.Token).ConfigureAwait(false) != "ok")
+            throw new IOException("Relay closed before accepting the request");
     }
 }

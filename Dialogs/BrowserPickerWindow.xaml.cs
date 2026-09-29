@@ -238,10 +238,13 @@ public partial class BrowserPickerWindow : Window
     /// rafraîchit seulement si elle est là, par le même point que les mutations MCP.
     /// </para>
     /// </remarks>
-    private void BtnFavorite_Click(object sender, RoutedEventArgs e) =>
+    private void BtnFavorite_Click(object sender, RoutedEventArgs e)
+    {
         // Le décompte d'ouverture automatique est déjà annulé par PreviewMouseDown : sans ça,
         // mettre en favori aurait ouvert le navigateur sous les doigts.
         PendingFavoriteWrite = ApplyFavoriteAsync(BtnFavorite.IsChecked == true);
+        Services.Updates.PendingWrites.Track(PendingFavoriteWrite);
+    }
 
     private async Task ApplyFavoriteAsync(bool wanted)
     {

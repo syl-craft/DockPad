@@ -1,0 +1,25 @@
+diff --git a/src/bins/src/commands/apply_windows_impl.rs b/src/bins/src/commands/apply_windows_impl.rs
+index 2effdf5..0b30017 100644
+--- a/src/bins/src/commands/apply_windows_impl.rs
++++ b/src/bins/src/commands/apply_windows_impl.rs
+@@ -158,3 +158,3 @@ pub fn apply_package_impl(old_locator: &VelopackLocator, package: &PathBuf, hook
+         // third, we try _REALLY HARD_ to stop the package
+-        let _ = shared::force_stop_package(&root_path);
++        shared::force_stop_package(&root_path)?;
+         // fourth, we make as backup of the current dir to temp_path_old
+diff --git a/src/bins/src/shared/util_windows.rs b/src/bins/src/shared/util_windows.rs
+index 76af834..a77c858 100644
+--- a/src/bins/src/shared/util_windows.rs
++++ b/src/bins/src/shared/util_windows.rs
+@@ -89,3 +89,3 @@ fn _force_stop_package<P: AsRef<Path>>(root_dir: P) -> Result<()> {
+     info!("Checking for running processes in: {}", dir.display());
+-    let processes = unsafe { get_processes_running_in_directory(dir)? };
++    let processes = unsafe { get_processes_running_in_directory(dir.join("current"))? };
+     let my_pid = std::process::id();
+@@ -96,4 +96,4 @@ fn _force_stop_package<P: AsRef<Path>>(root_dir: P) -> Result<()> {
+         }
+-        warn!("Killing process: {} ({})", path.display(), pid);
+-        process::kill_process(handle)?;
++        warn!("Application still running: {} ({})", path.display(), pid);
++        anyhow::bail!("Close the application before updating: {} ({})", path.display(), pid);
+     }

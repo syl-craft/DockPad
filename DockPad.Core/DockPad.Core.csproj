@@ -5,6 +5,10 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <Platforms>x64</Platforms>
+    <Product>DockPad</Product>
+    <Authors>syl-craft</Authors>
+    <Copyright>Copyright (c) 2026 syl-craft</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <!--
       DockPad, et non DockPad.Core. C'est ce qui garde le nom de manifeste des ressources a
       « DockPad.Resources.Strings » — que Loc code en dur — et ce qui evite de toucher un seul

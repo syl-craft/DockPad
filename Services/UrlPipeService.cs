@@ -16,6 +16,7 @@ public static class UrlPipeService
 
     /// <summary>Démarre le serveur (instance principale). onUrl est appelé sur un thread de pool.</summary>
     public static void StartServer(Action<string> onUrl) => Pipe.StartServer(onUrl);
+    public static System.Threading.Tasks.Task StopServerAsync() => Pipe.StopServerAsync();
 
     /// <summary>Envoie une URL à l'instance principale. false si échec ou timeout.</summary>
     public static bool TrySend(string url, int timeoutMs = 2000) => Pipe.TrySend(url, timeoutMs);

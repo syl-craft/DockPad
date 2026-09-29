@@ -1,0 +1,73 @@
+name: SignPath application signing (onboarding only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sign-application:
+    if: github.repository == 'syl-craft/DockPad' && github.ref == 'refs/heads/master'
+    runs-on: windows-2022
+    environment: signpath
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Require SignPath onboarding configuration
+        shell: pwsh
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          SIGNPATH_APPLICATION_CONFIGURATION_SLUG: ${{ vars.SIGNPATH_APPLICATION_CONFIGURATION_SLUG }}
+          SIGNPATH_CERTIFICATE_THUMBPRINT: ${{ vars.SIGNPATH_CERTIFICATE_THUMBPRINT }}
+        run: |
+          foreach ($name in @('SIGNPATH_API_TOKEN', 'SIGNPATH_ORGANIZATION_ID', 'SIGNPATH_PROJECT_SLUG', 'SIGNPATH_SIGNING_POLICY_SLUG', 'SIGNPATH_APPLICATION_CONFIGURATION_SLUG', 'SIGNPATH_CERTIFICATE_THUMBPRINT')) {
+            if (![Environment]::GetEnvironmentVariable($name)) { throw "Configure $name after SignPath approval. No signing request sent." }
+          }
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Test
+        run: dotnet test DockPad.Tests/DockPad.Tests.csproj -c Release -p:UseSharedCompilation=false -m:1
+      - name: Build versioned application
+        id: build
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content DockPad.csproj)).Project.PropertyGroup.Version | Where-Object { $_ }
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Expected stable project version' }
+          dotnet publish DockPad.csproj -c Release -r win-x64 --self-contained false -p:SkipLegacyZip=true -p:UseSharedCompilation=false -m:1 -p:IncludeSourceRevisionInInformationalVersion=false "-p:Version=$version" -o signing-input
+          if ($LASTEXITCODE) { throw 'Publish failed' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+      - name: Upload build provenance
+        id: unsigned
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: DockPad-application-unsigned
+          path: signing-input/
+          if-no-files-found: error
+      - name: Request application signing
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_APPLICATION_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: signing-output
+          parameters: |
+            version: ${{ toJSON(steps.build.outputs.version) }}
+      - name: Verify returned publisher signatures
+        shell: pwsh
+        env:
+          EXPECTED_VERSION: ${{ steps.build.outputs.version }}
+          EXPECTED_CERTIFICATE: ${{ vars.SIGNPATH_CERTIFICATE_THUMBPRINT }}
+        run: ./tools/signing/verify-application.ps1 -Directory signing-output -Version $env:EXPECTED_VERSION -CertificateThumbprint $env:EXPECTED_CERTIFICATE
+      - name: Retain verified application (not a Velopack release)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: DockPad-application-signed-not-installer
+          path: signing-output/
+          if-no-files-found: error

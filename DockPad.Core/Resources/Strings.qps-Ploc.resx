@@ -1476,4 +1476,31 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Usage_Gauge_StaleTooltip" xml:space="preserve">
     <value>{0} % ut1l1535, {1} % r35t4nt5 — d3rn13r r3l3v3 : {2:g}. L4 v4l3ur 53 m3t 4 j0ur 4 l4 pr0ch41n3 ut1l154t10n d3 l'0ut1l.</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>M1535 4 j0ur</value></data>
+  <data name="Update_Unavailable" xml:space="preserve"><value>L35 m1535 4 j0ur 50nt d15p0n1bl35 d4n5 l4 v3r510n 1n5t4ll33 0u p0rt4bl3. T3l3ch4rg3z l4 d3rn13r3 v3r510n 5ur G1tHub.</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>R3ch3rch3 d3 m1535 4 j0ur…</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>L4 v3r510n {0} 35t d15p0n1bl3.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>T3l3ch4rg3m3nt… {0} %</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>M153 4 j0ur t3l3ch4rg33. Pr3t3 p0ur l3 r3d3m4rr4g3.</value></data>
+  <data name="Update_Installing" xml:space="preserve"><value>F3rm3tur3 d3 D0ckP4d p0ur 1n5t4ll3r l4 m153 4 j0ur…</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>L4 m153 4 j0ur n’4 p45 pu 4b0ut1r. V3r1f13z l4 c0nn3x10n 3t r33554y3z. D0ckP4d r35t3 ut1l154bl3.</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>V0u5 d15p053z d3 l4 d3rn13r3 v3r510n.</value></data>
+  <data name="Update_NotChecked" xml:space="preserve"><value>V3r1f13z 51 un3 n0uv3ll3 v3r510n 35t d15p0n1bl3.</value></data>
+  <data name="Update_Progress" xml:space="preserve"><value>Pr0gr35510n du t3l3ch4rg3m3nt</value></data>
+  <data name="Update_Automatic" xml:space="preserve"><value>R3ch3rch3r 4ut0m4t1qu3m3nt l35 m1535 4 j0ur</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>R3ch3rch3r</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>M3ttr3 4 j0ur 3t r3d3m4rr3r</value></data>
+  <data name="Update_BlockedTitle" xml:space="preserve"><value>F3rm3r l35 4ppl1c4t10n5 bl0qu4nt35</value></data>
+  <data name="Update_BlockedHelp" xml:space="preserve"><value>C35 pr0c355u5 ut1l153nt d35 f1ch13r5 d3 D0ckP4d. 53l3ct10nn3z c3ux 4 f3rm3r. Un3 535510n MCP 0u 14 p3ut 4v01r du tr4v41l 3n c0ur5 qu1 53r4 1nt3rr0mpu.</value></data>
+  <data name="Update_Retry" xml:space="preserve"><value>R33554y3r</value></data>
+  <data name="Update_CloseSelected" xml:space="preserve"><value>F3rm3r l4 53l3ct10n 3t c0nt1nu3r</value></data>
+  <data name="Update_Postpone" xml:space="preserve"><value>R3p0rt3r</value></data>
+  <data name="Update_ForcePrompt" xml:space="preserve"><value>C35 pr0c355u5 n3 53 50nt p45 f3rm35 :
+{0}
+
+F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
+  <data name="Update_LockError" xml:space="preserve"><value>D35 f1ch13r5 r35t3nt ut1l1535 0u l3ur 4cc35 35t r3fu53. F3rm3z l35 4ppl1c4t10n5 c0nc3rn335, pu15 r33554y3z. V0u5 p0uv3z 4u551 r3p0rt3r l4 m153 4 j0ur.</value></data>
+  <data name="Update_ProfileInside" xml:space="preserve"><value>V0tr3 pr0f1l 53 tr0uv3 d4n5 l3 d05513r d3 l’4ppl1c4t10n. D3pl4c3z-l3 h0r5 d3 c3 d05513r 3t 4d4pt3z D0CKP4D_PR0F1L3_D1R 4v4nt l4 m153 4 j0ur.</value></data>
+  <data name="Update_CloseDialogs" xml:space="preserve"><value>T3rm1n3z v0tr3 tr4v41l 3t f3rm3z l35 4utr35 f3n3tr35 d3 d14l0gu3 d3 D0ckP4d 4v4nt l4 m153 4 j0ur.</value></data>
+  <data name="Update_DownloadLatest" xml:space="preserve"><value>T3l3ch4rg3r l4 d3rn13r3 v3r510n</value></data>
 </root>

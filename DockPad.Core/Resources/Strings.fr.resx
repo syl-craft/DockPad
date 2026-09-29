@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -1476,4 +1476,31 @@ Cette action est irréversible.</value>
   <data name="Usage_Gauge_StaleTooltip" xml:space="preserve">
     <value>{0} % utilisés, {1} % restants — dernier relevé : {2:g}. La valeur se met à jour à la prochaine utilisation de l'outil.</value>
   </data>
+  <data name="Update_Title" xml:space="preserve"><value>Mises à jour</value></data>
+  <data name="Update_Unavailable" xml:space="preserve"><value>Les mises à jour sont disponibles dans la version installée ou portable. Téléchargez la dernière version sur GitHub.</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Recherche de mises à jour…</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>La version {0} est disponible.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Téléchargement… {0} %</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>Mise à jour téléchargée. Prête pour le redémarrage.</value></data>
+  <data name="Update_Installing" xml:space="preserve"><value>Fermeture de DockPad pour installer la mise à jour…</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>La mise à jour n’a pas pu aboutir. Vérifiez la connexion et réessayez. DockPad reste utilisable.</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>Vous disposez de la dernière version.</value></data>
+  <data name="Update_NotChecked" xml:space="preserve"><value>Vérifiez si une nouvelle version est disponible.</value></data>
+  <data name="Update_Progress" xml:space="preserve"><value>Progression du téléchargement</value></data>
+  <data name="Update_Automatic" xml:space="preserve"><value>Rechercher automatiquement les mises à jour</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>Rechercher</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Mettre à jour et redémarrer</value></data>
+  <data name="Update_BlockedTitle" xml:space="preserve"><value>Fermer les applications bloquantes</value></data>
+  <data name="Update_BlockedHelp" xml:space="preserve"><value>Ces processus utilisent des fichiers de DockPad. Sélectionnez ceux à fermer. Une session MCP ou IA peut avoir du travail en cours qui sera interrompu.</value></data>
+  <data name="Update_Retry" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="Update_CloseSelected" xml:space="preserve"><value>Fermer la sélection et continuer</value></data>
+  <data name="Update_Postpone" xml:space="preserve"><value>Reporter</value></data>
+  <data name="Update_ForcePrompt" xml:space="preserve"><value>Ces processus ne se sont pas fermés :
+{0}
+
+Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
+  <data name="Update_LockError" xml:space="preserve"><value>Des fichiers restent utilisés ou leur accès est refusé. Fermez les applications concernées, puis réessayez. Vous pouvez aussi reporter la mise à jour.</value></data>
+  <data name="Update_ProfileInside" xml:space="preserve"><value>Votre profil se trouve dans le dossier de l’application. Déplacez-le hors de ce dossier et adaptez DOCKPAD_PROFILE_DIR avant la mise à jour.</value></data>
+  <data name="Update_CloseDialogs" xml:space="preserve"><value>Terminez votre travail et fermez les autres fenêtres de dialogue de DockPad avant la mise à jour.</value></data>
+  <data name="Update_DownloadLatest" xml:space="preserve"><value>Télécharger la dernière version</value></data>
 </root>

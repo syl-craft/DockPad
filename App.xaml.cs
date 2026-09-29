@@ -11,9 +11,12 @@ public partial class App : Application
 {
     public static bool IsExiting { get; private set; }
 
-    public static new void Exit()
+    public static new async void Exit()
     {
+        if (IsExiting) return;
         IsExiting = true;
+        await System.Threading.Tasks.Task.WhenAll(Services.UrlPipeService.StopServerAsync(),
+            InjectPipe.StopServerAsync(), ShowPipe.StopServerAsync(), Services.McpPipeService.StopServerAsync());
         Current.Shutdown();
     }
 
@@ -151,11 +154,24 @@ public partial class App : Application
 
         _trayIcon = CreateTrayIcon();
 
+        if (Services.Updates.AppInstallation.Root is not null)
+        {
+            if (Services.SettingsService.LoadAutoStart()) Services.SettingsService.SaveAutoStart(true);
+            Services.BrowserRegistrationService.RefreshExisting();
+            Secrets.SecretMenu.RefreshExisting();
+        }
+        Services.Updates.UpdateService.Current.StartPolling();
+
+        _updateRelays = new(action => Dispatcher.BeginInvoke(action), args =>
+        {
+            if (!Services.Updates.AppInstallation.DeferDuringUpdate(args))
+                throw new System.IO.IOException("Update handoff is not active");
+        });
         Services.UrlPipeService.StartServer(u =>
-            Dispatcher.BeginInvoke(() => Services.UrlRouterService.Handle(u)));
+            _updateRelays.Accept(["--url", u], () => Services.UrlRouterService.Handle(u)));
 
         InjectPipe.StartServer(path =>
-            Dispatcher.BeginInvoke(() => Secrets.SecretInjection.Handle(path)));
+            _updateRelays.Accept(["--inject-secrets", path], () => Secrets.SecretInjection.Handle(path)));
 
         // La demande d'affichage passe par le meme geste que le raccourci global : un seul point,
         // et le bandeau se rafraichit comme il doit.
@@ -173,6 +189,9 @@ public partial class App : Application
 
     /// <summary>Pipe du clic droit « Injecter les secrets… », jumeau de celui des URL.</summary>
     private static readonly Services.LinePipeService InjectPipe = new(Services.StartupRelay.InjectPipeName);
+    private Services.Updates.PendingRelays? _updateRelays;
+    public void BeginUpdateHandoff() => _updateRelays?.BeginHandoff();
+    public void CancelUpdateHandoff() => _updateRelays?.Resume();
 
     /// <summary>
     /// Pipe du <b>second lancement</b> : « montre-toi ». Troisième jumeau.
@@ -224,6 +243,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        Services.Updates.UpdateService.Stop();
         // Filet de sortie : un rendu encore dans le presse-papier en est retiré, à condition qu'il
         // s'y trouve toujours — l'utilisateur a pu copier autre chose entre-temps.
         Secrets.SecretInjection.ClearClipboardNow();
@@ -235,6 +255,19 @@ public partial class App : Application
         _mutex?.Dispose();
         Services.LogService.Shutdown();
         base.OnExit(e);
+    }
+
+    public async System.Threading.Tasks.Task<bool> PrepareForUpdateAsync(Window updateDialog)
+    {
+        var open = Windows.Cast<Window>().Where(w => w != _mainWindow && w != updateDialog).ToArray();
+        if (open.Length > 0)
+        {
+            AppDialog.Info(Loc.T("Update_CloseDialogs"), Loc.T("Update_Title"), updateDialog);
+            return false;
+        }
+        await Services.Updates.PendingWrites.CompleteAsync();
+        Secrets.SecretInjection.ClearClipboardNow();
+        return true;
     }
 
     private WinForms.NotifyIcon CreateTrayIcon()

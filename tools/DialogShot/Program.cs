@@ -116,6 +116,10 @@ internal static class Program
         Window window = target switch
         {
             "settings" => new SettingsDialog(),
+            "updates" => UpdateShots.Create(),
+            "update-blockers" => new UpdateBlockersDialog(Path.GetTempPath(), [
+                new DockPad.Services.Updates.UpdateBlocker { Pid = 4128, Name = "DockPad — MCP", File = @"C:\Users\Demo\AppData\Local\DockPad\current\DockPad.exe" },
+                new DockPad.Services.Updates.UpdateBlocker { Pid = 9360, Name = "Éditeur de texte" }]),
             "ctxmenu" => new ContextMenuManagerWindow(),
             "presets" => new PresetsDialog(),
             "mcp" => new McpConfigDialog(),

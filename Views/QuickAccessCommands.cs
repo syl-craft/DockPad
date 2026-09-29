@@ -29,6 +29,7 @@ public sealed class QuickAccessCommands(IQuickAccessView view)
 
     // ── Paramètres
     public ICommand OpenSettings { get; } = new RelayCommand(view.ShowSettings);
+    public ICommand OpenUpdates { get; } = new RelayCommand(view.ShowUpdates);
     public ICommand OpenBrowsers { get; } = new RelayCommand(view.ShowBrowsers);
     public ICommand OpenMcpConfig { get; } = new RelayCommand(view.ShowMcpConfig);
     public ICommand OpenSecretSettings { get; } = new RelayCommand(view.ShowSecretSettings);
@@ -76,6 +77,7 @@ public interface IQuickAccessView
     void ShowContextMenuManager();
     void ShowPresets();
     void ShowSettings();
+    void ShowUpdates();
     void ShowBrowsers();
     void ShowMcpConfig();
     void ShowUsageConfig();

@@ -74,8 +74,7 @@ public partial class SettingsDialog : Window
         // elle peut avoir changé hors de DockPad.
         ChkInjectMenu.IsChecked = Secrets.SecretMenu.IsInstalled();
         _ = RefreshLastSyncAsync();
-        TxtAutoStartPath.Text = Environment.ProcessPath
-            ?? System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+        TxtAutoStartPath.Text = Services.Updates.AppInstallation.Executable;
 
         TxtVersion.Text = Services.AppInfo.VersionText;
 

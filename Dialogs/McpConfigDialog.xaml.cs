@@ -19,7 +19,7 @@ public partial class McpConfigDialog : Window
         ChkEnabled.IsChecked = _config.Enabled;
         ChkAllowDelete.IsChecked = _config.AllowDelete;
 
-        string exe = Environment.ProcessPath ?? "DockPad.exe";
+        string exe = Services.Updates.AppInstallation.Executable;
         UpdateClaudeCodeCmd();
         TxtClaudeDesktopCfg.Text =
             "\"dockpad\": {\n" +
@@ -39,7 +39,7 @@ public partial class McpConfigDialog : Window
     /// <summary>Commande d'ajout, portée utilisateur (-s user) ou locale selon la case.</summary>
     private void UpdateClaudeCodeCmd()
     {
-        string exe = Environment.ProcessPath ?? "DockPad.exe";
+        string exe = Services.Updates.AppInstallation.Executable;
         string scope = ChkUserScope.IsChecked == true ? "-s user " : "";
         TxtClaudeCodeCmd.Text = $"claude mcp add dockpad {scope}-- \"{exe}\" --mcp";
     }
