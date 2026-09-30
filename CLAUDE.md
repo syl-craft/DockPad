@@ -218,6 +218,7 @@ tools/
                                          le câblage de la grille (grid), l'overlay clavier (overlay),
                                          et chronomètre un peuplement (bench)
     UsageShot/                           Outil console : capture le bandeau Usage IA et sa fenêtre de réglages en PNG (doc)
+    MotionDemo/                          Outil Node : les six motion designs de démonstration (16:9, ≤ 10 s, clair + sombre) → dépôt DockPad-media
 ```
 
 ## Fonctionnalités
@@ -1751,6 +1752,51 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 > attachées `TextElement.*`, qui ne couvrent que l'en-tête.
 
 > Une **valeur locale** (attribut posé sur l'élément, ex. `Visibility="Collapsed"`) bat les `Setter` des `DataTrigger` d'un `Style` : elle ne sera jamais remplacée. Mettre la valeur par défaut dans un `<Setter>` du `Style` et laisser les triggers la surcharger — sinon le trigger paraît « ne rien faire » (cas vécu sur le filet d'indentation des profils de navigateur).
+
+## Motion designs de démonstration (tools/MotionDemo)
+
+Six clips de 10 s au format 16:9, un par fonctionnalité phare : `01-launcher` (grille, pages,
+recherche — le GIF d'en-tête du README), `02-browser-picker`, `03-usage`, `04-secrets`,
+`05-keyboard`, `06-composite`. Chacun est rendu en **clair et en sombre**, en MP4 1080p60 et en GIF
+960×540. Le README choisit le thème du lecteur avec `<picture><source media="(prefers-color-scheme: dark)">`.
+
+> **Les rendus ne sont pas dans ce dépôt** : ils vivent dans
+> [`syl-craft/DockPad-media`](https://github.com/syl-craft/DockPad-media), cloné **à côté** de
+> DockPad (`C:\dev\DockPad-media`), et `render.mjs` écrit directement dans son `videos/`
+> (surchargeable par `DOCKPAD_MEDIA_DIR`). Le README les cite en URL absolue
+> `raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/…`. 64 Mo de binaires régénérés à
+> chaque retouche auraient alourdi chaque clone pour toujours — un binaire commité ne se retire plus
+> de l'historique sans le réécrire. Après un rendu : commit et push **dans DockPad-media**, puis
+> rien à changer ici tant que les noms de fichiers ne bougent pas. Les captures `docs/screenshots/`,
+> elles, restent dans le dépôt : elles sont petites et épinglées au tag dans les notes de release.
+
+```bash
+cd tools/MotionDemo && npm install && npx playwright install chromium
+powershell -File extract-icons.ps1        # icones 256 px des exe (Chrome, Edge, PowerShell…) → %TEMP%
+node render.mjs                           # tout ; --clip 01-launcher --theme dark pour un seul
+node render.mjs --clip 03-usage --stills 1.2,4.6   # images cles en PNG, pour relecture
+node render.mjs --serve                   # lecture en boucle dans un navigateur (espace, fleches)
+```
+
+- **L'UI est recréée en HTML, pas filmée.** La géométrie vient de `window-en.png` (fenêtre 850 × 622,
+  tuile 108 × 90 au pas de 118 × 100, grille en (76, 71)), les couleurs de `Light.xaml`/`Dark.xaml`,
+  les bandes de type de `QuickAccessWindow.xaml.cs`, l'overlay de `TileHintOverlay`, les sous-cases
+  de `TileGroupPanel.Bounds`, les libellés de `Strings.resx`. Une valeur qui change dans l'application
+  doit changer ici — sinon le clip montre une application qui n'existe plus
+- **Déterministe** : chaque page expose `seek(t)`, qui pose l'état exact de l'instant `t` sans rien
+  retenir de l'image précédente. Aucune transition CSS, aucune horloge : le rendu capture image par
+  image et donne la même vidéo d'une machine à l'autre. Une animation qui dépendrait de l'état
+  précédent casserait en silence le jour où l'on rend une image isolée (`--stills`)
+- **La dernière image rejoint la première** : les GIF bouclent sans saut
+- **Les icônes ne sont jamais copiées dans le dépôt** — mêmes règles que `UsageShot` : `C:\dev\Dock-icons`
+  (surchargeable par `DOCKPAD_DEMO_ICONS`), puis les icônes extraites des exécutables, puis `Assets\`.
+  Elles n'apparaissent que dans les rendus
+- **Données de démonstration uniquement**, environnements tiers (chat, Explorateur, navigateur)
+  génériques et sans marque, et **aucune valeur de secret à l'écran** : un marqueur résolu devient
+  `••••••••••`
+- `extract-icons.ps1` tourne sous **Windows PowerShell 5.1** et non `pwsh` : `System.Drawing` s'y
+  référence sans résolution d'assemblys. Il recopie les octets de la section DIB plutôt que
+  d'appeler `Image.FromHbitmap`, qui jette le canal alpha
 
 ## Palette et couleurs (App.xaml)
 

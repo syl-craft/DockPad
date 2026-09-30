@@ -1,0 +1,13 @@
+{
+  "name": "dockpad-motion-demo",
+  "version": "1.0.0",
+  "scripts": {
+    "render": "node render.mjs",
+    "serve": "node render.mjs --serve"
+  },
+  "description": "Motion designs de demonstration de DockPad (NIN-7)",
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  },
+  "private": true
+}

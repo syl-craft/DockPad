@@ -1,0 +1,167 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Composite tiles</title>
+<link rel="stylesheet" href="../shared/theme.css"></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el, lerp, track } from '../shared/engine.js';
+import { stage, buildDock, placeDock, showPage, renderUsage, tileXY, tileCenter, tileState, resetTiles, GRID, BAND, icon,
+  cursor, renderCursor, legend, setCamera, appWindow, renderLaunch, renderPop, centerOf, TERMINAL_BODY } from '../shared/ui.js';
+
+const S = 1.25, DX = (1920 - 850 * 1.25) / 2, DY = 64;
+const GROUP = '#8B5CF6';                        // TileGroupService.DefaultColor
+const M1 = [2.15, 2.55], M2 = [6.9, 7.3];       // simple -> 2 x 2, puis 2 x 2 -> 2 + 4
+// Trois glisser-deposer : [appui, depot, tuile source, sous-case cible, icone]
+const DRAGS = [[3.3, 3.9, '0:3', 1, 'powershell'], [4.1, 4.7, '0:2', 2, 'terminal'], [4.9, 5.5, '0:0', 3, 'claude-code']];
+const CHILD = ['vscode', 'powershell', 'terminal', 'claude-code'];
+
+// Bornes de TileGroupPanel.Bounds sur la zone 104 x 72 (la bande et le titre en moins).
+const W = 104, H = 72;
+const quad = i => ({ x: i % 2 * W / 2, y: Math.floor(i / 2) * H / 2, w: W / 2, h: H / 2, ic: 22 });
+const twoFour = i => i < 2 ? { x: i * W / 2, y: 0, w: W / 2, h: H * 2 / 3, ic: 24 } : { x: (i - 2) * W / 4, y: H * 2 / 3, w: W / 4, h: H / 3, ic: 14 };
+const single = { x: 0, y: 0, w: W, h: 66, ic: 32 };
+const mix = (a, b, p) => ({ x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p), w: lerp(a.w, b.w, p), h: lerp(a.h, b.h, p), ic: lerp(a.ic, b.ic, p) });
+
+function menu(items) {
+  return el(`<div class="abs" style="transform:scale(${S});transform-origin:0 0;z-index:40"><div class="cmenu">${items.map(it => it === '-' ? '<div class="sepr"></div>'
+    : `<div class="it" data-k="${it[2] || ''}"><span class="g sym">${it[0]}</span>${it[1]}${it[3] ? '<span class="arrow">►</span>' : ''}</div>`).join('')}</div></div>`);
+}
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const dock = buildDock(camera, { usage: 'single' });
+    placeDock(dock, DX, DY, S);
+    renderUsage(dock.usage, 'claude');
+    showPage(dock, 0);
+    const page = dock.pageEls[0];
+
+    // La tuile VS Code est remplacee par une tuile composee qui sait se dessiner dans les trois formes.
+    dock.tiles[0]['0:1'].style.visibility = 'hidden';
+    const p = tileXY(0, 1);
+    const g = el(`<div class="tile" style="left:${p.x}px;top:${p.y - 46}px">
+      <div class="hover" style="background:${GROUP}"></div>
+      <div class="cells"></div><div class="nm sname">VS Code</div><div class="gname">Dev</div>
+      <div class="band b1" style="background:${BAND.run}"></div><div class="band b2" style="background:${GROUP}"></div></div>`);
+    page.appendChild(g);
+    const kids = [];
+    for (let i = 0; i < 6; i++) {
+      const k = el('<div class="gc"><div class="frame"></div><img><span class="plus">+</span></div>');
+      g.querySelector('.cells').appendChild(k);
+      kids.push(k);
+    }
+    // Cases liberees par les glisser-deposer.
+    const empties = {};
+    for (const [, , key] of DRAGS) {
+      const [r, c] = key.split(':').map(Number), q = tileXY(r, c);
+      const e = el(`<div class="tile empty" style="left:${q.x}px;top:${q.y - 46}px"><div class="plus">+</div></div>`);
+      page.appendChild(e); empties[key] = e;
+    }
+
+    const m1 = menu([['🖼', 'Change the icon'], ['✏', 'Edit'], ['⧉', 'Duplicate'], ['▦', 'Layout', 'layout', 1], ['↗', 'Move to page', '', 1], ['★', 'Move to favourites'], '-', ['🗑', 'Delete']]);
+    const sub1 = menu([['✓', 'Single — 1 shortcut'], ['', '2 × 2 grid — 4 shortcuts', 'quad'], ['', '2 + 4 grid — 6 shortcuts', 'two']]);
+    const m2 = menu([['✏', 'Edit group…'], ['▦', 'Layout', 'layout', 1], ['↗', 'Move the entire group…'], '-', ['🗑', 'Delete group…']]);
+    const sub2 = menu([['', 'Single — 1 shortcut'], ['✓', '2 × 2 grid — 4 shortcuts'], ['', '2 + 4 grid — 6 shortcuts', 'two']]);
+    [m1, sub1, m2, sub2].forEach(m => camera.appendChild(m));
+    const gc = { x: dock.x + (p.x + 54) * S, y: dock.y + (p.y + 45) * S };
+    style(m1, { left: `${gc.x + 6}px`, top: `${gc.y + 6}px` });
+    style(m2, { left: `${gc.x + 6}px`, top: `${gc.y + 6}px` });
+    const place = (m, sub) => { const r = centerOf(m.querySelector('[data-k="layout"]')); style(sub, { left: `${r.l + r.w - 4}px`, top: `${r.t - 5}px` }); return r; };
+    const lay1 = place(m1, sub1), lay2 = place(m2, sub2);
+    const quadItem = centerOf(sub1.querySelector('[data-k="quad"]')), twoItem = centerOf(sub2.querySelector('[data-k="two"]'));
+
+    const ghost = el('<img class="ghost">');
+    camera.appendChild(ghost);
+    const apps = el('<div class="layer"></div>');
+    camera.appendChild(apps);
+    const pwsh = appWindow(apps, { w: 1000, h: 600, icon: 'powershell', title: 'PowerShell', body: TERMINAL_BODY(['PowerShell 7', '', 'PS C:\\dev&gt; <span style="background:#ccc;color:#000">&nbsp;</span>']) });
+    const cur = cursor(camera);
+    return { st, camera, dock, g, kids, empties, m1, sub1, m2, sub2, lay1, lay2, quadItem, twoItem, gc, p, ghost, pwsh, cur, leg: legend(st) };
+  },
+
+  render(t, x) {
+    const { dock, g, kids, p } = x;
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 9.45, 9.9, E.in));
+    placeDock(dock, DX, DY, S, { opacity: show, scale: .96 + .04 * show });
+    const m1 = prog(t, M1[0], M1[1]), m2 = prog(t, M2[0], M2[1]);
+
+    // Camera : un premier rapprochement qui garde le verrou dans le cadre, puis la tuile en gros plan.
+    const keys = [[2.05, 0], [2.5, .45], [3.1, .45], [3.45, 1], [7.25, 1], [7.6, 0]];
+    const k = track(t, keys);
+    setCamera(x.camera, 1 + .75 * k, x.gc.x, x.gc.y, lerp(x.gc.x, 820, k), lerp(x.gc.y, 330, k));
+
+    // Tuile composee : cases, icones, titre, bande.
+    const subStage = i => { const r = m2 > 0 ? twoFour(i) : quad(i); return { x: dock.x + (p.x + r.x + r.w / 2) * S, y: dock.y + (p.y + r.y + r.h / 2) * S }; };
+    kids.forEach((k, i) => {
+      const r = i === 0 ? mix(mix(single, quad(0), m1), twoFour(0), m2) : i < 4 ? mix(quad(i), twoFour(i), m2) : twoFour(i);
+      const vis = i === 0 ? 1 : i < 4 ? m1 : m2;
+      style(k, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px`, opacity: vis });
+      const filled = i === 0 || (i < 4 && t >= DRAGS[i - 1][1]);
+      const img = k.querySelector('img');
+      img.style.display = filled ? 'block' : 'none';
+      if (filled) { img.src = icon(CHILD[i]); style(img, { width: `${r.ic}px`, height: `${r.ic}px` }); }
+      k.querySelector('.plus').style.display = filled ? 'none' : 'block';
+      const frame = k.querySelector('.frame');
+      frame.style.opacity = i === 0 ? m1 : 1;
+      const drag = DRAGS[i - 1];
+      frame.classList.toggle('target', !!drag && t > lerp(drag[0], drag[1], .55) && t < drag[1]);
+      // Pop a l'arrivee d'une icone deposee.
+      if (drag && filled) img.style.transform = `scale(${1 + env(t, drag[1], drag[1] + .3, .1) * .25})`;
+    });
+    g.querySelector('.sname').style.opacity = 1 - m1;
+    g.querySelector('.gname').style.opacity = m1;
+    g.querySelector('.b2').style.opacity = m1;
+
+    // Tuiles sources : a moitie effacees pendant le glissement, puis case libre.
+    resetTiles(dock);
+    for (const [a, b, key] of DRAGS) {
+      const src = dock.tiles[0][key];
+      src.style.opacity = t >= a && t < b ? .45 : 1;
+      src.style.visibility = t >= b ? 'hidden' : 'visible';
+      x.empties[key].style.visibility = t >= b ? 'visible' : 'hidden';
+    }
+    tileState(g, 0, 0, env(t, 7.7, 8.0, .08) * 0);
+
+    // Verrou : ouvert pour pouvoir glisser.
+    const lock = dock.btn('lock');
+    const unlocked = t >= 3.05;
+    lock.textContent = unlocked ? '✓' : '🔒';
+    lock.classList.toggle('on', unlocked);
+
+    // Menus.
+    renderPop(x.m1.firstChild, t, [1.15, 1.3], [2.1, 2.18], .94);
+    renderPop(x.sub1.firstChild, t, [1.62, 1.75], [2.1, 2.18], .94);
+    renderPop(x.m2.firstChild, t, [6.1, 6.25], [6.85, 6.93], .94);
+    renderPop(x.sub2.firstChild, t, [6.5, 6.62], [6.85, 6.93], .94);
+    const sel = (m, k, on) => m.querySelector(`[data-k="${k}"]`).classList.toggle('sel', on);
+    sel(x.m1, 'layout', t >= 1.5); sel(x.sub1, 'quad', t >= 1.95);
+    sel(x.m2, 'layout', t >= 6.35); sel(x.sub2, 'two', t >= 6.75);
+
+    const T = (r, c) => { const q = tileCenter(r, c); return { x: dock.x + q.x * S, y: dock.y + q.y * S }; };
+    const lockPos = { x: dock.x + 741 * S, y: dock.y + 22 * S };
+    const src = DRAGS.map(([, , key]) => T(...key.split(':').map(Number)));
+    const dst = DRAGS.map(([, , , i]) => { const r = quad(i); return { x: dock.x + (p.x + r.x + r.w / 2) * S, y: dock.y + (p.y + r.y + r.h / 2) * S }; });
+    const ps1 = subStage(1);
+    const path = [
+      [.4, 1560, 960], [1.0, x.gc.x, x.gc.y], [1.35, x.gc.x, x.gc.y],
+      [1.5, x.lay1.x, x.lay1.y], [1.7, x.lay1.x, x.lay1.y], [1.95, x.quadItem.x, x.quadItem.y], [2.25, x.quadItem.x, x.quadItem.y],
+      [2.9, lockPos.x, lockPos.y], [3.1, lockPos.x, lockPos.y],
+    ];
+    DRAGS.forEach(([a, b], k) => { path.push([a - .15, src[k].x, src[k].y], [a, src[k].x, src[k].y], [b - .05, dst[k].x, dst[k].y], [b + .05, dst[k].x, dst[k].y]); });
+    path.push([5.9, x.gc.x, x.gc.y], [6.2, x.gc.x, x.gc.y], [6.35, x.lay2.x, x.lay2.y], [6.55, x.lay2.x, x.lay2.y],
+      [6.75, x.twoItem.x, x.twoItem.y], [7.0, x.twoItem.x, x.twoItem.y], [7.6, ps1.x, ps1.y], [8.9, ps1.x, ps1.y], [9.45, 1560, 960]);
+    const pos = renderCursor(x.cur, t, path, [1.1, 2.1, 3.05, ...DRAGS.map(d => d[0]), 6.05, 6.85, 7.7], [.4, 9.5]);
+
+    // Icone fantome qui suit le curseur pendant chaque glissement.
+    const d = DRAGS.find(([a, b]) => t >= a && t < b);
+    if (d) { x.ghost.src = icon(d[4]); style(x.ghost, { display: 'block', left: `${pos.x - 20}px`, top: `${pos.y - 20}px`, opacity: .9 }); }
+    else x.ghost.style.display = 'none';
+
+    const r1 = twoFour(1);
+    renderLaunch(x.pwsh, t, { x: dock.x + (p.x + r1.x) * S, y: dock.y + (p.y + r1.y) * S, w: r1.w * S, h: r1.h * S },
+      { x: 460, y: 200, w: 1000, h: 600 }, [7.8, 8.2], [8.6, 8.9]);
+
+    x.leg(t, [[.45, 5.75, 'Four apps in one slot'], [6.0, 9.45, 'Or six, with the 2 + 4 layout']]);
+  },
+});
+</script></body></html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Launcher</title>
+<link rel="stylesheet" href="../shared/theme.css"></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el, lerp } from '../shared/engine.js';
+import { stage, buildDock, placeDock, toStage, showPage, tileState, resetTiles, tileCenter, GRID, PAGES, TYPE, icon,
+  renderUsage, cursor, renderCursor, legend, keycaps, setCamera, appWindow, renderLaunch, TERMINAL_BODY, EDITOR_BODY } from '../shared/ui.js';
+
+const S = 1.25, DX = (1920 - 850 * 1.25) / 2, DY = 64;
+const QUERY = 'code', TYPED = [6.05, 6.2, 6.35, 6.5];
+const DOWN = [6.95, 7.25], ENTER = 7.6;
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const dock = buildDock(camera, { usage: 'single' });
+    placeDock(dock, DX, DY, S);
+    renderUsage(dock.usage, 'claude');
+    const results = el('<div class="results"></div>');
+    dock.root.appendChild(results);
+    const apps = el('<div class="layer"></div>');
+    camera.appendChild(apps);
+    const term = appWindow(apps, { w: 1000, h: 600, icon: 'claude-code', title: 'Claude Code — C:\\dev\\dockpad',
+      body: TERMINAL_BODY(['<span style="color:#D97757">✻</span> Welcome back', '', '<span style="color:#6A9955">cwd:</span> C:\\dev\\dockpad',
+        '', '<span style="color:#888">&gt;</span> <span style="color:#fff">what should we build today?</span><span style="background:#ccc;color:#000">&nbsp;</span>']) });
+    const editor = appWindow(apps, { w: 1000, h: 600, icon: 'vscode', title: 'dockpad — VS Code', body: EDITOR_BODY() });
+    const cur = cursor(camera);
+    return { st, camera, dock, results, term, editor, cur, leg: legend(st), keys: keycaps(st), hot: keycaps(st, 'center') };
+  },
+
+  render(t, x) {
+    const { dock } = x;
+    const P = (wx, wy) => toStage(dock, wx, wy);
+
+    // Apparition au raccourci global, disparition en fin de boucle.
+    const show = prog(t, .6, .95, E.out) * (1 - prog(t, 9.35, 9.8, E.in));
+    placeDock(dock, DX, DY, S, { opacity: show, scale: .94 + .06 * show });
+    x.hot(t, [{ label: 'Alt', a: .15, b: 1.05, down: [[.45, .8]], accent: true },
+              { label: 'Space', a: .15, b: 1.05, down: [[.5, .8]], accent: true }]);
+
+    // Pages : glissement vers 2 puis retour.
+    showPage(dock, prog(t, 3.6, 4.0) * (1 - prog(t, 4.85, 5.25)));
+
+    // Recherche.
+    const typed = TYPED.filter(tc => t >= tc).length;
+    const cleared = t >= 8.8;
+    const q = cleared ? '' : QUERY.slice(0, typed);
+    const focus = t >= 5.85 && t < 9.0;
+    dock.q.textContent = q;
+    dock.search.classList.toggle('focus', focus);
+    dock.caret.style.opacity = focus && Math.floor(t * 2.2) % 2 === 0 ? 1 : 0;
+    const matches = q ? PAGES.flat().filter(s => s.name.toLowerCase().includes(q)).slice(0, 6) : [];
+    const sel = DOWN.filter(tc => t >= tc).length - 1;
+    const popOpen = q ? prog(t, TYPED[0], TYPED[0] + .15, E.out) : 0;
+    x.results.innerHTML = matches.map((s, i) => `<div class="rrow ${i === sel ? 'sel' : ''}"><img src="${icon(s.icon)}"><span>${s.name}</span><span class="ty" style="color:${TYPE[s.type][1]}">${TYPE[s.type][0]}</span></div>`).join('');
+    style(x.results, { display: matches.length ? 'block' : 'none', opacity: popOpen * (1 - prog(t, 8.7, 8.8)),
+      transform: `scaleY(${.9 + .1 * popOpen})` });
+    const flashRow = env(t, ENTER, ENTER + .25, .08);
+    if (matches.length && sel >= 0) x.results.children[sel].style.background = `color-mix(in srgb, var(--accent) ${20 + flashRow * 35}%, transparent)`;
+
+    // Camera : leger rapprochement sur la recherche.
+    const z = 1 + .1 * prog(t, 5.4, 6.0) * (1 - prog(t, 8.7, 9.3));
+    setCamera(x.camera, z, 960, DY);
+
+    // Curseur.
+    const tile00 = P(tileCenter(0, 0).x, tileCenter(0, 0).y);
+    const pb = i => P(dock.pbtns[i].offsetLeft + 15, 571 + 12 + 15);
+    const search = P(300, 22);
+    const off = [1560, 930];
+    const pos = renderCursor(x.cur, t, [
+      [1.0, ...off], [1.6, tile00.x, tile00.y], [3.0, tile00.x, tile00.y],
+      [3.45, pb(1).x, pb(1).y], [4.35, pb(1).x, pb(1).y], [4.7, pb(0).x, pb(0).y],
+      [5.3, pb(0).x, pb(0).y], [5.75, search.x, search.y], [8.9, search.x, search.y], [9.45, ...off],
+    ], [1.72, 3.55, 4.8, 5.85], [1.0, 9.6]);
+
+    // Survol et clic des tuiles.
+    resetTiles(dock);
+    const wx = (pos.x - dock.x) / dock.s, wy = (pos.y - dock.y) / dock.s;
+    const col = Math.floor((wx - GRID.x + 5) / GRID.px), row = Math.floor((wy - GRID.y + 5) / GRID.py);
+    const page = Math.round(prog(t, 3.6, 4.0) * (1 - prog(t, 4.85, 5.25)));
+    if (row >= 0 && row < 4 && col >= 0 && col < 6 && t > 1.0 && t < 9.5 && !x.results.childElementCount) {
+      const n = dock.tiles[page][`${row}:${col}`];
+      if (n && !n.classList.contains('empty')) tileState(n, 1, row === 0 && col === 0 ? Math.max(0, 1 - Math.abs(t - 1.72) / .09) : 0);
+    }
+
+    // Lancements : Claude Code depuis sa tuile, VS Code depuis la ligne de resultat.
+    const tileRect = { x: dock.x + GRID.x * S, y: dock.y + GRID.y * S, w: GRID.w * S, h: GRID.h * S };
+    const target = { x: 460, y: 200, w: 1000, h: 600 };
+    renderLaunch(x.term, t, tileRect, target, [1.82, 2.25], [2.75, 3.0]);
+    const rowRect = { x: dock.x + 194 * S, y: dock.y + (40 + 4 + 32) * S, w: 329 * S, h: 32 * S };
+    renderLaunch(x.editor, t, rowRect, target, [7.72, 8.15], [8.55, 8.85]);
+
+    x.keys(t, [{ label: '↓', a: 6.8, b: 7.5, down: [[6.95, 7.07], [7.25, 7.37]] },
+               { label: 'Enter', a: 7.45, b: 8.1, down: [[7.6, 7.75]] }]);
+    x.leg(t, [[1.05, 4.95, 'Tiles, pages, one global hotkey'], [5.25, 9.3, 'Search every tile']]);
+  },
+});
+</script></body></html>
