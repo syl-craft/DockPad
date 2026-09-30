@@ -1,0 +1,99 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Drop from Explorer</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .ex { position: absolute; inset: 0; background: var(--surface-card); }
+  .ex .bar { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--border); font-size: 15px; color: var(--text-subtle); }
+  .ex .grid { padding: 26px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px 18px; }
+  .ex .f { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 14px; color: var(--text); padding: 8px 4px; border-radius: 6px; }
+  .ex .f img, .ex .f svg { width: 64px; height: 64px; }
+  .ex .f.sel { background: var(--accent-tint); }
+  .ghost2 { position: absolute; z-index: 48; display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: .85; pointer-events: none; }
+  .ghost2 img, .ghost2 svg { width: 56px; height: 56px; }
+  .ghost2 span { font-size: 12px; background: var(--surface-card); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; color: var(--text); white-space: nowrap; }
+  .tile.target { border: 2px solid var(--accent) !important; opacity: 1 !important; }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el } from '../shared/engine.js';
+import { stage, PAGES, buildDock, placeDock, showPage, renderUsage, tileXY, tileHTML, appWindow, cursor, renderCursor, legend, centerOf, icon } from '../shared/ui.js';
+
+const S = 1.05, DX = 880, DY = 150;
+// Fichier .url : l'icone du document raccourci Internet, dessinee ici plutot qu'empruntee a Windows.
+const URLDOC = `<svg viewBox="0 0 64 64"><path d="M14 4h26l12 12v44H14z" fill="#fff" stroke="#9AA4AE" stroke-width="2"/><path d="M40 4v12h12" fill="#EEF1F4" stroke="#9AA4AE" stroke-width="2"/>
+  <circle cx="33" cy="38" r="12" fill="#2F8CD8"/><path d="M21 38h24M33 26c5 5 5 19 0 24M33 26c-5 5-5 19 0 24" stroke="#fff" stroke-width="1.8" fill="none"/></svg>`;
+// [appui, depot, index dans l'Explorateur, case cible, tuile creee]
+const DROPS = [
+  [1.3, 2.75, 0, { r: 3, c: 2 }, { name: 'Invoices', icon: 'folder', type: 'folder' }],
+  [4.6, 6.05, 2, { r: 3, c: 3 }, { name: 'Roadmap', icon: 'chrome', type: 'url' }],
+];
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const ex = appWindow(camera, { w: 680, h: 560, icon: 'explorer', title: 'Documents', body: `<div class="ex">
+      <div class="bar">This PC › <b style="color:var(--text)">Documents</b></div>
+      <div class="grid">
+        <div class="f"><img src="${icon('folder')}">Invoices</div><div class="f"><img src="${icon('folder')}">Photos</div>
+        <div class="f">${URLDOC}Roadmap.url</div><div class="f"><img src="${icon('folder')}">Taxes</div>
+      </div></div>` });
+    style(ex, { left: '110px', top: '220px' });
+    const dock = buildDock(camera, { usage: 'single' });
+    placeDock(dock, DX, DY, S);
+    showPage(dock, 0);
+    renderUsage(dock.usage, 'claude');
+    const page = dock.pageEls[0];
+    const made = DROPS.map(([, , , at, tile]) => {
+      const n = el(tileHTML({ ...at, ...tile })); const p = tileXY(at.r, at.c);
+      style(n, { left: `${p.x}px`, top: `${p.y - 46}px` }); page.appendChild(n); return n;
+    });
+    const files = [...ex.querySelectorAll('.f')];
+    const src = DROPS.map(([, , i]) => centerOf(files[i]));
+    const dst = DROPS.map(([, , , at]) => { const p = tileXY(at.r, at.c); return { x: DX + (p.x + 54) * S, y: DY + (p.y + 45) * S }; });
+    const ghost = el('<div class="ghost2"><div class="gi"></div><span></span></div>');
+    camera.appendChild(ghost);
+    const cur = cursor(camera);
+    return { st, dock, ex, files, made, src, dst, ghost, cur, leg: legend(st) };
+  },
+
+  render(t, x) {
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 9.45, 9.9, E.in));
+    placeDock(x.dock, DX, DY, S, { opacity: show, scale: .96 + .04 * show });
+    style(x.ex, { opacity: show });
+
+    // Le verrou reste ferme : il ne bloque que la reorganisation, jamais un depot.
+    const lock = x.dock.btn('lock');
+    lock.style.transform = `scale(${1 + env(t, 6.6, 7.4, .2) * .25})`;
+    lock.style.boxShadow = t >= 6.6 && t < 7.4 ? '0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent)' : '';
+
+    x.files.forEach((f, i) => f.classList.toggle('sel', DROPS.some(([a, b, k]) => k === i && t >= a - .2 && t < b)));
+    DROPS.forEach(([a, b, , at], k) => {
+      const empty = x.dock.tiles[0][`${at.r}:${at.c}`];
+      empty.classList.toggle('target', t >= a + .8 && t < b);
+      empty.style.visibility = t >= b ? 'hidden' : 'visible';
+      const p = prog(t, b, b + .3, E.outBack);
+      style(x.made[k], { opacity: t >= b ? 1 : 0, transform: `scale(${.6 + .4 * p})` });
+    });
+
+    const path = [[.3, 1560, 960]];
+    DROPS.forEach(([a, b], k) => { path.push([a - .35, x.src[k].x, x.src[k].y], [a, x.src[k].x, x.src[k].y], [b - .1, x.dst[k].x, x.dst[k].y], [b + .25, x.dst[k].x, x.dst[k].y]); });
+    path.push([7.0, 1560 - 800, 160], [7.4, 1560 - 800, 160], [8.2, 1560, 960]);
+    // Le curseur passe sur le cadenas pour le designer, sans cliquer.
+    const lockP = { x: DX + 741 * S, y: DY + 22 * S };
+    path.splice(path.length - 2, 2, [7.0, lockP.x, lockP.y + 10], [7.4, lockP.x, lockP.y + 10]);
+    const pos = renderCursor(x.cur, t, path, DROPS.map(d => d[0]), [.3, 8.3]);
+
+    const d = DROPS.find(([a, b]) => t >= a && t < b);
+    x.ghost.style.display = d ? 'flex' : 'none';
+    if (d) {
+      const k = DROPS.indexOf(d);
+      x.ghost.querySelector('.gi').innerHTML = k === 0 ? `<img src="${icon('folder')}">` : URLDOC;
+      x.ghost.querySelector('span').textContent = '+ Create a tile';
+      style(x.ghost, { left: `${pos.x + 6}px`, top: `${pos.y + 6}px` });
+    }
+
+    x.leg(t, [[.4, 4.35, 'Drop a folder: it becomes a tile'], [4.5, 9.4, 'A .url too — even with the grid locked']]);
+  },
+});
+</script></body></html>

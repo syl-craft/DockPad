@@ -1,0 +1,82 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — MCP server</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .term { position: absolute; inset: 0; background: #141414; color: #D4D4D4; font-size: 16px; line-height: 26px; padding: 18px 22px; overflow: hidden; }
+  .term .ln { white-space: pre-wrap; }
+  .term .you { color: #FFFFFF; } .term .pr { color: #D97757; }
+  .term .tool { color: #9CDCFE; } .term .ok { color: #6FD68A; } .term .ko { color: #FF8A7A; } .term .dim { color: #8A8A8A; }
+  .term .cur { background: #D4D4D4; color: #000; }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el } from '../shared/engine.js';
+import { stage, PAGES, buildDock, placeDock, showPage, renderUsage, layoutPager, legend, appWindow, icon } from '../shared/ui.js';
+
+const S = 1.1, DX = 900, DY = 128;
+const ASK1 = 'add a page with VS Code, a terminal on C:\\dev and the dockpad folder';
+const ASK2 = 'remove the dockpad folder tile';
+const NEW = [['0:0', 3.3], ['0:1', 3.55], ['0:2', 3.8]];
+
+// Chaque ligne du terminal : [apparition, html]. Les deux invites sont tapees lettre a lettre.
+const LINES = [
+  [2.35, '<span class="tool">⏺ dockpad - dockpad_page_add</span> <span class="dim">(MCP)</span>'],
+  [2.55, '<span class="dim">  ⎿ page 4 added</span>'],
+  [3.05, '<span class="tool">⏺ dockpad - dockpad_shortcut_add</span> <span class="dim">(MCP) · 3 items</span>'],
+  [3.95, '<span class="ok">  ⎿ VS Code, Terminal, DockPad — page 4, row 1</span>'],
+  [4.3, '⏺ Done: page 4 now holds VS Code, a terminal on C:\\dev and the DockPad folder.'],
+  [6.55, '<span class="tool">⏺ dockpad - dockpad_shortcut_delete</span> <span class="dim">(MCP)</span>'],
+  [6.8, '<span class="ko">  ⎿ refused: deletion is turned off in DockPad</span>'],
+  [7.25, "⏺ I can't delete tiles: deletion over MCP is turned off."],
+  [7.25, '  Remove it yourself, or allow it in MCP server → Options.'],
+];
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const pages = [...PAGES, [
+      { r: 0, c: 0, name: 'VS Code', icon: 'vscode', type: 'run' },
+      { r: 0, c: 1, name: 'Terminal', icon: 'terminal', type: 'term' },
+      { r: 0, c: 2, name: 'DockPad', icon: 'folder', type: 'folder' },
+    ]];
+    const dock = buildDock(camera, { usage: 'single', pages });
+    renderUsage(dock.usage, 'claude');
+    // Sous chaque tuile a venir, la case vide qu'elle remplace.
+    NEW.forEach(([k]) => { const n = dock.tiles[3][k]; const e = el(`<div class="tile empty"><div class="plus">+</div></div>`);
+      style(e, { left: n.style.left, top: n.style.top }); n.before(e); });
+    const term = appWindow(camera, { w: 800, h: 640, icon: 'claude-code', title: 'Claude Code — C:\\dev\\dockpad', body: '<div class="term mono"></div>' });
+    style(term, { left: '60px', top: '150px' });
+    return { st, dock, term, box: term.querySelector('.term'), leg: legend(st) };
+  },
+
+  render(t, x) {
+    const { dock } = x;
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 9.45, 9.9, E.in));
+    placeDock(dock, DX, DY, S, { opacity: show, scale: .96 + .04 * show });
+    style(x.term, { opacity: show });
+
+    // La page 4 nait de dockpad_page_add, puis la grille y glisse.
+    const hasPage = t >= 2.5;
+    const pos = hasPage ? 3 * prog(t, 2.6, 3.05) : 0;
+    showPage(dock, pos);
+    layoutPager(dock, hasPage ? 4 : 3, Math.round(pos));
+    NEW.forEach(([k, tc]) => {
+      const n = dock.tiles[3][k];
+      const p = prog(t, tc, tc + .3, E.outBack);
+      style(n, { opacity: Math.min(1, p * 1.5), transform: `scale(${.6 + .4 * p})` });
+    });
+
+    // Terminal : invites tapees, lignes d'outil qui arrivent.
+    const typed = (s, a, b) => s.slice(0, Math.round(s.length * prog(t, a, b, E.linear)));
+    const cursor = on => on && Math.floor(t * 2.4) % 2 === 0 ? '<span class="cur"> </span>' : '';
+    let html = `<div class="ln"><span class="pr">&gt;</span> <span class="you">${typed(ASK1, .6, 2.1)}</span>${cursor(t < 2.3)}</div>`;
+    LINES.filter(([a]) => a < 5).forEach(([a, h]) => { if (t >= a) html += `<div class="ln">${h}</div>`; });
+    if (t >= 5.2) html += `<div class="ln">&nbsp;</div><div class="ln"><span class="pr">&gt;</span> <span class="you">${typed(ASK2, 5.3, 6.3)}</span>${cursor(t < 6.5)}</div>`;
+    LINES.filter(([a]) => a >= 5).forEach(([a, h]) => { if (t >= a) html += `<div class="ln">${h}</div>`; });
+    x.box.innerHTML = html;
+
+    x.leg(t, [[.45, 5.15, 'Claude drives your grid over MCP'], [5.35, 9.4, 'It builds — deleting stays off until you allow it']]);
+  },
+});
+</script></body></html>

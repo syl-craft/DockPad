@@ -1,0 +1,141 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Theme and languages</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .grp { margin-bottom: 18px; }
+  .lst { position: absolute; background: var(--surface-card); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--menu-shadow);
+    padding: 3px 0; font-size: 13px; z-index: 10; transform-origin: 50% 0; }
+  .lst div { height: 28px; display: flex; align-items: center; padding: 0 10px; }
+  .lst div.sel { background: var(--accent-selected); }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, E, style, el } from '../shared/engine.js';
+import { stage, buildDock, placeDock, showPage, renderUsage, cursor, renderCursor, legend, dialog, centerOf, renderPop } from '../shared/ui.js';
+
+// Libelles recopies de Strings.resx, Strings.fr.resx et Strings.qps-Ploc.resx. Le 1337 garde les
+// conventions francaises (virgule decimale, 19h32, « mer. ») : Loc.Formatting reste le francais.
+const T = {
+  en: { title: 'Settings', general: 'General', integ: 'Integrations', secrets: 'Secrets', lang: 'Language', theme: 'Theme',
+    hotkey: 'Global keyboard shortcut', mods: 'Modifiers:', key: 'Key:', space: 'Space', current: 'Current shortcut: Alt+Space',
+    tiles: 'Tile shortcuts', tilesHelp: 'Modifier + 1-9 / 0 / ↑ / ↓ runs a tile from the left or right half of the grid.',
+    left: 'Left half:', right: 'Right half:', startup: 'Startup', withWin: 'Start with Windows', save: 'Save', cancel: 'Cancel',
+    auto: 'Automatic (Windows)', light: 'Light', dark: 'Dark',
+    session: 'session', week: 'week', m: ['Session', 'Day', 'Month', 'Requests', 'Est. cost', 'Model'], demo: 'demo',
+    r0: '↻ 19:32', r1: '↻ Wed 16:52', v: ['12.4k', '86k', '1.2M', '47', '$4', 'claude-opus-5'], hot: 'Alt + Space', name: 'English' },
+  fr: { title: 'Paramètres', general: 'Général', integ: 'Intégrations', secrets: 'Secrets', lang: 'Langue', theme: 'Thème',
+    hotkey: 'Raccourci clavier global', mods: 'Modificateurs :', key: 'Touche :', space: 'Espace', current: 'Raccourci actuel : Alt+Espace',
+    tiles: 'Raccourcis des tuiles', tilesHelp: 'Modificateur + 1-9 / 0 / ↑ / ↓ exécute une tuile de la moitié gauche ou droite de la grille.',
+    left: 'Moitié gauche :', right: 'Moitié droite :', startup: 'Démarrage', withWin: 'Démarrer avec Windows', save: 'Enregistrer', cancel: 'Annuler',
+    auto: 'Automatique (Windows)', light: 'Clair', dark: 'Sombre',
+    session: 'session', week: 'semaine', m: ['Session', 'Jour', 'Mois', 'Requêtes', 'Coût est.', 'Modèle'], demo: 'démo',
+    r0: '↻ 19h32', r1: '↻ mer. 16h', v: ['12,4k', '86k', '1,2M', '47', '$4', 'claude-opus-5'], hot: 'Alt + Espace', name: 'Français' },
+  leet: { title: 'P4r4m3tr35', general: 'G3n3r4l', integ: '1nt3gr4t10n5', secrets: '53cr3t5', lang: 'L4ngu3', theme: 'Th3m3',
+    hotkey: 'R4cc0urc1 cl4v13r gl0b4l', mods: 'M0d1f1c4t3ur5 :', key: 'T0uch3 :', space: '35p4c3', current: 'R4cc0urc1 4ctu3l : Alt+35p4c3',
+    tiles: 'R4cc0urc15 d35 tu1l35', tilesHelp: 'M0d1f1c4t3ur + 1-9 / 0 / ↑ / ↓ 3x3cut3 un3 tu1l3 d3 l4 m01t13 g4uch3 0u dr01t3 d3 l4 gr1ll3.',
+    left: 'M01t13 g4uch3 :', right: 'M01t13 dr01t3 :', startup: 'D3m4rr4g3', withWin: 'D3m4rr3r 4v3c W1nd0w5', save: '3nr3g15tr3r', cancel: '4nnul3r',
+    auto: '4ut0m4t1qu3 (W1nd0w5)', light: 'Cl41r', dark: '50mbr3',
+    session: '535510n', week: '53m41n3', m: ['535510n', 'J0ur', 'M015', 'R3qu3t35', 'C0ût 35t.', 'M0d3l3'], demo: 'd3m0',
+    r0: '↻ 19h32', r1: '↻ mer. 16h', v: ['12,4k', '86k', '1,2M', '47', '$4', 'claude-opus-5'], hot: 'Alt + 35p4c3', name: '1337' },
+};
+const THEME_AT = 1.7, FR_AT = 4.4, LEET_AT = 6.65;
+const S = 1.05, DX = 80, DY = 160, DS = 1.2, WX = 1130, WY = 112;
+
+const body = `
+  <div class="tabs"><span class="on" data-t="general"></span><span data-t="integ"></span><span data-t="secrets"></span></div>
+  <div class="grp"><div class="sec" data-t="lang"></div><div class="combo c-lang" style="width:240px"></div></div>
+  <div class="grp"><div class="sec" data-t="theme"></div><div class="combo c-theme" style="width:240px"></div></div>
+  <div class="grp"><div class="sec" data-t="hotkey"></div><div class="hint2" style="font-size:12.5px;margin-bottom:8px" data-t="mods"></div>
+    <div class="row">${['Ctrl', 'Alt', 'Shift', 'Win'].map(k => `<span class="cbx ${k === 'Alt' ? 'on' : ''}">${k === 'Alt' ? '✓' : ''}</span><span style="margin-right:12px">${k}</span>`).join('')}</div>
+    <div class="row"><span data-t="key"></span><div class="combo c-key" style="width:120px"></div></div>
+    <div style="color:var(--accent);font-size:12.5px" data-t="current"></div></div>
+  <div class="grp"><div class="sec" data-t="tiles"></div><div class="hint2" style="margin-bottom:10px" data-t="tilesHelp"></div>
+    <div class="row"><span style="width:112px" data-t="left"></span><div class="combo" style="width:200px">Ctrl</div></div>
+    <div class="row"><span style="width:112px" data-t="right"></span><div class="combo" style="width:200px">Shift</div></div></div>
+  <div class="grp"><div class="sec" data-t="startup"></div><div class="row"><span class="cbx on">✓</span><span data-t="withWin"></span></div>
+    <div class="mono hint2">C:\\Users\\Demo\\AppData\\Local\\DockPad\\current\\DockPad.exe</div></div>`;
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const dock = buildDock(camera, { usage: 'single' });
+    placeDock(dock, DX, DY, S);
+    showPage(dock, 0);
+    renderUsage(dock.usage, 'claude');
+    const dlg = dialog(camera, { w: 520, h: 690, title: '<span data-t="title"></span>', body, x: WX, y: WY, scale: DS,
+      footer: '<span class="bt p" data-t="save"></span><span class="bt" data-t="cancel"></span>' });
+    const box = dlg.querySelector('.dlgx');
+    const lstTheme = el('<div class="lst" style="left:24px;width:240px"></div>'), lstLang = el('<div class="lst" style="left:24px;width:240px"></div>');
+    box.querySelector('.dlgx-b').append(lstTheme, lstLang);
+    const cTheme = box.querySelector('.c-theme'), cLang = box.querySelector('.c-lang');
+    const fill = (l, items) => { l.innerHTML = items.map(i => `<div>${i}</div>`).join(''); };
+    // Mesure avec de vrais libelles : sans texte, les titres de section n'ont pas de hauteur.
+    box.querySelectorAll('[data-t]').forEach(n => { n.textContent = T.en[n.dataset.t]; });
+    cTheme.textContent = 'x'; cLang.textContent = 'x';
+    const place = () => { lstTheme.style.top = `${cTheme.offsetTop + 32}px`; lstLang.style.top = `${cLang.offsetTop + 32}px`; };
+    place();
+    fill(lstTheme, ['a', 'b', 'c']); fill(lstLang, ['a', 'b', 'c', 'd']);
+    const rowC = (l, i) => centerOf(l.children[i]);
+    const pts = { theme: centerOf(cTheme), lang: centerOf(cLang), themeRow: [0, 1, 2].map(i => rowC(lstTheme, i)), langRow: [0, 1, 2, 3].map(i => rowC(lstLang, i)) };
+    const cur = cursor(camera);
+    // Le fond de depart, pour boucler : il revient en fondu pendant la sortie des fenetres.
+    const desk = th => { document.documentElement.dataset.theme = th; return getComputedStyle(document.documentElement).getPropertyValue('--desktop'); };
+    const baseTheme = new URLSearchParams(location.search).get('theme') === 'dark' ? 'dark' : 'light';
+    const back = el(`<div class="abs" style="inset:0;background:${desk(baseTheme)};z-index:70"></div>`);
+    st.appendChild(back);
+    return { st, camera, dock, dlg, box, lstTheme, lstLang, cTheme, cLang, pts, fill, place, back, cur, leg: legend(st) };
+  },
+
+  render(t, x) {
+    const base = new URLSearchParams(location.search).get('theme') === 'dark' ? 'dark' : 'light';
+    const other = base === 'dark' ? 'light' : 'dark';
+    const theme = t >= THEME_AT ? other : base;
+    document.documentElement.dataset.theme = theme;
+    const lang = t >= LEET_AT ? 'leet' : t >= FR_AT ? 'fr' : 'en';
+    const L = T[lang];
+
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 9.45, 9.9, E.in));
+    placeDock(x.dock, DX, DY, S, { opacity: show, scale: .96 + .04 * show });
+    renderPop(x.dlg.firstElementChild, t, [0, .4], [9.45, 9.9], .96);
+
+    // Fenetre des parametres : chaque libelle suit la langue, sans redemarrage.
+    x.box.querySelectorAll('[data-t]').forEach(n => { n.textContent = L[n.dataset.t]; });
+    x.box.querySelector('.c-key').textContent = L.space;
+    x.cTheme.textContent = L[theme];
+    x.cLang.textContent = L.name;
+    const themeItems = [L.auto, L.light, L.dark];
+    const langItems = [L.auto, 'Français', 'English', '1337'];
+    x.place();
+    x.fill(x.lstTheme, themeItems);
+    x.fill(x.lstLang, langItems);
+    const openT = t >= 1.2 && t < THEME_AT, hoverT = t >= 1.5 ? (other === 'dark' ? 2 : 1) : -1;
+    style(x.lstTheme, { display: openT ? 'block' : 'none' });
+    if (hoverT >= 0) x.lstTheme.children[hoverT].classList.add('sel');
+    const openL = (t >= 3.9 && t < FR_AT) || (t >= 6.1 && t < LEET_AT);
+    style(x.lstLang, { display: openL ? 'block' : 'none' });
+    const hoverL = t >= 6.45 ? 3 : t >= 6.1 ? -1 : t >= 4.2 ? 1 : -1;
+    if (hoverL >= 0) x.lstLang.children[hoverL].classList.add('sel');
+
+    // Fenetre principale : bandeau et badge du raccourci suivent aussi.
+    const u = x.dock.usage.el;
+    u.querySelectorAll('.gauge .lbl').forEach((n, i) => { n.textContent = i ? L.week : L.session; });
+    const resets = u.querySelectorAll('.gauge .reset'); resets[0].textContent = L.r0; resets[1].textContent = L.r1;
+    u.querySelectorAll('.metric').forEach((m, i) => { m.querySelector('.k').textContent = L.m[i]; m.querySelector('.v').textContent = L.v[i]; });
+    u.querySelector('.badge-demo').textContent = L.demo;
+    x.dock.root.querySelector('.hotkey').textContent = L.hot;
+
+    const p = x.pts;
+    renderCursor(x.cur, t, [
+      [.5, 1600, 980], [1.1, p.theme.x, p.theme.y], [1.3, p.theme.x, p.theme.y], [1.5, p.themeRow[1].x, p.themeRow[other === 'dark' ? 2 : 1].y],
+      [2.4, p.themeRow[1].x, p.themeRow[other === 'dark' ? 2 : 1].y], [3.75, p.lang.x, p.lang.y], [3.95, p.lang.x, p.lang.y],
+      [4.2, p.langRow[1].x, p.langRow[1].y], [5.6, p.langRow[1].x, p.langRow[1].y], [6.0, p.lang.x, p.lang.y], [6.15, p.lang.x, p.lang.y],
+      [6.45, p.langRow[3].x, p.langRow[3].y], [7.2, p.langRow[3].x, p.langRow[3].y], [8.0, 1600, 980],
+    ], [1.2, THEME_AT - .05, 3.9, FR_AT - .05, 6.1, LEET_AT - .05], [.5, 8.1]);
+
+    x.back.style.opacity = prog(t, 9.45, 9.9, E.inOut);
+    x.leg(t, [[.45, 3.7, 'Light or dark, applied instantly'], [3.85, 9.4, 'French, English… and 1337 — no restart']]);
+  },
+});
+</script></body></html>

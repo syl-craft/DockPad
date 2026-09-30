@@ -1,0 +1,101 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Updates</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .upd .t { font-size: 16px; font-weight: 600; }
+  .upd .v { color: var(--text-faint); margin: 4px 0 14px; }
+  .upd .row { display: flex; align-items: center; gap: 10px; margin: 10px 0 14px; }
+  .notes { line-height: 18px; }
+  .bar { height: 6px; border-radius: 3px; background: var(--gauge-track); overflow: hidden; margin-top: 12px; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+  .proc { border: 1px solid var(--border); background: var(--surface-card); border-radius: 3px; padding: 6px 12px; }
+  .proc .p { display: flex; gap: 14px; align-items: flex-start; padding: 8px 0; }
+  .proc .p small { display: block; color: var(--text-faint); font-size: 11px; margin-top: 2px; }
+  .restart { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    font-size: 15px; color: var(--text-subtle); }
+  .spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--border-strong); border-top-color: var(--accent); }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el } from '../shared/engine.js';
+import { stage, buildDock, placeDock, showPage, renderUsage, quickMenu, dialog, cursor, renderCursor, legend, renderPop, centerOf } from '../shared/ui.js';
+
+const S = 1.2, DX = (1920 - 850 * S) / 2, DY = 70;
+// Libelles de Strings.resx ; notes de version de demonstration, comme la capture updates-fr.png.
+const upBody = `<div class="upd">
+  <div class="t">Updates</div><div class="v">1.25.2</div>
+  <div class="st"></div>
+  <div class="row"><span class="cbx on">✓</span>Check for updates automatically</div>
+  <div class="notes"><div style="margin-bottom:10px">What's new in 1.25.3 — demo data</div>
+    • Update from within the application.<br>• Shortcuts and incoming links are kept.<br>• Blocking applications are handled.</div>
+  <div class="bar"><i></i></div></div>`;
+const blkBody = `<div class="upd">
+  <div class="t">Close apps to continue</div>
+  <div class="hint2" style="font-size:12.5px;margin:8px 0 14px;color:var(--text-secondary)">These processes are using DockPad files. Select those you want to close. Closing an MCP or AI session may interrupt work in progress.</div>
+  <div class="proc">
+    <div class="p"><span class="cbx c0"></span><div>DockPad — MCP · PID 4128<small class="mono">C:\\Users\\Demo\\AppData\\Local\\DockPad\\current\\DockPad.exe</small></div></div>
+    <div class="p"><span class="cbx c1"></span><div>Text editor · PID 9360</div></div>
+  </div></div>`;
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const dock = buildDock(camera, { usage: 'single' });
+    placeDock(dock, DX, DY, S);
+    showPage(dock, 0);
+    renderUsage(dock.usage, 'claude');
+    const menu = quickMenu(dock);
+    const layer = el('<div class="layer" style="z-index:40"></div>');
+    camera.appendChild(layer);
+    const up = dialog(layer, { w: 580, h: 330, header: false, body: upBody, x: 610, y: 250, scale: 1.3,
+      footer: '<span class="bt b-check">Check for updates</span><span class="bt p b-install">Update and restart</span><span class="bt">Cancel</span>' });
+    const blk = dialog(layer, { w: 660, h: 300, header: false, body: blkBody, x: 530, y: 270, scale: 1.3,
+      footer: '<span class="bt">Retry</span><span class="bt p b-close">Close selected and continue</span><span class="bt">Postpone</span>' });
+    [up, blk].forEach(d => { d.querySelector('.dlgx-f .v').style.display = 'none'; });
+    const restart = el('<div class="restart" style="z-index:45"><div class="spin"></div><span>Closing DockPad to install the update…</span></div>');
+    camera.appendChild(restart);
+    const pts = { menu: centerOf(dock.btn('menu')), item: centerOf(menu.item('updates')), install: centerOf(up.querySelector('.b-install')),
+      c0: centerOf(blk.querySelector('.c0')), close: centerOf(blk.querySelector('.b-close')) };
+    const cur = cursor(camera);
+    return { st, dock, menu, up, blk, restart, pts, cur, leg: legend(st) };
+  },
+
+  render(t, x) {
+    const { dock } = x;
+    // La fenetre part au redemarrage (7.6) et revient en 1.25.3 (8.6).
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 7.45, 7.8, E.in) * (1 - prog(t, 8.55, 8.9, E.out))) * (1 - prog(t, 9.45, 9.9, E.in));
+    placeDock(dock, DX, DY, S, { opacity: show, scale: .96 + .04 * show });
+    dock.root.querySelector('.version').textContent = t >= 8.5 ? 'v1.25.3' : 'v1.25.2';
+
+    renderPop(x.menu.el, t, [.8, .95], [1.45, 1.55], .96);
+    x.menu.item('updates').classList.toggle('sel', t >= 1.25);
+
+    // Fenetre des mises a jour : recherche, version disponible, telechargement.
+    renderPop(x.up.firstElementChild, t, [1.5, 1.8], [4.05, 4.25]);
+    const st = x.up.querySelector('.st');
+    const dl = prog(t, 3.1, 3.95, E.inOut);
+    st.textContent = t < 2.2 ? 'Checking for updates…' : t < 3.1 ? 'Version 1.25.3 is available.' : `Downloading… ${Math.round(dl * 100)}%`;
+    x.up.querySelector('.bar').style.visibility = t >= 3.1 ? 'visible' : 'hidden';
+    x.up.querySelector('.bar i').style.width = `${dl * 100}%`;
+    x.up.querySelector('.b-install').style.opacity = t < 2.2 ? .5 : 1;
+
+    // Applications bloquantes : rien n'est coche d'avance.
+    renderPop(x.blk.firstElementChild, t, [4.15, 4.45], [7.05, 7.25]);
+    const c0 = x.blk.querySelector('.c0'), on = t >= 5.35;
+    c0.classList.toggle('on', on); c0.textContent = on ? '✓' : '';
+
+    style(x.restart, { opacity: env(t, 7.25, 8.6, .2) });
+    x.restart.querySelector('.spin').style.transform = `rotate(${t * 400}deg)`;
+
+    const p = x.pts;
+    renderCursor(x.cur, t, [
+      [.2, 1560, 960], [.7, p.menu.x, p.menu.y], [.9, p.menu.x, p.menu.y], [1.25, p.item.x - 40, p.item.y], [1.5, p.item.x - 40, p.item.y],
+      [2.5, p.install.x, p.install.y], [3.1, p.install.x, p.install.y], [4.5, p.install.x, p.install.y],
+      [5.15, p.c0.x, p.c0.y], [5.5, p.c0.x, p.c0.y], [6.6, p.close.x, p.close.y], [7.1, p.close.x, p.close.y], [7.5, 1560, 960],
+    ], [.85, 1.45, 3.0, 5.35, 6.85], [.2, 7.55]);
+
+    x.leg(t, [[.4, 4.0, 'Update from inside the app'], [4.2, 7.25, 'Nothing is closed without your say'], [7.35, 9.4, 'Back in seconds, settings kept']]);
+  },
+});
+</script></body></html>

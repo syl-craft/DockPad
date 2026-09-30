@@ -42,6 +42,11 @@ A WPF application (.NET 8, x64): a **quick launch bar** for Windows, with a mana
 **Update and restart** downloads, installs and restarts DockPad, keeping the profile.
 The check can be automatic; installing always happens on request.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/10-updates-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/10-updates-light.gif" alt="Demo: checking, downloading, closing blocking apps and restarting" width="960">
+</picture>
+
 | Check and install | Blocking applications |
 |---|---|
 | ![Updates — demo data](docs/screenshots/updates-fr.png) | ![Choosing the applications to close — demo data](docs/screenshots/update-blockers-fr.png) |
@@ -61,6 +66,18 @@ Ctrl — like `Alt + Space` in the demo —, otherwise **Shift** and **Alt**. Th
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/05-keyboard-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/05-keyboard-light.gif" alt="Demo: keyboard overlay and page switching" width="960">
+</picture>
+
+## Dropping from Explorer
+
+Drag a **folder** from Windows Explorer onto an empty slot: it becomes an `OpenFolder` tile, with the
+default folder icon. Drop a **`.url` file** and you get an `OpenUrl` tile with the icon of your
+browser. Dropping works even when the grid is locked — the padlock only guards rearranging, and a
+drop is always deliberate.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/12-explorer-drop-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/12-explorer-drop-light.gif" alt="Demo: a folder and a .url file dropped from Explorer become tiles" width="960">
 </picture>
 
 ## Composite tiles
@@ -108,6 +125,11 @@ move or delete the whole group.
 ## Light and dark theme
 
 ☰ → Settings → **Theme**: `Automatic (Windows)`, `Light` or `Dark`.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/09-theme-language-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/09-theme-language-light.gif" alt="Demo: switching the theme, then the language to French and 1337, without a restart" width="960">
+</picture>
 
 | Light | Dark |
 |---|---|
@@ -185,6 +207,11 @@ Keyboard: `1-9` picks directly · `↑/↓` + `Enter` · `Esc` cancels · losing
 A **second grid**, dedicated to websites: its own pages, its own positions, and everything the
 shortcut grid already does — drag and drop, right-click, keyboard overlay, search. The **▦ / ★**
 toolbar button, to the left of the lock, switches between the two.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/08-favorites-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/08-favorites-light.gif" alt="Demo: switching to the favourites grid, moving a tile over, back to shortcuts" width="960">
+</picture>
 
 ![The favourites grid](docs/screenshots/window-favorites.png)
 
@@ -283,6 +310,11 @@ application.
 
 > “Add a page with VS Code, a terminal on C:\dev and the project folder” → three tiles appear, placed in the free slots.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/07-mcp-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/07-mcp-light.gif" alt="Demo: Claude adds a page and three tiles over MCP; deletion is refused" width="960">
+</picture>
+
 | Configuration (Options) | Action log |
 |:---:|:---:|
 | ![MCP server options](docs/screenshots/mcp-options.png) | ![MCP action log](docs/screenshots/mcp-journal.png) |
@@ -326,6 +358,20 @@ included in 💾 Save.
 - [ ] Open a Claude Code session → `/mcp` lists the `dockpad` server and its 14 tools
 - [ ] Ask for instance: *“show me my DockPad grid”* or *“add a Notepad shortcut”*
 - [ ] If the exe path changes: `claude mcp remove dockpad`, then add it again (“Updating the path” block of the window)
+
+## Windows context menu
+
+**☰ Menu → Predefined shortcuts** adds your tools to the Explorer right-click menu of a folder: a
+Claude or Codex terminal opened in that folder, PowerShell, Visual Studio Code, SQL Server
+Management Studio, GitHub Desktop. Each entry shows whether it is already installed or has an
+update; **☰ Menu → Manage** lists, edits and removes every entry of the Windows context menu
+(HKCU / HKLM / HKCR). Changing machine-wide entries needs administrator rights: the **🛡 Elevate**
+button restarts DockPad as administrator when needed.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/11-context-menu-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/11-context-menu-light.gif" alt="Demo: installing predefined shortcuts, then opening a Claude terminal from a folder right-click" width="960">
+</picture>
 
 ## Secret injection from Vaultwarden
 
