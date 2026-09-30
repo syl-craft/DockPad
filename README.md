@@ -1,404 +1,486 @@
 # DockPad
 
-Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du menu contextuel Windows.
+[Français](README.fr.md) · **English**
 
-[Télécharger la dernière version](https://github.com/syl-craft/DockPad/releases/latest) · [Historique des versions](CHANGELOG.md)
+A WPF application (.NET 8, x64): a **quick launch bar** for Windows, with a manager for the Windows context menu.
 
-## Fonctionnalités
+[Download the latest version](https://github.com/syl-craft/DockPad/releases/latest) · [Release history](CHANGELOG.md)
 
-- **Grille de tuiles** multi-pages (4 × 6) avec raccourci clavier global configurable
-- **Tuiles composées** : un emplacement peut contenir un raccourci, quatre icônes en grille 2 × 2, ou deux grandes cases au-dessus de quatre petites
-- **Types de raccourcis** : lancer une commande, ouvrir un dossier, URL, terminal, basculer vers un processus
-- **Drag & drop** depuis l'Explorateur Windows (dossier → OpenFolder, fichier .url → OpenUrl)
-- **Thème clair et sombre**, lié à Windows ou choisi — bascule immédiate, barre de titre comprise
-- **Français, anglais et « 1337 »**, avec bascule immédiate depuis les Options — aucun redémarrage, les fenêtres ouvertes se retraduisent. Par défaut DockPad suit la langue de Windows
-- **Verrou du déplacement des tuiles** : un bouton de la toolbar (🔒 → ✓) ouvre la réorganisation, pour qu'un clic manqué ne déplace pas la tuile qu'on voulait lancer. Ranger la fenêtre repose le verrou
-- **Mode Favoris** : une seconde grille, avec ses propres pages et positions, alimentée par l'étoile de la popup de choix du navigateur (▦ → ★ dans la toolbar)
-- **Barre de recherche** globale avec navigation clavier
-- **Overlay numérique** (Ctrl/Shift + 1–9) pour exécution rapide au clavier
-- **Store d'icônes** portable dans `%APPDATA%\DockPad\icons\`
-- **Gestionnaire de menu contextuel** Windows (HKCU / HKLM / HKCR)
-- **Raccourcis prédéfinis** : Claude Code, Codex, PowerShell, VS Code, SSMS, GitHub Desktop
-- **Sélecteur de navigateur** : popup de choix au clic sur une URL + règles par domaine
-- **Serveur MCP** : Claude (Claude Code / Claude Desktop) peut gérer la grille, les pages et les navigateurs
-- **Bandeau Usage IA** : consommation de jetons de Claude Code, Codex, Gemini et Copilot, sous la grille
-- **Injection de secrets** : clic droit sur un fichier → ses marqueurs `{{ bw:… }}` sont remplacés par les valeurs de Vaultwarden, dans le presse-papier ou dans des fichiers de secrets
-- **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
-- **Démarrage automatique** avec Windows configurable
-- **Mises à jour intégrées** : recherche automatique désactivable, téléchargement et redémarrage depuis l'application, gestion des processus bloquants avec consentement
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/01-launcher-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/01-launcher-light.gif" alt="Demo: global hotkey, launching a tile, pages and search" width="960">
+</picture>
 
-![La fenêtre d'accès rapide](docs/screenshots/window-fr.png)
+## Features
 
-## Mises à jour
+- **Tile grid** over several pages (4 × 6), with a configurable global hotkey
+- **Composite tiles**: a slot can hold one shortcut, four icons in a 2 × 2 grid, or two large cells above four small ones
+- **Shortcut types**: run a command, open a folder, open a URL, open a terminal, switch to a process
+- **Drag & drop** from Windows Explorer (folder → OpenFolder, `.url` file → OpenUrl)
+- **Light and dark theme**, following Windows or chosen — switches instantly, title bar included
+- **French, English and “1337”**, switched instantly from the Options — no restart, open windows translate themselves. By default DockPad follows the Windows language
+- **Tile moving lock**: a toolbar button (🔒 → ✓) unlocks rearranging, so that a slightly missed click does not move the tile you meant to launch. Putting the window away locks it again
+- **Favourites mode**: a second grid, with its own pages and positions, filled from the star of the browser picker (▦ → ★ in the toolbar)
+- **Global search bar** with keyboard navigation
+- **Keyboard overlay** (modifier + 1–9) to launch tiles from the keyboard
+- **Portable icon store** in `%APPDATA%\DockPad\icons\`
+- **Windows context menu manager** (HKCU / HKLM / HKCR)
+- **Predefined shortcuts**: Claude Code, Codex, PowerShell, VS Code, SSMS, GitHub Desktop
+- **Browser picker**: choose the browser when clicking a URL + per-domain rules
+- **MCP server**: Claude (Claude Code / Claude Desktop) can manage the grid, the pages and the browsers
+- **AI usage panel**: token consumption of Claude Code, Codex, Gemini and Copilot, under the grid
+- **Secret injection**: right-click a file → its `{{ bw:… }}` markers are replaced with values from Vaultwarden, into the clipboard or into secret files
+- **System tray icon** — the application runs in the background, single instance (Mutex)
+- **Start with Windows**, configurable
+- **Built-in updates**: optional automatic check, download and restart from the application, handling of blocking processes with consent
 
-**☰ Menu → Mises à jour → Rechercher** affiche la version disponible et ses notes.
-**Mettre à jour et redémarrer** télécharge, installe et relance DockPad en conservant le profil.
-La recherche peut être automatique ; l'installation se fait à votre demande.
+![The quick access window](docs/screenshots/window-en.png)
 
-| Recherche et installation | Applications bloquantes |
+## Updates
+
+**☰ Menu → Updates → Check for updates** shows the available version and its notes.
+**Update and restart** downloads, installs and restarts DockPad, keeping the profile.
+The check can be automatic; installing always happens on request.
+
+| Check and install | Blocking applications |
 |---|---|
-| ![Mises à jour — données de démonstration](docs/screenshots/updates-fr.png) | ![Choix des applications à fermer — données de démonstration](docs/screenshots/update-blockers-fr.png) |
+| ![Updates — demo data](docs/screenshots/updates-fr.png) | ![Choosing the applications to close — demo data](docs/screenshots/update-blockers-fr.png) |
 
-Les cases ne sont pas cochées par défaut. DockPad demande une fermeture douce, puis une
-confirmation distincte si un arrêt forcé est nécessaire. **Reporter** conserve la session en cours.
-Les versions issues de l'ancien ZIP proposent le lien GitHub jusqu'à la première migration Velopack.
+The boxes are not ticked by default. DockPad asks for a graceful close, then for a separate
+confirmation if a forced stop is needed. **Postpone** keeps the current session.
+Versions installed from the old ZIP offer the GitHub link until their first Velopack migration.
 
-## Tuiles composées
+## Launching from the keyboard
 
-| Clair | Sombre |
+Hold a modifier: each tile of the left or right half of the grid shows a key (**1–9**, then **0**,
+**↑**, **↓** for the bottom row). Press the key and the tile launches. **← / →** switch pages. By
+default the two modifiers adapt to the global hotkey: **Ctrl** and **Shift** if it does not use
+Ctrl — like `Alt + Space` in the demo —, otherwise **Shift** and **Alt**. They can be set in
+**☰ Menu → Options**.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/05-keyboard-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/05-keyboard-light.gif" alt="Demo: keyboard overlay and page switching" width="960">
+</picture>
+
+## Composite tiles
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/06-composite-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/06-composite-light.gif" alt="Demo: a tile becomes a 2 × 2 grid, then a 2 + 4 grid" width="960">
+</picture>
+
+| Light | Dark |
 |---|---|
-| ![Tuiles composées en thème clair](docs/screenshots/tile-groups.png) | ![Tuiles composées en thème sombre](docs/screenshots/tile-groups-dark.png) |
+| ![Composite tiles in the light theme](docs/screenshots/tile-groups.png) | ![Composite tiles in the dark theme](docs/screenshots/tile-groups-dark.png) |
 
-De gauche à droite : une tuile simple, une grille **2 × 2**, une grille **2 + 4** avec une couleur
-de groupe personnalisée, puis les mêmes dispositions à sous-cases partiellement vides.
+From left to right: a single tile, a **2 × 2** grid, a **2 + 4** grid with a custom group colour,
+then the same layouts with partly empty cells.
 
-Clic droit sur une tuile ou une case vide → **Disposition** : simple, grille **2 × 2**,
-ou grille **2 + 4** (deux tiers de la hauteur en haut, un tiers en bas). Chaque icône lance
-son propre raccourci ; son nom et sa commande restent accessibles au survol. Une sous-case
-vide permet d'ajouter un raccourci. Les groupes fonctionnent aussi dans les favoris.
+Right-click a tile or an empty slot → **Layout**: single, **2 × 2** grid, or **2 + 4** grid (two
+thirds of the height at the top, one third at the bottom). Each icon launches its own shortcut; its
+name and command stay available on hover. An empty cell lets you add a shortcut. Groups also work
+in the favourites.
 
-Le nom du groupe est affiché en bas de la carte. **Groupe → Modifier le groupe…** permet
-de modifier son nom et la couleur de sa bande droite, violette par défaut. Cette bande est
-commune au groupe : les icônes internes n'ont plus de bande individuelle.
-Une fois le cadenas déverrouillé, glisser ce nom déplace le groupe entier ;
-glisser une icône déplace uniquement son raccourci.
+The group name is shown at the bottom of the card. **Group → Edit group…** changes its name and the
+colour of its right-hand band, purple by default. That band belongs to the group: the icons inside
+no longer have a band of their own. Once the padlock is unlocked, dragging the name moves the whole
+group; dragging an icon moves only its shortcut.
 
-- **Déplacer → Choisir une case…** : les destinations possibles sont encadrées. Cliquer sur
-  une case vide déplace le raccourci ; cliquer sur un raccourci l'échange avec la source.
-  La pagination reste disponible et **Échap** annule le déplacement.
-- Le **glisser-déposer**, une fois le cadenas déverrouillé, fonctionne aussi entre la grille
-  et les sous-cases, ainsi qu'entre deux groupes.
-- **Groupe → Déplacer le groupe entier…** déplace tous ses raccourcis ensemble. Le même
-  sous-menu permet de dupliquer le groupe, de changer de page ou de le transférer dans les favoris.
-- Pour passer de six à quatre cases, il faut d'abord sortir les raccourcis en trop.
-  Pour revenir à une tuile simple, il doit en rester au maximum un. Aucun raccourci n'est
-  déplacé automatiquement hors du groupe. Les raccourcis conservés suivent l'ordre de lecture.
-- La recherche inclut les raccourcis des groupes. Le raccourci clavier d'une tuile composée
-  ouvre un menu permettant de choisir lequel lancer. Les groupes ne peuvent pas être imbriqués.
+- **Move → Choose a slot…**: the possible destinations are outlined. Clicking an empty slot moves
+  the shortcut; clicking a shortcut swaps it with the source. Paging stays available and **Esc**
+  cancels the move.
+- **Drag and drop**, once the padlock is unlocked, also works between the grid and the cells, and
+  between two groups.
+- **Group → Move the entire group…** moves all its shortcuts together. The same submenu duplicates
+  the group, moves it to another page or transfers it to the favourites.
+- To go from six cells to four, first move the extra shortcuts out. To go back to a single tile, at
+  most one may remain. No shortcut is ever moved out of the group automatically. The shortcuts that
+  are kept follow reading order.
+- Search includes the shortcuts inside groups. The keyboard shortcut of a composite tile opens a
+  menu to choose which one to launch. Groups cannot be nested.
 
-Les anciens fichiers de raccourcis restent lisibles. Les groupes ajoutent les champs `layout`
-(`Quad` ou `TwoPlusFour`), `children` et une couleur optionnelle `groupColor` ; une valeur `null` dans `children` conserve une sous-case vide.
-L'outil MCP de lecture de la grille expose également ces informations ; les actions MCP qui
-visent uniquement une case entière déplacent ou suppriment le groupe entier.
+Older shortcut files remain readable. Groups add the fields `layout` (`Quad` or `TwoPlusFour`),
+`children` and an optional `groupColor`; a `null` value in `children` keeps an empty cell.
+The MCP grid-reading tool exposes this information too; MCP actions that only target a whole slot
+move or delete the whole group.
 
-## Thème clair et sombre
+## Light and dark theme
 
-☰ → Paramètres → **Thème** : `Automatique (Windows)`, `Clair` ou `Sombre`.
+☰ → Settings → **Theme**: `Automatic (Windows)`, `Light` or `Dark`.
 
-| Clair | Sombre |
+| Light | Dark |
 |---|---|
-| ![La fenêtre en thème clair](docs/screenshots/window-fr.png) | ![La fenêtre en thème sombre](docs/screenshots/window-dark.png) |
+| ![The window in the light theme](docs/screenshots/window-en.png) | ![The window in the dark theme](docs/screenshots/window-dark.png) |
 
-- **`Automatique` suit Windows en direct** : basculer Windows en sombre change DockPad sur le champ, sans redémarrer. Un choix explicite, lui, ne bouge plus
-- **La barre de titre suit aussi** — Windows ne la peint pas de lui-même
-- La bascule s'applique aux **fenêtres déjà ouvertes**
+- **`Automatic` follows Windows live**: switching Windows to dark changes DockPad on the spot, without a restart. An explicit choice stays put
+- **The title bar follows too** — Windows does not paint it on its own
+- The switch applies to **windows that are already open**
 
-Le bandeau Usage IA et les fenêtres de configuration suivent le thème, listes et champs compris :
+The AI usage panel and the configuration windows follow the theme, lists and fields included:
 
-| Bandeau Usage IA | Fenêtre Navigateurs |
+| AI usage panel | Browsers window |
 |---|---|
-| ![Le bandeau Usage IA en thème sombre](docs/screenshots/usage-panel-dark.png) | ![La fenêtre Navigateurs en thème sombre](docs/screenshots/browser-config-dark.png) |
+| ![The AI usage panel in the dark theme](docs/screenshots/usage-panel-dark.png) | ![The Browsers window in the dark theme](docs/screenshots/browser-config-dark.png) |
 
-> Les cases à cocher et les listes déroulantes ont changé d'aspect **dans les deux thèmes** : elles
-> sont passées de l'habillage Windows au plat, déjà celui du reste de l'application. C'était le prix
-> pour qu'elles suivent le thème — leur habillage d'origine ignore les couleurs qu'on leur donne.
+> Check boxes and drop-down lists changed appearance **in both themes**: they went from the Windows
+> look to flat, the look of the rest of the application. That was the price for following the
+> theme — their original template ignores the colours it is given.
 
-## Français, anglais… et 1337
+## French, English… and 1337
 
-☰ → Paramètres → **Langue** : `Automatique (Windows)`, `Français`, `English` ou `1337`. Par défaut DockPad
-suit la langue de Windows, et retombe sur l'anglais si elle n'est pas traduite.
+☰ → Settings → **Language**: `Automatic (Windows)`, `Français`, `English` or `1337`. By default
+DockPad follows the Windows language, and falls back to English if it is not translated.
 
 | Français | English |
 |---|---|
-| ![DockPad en français](docs/screenshots/window-fr.png) | ![DockPad en anglais](docs/screenshots/window-en.png) |
+| ![DockPad in French](docs/screenshots/window-fr.png) | ![DockPad in English](docs/screenshots/window-en.png) |
 
-- **Bascule immédiate**, sans redémarrer : les fenêtres ouvertes se retraduisent sous les yeux, la grille derrière et son bandeau compris
-- **Les nombres et les heures suivent** : `12,4k` et `11h54` en français, `12.4k` et `11:54` en anglais
-- **Les pluriels sont justes**, y compris là où les deux langues ne basculent pas au même endroit : « 0 règle » mais « 0 rules »
-- **Les libellés du menu clic droit de Windows** sont traduits ; les entrées déjà posées se mettent à jour depuis la fenêtre **Prédéfinis**
+- **Instant switch**, no restart: open windows translate themselves before your eyes, the grid behind them and its panel included
+- **Numbers and times follow**: `12,4k` and `11h54` in French, `12.4k` and `11:54` in English
+- **Plurals are right**, including where the two languages do not switch at the same point: “0 règle” but “0 rules”
+- **The labels of the Windows right-click menu** are translated; entries already installed are updated from the **Predefined shortcuts** window
 
-Et une troisième langue, pour le plaisir :
+And a third language, for fun:
 
-![DockPad en 1337](docs/screenshots/window-leet.png)
+![DockPad in 1337](docs/screenshots/window-leet.png)
 
-Elle n'est pas écrite à la main : elle est **engendrée** depuis le français par substitution de
-glyphes, et se régénère d'une commande quand une chaîne est ajoutée. Elle rend un service au
-passage — **tout ce qui n'y apparaît pas en leet est soit une donnée, soit une chaîne restée en dur
-dans le code**. Les noms de tuiles, eux, restent lisibles : ce sont les vôtres.
+It is not written by hand: it is **generated** from French by glyph substitution, and regenerated
+with one command whenever a string is added. It does a job along the way — **anything that does not
+show up in leet is either data or a string left hard-coded**. Tile names stay readable: they are
+yours.
 
-## Sélecteur de navigateur
+## Browser picker
 
-DockPad peut devenir le navigateur par défaut de Windows : au clic sur une URL, une popup propose le choix du navigateur **et de ses profils**. Les règles « Toujours pour ce domaine » ouvrent les sites connus directement, sans popup (sous-domaines inclus).
+DockPad can become the default browser of Windows: when you click a URL, a popup offers a choice of
+browser **and of its profiles**. “Always for this domain” rules open known sites directly, without
+the popup (subdomains included).
 
-Les profils des navigateurs Chromium (Chrome, Edge, Brave, Vivaldi…) sont détectés par **↻ Redétecter** et proposés sous leur navigateur ; un navigateur qui n'a qu'un seul profil reste une ligne unique. Chaque profil se masque, se renomme et peut recevoir ses propres règles de domaine.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/02-browser-picker-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/02-browser-picker-light.gif" alt="Demo: choosing the browser when clicking a link, per-domain rule and favourite" width="960">
+</picture>
 
-| Popup au clic sur une URL | Navigateurs et profils | Règles de domaine |
+Profiles of Chromium browsers (Chrome, Edge, Brave, Vivaldi…) are detected by **↻ Detect again**
+and listed under their browser; a browser with a single profile stays a single line. Each profile
+can be hidden, renamed and given its own domain rules.
+
+| Popup when clicking a URL | Browsers and profiles | Domain rules |
 |:---:|:---:|:---:|
-| ![Popup de choix](docs/screenshots/browser-picker.png) | ![Configuration des navigateurs](docs/screenshots/browser-config.png) | ![Règles de domaine](docs/screenshots/browser-rules.png) |
+| ![Picker popup](docs/screenshots/browser-picker.png) | ![Browser configuration](docs/screenshots/browser-config.png) | ![Domain rules](docs/screenshots/browser-rules.png) |
 
-Clavier : `1-9` choix direct · `↑/↓` + `Entrée` · `Échap` annule · perte de focus = annule.
+Keyboard: `1-9` picks directly · `↑/↓` + `Enter` · `Esc` cancels · losing focus cancels.
 
-### Activer sur un ordinateur
+### Enabling it on a computer
 
-- [ ] Lancer DockPad
-- [ ] **☰ → Paramètres → 🌐 Navigateurs** → **↻ Redétecter** puis vérifier la liste (Chrome, Edge… et leurs profils)
-- [ ] Cliquer **S'enregistrer comme navigateur**
-- [ ] Cliquer **Paramètres Windows…** → définir **DockPad** comme navigateur par défaut
-- [ ] Cliquer une URL n'importe où → la popup s'affiche ; cocher **Toujours pour ce domaine** pour créer une règle
-- [ ] Gérer les règles dans l'onglet **Règles de domaine** (recherche, filtre, réassociation, suppression)
+- [ ] Start DockPad
+- [ ] **☰ → Settings → 🌐 Browsers** → **↻ Detect again**, then check the list (Chrome, Edge… and their profiles)
+- [ ] Click **Register as a browser**
+- [ ] Click **Windows settings…** → set **DockPad** as the default browser
+- [ ] Click a URL anywhere → the popup appears; tick **Always for this domain** to create a rule
+- [ ] Manage the rules in the **Domain rules** tab (search, filter, reassign, delete)
 
-## Mode Favoris
+## Favourites mode
 
-Une **seconde grille**, dédiée aux sites : ses propres pages, ses propres positions, et tout ce que
-la grille des raccourcis sait déjà faire — glisser-déposer, clic droit, overlay clavier, recherche.
-Le bouton **▦ / ★** de la toolbar, à gauche du verrou, passe de l'une à l'autre.
+A **second grid**, dedicated to websites: its own pages, its own positions, and everything the
+shortcut grid already does — drag and drop, right-click, keyboard overlay, search. The **▦ / ★**
+toolbar button, to the left of the lock, switches between the two.
 
-![La grille des favoris](docs/screenshots/window-favorites.png)
+![The favourites grid](docs/screenshots/window-favorites.png)
 
-On y ajoute une page depuis la popup de choix du navigateur : l'**étoile en bas à droite** met la
-page courante en favori, et la retire si on la décoche. Elle est déjà allumée à l'ouverture quand
-l'URL y est — un toggle qui montre un état dit la vérité, et l'on peut mettre en favori sans ouvrir
-le lien.
+Pages are added from the browser picker: the **star at the bottom right** adds the current page to
+the favourites, and removes it when unticked. It is already lit when the popup opens if the URL is
+there — a toggle that shows a state tells the truth, and you can add a favourite without opening the
+link.
 
-- Le favori garde l'**URL complète** et prend le **domaine** comme nom de tuile ; l'icône du site est
-  téléchargée comme pour toute tuile web (réglage Options → *Réseau*)
-- Il atterrit à la **première case libre**, pages balayées dans l'ordre ; si tout est plein, une page
-  est créée
-- **Une tuile passe d'une grille à l'autre** par le clic droit : « ★ Déplacer vers les favoris »,
-  ou « ▦ Déplacer vers les raccourcis » depuis les favoris. Elle garde son icône et sa
-  configuration, et atterrit à la première case libre
-- **Le mode ne survit pas au rangement de la fenêtre** : masquer ou réduire ramène aux raccourcis.
-  C'est un détour, pas un réglage — rien n'est écrit sur le disque
-- Les favoris vivent dans `%APPDATA%\DockPad\favorites.json` et `favorite-pages.json`, **même
-  format** que les raccourcis, et sont inclus dans 💾 *Sauvegarder la configuration*
+- The favourite keeps the **full URL** and takes the **domain** as its tile name; the site icon is
+  downloaded like for any web tile (setting Options → *Network*)
+- It lands in the **first free slot**, pages scanned in order; if everything is full, a page is
+  created
+- **A tile moves from one grid to the other** from the right-click menu: “★ Move to favourites”, or
+  “▦ Move to shortcuts” from the favourites. It keeps its icon and configuration, and lands in the
+  first free slot
+- **The mode does not survive putting the window away**: hiding or minimising brings back the
+  shortcuts. It is a detour, not a setting — nothing is written to disk
+- Favourites live in `%APPDATA%\DockPad\favorites.json` and `favorite-pages.json`, **same format**
+  as the shortcuts, and are included in 💾 *Save*
 
-## Bandeau Usage IA
+## AI usage panel
 
-Un bandeau sous la grille montre la consommation des assistants IA détectés : les deux jauges de quota (session de 5 h et semaine) avec leur heure de remise à zéro, puis les jetons de la session, du jour et du mois, le nombre de requêtes, le coût estimé et le modèle en cours. Un onglet par fournisseur quand il y en a plusieurs.
+A panel under the grid shows the consumption of the detected AI assistants: the two quota gauges
+(5-hour session and week) with their reset time, then the tokens of the session, the day and the
+month, the number of requests, the estimated cost and the current model. One tab per provider when
+there are several.
 
-![Bandeau Usage IA](docs/screenshots/usage-panel.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/03-usage-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/03-usage-light.gif" alt="Demo: quota gauges, Claude and Codex tabs, alert threshold" width="960">
+</picture>
 
-Avec plusieurs fournisseurs, un onglet apparaît pour chacun :
+![AI usage panel](docs/screenshots/usage-panel.png)
 
-![Bandeau Usage IA avec onglets](docs/screenshots/usage-panel-tabs.png)
+With several providers, each gets a tab:
 
-Quatre assistants sont lus, chacun dans ses fichiers locaux, sans réseau :
+![AI usage panel with tabs](docs/screenshots/usage-panel-tabs.png)
 
-| Assistant | Source | Quota | Coût |
+Four assistants are read, each from its own local files, without any network access:
+
+| Assistant | Source | Quota | Cost |
 |---|---|---|---|
-| **Claude Code** | `%USERPROFILE%\.claude\projects` | oui | estimé |
-| **Codex** | `%USERPROFILE%\.codex\sessions` et `archived_sessions` | oui, dernier relevé local | non |
-| **Gemini CLI** | `%USERPROFILE%\.gemini\tmp\<hash>\chats` | non | non |
-| **Copilot CLI** | `%USERPROFILE%\.copilot\session-store.db` | non | non |
+| **Claude Code** | `%USERPROFILE%\.claude\projects` | yes | estimated |
+| **Codex** | `%USERPROFILE%\.codex\sessions` and `archived_sessions` | yes, latest local reading | no |
+| **Gemini CLI** | `%USERPROFILE%\.gemini\tmp\<hash>\chats` | no | no |
+| **Copilot CLI** | `%USERPROFILE%\.copilot\session-store.db` | no | no |
 
-Les quotas Claude viennent de l'API Anthropic, avec le jeton du compte déjà présent sur la machine.
-Les quotas **Codex** sont lus dans les événements `token_count` des sessions locales : aucun
-processus supplémentaire ni accès aux identifiants n'est nécessaire. Le relevé le plus récent
-est retenu parmi les sessions et les archives, selon sa date d'observation.
+Claude quotas come from the Anthropic API, with the account token already present on the machine.
+**Codex** quotas are read from the `token_count` events of the local sessions: no extra process and
+no access to credentials is needed. The most recent reading is kept across sessions and archives,
+by its observation date.
 
-Chaque jauge Codex suit la durée annoncée : 5 h pour la session, 7 jours pour la semaine. Un compte
-qui n'expose qu'une limite hebdomadaire affiche uniquement cette jauge, même si Codex la place
-dans le champ `primary`. Une fenêtre expirée ou un relevé de plus de **15 minutes** est masqué ;
-si aucune jauge n'est disponible, une notice explique l'absence. Utiliser Codex actualise les
-relevés, que DockPad relit au prochain rafraîchissement. Gemini et Copilot restent sans jauges.
+Each Codex gauge follows the announced window: 5 h for the session, 7 days for the week. An account
+that only exposes a weekly limit shows only that gauge, even if Codex puts it in the `primary`
+field. An expired window or a reading older than **15 minutes** is hidden; if no gauge is available,
+a notice explains why. Using Codex refreshes the readings, which DockPad reads again at the next
+refresh. Gemini and Copilot have no gauges.
 
-Une seule jauge occupe toute la largeur disponible ; deux jauges se partagent cet espace.
-La pastille à droite ouvre la page web des usages de Claude ou de Codex.
+A single gauge takes the whole available width; two gauges share it.
+The badge on the right opens the usage web page of Claude or Codex.
 
-![Quota hebdomadaire Codex — données de démonstration](docs/screenshots/usage-panel-codex.png)
+![Codex weekly quota — demo data](docs/screenshots/usage-panel-codex.png)
 
-Si le quota Claude n'est pas joignable — l'API limite le débit, le jeton a expiré, la réponse change de forme — **les jauges cèdent la place à une explication** qui annonce la prochaine tentative, avec la cause technique au survol. Les jetons, eux, sont lus en local : ils restent exacts et affichés.
+If the Claude quota cannot be reached — the API is rate limiting, the token has expired, the response
+changed shape — **the gauges give way to an explanation** that announces the next attempt, with the
+technical cause on hover. Tokens are read locally: they stay exact and displayed.
 
-![Quota indisponible](docs/screenshots/usage-panel-quota.png)
+![Quota unavailable](docs/screenshots/usage-panel-quota.png)
 
-Un assistant **installé mais que tu n'as pas utilisé sur la période** garde son onglet, à zéro : disparaître du bandeau veut dire « pas installé », et rien d'autre. Les valeurs qui n'auraient pas de sens s'affichent `—` plutôt que `0`.
+An assistant **installed but not used during the period** keeps its tab, at zero: disappearing from
+the panel means “not installed”, and nothing else. Values that would make no sense are shown as `—`
+rather than `0`.
 
-![Onglet d'un assistant inactif](docs/screenshots/usage-panel-idle.png)
+![Tab of an idle assistant](docs/screenshots/usage-panel-idle.png)
 
-Le **coût** n'est calculé que pour Claude, à partir des tarifs publics, et affiché dans la devise de la source — DockPad ne convertit jamais. Un abonnement Max ou Pro ne facture pas au jeton : le montant indique un ordre de grandeur, pas une facture. Pour les trois autres, la colonne affiche un tiret plutôt qu'un montant inventé.
+The **cost** is only computed for Claude, from the public prices, and shown in the currency of the
+source — DockPad never converts. A Max or Pro subscription is not billed per token: the amount is an
+order of magnitude, not an invoice. For the three others, the column shows a dash rather than an
+invented amount.
 
-Un fournisseur **Démo** est fourni, masqué par défaut : il sert aux captures de documentation et permet d'essayer le changement d'onglet. Les chiffres de démonstration portent toujours un badge « démo ».
+A **Demo** provider is included, hidden by default: it is used for documentation captures and lets
+you try tab switching. Demo figures always carry a “demo” badge.
 
-Réglages via **☰ Menu → Paramètres → 📊 Usage IA** : afficher ou masquer le bandeau, seuil d'alerte des jauges, affichage du coût, fournisseur affiché à l'ouverture, et détection des assistants installés (**↻ Redétecter**, jamais en tâche de fond).
+Settings in **☰ Menu → Settings → 📊 AI usage**: show or hide the panel, gauge alert threshold, cost
+display, provider shown on opening, and detection of the installed assistants (**↻ Detect again**,
+never in the background).
 
-![Configuration de l'Usage IA](docs/screenshots/usage-config.png)
+![AI usage configuration](docs/screenshots/usage-config.png)
 
-## Serveur MCP — piloter DockPad avec Claude
+## MCP server — driving DockPad with Claude
 
-DockPad expose un serveur [MCP](https://modelcontextprotocol.io) : depuis Claude Code ou Claude Desktop, Claude peut lire l'état de la grille, ajouter des raccourcis (unitairement ou en lot), créer et réorganiser des pages, et gérer les navigateurs et règles de domaine — la grille se met à jour en direct, sans toucher à l'application.
+DockPad exposes an [MCP](https://modelcontextprotocol.io) server: from Claude Code or Claude
+Desktop, Claude can read the state of the grid, add shortcuts (one by one or in a batch), create and
+reorder pages, and manage browsers and domain rules — the grid updates live, without touching the
+application.
 
-> « Ajoute une page avec VS Code, un terminal sur C:\dev et le dossier du projet » → trois tuiles apparaissent, placées sur les cases libres.
+> “Add a page with VS Code, a terminal on C:\dev and the project folder” → three tiles appear, placed in the free slots.
 
-| Configuration (Options) | Journal des actions |
+| Configuration (Options) | Action log |
 |:---:|:---:|
-| ![Options du serveur MCP](docs/screenshots/mcp-options.png) | ![Journal des actions MCP](docs/screenshots/mcp-journal.png) |
+| ![MCP server options](docs/screenshots/mcp-options.png) | ![MCP action log](docs/screenshots/mcp-journal.png) |
 
-**14 outils** `dockpad_<domaine>_<action>` (positions 0-based : page 0, lignes 0-3, colonnes 0-5) :
+**14 tools** `dockpad_<domain>_<action>` (0-based positions: page 0, rows 0-3, columns 0-5):
 
-| Domaine | Outils |
+| Domain | Tools |
 |---|---|
-| Grille | `grid_get` · `shortcut_add` (lot tout-ou-rien) · `shortcut_update` · `shortcut_move` · `shortcut_delete` 🔒 · `group_set` |
-| Pages | `page_add` · `page_update` (icône, position) · `page_delete` 🔒 |
-| Navigateurs | `browser_list` · `browser_update` · `rule_list` · `rule_add` · `rule_delete` 🔒 |
+| Grid | `grid_get` · `shortcut_add` (all-or-nothing batch) · `shortcut_update` · `shortcut_move` · `shortcut_delete` 🔒 · `group_set` |
+| Pages | `page_add` · `page_update` (icon, position) · `page_delete` 🔒 |
+| Browsers | `browser_list` · `browser_update` · `rule_list` · `rule_add` · `rule_delete` 🔒 |
 
-`dockpad_shortcut_move` accepte en plus un **`toTarget`** : omis, le déplacement reste dans la grille comme avant ; différent de `target`, la tuile change de grille et se pose à la première case libre, en gardant son icône.
+`dockpad_shortcut_move` also accepts a **`toTarget`**: omitted, the move stays within the grid as
+before; different from `target`, the tile changes grid and lands in the first free slot, keeping its
+icon.
 
-**Tuiles groupées** : `dockpad_group_set` crée un groupe (`Quad` ou `TwoPlusFour`) sur une case vide ou autour d’une tuile existante, change sa disposition, son nom ou sa couleur. Les sous-cases se remplissent avec `shortcut_add` et un **`slot`** ; `shortcut_update`, `shortcut_delete` et `shortcut_move` acceptent aussi `slot`, et `shortcut_move` un `toSlot` pour ranger une tuile dans une sous-case **libre** — le serveur refuse une sous-case occupée au lieu d’échanger, comme partout ailleurs. `grid_get` expose `groupColor` et `freeSlots`.
+**Grouped tiles**: `dockpad_group_set` creates a group (`Quad` or `TwoPlusFour`) on an empty slot or
+around an existing tile, and changes its layout, name or colour. Cells are filled with
+`shortcut_add` and a **`slot`**; `shortcut_update`, `shortcut_delete` and `shortcut_move` accept
+`slot` as well, and `shortcut_move` a `toSlot` to put a tile into a **free** cell — the server
+refuses an occupied cell instead of swapping, as everywhere else. `grid_get` exposes `groupColor`
+and `freeSlots`.
 
-Les neuf outils de grille et de pages acceptent un **`target`** optionnel — `"shortcuts"` (défaut) ou `"favorites"` — pour travailler sur l’une ou l’autre grille. Une valeur inconnue est refusée plutôt que ramenée aux raccourcis : écrire dans la mauvaise grille sans le dire serait pire.
+The nine grid and page tools accept an optional **`target`** — `"shortcuts"` (default) or
+`"favorites"` — to work on either grid. An unknown value is refused rather than brought back to the
+shortcuts: writing to the wrong grid without saying so would be worse.
 
-**Sécurité par défaut** : les outils 🔒 de suppression sont refusés tant que la case « Autoriser Claude à supprimer » n'est pas cochée — Claude peut construire, pas détruire. Chaque action (exécutée ✅, refusée 🚫 ou en erreur ❌) est visible dans l'onglet **Journal** et tracée dans les logs. Configuration dans `%APPDATA%\DockPad\mcp.json`, incluse dans 💾 Sauvegarder la configuration.
+**Safe by default**: the 🔒 delete tools are refused until the “Allow Claude to delete” box is ticked
+— Claude can build, not destroy. Each action (executed ✅, refused 🚫 or failed ❌) is visible in the
+**Journal** tab and traced in the logs. Configuration lives in `%APPDATA%\DockPad\mcp.json`,
+included in 💾 Save.
 
-### Activer sur un ordinateur
+### Enabling it on a computer
 
-- [ ] Lancer DockPad (l'application doit tourner : le serveur MCP dialogue avec l'instance en cours)
-- [ ] **☰ → Paramètres → 🔌 Serveur MCP** → onglet Options
-- [ ] Copier la commande d'enregistrement (⧉) et l'exécuter dans un terminal :
+- [ ] Start DockPad (the application must be running: the MCP server talks to the running instance)
+- [ ] **☰ → Settings → 🔌 MCP server** → Options tab
+- [ ] Copy the registration command (⧉) and run it in a terminal:
   `claude mcp add dockpad -s user -- "C:\DockPad\DockPad.exe" --mcp`
-  (décocher « Pour tous les projets » pour un enregistrement limité au projet courant ; snippet `claude_desktop_config.json` fourni pour Claude Desktop)
-- [ ] Ouvrir une session Claude Code → `/mcp` liste le serveur `dockpad` et ses 14 outils
-- [ ] Demander par exemple : *« montre-moi ma grille DockPad »* ou *« ajoute un raccourci Bloc-notes »*
-- [ ] En cas de changement de chemin de l'exe : `claude mcp remove dockpad` puis ré-ajouter (bloc « Mise à jour du chemin » de la fenêtre)
+  (untick “For every project” to register it for the current project only; a
+  `claude_desktop_config.json` snippet is provided for Claude Desktop)
+- [ ] Open a Claude Code session → `/mcp` lists the `dockpad` server and its 14 tools
+- [ ] Ask for instance: *“show me my DockPad grid”* or *“add a Notepad shortcut”*
+- [ ] If the exe path changes: `claude mcp remove dockpad`, then add it again (“Updating the path” block of the window)
 
-## Injection de secrets depuis Vaultwarden
+## Secret injection from Vaultwarden
 
-Clic droit sur **n'importe quel fichier** → **Injecter les secrets…**. DockPad remplace les marqueurs `{{ bw:item:champ }}` par les valeurs du coffre, et **le fichier dit lui-même ce qu'on fait de lui** — il n'y a rien à choisir au moment du clic.
+Right-click **any file** → **Inject secrets…**. DockPad replaces the `{{ bw:item:field }}` markers
+with the values from the vault, and **the file itself says what to do with it** — there is nothing
+to choose at click time.
 
-| Ce que porte le fichier | Ce que DockPad produit |
+| What the file carries | What DockPad produces |
 |---|---|
-| des marqueurs `{{ bw:item:champ }}` | le rendu dans le **presse-papier**, prêt à coller |
-| des annotations `x-bw:` sous `secrets:` | les **fichiers de secrets** dans un sous-dossier `secrets/` |
-| les deux | **les deux**, avec un écran pour choisir |
-| un marqueur précédé d'un antislash — `\{{ … }}` | le marqueur **littéral** : un README peut documenter la syntaxe |
+| `{{ bw:item:field }}` markers | the rendered file in the **clipboard**, ready to paste |
+| `x-bw:` annotations under `secrets:` | the **secret files** in a `secrets/` subfolder |
+| both | **both**, with a screen to choose |
+| a marker preceded by a backslash — `\{{ … }}` | the **literal** marker: a README can document the syntax |
 
-| Mot de passe maître | Choix des sorties | Compte-rendu |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/04-secrets-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/04-secrets-light.gif" alt="Demo: right-click a file, unlock the vault, rendered to the clipboard" width="960">
+</picture>
+
+| Master password | Choice of outputs | Report |
 |:---:|:---:|:---:|
-| ![Saisie du mot de passe](docs/screenshots/inject-unlock.png) | ![Choix des sorties](docs/screenshots/inject-choice.png) | ![Compte-rendu](docs/screenshots/inject-result.png) |
+| ![Entering the password](docs/screenshots/inject-unlock.png) | ![Choice of outputs](docs/screenshots/inject-choice.png) | ![Report](docs/screenshots/inject-result.png) |
 
-**Aucune clé de session n'est conservée** : le mot de passe maître est redemandé à chaque injection, il ne quitte jamais l'environnement du processus enfant, et il n'apparaît dans aucune ligne de commande. Le rendu est retiré du presse-papier après un délai réglable (90 s par défaut), **à condition qu'il s'y trouve toujours** — si tu as copié autre chose entre-temps, rien n'est effacé.
+**No session key is kept**: the master password is asked for at every injection, it never leaves the
+environment of the child process, and it appears on no command line. The rendered file is removed
+from the clipboard after an adjustable delay (90 s by default), **provided it is still there** — if
+you copied something else in the meantime, nothing is cleared.
 
-### Syntaxe des marqueurs
+### Marker syntax
 
 ```
-{{ bw:<item>:<champ> }}
+{{ bw:<item>:<field> }}
 ```
 
-Les espaces autour des `:` et des accolades sont facultatifs — `{{bw:item:champ}}` marche aussi. Le
-**nom d'item accepte les espaces** (`{{ bw:Infra maison:token }}`), le nom de champ non : le `:` et le
-`}}` suffisent à délimiter.
+Spaces around the `:` and the braces are optional — `{{bw:item:field}}` works too. The **item name
+accepts spaces** (`{{ bw:Home infra:token }}`), the field name does not: the `:` and the `}}` are
+enough to delimit it.
 
-Un marqueur se remplace **dans n'importe quel fichier**, pas seulement du YAML — un `.env`, un
-`Dockerfile`, un script. C'est le contenu qui décide, jamais l'extension.
+A marker is replaced **in any file**, not just YAML — a `.env`, a `Dockerfile`, a script. The content
+decides, never the extension.
 
-**L'item est cherché par son nom exact**, sans tenir compte de la casse :
+**The item is looked up by its exact name**, case-insensitively:
 
-| Ce que le coffre répond | Ce que DockPad fait |
+| What the vault answers | What DockPad does |
 |---|---|
-| un seul item de ce nom | il est utilisé |
-| aucun | refus **qui nomme l'item**, et rappelle l'organisation si une est configurée |
-| deux ou plus | refus : DockPad ne devine pas. Renommer l'un des deux, ou cantonner à une organisation |
+| a single item with that name | it is used |
+| none | refusal **naming the item**, with a reminder of the organisation if one is configured |
+| two or more | refusal: DockPad does not guess. Rename one of them, or restrict to an organisation |
 
-**Le champ suit un ordre, et le personnalisé gagne toujours :**
+**The field follows an order, and a custom field always wins:**
 
-| `<champ>` | Ce qui est lu |
+| `<field>` | What is read |
 |---|---|
-| n'importe quel nom | le **champ personnalisé** de ce nom, s'il existe |
-| `password` | le mot de passe de l'identifiant |
-| `username` | l'identifiant |
-| `notes` | les notes de l'item |
-| `totp` | la graine TOTP |
+| any name | the **custom field** with that name, if it exists |
+| `password` | the login password |
+| `username` | the login username |
+| `notes` | the item notes |
+| `totp` | the TOTP seed |
 
-Un champ personnalisé nommé `password` masque donc le mot de passe standard — et **ne retombe pas
-dessus s'il est vide** : le champ qu'on a nommé soi-même existe, et le dire franchement vaut mieux
-que d'aller chercher ailleurs une valeur que personne n'a demandée.
+A custom field named `password` therefore hides the standard password — and **does not fall back to
+it when empty**: the field you named yourself exists, and saying so plainly beats fetching elsewhere
+a value nobody asked for.
 
-Une **valeur vide compte comme absente** : le champ existe mais ne porte rien, ce qui produirait une
-ligne syntaxiquement valide et fonctionnellement fausse.
+An **empty value counts as missing**: the field exists but holds nothing, which would produce a line
+that is syntactically valid and functionally wrong.
 
-**Deux formes échappent au remplacement :**
+**Two forms escape replacement:**
 
-| Écrit | Effet |
+| Written | Effect |
 |---|---|
-| `\{{ bw:item:champ }}` | le marqueur **littéral**, antislash retiré, jamais cherché dans le coffre |
-| `REMPLACER` | rien — mais il est **signalé** dans le compte-rendu : c'est le marqueur manuel qui a causé la panne d'origine |
+| `\{{ bw:item:field }}` | the **literal** marker, backslash removed, never looked up in the vault |
+| `REMPLACER` | nothing — but it is **reported** in the summary: it is the manual marker that caused the original failure |
 
-### Syntaxe des annotations `x-bw`
+### `x-bw` annotation syntax
 
-Compose ignore tout champ commençant par `x-`, donc l'annotation cohabite sans rien changer au déploiement :
+Compose ignores any field starting with `x-`, so the annotation sits alongside without changing
+anything to the deployment:
 
 ```yaml
 secrets:
   ntfy-ts-authkey:
     file: /share/.../secrets/ts-authkey
     x-bw:
-      item: ntfy-infra          # la valeur du coffre EST le contenu
+      item: ntfy-infra          # the vault value IS the content
       field: ntfy-ts-authkey
 
   ntfy-config:
     file: /share/.../secrets/server.yml
     x-bw:
-      template: templates/ntfy-config/server.yml   # un modèle local est rendu
+      template: templates/ntfy-config/server.yml   # a local template is rendered
 ```
 
-Chaque entrée annotée doit porter un `file:` : **son nom de base** devient le nom du fichier produit
-(`ts-authkey`, et non la clé du secret). Le chemin complet vise le NAS et n'est pas exploitable ici.
+Every annotated entry must carry a `file:`: **its base name** becomes the name of the produced file
+(`ts-authkey`, not the secret key). The full path targets the NAS and cannot be used here.
 
-Les noms `.gitignore` et ceux se terminant par `.dockpad-tmp` sont réservés, sans distinction de
-casse. Les noms terminés par un point ou une espace sont également refusés. Un nom réservé ou deux
-destinations de même nom font refuser le lot avant toute écriture.
+The names `.gitignore` and those ending in `.dockpad-tmp` are reserved, case-insensitively. Names
+ending with a dot or a space are refused too. A reserved name or two destinations with the same name
+get the batch refused before anything is written.
 
-`item` + `field` et `template` sont **exclusifs** — les deux ensemble sont un refus, il n'y a qu'un
-fichier à produire ; aucun des deux également.
+`item` + `field` and `template` are **exclusive** — both together are a refusal, there is only one
+file to produce; neither of them is a refusal too.
 
-`template:` sert aux fichiers de **structure** dont seules quelques valeurs sont sensibles. Le modèle
-reste versionné à sa place, `secrets/` ne contient que du produit — et s'ignore lui-même par un
-`.gitignore` posé automatiquement. Trois règles s'y appliquent :
+`template:` is for **structure** files where only a few values are sensitive. The template stays
+versioned where it is, `secrets/` only holds output — and ignores itself through a `.gitignore`
+written automatically. Three rules apply:
 
-- le chemin est **relatif au dossier du compose** et doit y rester. C'est la seule annotation qui
-  désigne *quoi lire*, et elle vient d'un fichier : un chemin qui remonte est refusé ;
-- le rendu est **tout ou rien, par fichier** — un seul marqueur non résolu et ce fichier n'est pas
-  écrit. Contrairement au presse-papier, où le marqueur reste visible dans ce qu'on colle, un fichier
-  part sur le NAS sans être relu ;
-- les fins de ligne sont **normalisées en LF** : le modèle vient d'un dépôt git qui a pu l'extraire
-  en CRLF, la destination est un conteneur Linux. Une *valeur* du coffre, elle, n'est jamais
-  touchée — c'est un secret, on l'écrit telle qu'elle est.
+- the path is **relative to the compose folder** and must stay inside it. It is the only annotation
+  that says *what to read*, and it comes from a file: a path that goes up is refused;
+- the rendering is **all or nothing, per file** — a single unresolved marker and that file is not
+  written. Unlike the clipboard, where the marker stays visible in what you paste, a file goes to the
+  NAS without being reread;
+- line endings are **normalised to LF**: the template comes from a git repository that may have
+  checked it out with CRLF, the destination is a Linux container. A *value* from the vault is never
+  touched — it is a secret, it is written as it is.
 
-Les fichiers produits n'ont **pas de saut de ligne final** : Vaultwarden rogne ce qu'il lit via
-`_FILE`, mais `containerboot` lit `TS_AUTHKEY` par `file:` sans rien rogner.
+The produced files have **no trailing newline**: Vaultwarden trims what it reads through `_FILE`,
+but `containerboot` reads `TS_AUTHKEY` through `file:` without trimming anything.
 
-### Quand une clé manque
+### When a key is missing
 
-Une clé absente du coffre n'annule plus le reste : les secrets présents sont écrits, le rendu est produit, et un écran **ambre** liste ce qui manque. Les marqueurs non résolus restent visibles dans le texte, et un fichier de secret n'est **jamais** écrit vide ou à moitié rendu — il est simplement absent, et nommé.
+A key missing from the vault no longer cancels the rest: the secrets that exist are written, the
+rendered file is produced, and an **amber** screen lists what is missing. Unresolved markers stay
+visible in the text, and a secret file is **never** written empty or half rendered — it is simply
+absent, and named.
 
-![Rendu incomplet](docs/screenshots/inject-partial.png)
+![Incomplete render](docs/screenshots/inject-partial.png)
 
-Les fichiers dont la clé a disparu du coffre sont **signalés, jamais supprimés d'office** : un coffre temporairement inaccessible ne doit pas détruire un déploiement qui marche.
+Files whose key has disappeared from the vault are **reported, never deleted automatically**: a
+vault that is temporarily unreachable must not destroy a deployment that works.
 
-### Activer sur un ordinateur
+### Enabling it on a computer
 
-- [ ] Installer la **CLI Bitwarden** — `winget install Bitwarden.CLI` (le client de bureau ne la fournit pas : ce sont deux produits distincts)
-- [ ] `bw config server https://<ton-vaultwarden>` puis `bw login`
-- [ ] **☰ → Paramètres → onglet Secrets** : renseigner l'organisation si le coffre en a une, et cocher **Ajouter au menu contextuel**
-- [ ] Sur Windows 11, l'entrée est sous **Afficher plus d'options** (Maj + clic droit)
-- [ ] Clic droit sur un fichier portant des marqueurs → **Injecter les secrets…**
-- [ ] Laisser cochée **Synchroniser le coffre avant d'injecter** : la CLI lit un cache local, et sans elle un item que tu viens de modifier n'est pas encore visible
+- [ ] Install the **Bitwarden CLI** — `winget install Bitwarden.CLI` (the desktop client does not provide it: they are two separate products)
+- [ ] `bw config server https://<your-vaultwarden>` then `bw login`
+- [ ] **☰ → Settings → Secrets tab**: fill in the organisation if the vault has one, and tick the **“Inject secrets…” entry in the Windows context menu**
+- [ ] On Windows 11, the entry is under **Show more options** (Shift + right-click)
+- [ ] Right-click a file carrying markers → **Inject secrets…**
+- [ ] Keep **Refresh the vault before injecting** ticked: the CLI reads a local cache, and without it an item you have just changed is not visible yet
 
-## Prérequis
+## Requirements
 
 - Windows 10/11 x64
 - [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (Desktop)
-- *Pour l'injection de secrets uniquement* : la [CLI Bitwarden](https://bitwarden.com/help/cli/), sous GPL-3.0, à installer séparément — `winget install Bitwarden.CLI`
+- *For secret injection only*: the [Bitwarden CLI](https://bitwarden.com/help/cli/), under GPL-3.0, installed separately — `winget install Bitwarden.CLI`
 
 ## Installation
 
-1. Télécharger `DockPad-X.Y.Z-win-x64-Setup.exe` dans les fichiers joints à la [dernière release GitHub](https://github.com/syl-craft/DockPad/releases/latest), puis l'exécuter pour une installation par utilisateur.
-2. Pour le mode portable, extraire `DockPad-win-Portable.zip` dans un dossier vide et lancer `DockPad.exe` à sa racine.
-3. Depuis un ancien ZIP, fermer DockPad avant cette première migration. Les réglages restent dans `%APPDATA%\DockPad`. Les clients MCP qui pointent vers un ancien dossier doivent utiliser le nouveau lanceur stable.
+1. Download `DockPad-X.Y.Z-win-x64-Setup.exe` from the assets of the [latest GitHub release](https://github.com/syl-craft/DockPad/releases/latest), then run it for a per-user installation.
+2. For portable mode, extract `DockPad-win-Portable.zip` into an empty folder and start `DockPad.exe` at its root.
+3. Coming from an old ZIP, close DockPad before this first migration. Settings stay in `%APPDATA%\DockPad`. MCP clients pointing at an old folder must use the new stable launcher.
 
-Windows x64 avec .NET Desktop Runtime 8. Le Setup peut installer le runtime manquant.
-La première release Velopack est **non signée** : Windows peut afficher un avertissement concernant
-l'éditeur. SignPath et la publication WinGet sont en préparation. Les paquets `.nupkg` et
-`releases.win.json` sont destinés au système de mise à jour ; pour installer, utiliser le Setup ou le portable.
+Windows x64 with the .NET Desktop Runtime 8. The Setup can install the missing runtime.
+The first Velopack release is **unsigned**: Windows may show a warning about the publisher.
+SignPath and WinGet publishing are in preparation. The `.nupkg` packages and `releases.win.json` are
+meant for the update system; to install, use the Setup or the portable build.
 
 ## Build
 
@@ -412,46 +494,45 @@ dotnet build
 dotnet publish -p:PublishProfile=FolderProfile
 ```
 
-Génère `release\DockPad-{version}.zip` et `release\DockPad-{version}-Changelog.md`.
+Produces `release\DockPad-{version}.zip` and `release\DockPad-{version}-Changelog.md`.
 
 ## Configuration
 
-Les fichiers de configuration sont dans `%APPDATA%\DockPad\` :
+Configuration files live in `%APPDATA%\DockPad\`:
 
-| Fichier | Contenu |
+| File | Content |
 |---------|---------|
-| `shortcuts.json` | Tuiles de la grille de raccourcis |
-| `pages.json` | Configuration des boutons de pagination |
-| `favorites.json`, `favorite-pages.json` | Tuiles et pages de la grille des favoris |
-| `settings.json` | Paramètres de l'application : raccourci clavier, langue, thème, etc. |
-| `mcp.json` | Activation du serveur MCP et autorisation de suppression |
-| `browsers.json` | Navigateurs du sélecteur + règles de domaine |
-| `usage.json` | Bandeau Usage IA : réglages + fournisseurs détectés |
-| `icons\` | Cache d'icônes (PNG, déduplication SHA1) |
-| `.backup\` | Sauvegardes horodatées |
+| `shortcuts.json` | Tiles of the shortcut grid |
+| `pages.json` | Configuration of the page buttons |
+| `favorites.json`, `favorite-pages.json` | Tiles and pages of the favourites grid |
+| `settings.json` | Application settings: keyboard shortcut, language, theme, etc. |
+| `mcp.json` | MCP server activation and delete permission |
+| `browsers.json` | Browsers of the picker + domain rules |
+| `usage.json` | AI usage panel: settings + detected providers |
+| `icons\` | Icon cache (PNG, SHA1 deduplication) |
+| `.backup\` | Timestamped backups |
 
-Les sauvegardes JSON remplacent le fichier après écriture complète d'un temporaire dans le même
-dossier. Si une configuration est illisible, DockPad utilise des valeurs de repli pour l'affichage
-et refuse de les enregistrer par-dessus le fichier existant. Après réparation ou restauration du
-fichier, rafraîchir la vue concernée ou redémarrer DockPad permet de le relire et de reprendre les
-modifications. Le journal indique le fichier en cause.
+JSON saves replace the file only after a temporary file has been fully written in the same folder.
+If a configuration cannot be read, DockPad uses fallback values for display and refuses to save them
+over the existing file. After repairing or restoring the file, refreshing the view concerned or
+restarting DockPad reads it again and lets you resume editing. The log names the file at fault.
 
-Les anciens paramètres de `HKCU\Software\DockPad\Settings` sont repris dans `settings.json`
-à sa création. Le démarrage automatique reste une inscription dans le registre Windows.
+Older settings from `HKCU\Software\DockPad\Settings` are carried over into `settings.json` when it
+is created. Start with Windows remains an entry in the Windows registry.
 
-## Raccourci clavier par défaut
+## Default keyboard shortcut
 
-`Ctrl + Shift + M` — affiche/remet au premier plan la fenêtre principale.
-Configurable via **☰ Menu → Options**.
+`Ctrl + Shift + M` — shows the main window or brings it to the front.
+Configurable in **☰ Menu → Options**.
 
 ## Licence
 
-DockPad est distribué sous [licence MIT](LICENSE), copyright 2026 syl-craft.
-Les dépendances et les éléments tiers conservent leurs licences et marques respectives,
-notamment [les logos des fournisseurs](Assets/ProviderLogos.LICENSE.txt) et Velopack
-(notice incluse dans les paquets).
+DockPad is distributed under the [MIT licence](LICENSE), copyright 2026 syl-craft.
+Dependencies and third-party items keep their respective licences and trademarks, notably
+[the provider logos](Assets/ProviderLogos.LICENSE.txt) and Velopack (notice included in the
+packages).
 
 ## Code signing policy
 
-La signature de confiance est **en préparation**, sans admission SignPath obtenue à ce jour.
-Voir la [politique de signature et la procédure d'activation](docs/code-signing.md).
+Trusted signing is **in preparation**, with no SignPath admission obtained so far.
+See the [signing policy and activation procedure](docs/code-signing.md).

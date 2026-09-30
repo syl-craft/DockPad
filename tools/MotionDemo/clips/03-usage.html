@@ -1,0 +1,56 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — AI usage</title>
+<link rel="stylesheet" href="../shared/theme.css"></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, E, lerp } from '../shared/engine.js';
+import { stage, buildDock, placeDock, toStage, showPage, renderUsage, cursor, renderCursor, legend, setCamera, centerOf } from '../shared/ui.js';
+
+const S = 1.25, DX = (1920 - 850 * 1.25) / 2, DY = 64;
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const dock = buildDock(camera, { usage: 'tabs' });
+    placeDock(dock, DX, DY, S);
+    showPage(dock, 0);
+    renderUsage(dock.usage, 'claude');
+    const tabs = dock.usage.tabs.map(centerOf);
+    const cur = cursor(camera);
+    return { st, camera, dock, tabs, cur, leg: legend(st) };
+  },
+
+  render(t, x) {
+    const { dock } = x;
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 9.45, 9.9, E.in));
+    placeDock(dock, DX, DY, S, { opacity: show, scale: .96 + .04 * show });
+
+    // Rapprochement sur le bandeau, retour en fin de clip.
+    const focus = toStage(dock, 425, 516);
+    const z = 1 + .55 * prog(t, .4, 1.3) * (1 - prog(t, 8.5, 9.3));
+    setCamera(x.camera, z, focus.x, focus.y);
+
+    // Lecture initiale de Claude, onglet Codex, retour sur Claude, puis la session qui monte.
+    const u = dock.usage;
+    if (t < 3.55) {
+      renderUsage(u, 'claude', { loading: t < 1.6 ? 1 : 0, t, gauges: t >= 1.6, fill: prog(t, 1.6, 2.7, E.out), count: prog(t, 1.6, 2.7, E.linear) });
+    } else if (t < 5.55) {
+      renderUsage(u, 'codex', { loading: t < 4.0 ? 1 : 0, t, gauges: t >= 4.0, fill: prog(t, 4.0, 4.8, E.out), count: t < 4.0 ? 0 : prog(t, 4.0, 4.8, E.linear) });
+    } else {
+      const rise = prog(t, 6.1, 7.7, E.inOut);
+      renderUsage(u, 'claude', {
+        pct: { 0: lerp(62, 89, rise) },
+        values: { 0: lerp(12400, 16900, rise), 1: lerp(86000, 90500, rise), 3: Math.round(lerp(47, 61, rise)), 4: lerp(4, 6, rise) },
+      });
+    }
+
+    renderCursor(x.cur, t, [
+      [2.6, 1500, 960], [3.35, x.tabs[1].x, x.tabs[1].y], [5.0, x.tabs[1].x, x.tabs[1].y],
+      [5.4, x.tabs[0].x, x.tabs[0].y], [6.0, x.tabs[0].x, x.tabs[0].y], [6.8, 1500, 960],
+    ], [3.55, 5.55], [2.6, 6.9]);
+
+    x.leg(t, [[.5, 5.2, 'Your AI quota, at a glance'], [5.5, 9.4, 'Turns red before you hit the limit']]);
+  },
+});
+</script></body></html>

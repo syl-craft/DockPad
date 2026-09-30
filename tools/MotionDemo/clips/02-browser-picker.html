@@ -1,0 +1,142 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Browser picker</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .chat { left: 150px; top: 150px; width: 820px; height: 690px; }
+  .chat .body { background: var(--surface-card); }
+  .chan { position: absolute; left: 0; top: 0; bottom: 0; width: 210px; background: var(--surface); border-right: 1px solid var(--border);
+    padding: 20px 18px; font-size: 16px; color: var(--text-subtle); display: flex; flex-direction: column; gap: 14px; }
+  .chan .on { color: var(--text); font-weight: 600; background: var(--row-hover); border-radius: 6px; padding: 4px 10px; margin: 0 -10px; }
+  .msgs { position: absolute; left: 240px; right: 30px; top: 30px; display: flex; flex-direction: column; gap: 30px; }
+  .msg { display: flex; gap: 16px; }
+  .av { width: 44px; height: 44px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .who { font-weight: 700; font-size: 17px; color: var(--text); } .who small { font-weight: 400; color: var(--text-faint); font-size: 13px; margin-left: 8px; }
+  .txt { font-size: 18px; line-height: 27px; color: var(--text-secondary); margin-top: 3px; }
+  .lnk { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+  .pk-wrap { position: absolute; left: 1080px; top: 190px; transform: scale(1.45); transform-origin: 0 0; }
+  .pk { width: 392px; background: var(--surface-card); border-radius: 8px; overflow: hidden; box-shadow: var(--window-shadow);
+    border: 1px solid var(--border); transform-origin: 50% 40%; color: var(--text); }
+  .pk-h { background: var(--accent); color: #fff; padding: 12px 14px 12px 16px; position: relative; }
+  .pk-h .t { font-size: 14.5px; font-weight: 600; }
+  .pk-h .u { font-size: 11px; margin-top: 6px; opacity: .92; width: 270px; line-height: 15px; word-break: break-all; }
+  .pk-h .cp { position: absolute; right: 12px; top: 11px; background: #fff; color: #1A1A1A; font-size: 12px; border-radius: 4px; padding: 3px 9px; }
+  .pk-l { padding: 8px 10px 4px; }
+  .pr { position: relative; height: 34px; display: flex; align-items: center; gap: 12px; padding-left: 12px; border-radius: 5px; font-size: 13.5px; }
+  .pr img { width: 24px; height: 24px; }
+  .pr.sub { padding-left: 56px; } .pr.sub img { width: 22px; height: 22px; }
+  .pr.sub::before { content: ''; position: absolute; left: 30px; top: 0; bottom: 0; width: 1px; background: var(--border-strong); }
+  .pr .nm { flex: 1; } .pr.main .nm { font-weight: 600; }
+  .pr .bd { width: 20px; height: 20px; border-radius: 4px; background: #888; color: #fff; font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; margin-right: 8px; }
+  .pr .bd.cd { background: var(--accent); width: auto; min-width: 20px; padding: 0 5px; }
+  .pk-auto { font-size: 12px; color: var(--accent); text-align: center; height: 18px; }
+  .pk-f { display: flex; align-items: center; gap: 8px; padding: 6px 16px 14px; font-size: 12.5px; color: var(--text-subtle); }
+  .cb { width: 16px; height: 16px; border: 1px solid var(--border-hover); border-radius: 3px; background: var(--surface-card);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; }
+  .cb.on { background: var(--accent); border-color: var(--accent); }
+  .star { margin-left: auto; font-size: 19px; color: var(--text-faint); width: 26px; text-align: center; }
+  .star.on { color: var(--accent); }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el, stepIndex } from '../shared/engine.js';
+import { stage, icon, cursor, renderCursor, legend, keycaps, appWindow, BROWSER_BODY, centerOf, renderPop } from '../shared/ui.js';
+
+const LINKS = ['github.com/acme/dockpad/pull/42', 'github.com/acme/dockpad/wiki', 'figma.com/design/roadmap'];
+
+function picker(url, host) {
+  const rows = [['main', 'chrome', 'Chrome'], ['sub', 'chrome', 'Work'], ['sub', 'chrome', 'Personal'], ['main', 'edge', 'Edge']];
+  return el(`<div class="pk-wrap"><div class="pk">
+    <div class="pk-h"><div class="t">Open with…</div><div class="u mono">https://${url}</div><div class="cp sym">⧉ Copy</div></div>
+    <div class="pk-l">${rows.map(([k, ic, n], i) => `<div class="pr ${k}"><img src="${icon(ic)}"><span class="nm">${n}</span><span class="bd">${i + 1}</span></div>`).join('')}</div>
+    <div class="pk-auto"></div>
+    <div class="pk-f"><span class="cb"></span><span>Always for ${host}</span><span class="star sym">☆</span></div>
+  </div></div>`);
+}
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const chat = appWindow(camera, { w: 820, h: 690, icon: 'task-board', title: 'Team chat', body: `
+      <div class="chan"><span>Channels</span><span class="on"># dockpad</span><span># design</span><span># infra</span><span># random</span></div>
+      <div class="msgs">
+        <div class="msg"><div class="av" style="background:#6E56CF">A</div><div><div class="who">Alex<small>10:42</small></div>
+          <div class="txt">PR is ready for review 👉 <span class="lnk" id="l0">${LINKS[0]}</span></div></div></div>
+        <div class="msg"><div class="av" style="background:#12A594">S</div><div><div class="who">Sam<small>10:47</small></div>
+          <div class="txt">Docs are updated too: <span class="lnk" id="l1">${LINKS[1]}</span></div></div></div>
+        <div class="msg"><div class="av" style="background:#E5484D">J</div><div><div class="who">Jo<small>10:55</small></div>
+          <div class="txt">New mockups for the roadmap → <span class="lnk" id="l2">${LINKS[2]}</span></div></div></div>
+      </div>` });
+    chat.classList.add('chat');
+    style(chat, { left: '150px', top: '150px' });
+    const links = [0, 1, 2].map(i => centerOf(document.getElementById(`l${i}`)));
+
+    const browser = appWindow(camera, { w: 1020, h: 650, icon: 'chrome', title: 'Chrome', body: BROWSER_BODY(`https://${LINKS[0]}`, 'Work') });
+    const browser2 = appWindow(camera, { w: 1020, h: 650, icon: 'chrome', title: 'Chrome', body: BROWSER_BODY(`https://${LINKS[1]}`, 'Work') });
+    [browser, browser2].forEach(b => style(b, { left: '760px', top: '150px' }));
+
+    const p1 = picker(LINKS[0], 'github.com'), p2 = picker(LINKS[2], 'figma.com');
+    camera.appendChild(p1); camera.appendChild(p2);
+    const m = p => ({ rows: [...p.querySelectorAll('.pr')].map(centerOf), cb: centerOf(p.querySelector('.cb')), star: centerOf(p.querySelector('.star')) });
+    const g1 = m(p1), g2 = m(p2);
+
+    const toast = el(`<div class="toast" style="left:1330px;top:880px"><img src="${icon('chrome')}"><span><b>github.com</b> → Chrome › Work<br><span style="color:var(--text-hint);font-size:13px">Rule applied — no popup</span></span></div>`);
+    camera.appendChild(toast);
+    const cur = cursor(camera);
+    return { st, links, browser, browser2, p1, p2, g1, g2, toast, cur, leg: legend(st), keys: keycaps(st) };
+  },
+
+  render(t, x) {
+    const { links, g1, g2 } = x;
+
+    // Popup n°1 : decompte, case « toujours », choix du profil Work.
+    renderPop(x.p1.firstChild, t, [1.15, 1.4], [3.05, 3.25]);
+    const cancel1 = t >= 2.25;
+    setPicker(x.p1, t, { start: 1.4, cancel: cancel1, checked: t >= 2.25, hoverRow: t >= 2.75 && t < 3.25 ? 1 : -1, pick: t >= 2.95 ? 1 : -1, star: false });
+
+    // Popup n°2 : l'etoile.
+    renderPop(x.p2.firstChild, t, [7.9, 8.15], [9.1, 9.3]);
+    setPicker(x.p2, t, { start: 8.15, cancel: t >= 8.7, checked: false, hoverRow: -1, pick: -1, star: t >= 8.7, starPop: env(t, 8.7, 9.0, .1) });
+
+    // Navigateur ouvert : par la popup, puis directement par la regle.
+    renderPop(x.browser, t, [3.2, 3.55], [4.55, 4.85], .9);
+    renderPop(x.browser2, t, [5.7, 6.05], [7.0, 7.3], .9);
+    const to = env(t, 5.65, 7.4, .25);
+    style(x.toast, { opacity: to, transform: `translateY(${(1 - to) * 20}px)` });
+
+    const off = [1560, 960];
+    renderCursor(x.cur, t, [
+      [.2, ...off], [.95, links[0].x, links[0].y], [1.5, links[0].x, links[0].y],
+      [2.1, g1.cb.x, g1.cb.y], [2.35, g1.cb.x, g1.cb.y], [2.8, g1.rows[1].x - 40, g1.rows[1].y],
+      [4.9, g1.rows[1].x - 40, g1.rows[1].y], [5.4, links[1].x, links[1].y],
+      [7.3, links[1].x, links[1].y], [7.7, links[2].x, links[2].y], [8.2, links[2].x, links[2].y],
+      [8.6, g2.star.x + 12, g2.star.y + 16], [9.3, g2.star.x + 12, g2.star.y + 16], [9.8, ...off],
+    ], [1.05, 2.25, 2.95, 5.55, 7.8, 8.7], [.2, 9.85]);
+
+    x.keys(t, [{ label: 'Esc', a: 8.85, b: 9.5, down: [[9.02, 9.15]] }]);
+    x.leg(t, [[.35, 4.95, 'Click a link, pick the browser'], [5.2, 9.6, 'Remember it per domain, star your favourites']]);
+  },
+});
+
+function setPicker(p, t, s) {
+  // Decompte « ouverture automatique » : 2 s, puis 1 s, annule a la premiere interaction.
+  const n = t < s.start + 1 ? 2 : 1;
+  const counting = t >= s.start && !s.cancel;
+  const rows = p.querySelectorAll('.pr');
+  rows.forEach((r, i) => {
+    const bd = r.querySelector('.bd');
+    const cd = i === 0 && counting;
+    bd.textContent = cd ? `${n}s` : `${i + 1}`;
+    bd.classList.toggle('cd', cd);
+    r.style.background = i === s.pick ? 'var(--accent-selected)' : i === s.hoverRow ? 'var(--row-hover)' : i === 0 && s.hoverRow < 0 && s.pick < 0 ? 'var(--accent-tint)' : '';
+  });
+  p.querySelector('.pk-auto').textContent = counting ? `Opening automatically in ${n} s` : '';
+  const cb = p.querySelector('.cb');
+  cb.classList.toggle('on', s.checked); cb.textContent = s.checked ? '✓' : '';
+  const star = p.querySelector('.star');
+  star.classList.toggle('on', s.star); star.textContent = s.star ? '★' : '☆';
+  star.style.transform = `scale(${1 + (s.starPop || 0) * .45})`;
+}
+</script></body></html>
