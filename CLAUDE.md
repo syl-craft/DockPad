@@ -1755,6 +1755,11 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 
 ## Motion designs de démonstration (tools/MotionDemo)
 
+> **Ajouter ou retoucher un clip, ou modifier un README : skill projet `updating-readme-and-demos`**
+> (`.claude/skills/`). Il porte le déroulé, l'ordre de publication et deux scripts de contrôle
+> — `verify-clips.sh` (format, durée, raccord de boucle, planches) et `check-readmes.sh` (parité
+> EN/FR, liens, GIF en ligne).
+
 Douze clips de 10 s au format 16:9, un par fonctionnalité : `01-launcher` (grille, pages,
 recherche — le GIF d'en-tête du README), `02-browser-picker`, `03-usage`, `04-secrets`,
 `05-keyboard`, `06-composite`, `07-mcp`, `08-favorites`, `09-theme-language`, `10-updates`,
