@@ -34,8 +34,6 @@ A WPF application (.NET 8, x64): a **quick launch bar** for Windows, with a mana
 - **Start with Windows**, configurable
 - **Built-in updates**: optional automatic check, download and restart from the application, handling of blocking processes with consent
 
-![The quick access window](docs/screenshots/window-en.png)
-
 ## Updates
 
 **☰ Menu → Updates → Check for updates** shows the available version and its notes.
@@ -46,10 +44,6 @@ The check can be automatic; installing always happens on request.
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/10-updates-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/10-updates-light.gif" alt="Demo: checking, downloading, closing blocking apps and restarting" width="960">
 </picture>
-
-| Check and install | Blocking applications |
-|---|---|
-| ![Updates — demo data](docs/screenshots/updates-fr.png) | ![Choosing the applications to close — demo data](docs/screenshots/update-blockers-fr.png) |
 
 The boxes are not ticked by default. DockPad asks for a graceful close, then for a separate
 confirmation if a forced stop is needed. **Postpone** keeps the current session.
@@ -131,19 +125,11 @@ move or delete the whole group.
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/09-theme-language-light.gif" alt="Demo: switching the theme, then the language to French and 1337, without a restart" width="960">
 </picture>
 
-| Light | Dark |
-|---|---|
-| ![The window in the light theme](docs/screenshots/window-en.png) | ![The window in the dark theme](docs/screenshots/window-dark.png) |
-
 - **`Automatic` follows Windows live**: switching Windows to dark changes DockPad on the spot, without a restart. An explicit choice stays put
 - **The title bar follows too** — Windows does not paint it on its own
 - The switch applies to **windows that are already open**
 
-The AI usage panel and the configuration windows follow the theme, lists and fields included:
-
-| AI usage panel | Browsers window |
-|---|---|
-| ![The AI usage panel in the dark theme](docs/screenshots/usage-panel-dark.png) | ![The Browsers window in the dark theme](docs/screenshots/browser-config-dark.png) |
+The AI usage panel and the configuration windows follow the theme, lists and fields included.
 
 > Check boxes and drop-down lists changed appearance **in both themes**: they went from the Windows
 > look to flat, the look of the rest of the application. That was the price for following the
@@ -154,18 +140,12 @@ The AI usage panel and the configuration windows follow the theme, lists and fie
 ☰ → Settings → **Language**: `Automatic (Windows)`, `Français`, `English` or `1337`. By default
 DockPad follows the Windows language, and falls back to English if it is not translated.
 
-| Français | English |
-|---|---|
-| ![DockPad in French](docs/screenshots/window-fr.png) | ![DockPad in English](docs/screenshots/window-en.png) |
-
 - **Instant switch**, no restart: open windows translate themselves before your eyes, the grid behind them and its panel included
 - **Numbers and times follow**: `12,4k` and `11h54` in French, `12.4k` and `11:54` in English
 - **Plurals are right**, including where the two languages do not switch at the same point: “0 règle” but “0 rules”
 - **The labels of the Windows right-click menu** are translated; entries already installed are updated from the **Predefined shortcuts** window
 
-And a third language, for fun:
-
-![DockPad in 1337](docs/screenshots/window-leet.png)
+And a third language, for fun — **1337**, at the end of the demo above.
 
 It is not written by hand: it is **generated** from French by glyph substitution, and regenerated
 with one command whenever a string is added. It does a job along the way — **anything that does not
@@ -187,9 +167,9 @@ Profiles of Chromium browsers (Chrome, Edge, Brave, Vivaldi…) are detected by 
 and listed under their browser; a browser with a single profile stays a single line. Each profile
 can be hidden, renamed and given its own domain rules.
 
-| Popup when clicking a URL | Browsers and profiles | Domain rules |
-|:---:|:---:|:---:|
-| ![Picker popup](docs/screenshots/browser-picker.png) | ![Browser configuration](docs/screenshots/browser-config.png) | ![Domain rules](docs/screenshots/browser-rules.png) |
+| Browsers and profiles | Domain rules |
+|:---:|:---:|
+| ![Browser configuration](docs/screenshots/browser-config.png) | ![Domain rules](docs/screenshots/browser-rules.png) |
 
 Keyboard: `1-9` picks directly · `↑/↓` + `Enter` · `Esc` cancels · losing focus cancels.
 
@@ -212,8 +192,6 @@ toolbar button, to the left of the lock, switches between the two.
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/08-favorites-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/08-favorites-light.gif" alt="Demo: switching to the favourites grid, moving a tile over, back to shortcuts" width="960">
 </picture>
-
-![The favourites grid](docs/screenshots/window-favorites.png)
 
 Pages are added from the browser picker: the **star at the bottom right** adds the current page to
 the favourites, and removes it when unticked. It is already lit when the popup opens if the URL is
@@ -244,12 +222,6 @@ there are several.
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/03-usage-light.gif" alt="Demo: quota gauges, Claude and Codex tabs, alert threshold" width="960">
 </picture>
 
-![AI usage panel](docs/screenshots/usage-panel.png)
-
-With several providers, each gets a tab:
-
-![AI usage panel with tabs](docs/screenshots/usage-panel-tabs.png)
-
 Four assistants are read, each from its own local files, without any network access:
 
 | Assistant | Source | Quota | Cost |
@@ -272,8 +244,6 @@ refresh. Gemini and Copilot have no gauges.
 
 A single gauge takes the whole available width; two gauges share it.
 The badge on the right opens the usage web page of Claude or Codex.
-
-![Codex weekly quota — demo data](docs/screenshots/usage-panel-codex.png)
 
 If the Claude quota cannot be reached — the API is rate limiting, the token has expired, the response
 changed shape — **the gauges give way to an explanation** that announces the next attempt, with the
@@ -391,9 +361,9 @@ to choose at click time.
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/04-secrets-light.gif" alt="Demo: right-click a file, unlock the vault, rendered to the clipboard" width="960">
 </picture>
 
-| Master password | Choice of outputs | Report |
-|:---:|:---:|:---:|
-| ![Entering the password](docs/screenshots/inject-unlock.png) | ![Choice of outputs](docs/screenshots/inject-choice.png) | ![Report](docs/screenshots/inject-result.png) |
+When the file carries both formats, a screen lets you choose what to produce — before the vault is unlocked:
+
+![Choice of outputs](docs/screenshots/inject-choice.png)
 
 **No session key is kept**: the master password is asked for at every injection, it never leaves the
 environment of the child process, and it appears on no command line. The rendered file is removed
