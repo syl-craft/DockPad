@@ -84,7 +84,8 @@ public sealed class CodexUsageProvider : IUsageProvider
         {
             try
             {
-                return CodexUsageReader.ReadSnapshot(_home, UsageWindows.ScanStart(now), ct);
+                return CodexUsageReader.ReadSnapshot(_home, UsageWindows.ScanStart(now),
+                    quotaSince: now - CodexQuotaReader.LongestWindow, ct);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)

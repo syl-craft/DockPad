@@ -16,13 +16,29 @@ public partial class UpdateBlockersDialog : Window
     }
     public UpdateBlockersDialog(string directory, IReadOnlyList<UpdateBlocker> blockers)
     {
-        InitializeComponent(); _directory = directory; Processes.ItemsSource = blockers;
+        InitializeComponent(); _directory = directory; ShowBlockers(blockers);
+    }
+    private IReadOnlyList<UpdateBlocker> _blockers = [];
+    private void ShowBlockers(IReadOnlyList<UpdateBlocker> blockers)
+    {
+        foreach (var blocker in _blockers) blocker.PropertyChanged -= Blocker_PropertyChanged;
+        _blockers = blockers;
+        foreach (var blocker in _blockers) blocker.PropertyChanged += Blocker_PropertyChanged;
+        Processes.ItemsSource = blockers;
+        SelectAll.IsChecked = UpdateBlockers.SelectionState(_blockers);
+    }
+    private void Blocker_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+        SelectAll.IsChecked = UpdateBlockers.SelectionState(_blockers);
+    private void SelectAll_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateBlockers.ToggleAll(_blockers);
+        SelectAll.IsChecked = UpdateBlockers.SelectionState(_blockers);
     }
     private async Task RefreshAsync()
     {
         var blockers = await Task.Run(() => UpdateBlockers.Find(_directory));
         if (blockers.Count == 0) { _working = false; DialogResult = true; return; }
-        Processes.ItemsSource = blockers;
+        ShowBlockers(blockers);
     }
     private async void Retry_Click(object sender, RoutedEventArgs e) => await RunAsync(RefreshAsync);
     private async void CloseSelected_Click(object sender, RoutedEventArgs e)
@@ -44,9 +60,9 @@ public partial class UpdateBlockersDialog : Window
     {
         if (_working) return;
         _working = true;
-        RetryButton.IsEnabled = CloseButton.IsEnabled = false; ErrorText.Text = "";
+        RetryButton.IsEnabled = CloseButton.IsEnabled = SelectAll.IsEnabled = false; ErrorText.Text = "";
         try { await work(); }
         catch (Exception ex) { LogService.Warn(ex, "Cannot resolve update locks"); ErrorText.Text = Loc.T("Update_LockError"); }
-        finally { _working = false; RetryButton.IsEnabled = CloseButton.IsEnabled = true; }
+        finally { _working = false; RetryButton.IsEnabled = CloseButton.IsEnabled = SelectAll.IsEnabled = true; }
     }
 }

@@ -11,7 +11,8 @@
             <TextBlock Text="{Binding CurrentVersion}" Foreground="{DynamicResource Brush.TextMuted}" Margin="0,6,0,12"/>
             <TextBlock Text="{Binding Status}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
             <ProgressBar Height="5" Minimum="0" Maximum="100" Value="{Binding Progress, Mode=OneWay}" Margin="0,12,0,12"
-                         Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVisibilityConverter}}"
+                         IsIndeterminate="{Binding IsIndeterminate, Mode=OneWay}"
+                         Visibility="{Binding ShowsProgress, Converter={StaticResource BoolToVisibilityConverter}}"
                          AutomationProperties.Name="{loc:T Update_Progress}"/>
             <CheckBox x:Name="Automatic" Content="{loc:T Update_Automatic}" Click="Automatic_Click" Margin="0,8,0,0"/>
             <Button Content="{loc:T Update_DownloadLatest}" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left" Margin="0,12,0,0"

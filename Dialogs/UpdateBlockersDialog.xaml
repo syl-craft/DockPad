@@ -10,6 +10,7 @@
             <TextBlock Text="{loc:T Update_BlockedTitle}" FontSize="16" FontWeight="SemiBold"/>
             <TextBlock Text="{loc:T Update_BlockedHelp}" TextWrapping="Wrap" Margin="0,10,0,0"/>
             <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Danger}" Margin="0,8,0,0"/>
+            <CheckBox x:Name="SelectAll" Content="{loc:T Update_SelectAll}" Click="SelectAll_Click" Margin="13,10,0,0"/>
         </StackPanel>
         <ListBox x:Name="Processes" Grid.Row="1" Margin="20,0,20,12" Background="{DynamicResource Brush.Surface}"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch"

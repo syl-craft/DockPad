@@ -1,4 +1,5 @@
 using System.IO;
+using DockPad.Services.Localization;
 using DockPad.Services.Updates;
 
 namespace DockPad.Tests;
@@ -204,5 +205,142 @@ public class UpdateServiceTests
     {
         // Even force=true must not touch the current test process for a stale PID identity.
         Assert.True(await UpdateBlockers.CloseAsync(new UpdateBlocker { Pid = Environment.ProcessId, Started = 0 }, force: true));
+    }
+    /// <summary>
+    /// Préparation après téléchargement : état occupé, indicateur indéterminé, abandon qui rend la
+    /// main, application possible depuis la préparation, préparation refusée avant téléchargement.
+    /// </summary>
+    [Fact]
+    public async Task PreparationShowsAnIndeterminateBusyState()
+    {
+        using var service = new UpdateService(new Backend());
+        await service.CheckAsync();
+        Assert.True(await service.DownloadAsync());
+
+        service.BeginPreparation();
+
+        Assert.Equal(UpdateState.Preparing, service.State);
+        Assert.True(service.Busy);
+        Assert.False(service.CanInstall);
+        Assert.False(service.CanCheck);
+        Assert.True(service.IsIndeterminate);
+        Assert.True(service.ShowsProgress);
+        Assert.Equal(Loc.T("Update_Preparing"), service.Status);
+    }
+
+    [Fact]
+    public async Task AbandonedPreparationReturnsToReady()
+    {
+        using var service = new UpdateService(new Backend());
+        await service.CheckAsync();
+        await service.DownloadAsync();
+        service.BeginPreparation();
+
+        service.CancelPreparation();
+
+        Assert.Equal(UpdateState.Ready, service.State);
+        Assert.True(service.CanInstall);
+        Assert.False(service.ShowsProgress);
+    }
+
+    [Fact]
+    public async Task ApplyFromPreparationKeepsTheIndicatorWhileClosing()
+    {
+        var backend = new Backend();
+        using var service = new UpdateService(backend);
+        await service.CheckAsync();
+        await service.DownloadAsync();
+        service.BeginPreparation();
+
+        service.Apply();
+
+        Assert.Equal(UpdateState.Installing, service.State);
+        Assert.True(service.IsIndeterminate);
+        Assert.Equal(1, backend.Applies);
+    }
+
+    [Fact]
+    public async Task FailedApplyFromPreparationReturnsToReady()
+    {
+        using var service = new UpdateService(new Backend { FailApply = true });
+        await service.CheckAsync();
+        await service.DownloadAsync();
+        service.BeginPreparation();
+
+        Assert.Throws<IOException>(service.Apply);
+
+        Assert.Equal(UpdateState.Ready, service.State);
+    }
+
+    [Fact]
+    public async Task PreparationRequiresADownloadedRelease()
+    {
+        using var service = new UpdateService(new Backend());
+        await service.CheckAsync();
+
+        Assert.Throws<InvalidOperationException>(service.BeginPreparation);
+        Assert.Equal(UpdateState.Available, service.State);
+    }
+
+    [Fact]
+    public async Task DownloadKeepsADeterminateProgressBar()
+    {
+        var backend = new Backend { DownloadStarted = new(), FinishDownload = new() };
+        using var service = new UpdateService(backend);
+        await service.CheckAsync();
+        var download = service.DownloadAsync();
+        await backend.DownloadStarted.Task;
+
+        Assert.True(service.ShowsProgress);
+        Assert.False(service.IsIndeterminate);
+
+        backend.FinishDownload.SetResult();
+        await download;
+    }
+
+    /// <summary>
+    /// Case « Tout sélectionner » : aucun, une partie, tout ; un clic coche tout sauf si tout
+    /// l'était déjà ; une ligne cochée à la main est notifiée pour que la case suive.
+    /// </summary>
+    [Fact]
+    public void SelectionStateCoversNoneSomeAndAll()
+    {
+        var a = new UpdateBlocker { Pid = 1 };
+        var b = new UpdateBlocker { Pid = 2 };
+        UpdateBlocker[] all = [a, b];
+
+        Assert.False(UpdateBlockers.SelectionState(all));
+        a.Selected = true;
+        Assert.Null(UpdateBlockers.SelectionState(all));
+        b.Selected = true;
+        Assert.True(UpdateBlockers.SelectionState(all));
+        Assert.False(UpdateBlockers.SelectionState([]));
+    }
+
+    [Fact]
+    public void ToggleAllSelectsEverythingUnlessAllWereSelected()
+    {
+        var a = new UpdateBlocker { Pid = 1, Selected = true };
+        var b = new UpdateBlocker { Pid = 2 };
+        UpdateBlocker[] all = [a, b];
+
+        UpdateBlockers.ToggleAll(all);
+        Assert.True(a.Selected && b.Selected);
+
+        UpdateBlockers.ToggleAll(all);
+        Assert.False(a.Selected || b.Selected);
+    }
+
+    [Fact]
+    public void SelectingABlockerNotifiesTheList()
+    {
+        var blocker = new UpdateBlocker { Pid = 1 };
+        var changed = new List<string?>();
+        blocker.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        blocker.Selected = true;
+        blocker.Selected = true;
+
+        Assert.Equal([nameof(UpdateBlocker.Selected)], changed);
     }
 }

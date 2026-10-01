@@ -7,7 +7,7 @@ using Velopack.Sources;
 
 namespace DockPad.Services.Updates;
 
-public enum UpdateState { Unavailable, Idle, Checking, Available, Downloading, Ready, Installing, Failed }
+public enum UpdateState { Unavailable, Idle, Checking, Available, Downloading, Ready, Preparing, Installing, Failed }
 
 public interface IUpdateBackend
 {
@@ -56,10 +56,15 @@ public sealed class UpdateService : INotifyPropertyChanged, IDisposable
     public UpdateState State { get; private set; }
     public UpdateRelease? Release { get; private set; }
     public int Progress { get; private set; }
-    public bool Busy => State is UpdateState.Checking or UpdateState.Downloading or UpdateState.Installing;
+    public bool Busy => State is UpdateState.Checking or UpdateState.Downloading or UpdateState.Preparing or UpdateState.Installing;
     public bool CanCheck => _backend.IsInstalled && !Busy;
     public bool CanInstall => Release is not null && !Busy;
     public bool IsDownloading => State == UpdateState.Downloading;
+    /// <summary>
+    /// Attente sans pourcentage : la préparation et la fermeture n'ont pas d'avancement mesurable.
+    /// </summary>
+    public bool IsIndeterminate => State is UpdateState.Preparing or UpdateState.Installing;
+    public bool ShowsProgress => IsDownloading || IsIndeterminate;
     public bool HasRelease => Release is not null;
     public bool IsUnavailable => State == UpdateState.Unavailable;
     public string Notes => Release?.Notes ?? "";
@@ -72,6 +77,7 @@ public sealed class UpdateService : INotifyPropertyChanged, IDisposable
         UpdateState.Available => Loc.F("Update_Available", Release!.Version),
         UpdateState.Downloading => Loc.F("Update_Downloading", Progress),
         UpdateState.Ready => Loc.T("Update_Ready"),
+        UpdateState.Preparing => Loc.T("Update_Preparing"),
         UpdateState.Installing => Loc.T("Update_Installing"),
         UpdateState.Failed => Loc.T("Update_Failed"),
         _ => Loc.T(_checked ? "Update_UpToDate" : "Update_NotChecked"),
@@ -115,11 +121,31 @@ public sealed class UpdateService : INotifyPropertyChanged, IDisposable
         return State == UpdateState.Ready;
     }
     public void CancelDownload() => _download?.Cancel();
+
+    /// <summary>
+    /// Entre le téléchargement et la fermeture : écritures en attente, recherche des processus bloquants.
+    /// </summary>
+    public void BeginPreparation()
+    {
+        if (State != UpdateState.Ready) throw new InvalidOperationException("Update is not downloaded");
+        State = UpdateState.Preparing; Notify();
+    }
+
+    /// <summary>
+    /// Mise à jour abandonnée ou reportée : la version téléchargée reste prête à installer.
+    /// </summary>
+    public void CancelPreparation()
+    {
+        if (State != UpdateState.Preparing) return;
+        State = UpdateState.Ready; Notify();
+    }
+
     public void Apply()
     {
-        if (State != UpdateState.Ready || Release is null) throw new InvalidOperationException("Update is not ready");
+        if (State is not (UpdateState.Ready or UpdateState.Preparing) || Release is null)
+            throw new InvalidOperationException("Update is not ready");
         try { _backend.Apply(Release); State = UpdateState.Installing; }
-        catch { State = UpdateState.Ready; throw; }
+        catch { State = UpdateState.Ready; Notify(); throw; }
         Notify();
     }
     public void StartPolling() => _polling ??= PollAsync();

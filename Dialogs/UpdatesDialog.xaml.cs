@@ -35,6 +35,7 @@ public partial class UpdatesDialog : Window
         _preparing = true; InstallButton.IsEnabled = false;
         try
         {
+            _updates.BeginPreparation();
             if (AppInstallation.IsWithin(AppPaths.ProfileRoot, AppInstallation.Root ?? _updates.ContentDirectory))
                 throw new IOException(Loc.T("Update_ProfileInside"));
             if (Application.Current is not App app || !await app.PrepareForUpdateAsync(this)) return;
@@ -51,6 +52,11 @@ public partial class UpdatesDialog : Window
             _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(App.Exit));
         }
         catch (Exception ex) { LogService.Warn(ex, "Cannot apply update"); AppDialog.Error(ex.Message, Loc.T("Update_Title"), this); }
-        finally { _preparing = false; InstallButton.SetBinding(IsEnabledProperty, new System.Windows.Data.Binding(nameof(UpdateService.CanInstall))); }
+        finally
+        {
+            // Sans effet une fois l'outil de mise à jour lancé : l'état est alors Installing.
+            _updates.CancelPreparation();
+            _preparing = false; InstallButton.SetBinding(IsEnabledProperty, new System.Windows.Data.Binding(nameof(UpdateService.CanInstall)));
+        }
     }
 }

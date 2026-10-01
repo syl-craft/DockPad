@@ -1482,6 +1482,8 @@ Cette action est irréversible.</value>
   <data name="Update_Available" xml:space="preserve"><value>La version {0} est disponible.</value></data>
   <data name="Update_Downloading" xml:space="preserve"><value>Téléchargement… {0} %</value></data>
   <data name="Update_Ready" xml:space="preserve"><value>Mise à jour téléchargée. Prête pour le redémarrage.</value></data>
+  <data name="Update_Preparing" xml:space="preserve"><value>Préparation de la mise à jour…</value></data>
+  <data name="Update_SelectAll" xml:space="preserve"><value>Tout sélectionner</value></data>
   <data name="Update_Installing" xml:space="preserve"><value>Fermeture de DockPad pour installer la mise à jour…</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>La mise à jour n’a pas pu aboutir. Vérifiez la connexion et réessayez. DockPad reste utilisable.</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>Vous disposez de la dernière version.</value></data>

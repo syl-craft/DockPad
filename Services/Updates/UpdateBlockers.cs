@@ -6,19 +6,49 @@ using System.Threading.Tasks;
 
 namespace DockPad.Services.Updates;
 
-public sealed class UpdateBlocker
+public sealed class UpdateBlocker : System.ComponentModel.INotifyPropertyChanged
 {
+    private bool _selected;
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
     public int Pid { get; init; }
     public string Name { get; init; } = "";
     public long Started { get; init; }
     public string File { get; init; } = "";
-    public bool Selected { get; set; }
+    public bool Selected
+    {
+        get => _selected;
+        set
+        {
+            if (_selected == value) return;
+            _selected = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Selected)));
+        }
+    }
     public string Label => $"{Name} · PID {Pid}";
 }
 
 /// <summary>Restart Manager identifies locks; never calls RmShutdown (which may force closure).</summary>
 public static class UpdateBlockers
 {
+    /// <summary>
+    /// État de la case « Tout sélectionner » : <c>null</c> quand une partie seulement est cochée.
+    /// </summary>
+    public static bool? SelectionState(IReadOnlyCollection<UpdateBlocker> blockers)
+    {
+        var selectedCount = blockers.Count(b => b.Selected);
+        if (selectedCount == 0) return false;
+        return selectedCount == blockers.Count ? true : null;
+    }
+
+    /// <summary>
+    /// Coche tout, sauf si tout l'était déjà : alors tout se décoche.
+    /// </summary>
+    public static void ToggleAll(IReadOnlyCollection<UpdateBlocker> blockers)
+    {
+        var selectAll = SelectionState(blockers) != true;
+        foreach (var blocker in blockers) blocker.Selected = selectAll;
+    }
+
     public static IReadOnlyList<UpdateBlocker> Find(string directory)
     {
         var results = new Dictionary<int, UpdateBlocker>();

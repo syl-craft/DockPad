@@ -101,9 +101,20 @@ public static class CodexUsageReader
 
     public sealed record Snapshot(List<UsageAggregator.UsageEntry> Entries, CodexQuotaSnapshot? Quota);
 
-    /// <summary>Un seul parcours pour les jetons et le relevé de quota le plus récent.</summary>
-    public static Snapshot ReadSnapshot(string home, DateTime since, CancellationToken token = default)
+    public static Snapshot ReadSnapshot(string home, DateTime since, CancellationToken token = default) =>
+        ReadSnapshot(home, since, quotaSince: since, token);
+
+    /// <summary>
+    /// Un seul parcours pour les jetons depuis <paramref name="since"/> et le relevé de quota le plus
+    /// récent depuis <paramref name="quotaSince"/>.
+    /// </summary>
+    /// <remarks>
+    /// Deux bornes : la semaine de quota chevauche le changement de mois, et un 1er du mois le seul
+    /// relevé qui court encore est dans un fichier du mois précédent.
+    /// </remarks>
+    public static Snapshot ReadSnapshot(string home, DateTime since, DateTime quotaSince, CancellationToken token = default)
     {
+        var oldestUseful = since < quotaSince ? since : quotaSince;
         var entries = new List<UsageAggregator.UsageEntry>();
         CodexQuotaSnapshot? quota = null;
 
@@ -120,7 +131,7 @@ public static class CodexUsageReader
                 token.ThrowIfCancellationRequested();
                 try
                 {
-                    if (File.GetLastWriteTime(file) < since) continue;
+                    if (File.GetLastWriteTime(file) < oldestUseful) continue;
                     ReadFile(file, since, entries, ref quota, token);
                 }
                 catch (OperationCanceledException) { throw; }

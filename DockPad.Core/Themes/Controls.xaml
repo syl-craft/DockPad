@@ -85,9 +85,14 @@
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
                                 VerticalAlignment="Center"
                                 SnapsToDevicePixels="True" UseLayoutRounding="True">
-                            <Path x:Name="Check" Visibility="Collapsed"
-                                  Data="M 3 8 L 6.2 11 L 12 4" Stroke="White" StrokeThickness="1.7"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            <Grid>
+                                <Path x:Name="Check" Visibility="Collapsed"
+                                      Data="M 3 8 L 6.2 11 L 12 4" Stroke="White" StrokeThickness="1.7"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <!-- Etat intermediaire (IsChecked = null) : une partie seulement est cochee. -->
+                                <Rectangle x:Name="Dash" Visibility="Collapsed" Width="8" Height="2" RadiusX="1" RadiusY="1"
+                                           Fill="{DynamicResource Brush.Accent}"/>
+                            </Grid>
                         </Border>
                         <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
                                           RecognizesAccessKey="True"/>
@@ -97,6 +102,10 @@
                             <Setter TargetName="Box" Property="Background" Value="{DynamicResource Brush.Accent}"/>
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
                             <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="{x:Null}">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                            <Setter TargetName="Dash" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>

@@ -1482,6 +1482,8 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Update_Available" xml:space="preserve"><value>L4 v3r510n {0} 35t d15p0n1bl3.</value></data>
   <data name="Update_Downloading" xml:space="preserve"><value>T3l3ch4rg3m3nt… {0} %</value></data>
   <data name="Update_Ready" xml:space="preserve"><value>M153 4 j0ur t3l3ch4rg33. Pr3t3 p0ur l3 r3d3m4rr4g3.</value></data>
+  <data name="Update_Preparing" xml:space="preserve"><value>Pr3p4r4t10n d3 l4 m153 4 j0ur…</value></data>
+  <data name="Update_SelectAll" xml:space="preserve"><value>T0ut 53l3ct10nn3r</value></data>
   <data name="Update_Installing" xml:space="preserve"><value>F3rm3tur3 d3 D0ckP4d p0ur 1n5t4ll3r l4 m153 4 j0ur…</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>L4 m153 4 j0ur n’4 p45 pu 4b0ut1r. V3r1f13z l4 c0nn3x10n 3t r33554y3z. D0ckP4d r35t3 ut1l154bl3.</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>V0u5 d15p053z d3 l4 d3rn13r3 v3r510n.</value></data>
