@@ -1482,6 +1482,8 @@ This cannot be undone.</value>
   <data name="Update_Available" xml:space="preserve"><value>Version {0} is available.</value></data>
   <data name="Update_Downloading" xml:space="preserve"><value>Downloading… {0}%</value></data>
   <data name="Update_Ready" xml:space="preserve"><value>Update downloaded. Ready to restart.</value></data>
+  <data name="Update_Preparing" xml:space="preserve"><value>Preparing the update…</value></data>
+  <data name="Update_SelectAll" xml:space="preserve"><value>Select all</value></data>
   <data name="Update_Installing" xml:space="preserve"><value>Closing DockPad to install the update…</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>The update could not be completed. Check your connection and try again. DockPad remains usable.</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>You have the latest version.</value></data>
