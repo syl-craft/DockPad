@@ -263,4 +263,48 @@ public class CodexQuotaReaderTests : IDisposable
         Assert.Equal(Now, snapshot.Quota!.ObservedAt);
         Assert.Null(snapshot.Quota.Week);
     }
+    /// <summary>
+    /// Premier du mois : le dernier relevé date de la veille, dans un fichier de la veille. La
+    /// fenêtre hebdomadaire court encore, la jauge doit rester affichée — datée.
+    /// </summary>
+    [Fact]
+    public async Task FirstOfTheMonth_LastMonthReadingStillShowsTheWeek()
+    {
+        var now = new DateTimeOffset(2026, 10, 1, 13, 0, 0, TimeSpan.Zero);
+        var observed = now.AddHours(-19);
+        var path = Write("sessions", "veille", Line(observed, Window(50, 10080, now.AddDays(5))));
+        File.SetLastWriteTime(path, observed.LocalDateTime);
+
+        var usage = await new CodexUsageProvider(_home, () => now.LocalDateTime).ReadAsync(CancellationToken.None);
+
+        Assert.Equal(50, usage!.Week!.UsedPct);
+        Assert.Equal(observed.LocalDateTime, usage.Week.ObservedAt);
+        Assert.Empty(usage.QuotaNotice);
+    }
+
+    /// <summary>
+    /// Le relevé de la veille donne la jauge, mais ses jetons n'entrent pas dans le mois en cours.
+    /// </summary>
+    [Fact]
+    public async Task FirstOfTheMonth_LastMonthTokensStayOutOfTheMonth()
+    {
+        var now = new DateTimeOffset(2026, 10, 1, 13, 0, 0, TimeSpan.Zero);
+        var observed = now.AddHours(-19);
+        var path = Write("sessions", "veille", JsonSerializer.Serialize(new
+        {
+            type = "event_msg", timestamp = observed.ToString("O", CultureInfo.InvariantCulture),
+            payload = new
+            {
+                type = "token_count",
+                info = new { last_token_usage = new { input_tokens = 100, output_tokens = 20 } },
+                rate_limits = new { limit_id = "codex", primary = Window(50, 10080, now.AddDays(5)), secondary = (object?)null },
+            },
+        }));
+        File.SetLastWriteTime(path, observed.LocalDateTime);
+
+        var usage = await new CodexUsageProvider(_home, () => now.LocalDateTime).ReadAsync(CancellationToken.None);
+
+        Assert.Equal(0, usage!.MonthTokens);
+        Assert.Equal(50, usage.Week!.UsedPct);
+    }
 }

@@ -18,6 +18,11 @@ public static class CodexQuotaReader
     /// </summary>
     public static readonly TimeSpan FreshFor = TimeSpan.FromMinutes(15);
 
+    /// <summary>
+    /// La plus longue fenêtre de quota connue, la semaine : un relevé plus ancien ne peut plus rien dire.
+    /// </summary>
+    public static readonly TimeSpan LongestWindow = TimeSpan.FromMinutes(10080);
+
     public static CodexQuotaSnapshot? ParseLine(string line)
     {
         try
