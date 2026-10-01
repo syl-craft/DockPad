@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.26.1] — 2026-10-01
+
+### Corrections
+
+- **Mises à jour** : après **Mettre à jour et redémarrer**, la fenêtre affiche « Préparation de la mise à jour… » avec une barre animée, puis « Fermeture de DockPad… », au lieu de paraître figée pendant la recherche des applications bloquantes. Reporter ou abandonner la remet sur « Mise à jour téléchargée ».
+- **Applications bloquantes** : une case **Tout sélectionner** coche ou décoche toute la liste, et affiche un tiret quand une partie seulement est cochée. Rien n'est coché par défaut.
+- **Quota Codex** : le 1er du mois, la jauge hebdomadaire disparaissait derrière « Quota Codex indisponible » jusqu'à la première session Codex du mois, alors que la semaine courait encore. Le relevé du mois précédent est de nouveau lu ; les jetons du mois ne sont pas touchés.
+
 ## [1.26.0] — 2026-10-01
 
 ### Nouveautés
