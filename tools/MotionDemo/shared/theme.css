@@ -178,3 +178,31 @@ body { font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: a
 .gc img { position: relative; object-fit: contain; }
 .gname { position: absolute; left: 0; right: 4px; top: 72px; height: 18px; text-align: center; font-size: 11px; line-height: 17px; color: var(--text); }
 .ghost { position: absolute; width: 40px; height: 40px; z-index: 48; filter: drop-shadow(0 6px 10px rgba(0,0,0,.25)); }
+
+/* ---------- Fenetres de dialogue (patron commun de l'application) ---------- */
+.dlgx { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  box-shadow: var(--window-shadow); color: var(--text); font-size: 13px; transform-origin: 50% 40%; }
+.dlgx-h { height: 48px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 600; padding: 12px 20px; }
+.dlgx-b { position: absolute; left: 0; right: 0; bottom: 56px; padding: 18px 24px; }
+.dlgx-f { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: var(--surface-card); border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; padding: 0 16px 0 22px; }
+.dlgx-f .v { font-size: 11px; color: var(--text-faint); margin-right: auto; }
+.bt { height: 32px; padding: 0 16px; border-radius: 4px; display: inline-flex; align-items: center; font-size: 13px; background: var(--surface-muted);
+  color: var(--text); border: 1px solid var(--border-strong); white-space: nowrap; }
+.bt.p { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sec { font-weight: 600; font-size: 14px; margin: 0 0 8px; }
+.combo { height: 30px; border: 1px solid var(--border-strong); background: var(--surface-card); border-radius: 3px; display: flex; align-items: center;
+  padding: 0 10px; font-size: 13px; position: relative; }
+.combo::after { content: '⌄'; position: absolute; right: 12px; top: 3px; font-size: 15px; color: var(--text-subtle); }
+.cbx { width: 18px; height: 18px; border-radius: 3px; border: 1px solid var(--border-hover); background: var(--surface-card); flex: none;
+  display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; }
+.cbx.on { background: var(--accent); border-color: var(--accent); }
+.tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--border); margin: -6px -24px 16px; padding: 0 30px; font-size: 13.5px; }
+.tabs span { padding: 8px 0 9px; color: var(--text-subtle); }
+.tabs span.on { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: 600; }
+.hint2 { font-size: 11.5px; color: var(--text-detail); line-height: 15px; }
+.badge { font-size: 11px; border-radius: 4px; padding: 3px 8px; white-space: nowrap; }
+.badge.warn { color: var(--warn-text-strong, #B26A00); background: color-mix(in srgb, #FFB900 18%, transparent); }
+.badge.ok { color: #1E7D34; background: color-mix(in srgb, #34A853 16%, transparent); }
+:root[data-theme="dark"] .badge.ok { color: #6FD68A; }
+:root[data-theme="dark"] .badge.warn { color: #FFC46B; }

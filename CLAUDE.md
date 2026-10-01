@@ -218,7 +218,7 @@ tools/
                                          le câblage de la grille (grid), l'overlay clavier (overlay),
                                          et chronomètre un peuplement (bench)
     UsageShot/                           Outil console : capture le bandeau Usage IA et sa fenêtre de réglages en PNG (doc)
-    MotionDemo/                          Outil Node : les six motion designs de démonstration (16:9, ≤ 10 s, clair + sombre) → dépôt DockPad-media
+    MotionDemo/                          Outil Node : les douze motion designs de démonstration (16:9, ≤ 10 s, clair + sombre) → dépôt DockPad-media
 ```
 
 ## Fonctionnalités
@@ -1755,9 +1755,10 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 
 ## Motion designs de démonstration (tools/MotionDemo)
 
-Six clips de 10 s au format 16:9, un par fonctionnalité phare : `01-launcher` (grille, pages,
+Douze clips de 10 s au format 16:9, un par fonctionnalité : `01-launcher` (grille, pages,
 recherche — le GIF d'en-tête du README), `02-browser-picker`, `03-usage`, `04-secrets`,
-`05-keyboard`, `06-composite`. Chacun est rendu en **clair et en sombre**, en MP4 1080p60 et en GIF
+`05-keyboard`, `06-composite`, `07-mcp`, `08-favorites`, `09-theme-language`, `10-updates`,
+`11-context-menu`, `12-explorer-drop`. Chacun est rendu en **clair et en sombre**, en MP4 1080p60 et en GIF
 960×540. Le README choisit le thème du lecteur avec `<picture><source media="(prefers-color-scheme: dark)">`.
 
 > **Les rendus ne sont pas dans ce dépôt** : ils vivent dans
@@ -1788,6 +1789,12 @@ node render.mjs --serve                   # lecture en boucle dans un navigateur
   image et donne la même vidéo d'une machine à l'autre. Une animation qui dépendrait de l'état
   précédent casserait en silence le jour où l'on rend une image isolée (`--stills`)
 - **La dernière image rejoint la première** : les GIF bouclent sans saut
+- **Un clip qui change d'état global doit le défaire avant la fin.** `09-theme-language` bascule le
+  thème de la page et la langue : sa dernière image serait dans l'autre thème que la première. Un
+  calque du fond de départ, lu au montage, revient en fondu pendant la sortie des fenêtres
+- **Les libellés viennent des `.resx`, jamais d'une traduction faite pour le clip** — y compris le
+  1337 de `09`, recopié de `Strings.qps-Ploc.resx`. Un libellé inventé montre une application qui
+  n'existe pas, et deux des premiers clips ont dû être rendus à nouveau pour cette raison
 - **Les icônes ne sont jamais copiées dans le dépôt** — mêmes règles que `UsageShot` : `C:\dev\Dock-icons`
   (surchargeable par `DOCKPAD_DEMO_ICONS`), puis les icônes extraites des exécutables, puis `Assets\`.
   Elles n'apparaissent que dans les rendus

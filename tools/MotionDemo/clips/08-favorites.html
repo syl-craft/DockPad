@@ -1,0 +1,102 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Favourites</title>
+<link rel="stylesheet" href="../shared/theme.css"></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el, lerp } from '../shared/engine.js';
+import { stage, PAGES, buildDock, buildPage, placeDock, showPage, renderUsage, layoutPager, tileXY, tileCenter, tileState, resetTiles,
+  tileHTML, cursor, renderCursor, legend, keycaps, renderPop, centerOf } from '../shared/ui.js';
+
+const S = 1.25, DX = (1920 - 850 * 1.25) / 2, DY = 64;
+// La grille des favoris : l'URL complete est gardee, le domaine sert de nom (FavoriteToggle).
+const FAV = [
+  { r: 0, c: 0, name: 'github.com', icon: 'pull-requests', type: 'url' }, { r: 0, c: 1, name: 'mail.google.com', icon: 'gmail', type: 'url' },
+  { r: 0, c: 2, name: 'linear.app', icon: 'linear', type: 'url' }, { r: 0, c: 3, name: 'music.youtube.com', icon: 'youtube-music', type: 'url' },
+  { r: 1, c: 0, name: 'dev.azure.com', icon: 'azure-devops', type: 'url' }, { r: 1, c: 1, name: 'calendar.google.com', icon: 'chrome', type: 'url' },
+];
+const FIGMA = { r: 2, c: 4 }, LANDS = { r: 0, c: 4 };
+// Favoris affiches : [debut, fin] des passages en mode ★.
+const FAVMODE = [[1.25, 2.5], [5.35, 7.3]];
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const dock = buildDock(camera, { usage: 'single' });
+    renderUsage(dock.usage, 'claude');
+    const favStrip = el('<div class="strip"></div>');
+    dock.root.querySelector('.grid-clip').appendChild(favStrip);
+    const favPage = el('<div class="page" style="left:0"></div>');
+    favStrip.appendChild(favPage);
+    const favTiles = buildPage(favPage, FAV);
+    // Figma, une fois deplacee, atterrit a la premiere case libre des favoris.
+    const landed = el(tileHTML({ ...LANDS, name: 'Figma', icon: 'chrome', type: 'url' }));
+    const lp = tileXY(LANDS.r, LANDS.c);
+    style(landed, { left: `${lp.x}px`, top: `${lp.y - 46}px` });
+    favPage.appendChild(landed);
+    // A la place de Figma dans les raccourcis, une case vide.
+    const hole = el('<div class="tile empty"><div class="plus">+</div></div>');
+    const fp = tileXY(FIGMA.r, FIGMA.c);
+    style(hole, { left: `${fp.x}px`, top: `${fp.y - 46}px` });
+    dock.tiles[0][`${FIGMA.r}:${FIGMA.c}`].before(hole);
+
+    const menu = el(`<div class="abs" style="transform:scale(${S});transform-origin:0 0;z-index:40"><div class="cmenu">
+      <div class="it"><span class="g sym">🖼</span>Change the icon</div><div class="it"><span class="g sym">✏</span>Edit</div>
+      <div class="it"><span class="g sym">⧉</span>Duplicate</div><div class="it"><span class="g sym">↗</span>Move to page<span class="arrow">►</span></div>
+      <div class="it fav"><span class="g sym">★</span>Move to favourites</div><div class="sepr"></div>
+      <div class="it"><span class="g sym">🗑</span>Delete</div></div></div>`);
+    camera.appendChild(menu);
+    placeDock(dock, DX, DY, S);
+    const fc = tileCenter(FIGMA.r, FIGMA.c);
+    const figma = { x: DX + fc.x * S, y: DY + fc.y * S };
+    style(menu, { left: `${figma.x + 6}px`, top: `${figma.y + 6}px` });
+    const favItem = centerOf(menu.querySelector('.fav'));
+    const cur = cursor(camera);
+    return { st, camera, dock, favStrip, favTiles, landed, hole, menu, figma, favItem, cur, leg: legend(st), hot: keycaps(st, 'center') };
+  },
+
+  render(t, x) {
+    const { dock } = x;
+    // Apparition ; rangement (⬇) a 7.3 puis retour par le raccourci global, en mode raccourcis.
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 7.35, 7.65, E.in) * (1 - prog(t, 8.3, 8.6, E.out))) * (1 - prog(t, 9.45, 9.9, E.in));
+    placeDock(dock, DX, DY, S, { opacity: show, scale: .96 + .04 * show });
+
+    const favOn = FAVMODE.some(([a, b]) => t >= a && t < b);
+    const mix = FAVMODE.reduce((m, [a, b]) => Math.max(m, prog(t, a, a + .25) * (1 - prog(t, b, b + .25))), 0);
+    dock.strip.style.opacity = 1 - mix;
+    x.favStrip.style.opacity = mix;
+    x.favStrip.style.visibility = mix > 0 ? 'visible' : 'hidden';
+    showPage(dock, 0);
+    layoutPager(dock, favOn ? 1 : 3, 0);
+    const mode = dock.btn('mode');
+    mode.textContent = favOn ? '★' : '▦';
+    mode.classList.toggle('on', favOn);
+
+    // Figma quitte la grille : elle retrecit et file vers le bouton ★.
+    const figTile = dock.tiles[0][`${FIGMA.r}:${FIGMA.c}`];
+    const fly = prog(t, 4.15, 4.6, E.in);
+    const fp = tileXY(FIGMA.r, FIGMA.c), mb = { x: 673 + 20, y: 22 };
+    const dx = (mb.x - (fp.x + 54)) * fly, dy = (mb.y - (fp.y + 45)) * fly;
+    resetTiles(dock);
+    style(figTile, { transform: `translate(${dx}px, ${dy}px) scale(${1 - .8 * fly})`, opacity: t < 4.6 ? 1 : 0, zIndex: 5 });
+    x.hole.style.visibility = t >= 4.15 ? 'visible' : 'hidden';
+    const land = prog(t, 5.5, 5.85, E.outBack);
+    style(x.landed, { opacity: t >= 5.5 ? 1 : 0, transform: `scale(${.6 + .4 * land})` });
+    mode.style.transform = `scale(${1 + env(t, 4.55, 4.85, .1) * .18})`;
+
+    renderPop(x.menu.firstChild, t, [3.45, 3.6], [4.1, 4.18], .94);
+    x.menu.querySelector('.fav').classList.toggle('sel', t >= 3.85);
+
+    const P = (wx, wy) => ({ x: DX + wx * S, y: DY + wy * S });
+    const modeP = P(700, 33), hideP = P(816, 22);
+    renderCursor(x.cur, t, [
+      [.4, 1560, 960], [1.05, modeP.x, modeP.y], [2.2, modeP.x, modeP.y], [2.35, modeP.x, modeP.y],
+      [3.25, x.figma.x, x.figma.y], [3.55, x.figma.x, x.figma.y], [3.85, x.favItem.x - 30, x.favItem.y],
+      [4.25, x.favItem.x - 30, x.favItem.y], [5.15, modeP.x, modeP.y], [6.8, modeP.x, modeP.y], [7.1, hideP.x, hideP.y], [7.4, hideP.x, hideP.y],
+    ], [1.2, 2.45, 3.4, 4.1, 5.3, 7.25], [.4, 7.45]);
+
+    x.hot(t, [{ label: 'Alt', a: 7.8, b: 8.5, down: [[8.05, 8.3]], accent: true }, { label: 'Space', a: 7.8, b: 8.5, down: [[8.1, 8.3]], accent: true }]);
+    x.leg(t, [[.45, 3.2, 'A second grid for your websites'], [3.35, 6.7, 'Any tile moves over in one click'], [6.85, 9.4, 'Put it away: back to your shortcuts']]);
+  },
+});
+</script></body></html>

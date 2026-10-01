@@ -399,3 +399,40 @@ export function renderPop(node, t, open, close, from = .96) {
   style(node, { opacity: o, transform: `scale(${from + (1 - from) * o})`, visibility: o > 0.001 ? 'visible' : 'hidden' });
   return o;
 }
+
+/** Pagination a nombre de pages variable : count premiers boutons + « + », recentres comme dans l'application. */
+export function layoutPager(dock, count, active = 0) {
+  const plus = dock.pbtns[dock.pbtns.length - 1];
+  const shown = [...dock.pbtns.slice(0, count), plus];
+  const x0 = 425 - (shown.length * 36 - 6) / 2;
+  dock.pbtns.forEach(b => { b.style.display = 'none'; });
+  shown.forEach((b, i) => { style(b, { display: 'flex', left: `${x0 + i * 36}px` }); b.classList.toggle('active', i === active && b !== plus); });
+}
+
+/** Le menu ☰ de la fenetre (QuickAccessWindow.xaml), en anglais. Rend {el, item(key)}. */
+export function quickMenu(dock) {
+  const rows = [
+    ['h', 'Context menu'], ['☰', 'Manage', 'manage'], ['📋', 'Predefined shortcuts', 'presets'], '-',
+    ['h', 'Settings'], ['⚙', 'Options', 'options'], ['🌐', 'Browsers'], ['🔌', 'MCP server'], ['📊', 'AI usage'], '-',
+    ['h', 'Secrets'], ['🔑', 'Secret settings'], ['↻', 'Synchronise the vault'], '-',
+    ['h', 'Configuration'], ['↺', 'Refresh'], ['✎', 'Edit'], ['💾', 'Save'], ['📁', 'Show the folder'], '-',
+    ['⟳', 'Updates', 'updates'], ['✕', 'Quit the application'],
+  ];
+  const m = el(`<div class="cmenu" style="left:12px;top:40px;min-width:230px;z-index:30">${rows.map(r => r === '-' ? '<div class="sepr"></div>'
+    : r[0] === 'h' ? `<div class="it" style="font-weight:600;color:var(--text-subtle)">${r[1]}</div>`
+    : `<div class="it" data-k="${r[2] || ''}"><span class="g sym">${r[0]}</span>${r[1]}</div>`).join('')}</div>`);
+  dock.root.appendChild(m);
+  return { el: m, item: k => m.querySelector(`[data-k="${k}"]`) };
+}
+
+/** Fenetre de dialogue DockPad : bandeau bleu (optionnel), corps, pied avec la version. */
+export function dialog(layer, { w, h, title, header = true, body = '', footer = '', scale = 1, x = 0, y = 0 }) {
+  const wrap = el(`<div class="abs" style="left:${x}px;top:${y}px;transform:scale(${scale});transform-origin:0 0">
+    <div class="dlgx" style="width:${w}px;height:${h}px">
+      ${header ? `<div class="dlgx-h">${title}</div>` : ''}
+      <div class="dlgx-b" style="top:${header ? 48 : 0}px">${body}</div>
+      <div class="dlgx-f"><span class="mono v">v1.25.2</span>${footer}</div>
+    </div></div>`);
+  layer.appendChild(wrap);
+  return wrap;
+}

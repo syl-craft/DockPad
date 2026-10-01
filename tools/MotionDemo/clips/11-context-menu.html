@@ -1,0 +1,105 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Context menu</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .ps { padding: 0 !important; }
+  .ps .sub { padding: 16px 24px 10px; }
+  .card { margin: 0 24px 10px; background: var(--surface-card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px;
+    display: flex; align-items: flex-start; gap: 14px; }
+  .card .n { font-weight: 600; } .card .d { color: var(--text-subtle); margin-top: 2px; }
+  .card .c { color: var(--text-faint); font-size: 11px; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 330px; }
+  .card .badge { margin-left: auto; align-self: center; }
+  .ex { position: absolute; inset: 0; background: var(--surface-card); }
+  .ex .bar { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--border); font-size: 15px; color: var(--text-subtle); }
+  .ex .grid { padding: 24px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px; }
+  .ex .grid div { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 14px; color: var(--text); }
+  .ex .grid img { width: 60px; height: 60px; }
+  .wmenu { font-size: 15px; min-width: 330px; }
+  .wmenu .it { height: 34px; }
+  .wmenu .it img { width: 18px; height: 18px; }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el } from '../shared/engine.js';
+import { stage, buildDock, placeDock, showPage, renderUsage, quickMenu, dialog, appWindow, cursor, renderCursor, legend, renderPop, centerOf,
+  renderLaunch, TERMINAL_BODY, icon } from '../shared/ui.js';
+
+const S = 1.2, DX = (1920 - 850 * S) / 2, DY = 70;
+// Prédéfinis de PresetService, libellés de Strings.resx. Les chemins sont ceux d'un poste de démonstration.
+const PRESETS = [
+  ['Open a Claude terminal', 'Opens a terminal in this folder and starts Claude Code', '"C:\\Users\\Demo\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe" -w 0 new-tab --startingDirectory "%V" -- claude', 1],
+  ['Open a Codex terminal', 'Opens a terminal in this folder and starts Codex', '"C:\\Users\\Demo\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe" -w 0 new-tab --startingDirectory "%V" -- codex', 0],
+  ['Open in PowerShell', 'Opens a PowerShell tab in this folder', '"C:\\Users\\Demo\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe" -w 0 new-tab --startingDirectory "%V"', 0],
+  ['Open in Visual Studio Code', 'Opens this folder in Visual Studio Code', '"C:\\Users\\Demo\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe" "%V"', 1],
+];
+const INSTALL = 3.7;
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const dock = buildDock(camera, { usage: 'single' });
+    placeDock(dock, DX, DY, S);
+    showPage(dock, 0);
+    renderUsage(dock.usage, 'claude');
+    const menu = quickMenu(dock);
+    const layer = el('<div class="layer" style="z-index:40"></div>');
+    camera.appendChild(layer);
+    const body = `<div class="ps"><div class="sub">Select the shortcuts to install or update</div>${PRESETS.map(([n, d, c]) =>
+      `<div class="card"><span class="cbx on">✓</span><div><div class="n">${n}</div><div class="d">${d}</div><div class="c mono">${c}</div></div><span class="badge"></span></div>`).join('')}</div>`;
+    const ps = dialog(layer, { w: 580, h: 560, title: 'Predefined shortcuts', body, x: 610, y: 150, scale: 1.25,
+      footer: '<span class="bt">☰ Context menu</span><span class="bt">↻ Refresh</span><span style="flex:1"></span><span class="bt">Cancel</span><span class="bt p b-inst">Install / Update</span>' });
+
+    // L'Explorateur, puis le menu clic droit de Windows qui porte les entrees posees.
+    const ex = appWindow(camera, { w: 1100, h: 640, icon: 'explorer', title: 'dockpad', body: `<div class="ex">
+      <div class="bar">This PC › C: › dev › <b style="color:var(--text)">dockpad</b></div>
+      <div class="grid">${['docs', 'tools', 'Services', 'Views', 'Assets'].map(n => `<div><img src="${icon('folder')}">${n}</div>`).join('')}</div></div>` });
+    style(ex, { left: '410px', top: '200px' });
+    const W = [['claude-code', 'Open a Claude terminal', 'claude'], ['terminal', 'Open a Codex terminal'], ['powershell', 'Open in PowerShell'],
+      ['vscode', 'Open in Visual Studio Code']];
+    const wmenu = el(`<div class="cmenu wmenu" style="left:1000px;top:560px;z-index:42">
+      <div class="it"><span class="g"></span>View<span class="arrow">►</span></div><div class="it"><span class="g"></span>Sort by<span class="arrow">►</span></div>
+      <div class="sepr"></div>
+      ${W.map(([ic, n, k]) => `<div class="it" data-k="${k || ''}"><img src="${icon(ic)}">${n}</div>`).join('')}
+      <div class="sepr"></div><div class="it"><span class="g"></span>New<span class="arrow">►</span></div><div class="it"><span class="g"></span>Properties</div></div>`);
+    camera.appendChild(wmenu);
+    const term = appWindow(camera, { w: 1000, h: 600, icon: 'claude-code', title: 'Claude Code — C:\\dev\\dockpad',
+      body: TERMINAL_BODY(['<span style="color:#D97757">✻</span> Welcome back', '', '<span style="color:#6A9955">cwd:</span> C:\\dev\\dockpad']) });
+    const pts = { menu: centerOf(dock.btn('menu')), item: centerOf(menu.item('presets')), inst: centerOf(ps.querySelector('.b-inst')),
+      bg: { x: 1000, y: 560 }, claude: centerOf(wmenu.querySelector('[data-k="claude"]')) };
+    const cur = cursor(camera);
+    return { st, dock, menu, ps, ex, wmenu, term, pts, cur, leg: legend(st) };
+  },
+
+  render(t, x) {
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 4.55, 4.85, E.in));
+    placeDock(x.dock, DX, DY, S, { opacity: show, scale: .96 + .04 * show });
+    renderPop(x.menu.el, t, [.7, .85], [1.35, 1.45], .96);
+    x.menu.item('presets').classList.toggle('sel', t >= 1.15);
+
+    // Prédéfinis : badges avant et après l'installation.
+    renderPop(x.ps.firstElementChild, t, [1.4, 1.7], [4.5, 4.8]);
+    x.ps.querySelectorAll('.card').forEach((c, i) => {
+      const b = c.querySelector('.badge'), done = t >= INSTALL + .15 + i * .12;
+      b.className = `badge ${done ? 'ok' : PRESETS[i][3] ? 'warn' : ''}`;
+      b.textContent = done ? 'Already installed' : PRESETS[i][3] ? 'Update available' : '';
+      b.style.transform = `scale(${1 + env(t, INSTALL + .15 + i * .12, INSTALL + .45 + i * .12, .08) * .12})`;
+    });
+
+    // Explorateur : clic droit sur le fond du dossier, puis « Open a Claude terminal ».
+    renderPop(x.ex, t, [4.7, 5.05], [9.45, 9.9], .96);
+    renderPop(x.wmenu, t, [5.75, 5.9], [6.95, 7.05], .96);
+    x.wmenu.querySelector('[data-k="claude"]').classList.toggle('sel', t >= 6.45);
+    renderLaunch(x.term, t, { x: 1000, y: 560, w: 330, h: 34 }, { x: 460, y: 210, w: 1000, h: 600 }, [7.05, 7.5], [9.2, 9.6]);
+
+    const p = x.pts;
+    renderCursor(x.cur, t, [
+      [.2, 1560, 960], [.6, p.menu.x, p.menu.y], [.8, p.menu.x, p.menu.y], [1.15, p.item.x - 40, p.item.y], [1.4, p.item.x - 40, p.item.y],
+      [3.3, p.inst.x, p.inst.y], [4.2, p.inst.x, p.inst.y], [5.4, p.bg.x - 8, p.bg.y - 8], [5.75, p.bg.x - 8, p.bg.y - 8],
+      [6.45, p.claude.x - 70, p.claude.y], [7.0, p.claude.x - 70, p.claude.y], [7.6, 1560, 960],
+    ], [.75, 1.35, INSTALL, 5.7, 6.95], [.2, 7.65]);
+
+    x.leg(t, [[.4, 4.55, 'Your tools, one click away in Explorer'], [4.75, 9.4, 'Right-click a folder: Claude, Codex, VS Code…']]);
+  },
+});
+</script></body></html>

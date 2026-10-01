@@ -42,6 +42,11 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 **Mettre à jour et redémarrer** télécharge, installe et relance DockPad en conservant le profil.
 La recherche peut être automatique ; l'installation se fait à votre demande.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/10-updates-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/10-updates-light.gif" alt="Démonstration : recherche, téléchargement, fermeture des applications bloquantes et redémarrage" width="960">
+</picture>
+
 | Recherche et installation | Applications bloquantes |
 |---|---|
 | ![Mises à jour — données de démonstration](docs/screenshots/updates-fr.png) | ![Choix des applications à fermer — données de démonstration](docs/screenshots/update-blockers-fr.png) |
@@ -61,6 +66,18 @@ lance. **← / →** changent de page. Par défaut les deux modificateurs s'adap
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/05-keyboard-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/05-keyboard-light.gif" alt="Démonstration : overlay clavier et changement de page" width="960">
+</picture>
+
+## Glisser depuis l'Explorateur
+
+Glissez un **dossier** depuis l'Explorateur Windows sur une case vide : il devient une tuile
+`OpenFolder`, avec l'icône de dossier par défaut. Déposez un **fichier `.url`** et vous obtenez une
+tuile `OpenUrl` avec l'icône de votre navigateur. Le dépôt fonctionne même grille verrouillée — le
+cadenas ne garde que la réorganisation, et un dépôt est toujours un geste délibéré.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/12-explorer-drop-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/12-explorer-drop-light.gif" alt="Démonstration : un dossier et un fichier .url glissés depuis l'Explorateur deviennent des tuiles" width="960">
 </picture>
 
 ## Tuiles composées
@@ -109,6 +126,11 @@ visent uniquement une case entière déplacent ou suppriment le groupe entier.
 ## Thème clair et sombre
 
 ☰ → Paramètres → **Thème** : `Automatique (Windows)`, `Clair` ou `Sombre`.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/09-theme-language-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/09-theme-language-light.gif" alt="Démonstration : changement de thème, puis de langue vers le français et le 1337, sans redémarrage" width="960">
+</picture>
 
 | Clair | Sombre |
 |---|---|
@@ -182,6 +204,11 @@ Clavier : `1-9` choix direct · `↑/↓` + `Entrée` · `Échap` annule · pert
 Une **seconde grille**, dédiée aux sites : ses propres pages, ses propres positions, et tout ce que
 la grille des raccourcis sait déjà faire — glisser-déposer, clic droit, overlay clavier, recherche.
 Le bouton **▦ / ★** de la toolbar, à gauche du verrou, passe de l'une à l'autre.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/08-favorites-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/08-favorites-light.gif" alt="Démonstration : bascule vers les favoris, déplacement d'une tuile, retour aux raccourcis" width="960">
+</picture>
 
 ![La grille des favoris](docs/screenshots/window-favorites.png)
 
@@ -264,6 +291,11 @@ DockPad expose un serveur [MCP](https://modelcontextprotocol.io) : depuis Claude
 
 > « Ajoute une page avec VS Code, un terminal sur C:\dev et le dossier du projet » → trois tuiles apparaissent, placées sur les cases libres.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/07-mcp-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/07-mcp-light.gif" alt="Démonstration : Claude ajoute une page et trois tuiles par MCP ; la suppression est refusée" width="960">
+</picture>
+
 | Configuration (Options) | Journal des actions |
 |:---:|:---:|
 | ![Options du serveur MCP](docs/screenshots/mcp-options.png) | ![Journal des actions MCP](docs/screenshots/mcp-journal.png) |
@@ -294,6 +326,20 @@ Les neuf outils de grille et de pages acceptent un **`target`** optionnel — `"
 - [ ] Ouvrir une session Claude Code → `/mcp` liste le serveur `dockpad` et ses 14 outils
 - [ ] Demander par exemple : *« montre-moi ma grille DockPad »* ou *« ajoute un raccourci Bloc-notes »*
 - [ ] En cas de changement de chemin de l'exe : `claude mcp remove dockpad` puis ré-ajouter (bloc « Mise à jour du chemin » de la fenêtre)
+
+## Menu contextuel Windows
+
+**☰ Menu → Raccourcis prédéfinis** ajoute vos outils au menu clic droit d'un dossier dans
+l'Explorateur : un terminal Claude ou Codex ouvert dans ce dossier, PowerShell, Visual Studio Code,
+SQL Server Management Studio, GitHub Desktop. Chaque entrée indique si elle est déjà installée ou
+si une mise à jour l'attend ; **☰ Menu → Gestion** liste, modifie et supprime toutes les entrées du
+menu contextuel Windows (HKCU / HKLM / HKCR). Modifier les entrées de la machine demande les droits
+administrateur : le bouton **🛡 Élever** relance DockPad en administrateur au besoin.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/11-context-menu-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/11-context-menu-light.gif" alt="Démonstration : installation des raccourcis prédéfinis, puis ouverture d'un terminal Claude depuis le clic droit d'un dossier" width="960">
+</picture>
 
 ## Injection de secrets depuis Vaultwarden
 
