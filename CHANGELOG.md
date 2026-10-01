@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.26.0] — 2026-10-01
+
+### Nouveautés
+
+- **Quotas Usage IA via le serveur MCP** : nouvel outil `dockpad_usage_get`, le quinzième. Claude Code, Claude Desktop, Codex ou tout autre client MCP lit les quotas de session et de semaine de chaque assistant qui en expose un — aujourd'hui Claude et Codex : pourcentage consommé et restant, heure de remise à zéro, minutes restantes. Chaque entrée porte l'identifiant de son fournisseur ; un relevé ancien est signalé comme tel, un quota momentanément illisible revient avec la notice du bandeau. `provider` lit un seul assistant, même masqué. DockPad relit à chaque appel par les mêmes fournisseurs que le bandeau : l'API de quota d'Anthropic reste appelée au plus une fois toutes les cinq minutes.
+
+### Documentation
+
+- **README en anglais**, version française dans `README.fr.md`, chacun avec un lien vers l'autre.
+- **Douze démonstrations animées** dans les README, en thème clair et sombre selon celui du lecteur : lancement, sélecteur de navigateur, bandeau Usage IA, injection de secrets, overlay clavier, tuiles composées, serveur MCP, favoris, thème et langues, mises à jour, menu contextuel, glisser-déposer depuis l'Explorateur. Les vidéos sont hébergées dans le dépôt `syl-craft/DockPad-media`.
+- Les captures fixes qui doublaient une démonstration ont été retirées des README.
+
 ## [1.25.2] — 2026-09-29
 
 ### Corrections
