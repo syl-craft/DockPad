@@ -15,7 +15,7 @@ public static class McpDispatcher
     private static readonly HashSet<string> DeleteTools =
         ["dockpad_shortcut_delete", "dockpad_page_delete", "dockpad_rule_delete"];
     private static readonly HashSet<string> ReadTools =
-        ["dockpad_grid_get", "dockpad_browser_list", "dockpad_rule_list"];
+        ["dockpad_grid_get", "dockpad_browser_list", "dockpad_rule_list", "dockpad_usage_get"];
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -132,6 +132,7 @@ public static class McpDispatcher
         "dockpad_rule_add"        => BrowserActionService.AddRule(
                                          ReqString(args, "host"), ReqString(args, "browserId")),
         "dockpad_rule_delete"     => BrowserActionService.DeleteRule(ReqString(args, "host")),
+        "dockpad_usage_get"       => UsageActionService.GetQuotas(OptString(args, "provider")),
         _ => ActionResult.Fail($"Outil inconnu : {tool}"),
     };
 

@@ -42,6 +42,25 @@ public sealed class UsageService
         return results.Where(u => u is not null).Select(u => u!).ToList();
     }
 
+    /// <summary>
+    /// Identifiants des fournisseurs connus, masqués compris.
+    /// </summary>
+    public IReadOnlyList<string> ProviderIds => _providers.Select(p => p.Id).ToList();
+
+    /// <summary>
+    /// Lit un seul fournisseur, même masqué dans le bandeau. <c>null</c> = inconnu, absent du poste
+    /// ou en échec.
+    /// </summary>
+    public async Task<AiUsage?> ReadOneAsync(string providerId, CancellationToken ct)
+    {
+        var provider = _providers
+            .Where(p => string.Equals(p.Id, providerId, StringComparison.OrdinalIgnoreCase))
+            .FirstOrDefault();
+        if (provider == null) return null;
+
+        return await ReadAsync(provider, ct).ConfigureAwait(false);
+    }
+
     private static async Task<AiUsage?> ReadAsync(IUsageProvider provider, CancellationToken ct)
     {
         try

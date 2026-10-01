@@ -289,13 +289,14 @@ application.
 |:---:|:---:|
 | ![MCP server options](docs/screenshots/mcp-options.png) | ![MCP action log](docs/screenshots/mcp-journal.png) |
 
-**14 tools** `dockpad_<domain>_<action>` (0-based positions: page 0, rows 0-3, columns 0-5):
+**15 tools** `dockpad_<domain>_<action>` (0-based positions: page 0, rows 0-3, columns 0-5):
 
 | Domain | Tools |
 |---|---|
 | Grid | `grid_get` · `shortcut_add` (all-or-nothing batch) · `shortcut_update` · `shortcut_move` · `shortcut_delete` 🔒 · `group_set` |
 | Pages | `page_add` · `page_update` (icon, position) · `page_delete` 🔒 |
 | Browsers | `browser_list` · `browser_update` · `rule_list` · `rule_add` · `rule_delete` 🔒 |
+| AI usage | `usage_get` (quotas, read-only) |
 
 `dockpad_shortcut_move` also accepts a **`toTarget`**: omitted, the move stays within the grid as
 before; different from `target`, the tile changes grid and lands in the first free slot, keeping its
@@ -312,6 +313,15 @@ The nine grid and page tools accept an optional **`target`** — `"shortcuts"` (
 `"favorites"` — to work on either grid. An unknown value is refused rather than brought back to the
 shortcuts: writing to the wrong grid without saying so would be worse.
 
+**AI usage quotas**: `dockpad_usage_get` returns, for each assistant that exposes one (Claude and
+Codex today), the session and weekly quota — used and remaining percentage, reset time with its UTC
+offset and the minutes left. Any MCP client can call it — Claude Code, Claude Desktop, Codex — and
+reads its own entry by id. An old reading is flagged `stale` with its `observedAt`; a quota that
+cannot be read right now comes back with `quotaAvailable: false` and the notice the panel shows.
+Without arguments it follows the panel (hidden providers are skipped); `provider` reads one
+assistant, even if hidden. DockPad reads afresh on each call, through the same providers as the
+panel: the Anthropic quota endpoint is still called at most once every five minutes.
+
 **Safe by default**: the 🔒 delete tools are refused until the “Allow Claude to delete” box is ticked
 — Claude can build, not destroy. Each action (executed ✅, refused 🚫 or failed ❌) is visible in the
 **Journal** tab and traced in the logs. Configuration lives in `%APPDATA%\DockPad\mcp.json`,
@@ -325,7 +335,7 @@ included in 💾 Save.
   `claude mcp add dockpad -s user -- "C:\DockPad\DockPad.exe" --mcp`
   (untick “For every project” to register it for the current project only; a
   `claude_desktop_config.json` snippet is provided for Claude Desktop)
-- [ ] Open a Claude Code session → `/mcp` lists the `dockpad` server and its 14 tools
+- [ ] Open a Claude Code session → `/mcp` lists the `dockpad` server and its 15 tools
 - [ ] Ask for instance: *“show me my DockPad grid”* or *“add a Notepad shortcut”*
 - [ ] If the exe path changes: `claude mcp remove dockpad`, then add it again (“Updating the path” block of the window)
 
