@@ -1,0 +1,2 @@
+# Les scripts shell doivent rester en LF : avec core.autocrlf, bash refuse un script extrait en CRLF.
+*.sh text eol=lf

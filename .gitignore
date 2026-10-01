@@ -33,8 +33,9 @@ desktop.ini
 docs/superpowers/specs/
 docs/superpowers/plans/
 
-# Claude Code
-.claude/
+# Claude Code : les reglages locaux restent ignores, les skills du projet sont versionnes
+.claude/*
+!.claude/skills/
 
 # CR
 .cr/
