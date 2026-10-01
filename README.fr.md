@@ -34,8 +34,6 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Démarrage automatique** avec Windows configurable
 - **Mises à jour intégrées** : recherche automatique désactivable, téléchargement et redémarrage depuis l'application, gestion des processus bloquants avec consentement
 
-![La fenêtre d'accès rapide](docs/screenshots/window-fr.png)
-
 ## Mises à jour
 
 **☰ Menu → Mises à jour → Rechercher** affiche la version disponible et ses notes.
@@ -46,10 +44,6 @@ La recherche peut être automatique ; l'installation se fait à votre demande.
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/10-updates-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/10-updates-light.gif" alt="Démonstration : recherche, téléchargement, fermeture des applications bloquantes et redémarrage" width="960">
 </picture>
-
-| Recherche et installation | Applications bloquantes |
-|---|---|
-| ![Mises à jour — données de démonstration](docs/screenshots/updates-fr.png) | ![Choix des applications à fermer — données de démonstration](docs/screenshots/update-blockers-fr.png) |
 
 Les cases ne sont pas cochées par défaut. DockPad demande une fermeture douce, puis une
 confirmation distincte si un arrêt forcé est nécessaire. **Reporter** conserve la session en cours.
@@ -132,19 +126,11 @@ visent uniquement une case entière déplacent ou suppriment le groupe entier.
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/09-theme-language-light.gif" alt="Démonstration : changement de thème, puis de langue vers le français et le 1337, sans redémarrage" width="960">
 </picture>
 
-| Clair | Sombre |
-|---|---|
-| ![La fenêtre en thème clair](docs/screenshots/window-fr.png) | ![La fenêtre en thème sombre](docs/screenshots/window-dark.png) |
-
 - **`Automatique` suit Windows en direct** : basculer Windows en sombre change DockPad sur le champ, sans redémarrer. Un choix explicite, lui, ne bouge plus
 - **La barre de titre suit aussi** — Windows ne la peint pas de lui-même
 - La bascule s'applique aux **fenêtres déjà ouvertes**
 
-Le bandeau Usage IA et les fenêtres de configuration suivent le thème, listes et champs compris :
-
-| Bandeau Usage IA | Fenêtre Navigateurs |
-|---|---|
-| ![Le bandeau Usage IA en thème sombre](docs/screenshots/usage-panel-dark.png) | ![La fenêtre Navigateurs en thème sombre](docs/screenshots/browser-config-dark.png) |
+Le bandeau Usage IA et les fenêtres de configuration suivent le thème, listes et champs compris.
 
 > Les cases à cocher et les listes déroulantes ont changé d'aspect **dans les deux thèmes** : elles
 > sont passées de l'habillage Windows au plat, déjà celui du reste de l'application. C'était le prix
@@ -155,18 +141,12 @@ Le bandeau Usage IA et les fenêtres de configuration suivent le thème, listes 
 ☰ → Paramètres → **Langue** : `Automatique (Windows)`, `Français`, `English` ou `1337`. Par défaut DockPad
 suit la langue de Windows, et retombe sur l'anglais si elle n'est pas traduite.
 
-| Français | English |
-|---|---|
-| ![DockPad en français](docs/screenshots/window-fr.png) | ![DockPad en anglais](docs/screenshots/window-en.png) |
-
 - **Bascule immédiate**, sans redémarrer : les fenêtres ouvertes se retraduisent sous les yeux, la grille derrière et son bandeau compris
 - **Les nombres et les heures suivent** : `12,4k` et `11h54` en français, `12.4k` et `11:54` en anglais
 - **Les pluriels sont justes**, y compris là où les deux langues ne basculent pas au même endroit : « 0 règle » mais « 0 rules »
 - **Les libellés du menu clic droit de Windows** sont traduits ; les entrées déjà posées se mettent à jour depuis la fenêtre **Prédéfinis**
 
-Et une troisième langue, pour le plaisir :
-
-![DockPad en 1337](docs/screenshots/window-leet.png)
+Et une troisième langue, pour le plaisir — le **1337**, à la fin de la démonstration ci-dessus.
 
 Elle n'est pas écrite à la main : elle est **engendrée** depuis le français par substitution de
 glyphes, et se régénère d'une commande quand une chaîne est ajoutée. Elle rend un service au
@@ -184,9 +164,9 @@ DockPad peut devenir le navigateur par défaut de Windows : au clic sur une URL,
 
 Les profils des navigateurs Chromium (Chrome, Edge, Brave, Vivaldi…) sont détectés par **↻ Redétecter** et proposés sous leur navigateur ; un navigateur qui n'a qu'un seul profil reste une ligne unique. Chaque profil se masque, se renomme et peut recevoir ses propres règles de domaine.
 
-| Popup au clic sur une URL | Navigateurs et profils | Règles de domaine |
-|:---:|:---:|:---:|
-| ![Popup de choix](docs/screenshots/browser-picker.png) | ![Configuration des navigateurs](docs/screenshots/browser-config.png) | ![Règles de domaine](docs/screenshots/browser-rules.png) |
+| Navigateurs et profils | Règles de domaine |
+|:---:|:---:|
+| ![Configuration des navigateurs](docs/screenshots/browser-config.png) | ![Règles de domaine](docs/screenshots/browser-rules.png) |
 
 Clavier : `1-9` choix direct · `↑/↓` + `Entrée` · `Échap` annule · perte de focus = annule.
 
@@ -209,8 +189,6 @@ Le bouton **▦ / ★** de la toolbar, à gauche du verrou, passe de l'une à l'
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/08-favorites-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/08-favorites-light.gif" alt="Démonstration : bascule vers les favoris, déplacement d'une tuile, retour aux raccourcis" width="960">
 </picture>
-
-![La grille des favoris](docs/screenshots/window-favorites.png)
 
 On y ajoute une page depuis la popup de choix du navigateur : l'**étoile en bas à droite** met la
 page courante en favori, et la retire si on la décoche. Elle est déjà allumée à l'ouverture quand
@@ -238,12 +216,6 @@ Un bandeau sous la grille montre la consommation des assistants IA détectés : 
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/03-usage-light.gif" alt="Démonstration : jauges de quota, onglets Claude et Codex, seuil d'alerte" width="960">
 </picture>
 
-![Bandeau Usage IA](docs/screenshots/usage-panel.png)
-
-Avec plusieurs fournisseurs, un onglet apparaît pour chacun :
-
-![Bandeau Usage IA avec onglets](docs/screenshots/usage-panel-tabs.png)
-
 Quatre assistants sont lus, chacun dans ses fichiers locaux, sans réseau :
 
 | Assistant | Source | Quota | Coût |
@@ -266,8 +238,6 @@ relevés, que DockPad relit au prochain rafraîchissement. Gemini et Copilot res
 
 Une seule jauge occupe toute la largeur disponible ; deux jauges se partagent cet espace.
 La pastille à droite ouvre la page web des usages de Claude ou de Codex.
-
-![Quota hebdomadaire Codex — données de démonstration](docs/screenshots/usage-panel-codex.png)
 
 Si le quota Claude n'est pas joignable — l'API limite le débit, le jeton a expiré, la réponse change de forme — **les jauges cèdent la place à une explication** qui annonce la prochaine tentative, avec la cause technique au survol. Les jetons, eux, sont lus en local : ils restent exacts et affichés.
 
@@ -357,9 +327,9 @@ Clic droit sur **n'importe quel fichier** → **Injecter les secrets…**. DockP
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/04-secrets-light.gif" alt="Démonstration : clic droit sur un fichier, déverrouillage du coffre, rendu dans le presse-papier" width="960">
 </picture>
 
-| Mot de passe maître | Choix des sorties | Compte-rendu |
-|:---:|:---:|:---:|
-| ![Saisie du mot de passe](docs/screenshots/inject-unlock.png) | ![Choix des sorties](docs/screenshots/inject-choice.png) | ![Compte-rendu](docs/screenshots/inject-result.png) |
+Quand le fichier porte les deux formats, un écran permet de choisir ce qu'on produit — avant d'ouvrir le coffre :
+
+![Choix des sorties](docs/screenshots/inject-choice.png)
 
 **Aucune clé de session n'est conservée** : le mot de passe maître est redemandé à chaque injection, il ne quitte jamais l'environnement du processus enfant, et il n'apparaît dans aucune ligne de commande. Le rendu est retiré du presse-papier après un délai réglable (90 s par défaut), **à condition qu'il s'y trouve toujours** — si tu as copié autre chose entre-temps, rien n'est effacé.
 
