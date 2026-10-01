@@ -172,6 +172,20 @@ public static class DockPadTools
     public static string RuleDelete(string host)
         => Call("dockpad_rule_delete", new { host });
 
+    // ───── Usage IA ─────
+
+    [McpServerTool(Name = "dockpad_usage_get")]
+    [Description("Quotas IA lus par DockPad pour chaque assistant qui en expose un (aujourd'hui Claude " +
+                 "et Codex) : pourcentage consommé et restant, heure de remise à zéro (resetsAt, avec son " +
+                 "décalage horaire) et minutes restantes, pour la session de 5 h et la semaine. Chaque " +
+                 "entrée porte l'id de son fournisseur : lis celle qui te concerne. stale = relevé ancien " +
+                 "(observedAt) ; quotaAvailable = false avec notice = quota momentanément illisible. " +
+                 "Lecture seule ; peut prendre quelques secondes (DockPad relit les journaux locaux).")]
+    public static string UsageGet(
+        [Description("Un seul fournisseur (claude, codex, gemini, copilot, demo), lu même s'il est masqué " +
+                     "dans le bandeau. Omis = tous ceux du bandeau qui ont un quota.")] string? provider = null)
+        => Call("dockpad_usage_get", new { provider });
+
     // ───── Relais pipe ─────
 
     private static string Call(string tool, object args)

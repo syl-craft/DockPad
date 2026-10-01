@@ -121,6 +121,7 @@ Services/
     TileStore.cs                          Le SEUL endroit qui sait quel fichier porte quelle grille
     FavoriteToggle.cs                     L'étoile du popup : trouver, placer, nommer (cœurs purs) + SetAsync
     ShortcutActionService.cs              Actions sur la grille de raccourcis, partagées UI ↔ MCP (cœurs purs + enveloppes verrou/IO)
+    UsageActionService.cs                 Quotas Usage IA pour dockpad_usage_get (lecture fraîche, mêmes fournisseurs que le bandeau)
     ShortcutLauncher.cs                   Décide ce que lance une tuile (plan pur) puis l'exécute
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save des tuiles d'une grille (shortcuts.json ou favorites.json)
@@ -155,7 +156,7 @@ Services/Usage/
     UsageViewModel.cs                     État affichable du bandeau (onglets, jauges, métriques)
 
 Mcp/
-    DockPadTools.cs                        Les 14 outils dockpad_* exposés au SDK MCP (relais vers le pipe)
+    DockPadTools.cs                        Les 15 outils dockpad_* exposés au SDK MCP (relais vers le pipe)
     McpRelay.cs                            Hôte MCP stdio du mode --mcp (SDK ModelContextProtocol, aucune UI/mutex)
 
 Secrets/                                 PERIMETRE D'AUDIT — tout ce qui voit un secret, et rien d'autre
@@ -199,12 +200,13 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
-DockPad.Tests/                           Projet xUnit (909 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
+DockPad.Tests/                           Projet xUnit (941 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
                                          + lecteurs Claude, Codex, Gemini et Copilot (dossiers temporaires, base SQLite de fixture)
                                          + traduction (parité des clés, pluriels, culture par défaut)
                                          + logique sortie de la fenêtre (lancement, overlay, recherche, dépôts, sauvegarde, commandes)
+                                         + quotas Usage IA exposés au MCP (dockpad_usage_get)
     Secrets/                             + injection de secrets : marqueurs, résolution, presse-papier, menu,
                                            et les quatre gardes du périmètre d'audit (vérifiés par mutation)
 
@@ -890,11 +892,23 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
 - DockPad expose un serveur MCP permettant à Claude Code / Claude Desktop de piloter la grille, les pages et les navigateurs
 - **Architecture** : Claude lance `DockPad.exe --mcp` — mode relais stdio (SDK officiel `ModelContextProtocol`), **aucune UI ni mutex**, détecté dans `App.xaml.cs` avant l'acquisition du mutex → chaque appel d'outil sérialise `{tool, args}` en JSON et l'envoie sur le named pipe `DockPad_McpPipe` (`McpPipeService`, multi-instances : Claude Code + Claude Desktop simultanés) → l'instance principale (déjà lancée par l'utilisateur) reçoit la requête : vérifie les options (`mcp.json`), exécute via les services d'actions **partagés avec l'UI** (`ShortcutActionService`, `PageActionService`, `BrowserActionService`), journalise (`McpLogService`), déclenche `RefreshGrid()` sur la grille si mutation, puis répond `{ok, data, error}` en une ligne
 - **DockPad doit être lancé** — sinon le pipe est injoignable et l'outil renvoie une erreur explicite (« DockPad n'est pas lancé — démarre l'application pour utiliser ce serveur MCP »)
-- **14 outils** `dockpad_<domaine>_<action>` (`Mcp/DockPadTools.cs`), positions **0-based** (page 0 = première page, lignes 0-3, colonnes 0-5) :
+- **15 outils** `dockpad_<domaine>_<action>` (`Mcp/DockPadTools.cs`), positions **0-based** (page 0 = première page, lignes 0-3, colonnes 0-5) :
   - Grille : `grid_get`, `shortcut_add` (lot tout-ou-rien, position omise = première case libre), `shortcut_update`, `shortcut_move`, `shortcut_delete` 🔒, `group_set`
   - Pages : `page_add`, `page_update` (`iconPath` omis = inchangé, `""` = retirer l'icône ; `newIndex` = déplacement par insertion), `page_delete` 🔒
   - Navigateurs & règles : `browser_list`, `browser_update`, `rule_list`, `rule_add`, `rule_delete` 🔒 — `browser_list` expose `parentId`/`profileDirectory` (une entrée avec `parentId` est un profil, visable par une règle) ; `order` se compte dans la fratrie (parmi les navigateurs, ou parmi les profils d'un même navigateur)
+  - Usage IA : `usage_get` (lecture seule) — quotas de session et de semaine de chaque assistant qui en expose un
   - 🔒 = refusé si `AllowDelete` est désactivé dans `mcp.json`
+- **`dockpad_usage_get` relit à chaque appel**, il ne lit pas le dernier état du bandeau : celui-ci
+  ne rafraîchit rien quand la fenêtre est cachée, soit l'essentiel du temps, et un cache serait
+  vide ou daté. Il passe par `UsageService` sur `UsageProviderRegistry.All`, **les mêmes instances**
+  que le bandeau — donc le même créneau de cinq minutes sur l'API de quota d'Anthropic : le MCP ne
+  peut pas provoquer de 429. Délai maximal de 20 s, au-delà un refus nommé plutôt qu'un appel figé
+- **Aucune déduction de l'appelant** : le relais ne lit pas `clientInfo`. Chaque entrée porte l'id
+  de son fournisseur et l'appelant lit la sienne ; une table de noms de clients MCP serait à
+  maintenir, et ces noms ne sont pas normalisés
+- **Un fournisseur sans quota par nature (Gemini, Copilot) est absent** de la liste, pas présent à
+  zéro ; nommé par `provider`, il revient avec une notice qui le dit. Démo exclu sauf s'il est nommé.
+  Un relevé ancien est `stale` avec son `observedAt` — un chiffre daté ne passe pas pour frais
 - **Tuiles groupées** : `dockpad_group_set` passe par `TileGroupService.ChangeLayoutCore`, le même
   cœur que le menu de l'interface — une tuile simple devient la sous-case 0, un groupe qui
   perdrait des tuiles est refusé. `slot` sur `shortcut_add/update/delete/move`, `toSlot` sur

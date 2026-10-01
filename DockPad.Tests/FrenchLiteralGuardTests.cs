@@ -67,7 +67,7 @@ public class FrenchLiteralGuardTests
     /// </summary>
     private static readonly string[] McpFacing =
     [
-        "ShortcutActionService.cs", "PageActionService.cs", "BrowserActionService.cs",
+        "ShortcutActionService.cs", "PageActionService.cs", "BrowserActionService.cs", "UsageActionService.cs",
         "McpDispatcher.cs", "McpLogService.cs", "McpPipeService.cs",
     ];
 
