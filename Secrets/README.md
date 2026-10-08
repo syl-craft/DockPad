@@ -191,14 +191,28 @@ CHROME_EXTENSION_ID={{ bw:${item}:${projet}-CHROME_EXTENSION_ID }}
 - **Variables `@nom = valeur`**, citées par `${nom}` dans l'en-tête et les lignes. Des littéraux,
   jamais envoyés à GitHub ; une variable ne cite que celles définies avant elle, ne porte pas de
   marqueur, et une variable inconnue ou redéfinie est un refus
-- **Aucune valeur en clair** : une ligne sans marqueur est refusée, même pour un identifiant public
+- **Aucune valeur en clair** : une ligne est **un marqueur et rien d'autre**. Du texte autour —
+  écrit sur la ligne ou apporté par une variable — partirait en clair sur GitHub, et c'est un refus
+- **Une cible sans ambiguïté** : un second en-tête, un paramètre répété ou vide sont refusés —
+  garder l'un des deux en silence pourrait envoyer au mauvais dépôt
 - **La vérification précède le mot de passe** : `gh … list --json name,updatedAt` ne lit que des
   noms. L'écran dit ce qui sera créé, écrasé (avec l'âge, pour voir venir une clé qui expire) et ce
   qui n'est que sur GitHub — **signalé, jamais supprimé**
-- **Rendu tout ou rien** (`RenderStrict`) : une valeur manquante, et rien ne part. La session du
-  coffre est refermée **avant** les appels à `gh`
+- **Rendu tout ou rien** (`RenderStrict`) : une valeur manquante, et rien ne part. Le second filet
+  est repassé sur chaque valeur rendue : une valeur du coffre qui porterait un `{{ … }}` bloque
+  l'envoi, comptée et jamais recopiée. La session du coffre est refermée **avant** les appels à `gh`
+- **Une réponse illisible de `gh … list` est un échec**, pas une liste vide : lue comme vide, elle
+  annoncerait chaque nom « à créer » — une vérification réussie qui n'a rien vérifié
+- **Un délai dépassé n'efface pas ce qui est parti** : la ligne en vol est « incertaine », les
+  suivantes « non envoyées », et l'écran d'échec (« rien n'a été envoyé ») n'est montré que si
+  c'est vrai
+- **Les modes debug de `gh` sont retirés de l'environnement** (`GH_DEBUG`, `DEBUG`) : `GH_DEBUG=api`
+  écrit le corps des requêtes — donc la valeur — sur l'erreur standard. Et l'erreur standard d'un
+  `set` refusé ne va pas au journal : seulement le nom et le code
+- **Limite de `gh`** : il retire les retours à la ligne **de fin** de ce qu'il lit sur l'entrée
+  standard. Sans effet sur une clé PEM ; une valeur qui en dépendrait ne peut pas passer par `gh`
 - **La valeur passe par l'entrée standard de `gh … set`**, en UTF-8 sans BOM, jamais en argument :
-  la garde « rien en ligne de commande » interdit le drapeau de corps dans tout le dossier. Un refus
+  la garde « rien en ligne de commande » interdit `--body` et `-b` dans tout le dossier. Un refus
   de GitHub sur une ligne n'arrête pas les autres : il est nommé, et l'écran passe en ambre
 - `GitHubCli` est le seul point qui lance `gh.exe`, calqué sur `BitwardenCli` plutôt que de partager
   son lanceur : celui-là porte l'environnement secret de `bw`, et le toucher ferait relire sa chaîne

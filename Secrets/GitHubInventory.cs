@@ -17,10 +17,10 @@ public sealed record GitHubRemoteEntry(string Name, DateTimeOffset? UpdatedAt);
 
 /// <summary>L'inventaire comparé à GitHub, sans rien déverrouiller.</summary>
 /// <param name="Missing">Dans l'inventaire, absents de GitHub : ils seront créés.</param>
-/// <param name="Extra">Sur GitHub, absents de l'inventaire : signalés, jamais supprimés.</param>
+/// <param name="Extra">Sur GitHub, absents de l'inventaire : signalés avec leur âge, jamais supprimés.</param>
 /// <param name="Present">Des deux côtés : ils seront écrasés, et leur âge se lit ici.</param>
 public sealed record GitHubCheck(
-    IReadOnlyList<string> Missing, IReadOnlyList<string> Extra, IReadOnlyList<GitHubRemoteEntry> Present);
+    IReadOnlyList<string> Missing, IReadOnlyList<GitHubRemoteEntry> Extra, IReadOnlyList<GitHubRemoteEntry> Present);
 
 /// <summary>
 /// PUR — un inventaire <c>.vault</c> : la cible GitHub, et pour chaque nom une référence au coffre.
@@ -90,7 +90,7 @@ public sealed class GitHubInventory
     /// par <see cref="Parse"/>, pas faire retomber le fichier — qui porte des marqueurs — vers le
     /// presse-papier sans un mot.
     /// </remarks>
-    public static bool Declares(string content) => Lines(content).Any(l => Header.IsMatch(l));
+    public static bool Declares(string content) => Lines(content).Where(l => Header.IsMatch(l)).Any();
 
     /// <summary>L'inventaire, ou ce qui l'empêche d'en être un. Jamais les deux.</summary>
     public static (GitHubInventory? Inventory, IReadOnlyList<string> Failures) Parse(string content)
@@ -108,6 +108,9 @@ public sealed class GitHubInventory
 
             if (Header.Match(line) is { Success: true } declared)
             {
+                // Deux en-têtes, deux cibles possibles : garder l'un en silence enverrait peut-être
+                // au mauvais dépôt.
+                if (header != null) failures.Add(Loc.T("GitHub_Error_SecondHeader"));
                 header ??= declared;
                 continue;
             }
@@ -150,6 +153,11 @@ public sealed class GitHubInventory
     /// sur GitHub, et un workflow qui publie sur trois stores avec une clé manquante échouerait loin
     /// d'ici, sans dire laquelle.
     /// </remarks>
+    /// <remarks>
+    /// <b>Le second filet est repassé sur chaque valeur rendue</b> : <c>RenderStrict</c> ne vérifie
+    /// que les marqueurs qu'il a trouvés, et une valeur du coffre qui porterait un <c>{{ … }}</c>
+    /// partirait telle quelle. Le reste est compté, jamais recopié — ce serait un morceau de secret.
+    /// </remarks>
     public (IReadOnlyList<GitHubValue>? Values, IReadOnlyList<string> Missing) Render(
         Func<SecretMarker, SecretLookup> lookup)
     {
@@ -160,8 +168,20 @@ public sealed class GitHubInventory
         {
             var (text, entryMissing) = SecretTemplate.RenderStrict(entry.Template, lookup);
 
-            if (text is null) missing.AddRange(entryMissing);
-            else values.Add(new GitHubValue(entry.Name, text));
+            if (text is null)
+            {
+                missing.AddRange(entryMissing);
+                continue;
+            }
+
+            var leftovers = SecretTemplate.FindLeftovers(text).Count;
+            if (leftovers > 0)
+            {
+                missing.Add(Loc.F("GitHub_Error_Leftovers", entry.Name, leftovers));
+                continue;
+            }
+
+            values.Add(new GitHubValue(entry.Name, text));
         }
 
         return missing.Count > 0
@@ -182,8 +202,7 @@ public sealed class GitHubInventory
 
         var extra = remote
             .Where(r => !declared.Contains(r.Name))
-            .Select(r => r.Name)
-            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         var present = Entries
@@ -238,19 +257,30 @@ public sealed class GitHubInventory
 
         string? repo = null;
         string? environment = null;
+        var given = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var token in header.Groups["rest"].Value.Split(' ', '\t').Where(t => t.Length > 0))
         {
             var separator = token.IndexOf('=');
-            var key = separator < 0 ? token : token[..separator];
+            var key = (separator < 0 ? token : token[..separator]).ToLowerInvariant();
             var value = separator < 0 ? "" : Expand(token[(separator + 1)..], line: 1, variables, failures);
 
-            switch (key.ToLowerInvariant())
+            if (key is not ("repo" or "environment"))
             {
-                case "repo": repo = value; break;
-                case "environment": environment = value.Length == 0 ? null : value; break;
-                default: failures.Add(Loc.F("GitHub_Error_UnknownParameter", key)); break;
+                failures.Add(Loc.F("GitHub_Error_UnknownParameter", key));
+                continue;
             }
+
+            // Répété, il changerait de cible selon la dernière valeur ; vide, environment= ne dirait
+            // pas s'il vise le dépôt par intention ou par oubli. L'absence du paramètre, elle, est claire.
+            if (!given.Add(key) || value.Length == 0)
+            {
+                failures.Add(Loc.F("GitHub_Error_AmbiguousParameter", key));
+                continue;
+            }
+
+            if (key == "repo") repo = value;
+            else environment = value;
         }
 
         if (repo is null)
@@ -296,8 +326,10 @@ public sealed class GitHubInventory
                 continue;
             }
 
+            // Un marqueur, et rien d'autre : du texte autour serait une valeur en clair qui part sur
+            // GitHub, qu'il vienne de la ligne ou d'une variable substituée.
             var template = Expand(rawValue, line, variables, failures);
-            if (SecretTemplate.FindMarkers(template).Count == 0)
+            if (!SecretTemplate.IsSingleMarker(template))
             {
                 failures.Add(Loc.F("GitHub_Error_PlainValue", name));
                 continue;

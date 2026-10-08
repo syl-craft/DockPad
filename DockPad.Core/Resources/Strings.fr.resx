@@ -1542,7 +1542,7 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>{0} apparaît deux fois dans l'inventaire (GitHub ignore la casse).</value>
   </data>
   <data name="GitHub_Error_PlainValue" xml:space="preserve">
-    <value>{0} porte une valeur en clair : chaque ligne doit pointer vers le coffre avec un marqueur bw:item:champ.</value>
+    <value>{0} doit être exactement un marqueur bw:item:champ, sans rien autour : tout autre texte partirait en clair.</value>
   </data>
   <data name="GitHub_Error_UnknownVariable" xml:space="preserve">
     <value>Variable inconnue « {0} » (ligne {1}) : définis-la par une ligne @{0} = ….</value>
@@ -1612,5 +1612,23 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   </data>
   <data name="GitHub_Partial_Title" xml:space="preserve">
     <value>Envoi incomplet — des valeurs ont été refusées</value>
+  </data>
+  <data name="GitHub_Error_SecondHeader" xml:space="preserve">
+    <value>L'inventaire porte deux lignes « # dockpad: » : n'en garde qu'une, c'est elle qui nomme la cible.</value>
+  </data>
+  <data name="GitHub_Error_AmbiguousParameter" xml:space="preserve">
+    <value>Le paramètre d'en-tête « {0} » est répété ou vide : donne-le une fois, avec une valeur, ou retire-le.</value>
+  </data>
+  <data name="GitHub_Error_Leftovers" xml:space="preserve">
+    <value>{0} : la valeur du coffre contient encore {1} {1:plural:marqueur|marqueurs}. Rien n'a été envoyé.</value>
+  </data>
+  <data name="GitHub_Error_ListUnreadable" xml:space="preserve">
+    <value>La réponse de GitHub pour {0} est illisible : la vérification n'a rien prouvé, rien n'a été comparé.</value>
+  </data>
+  <data name="GitHub_Error_SetUncertain" xml:space="preserve">
+    <value>{0} : GitHub n'a pas répondu en {1} secondes — la valeur a pu être écrite, ou non. Relance la vérification.</value>
+  </data>
+  <data name="GitHub_Error_SetUnsent" xml:space="preserve">
+    <value>{0} : non envoyé, l'envoi s'est arrêté avant.</value>
   </data>
 </root>

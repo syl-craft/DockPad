@@ -1542,7 +1542,7 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
     <value>{0} 4pp4r41t d3ux f015 d4n5 l'1nv3nt41r3 (G1tHub 1gn0r3 l4 c4553).</value>
   </data>
   <data name="GitHub_Error_PlainValue" xml:space="preserve">
-    <value>{0} p0rt3 un3 v4l3ur 3n cl41r : ch4qu3 l1gn3 d01t p01nt3r v3r5 l3 c0ffr3 4v3c un m4rqu3ur bw:1t3m:ch4mp.</value>
+    <value>{0} d01t 3tr3 3x4ct3m3nt un m4rqu3ur bw:1t3m:ch4mp, 54n5 r13n 4ut0ur : t0ut 4utr3 t3xt3 p4rt1r41t 3n cl41r.</value>
   </data>
   <data name="GitHub_Error_UnknownVariable" xml:space="preserve">
     <value>V4r14bl3 1nc0nnu3 « {0} » (l1gn3 {1}) : d3f1n15-l4 p4r un3 l1gn3 @{0} = ….</value>
@@ -1612,5 +1612,23 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   </data>
   <data name="GitHub_Partial_Title" xml:space="preserve">
     <value>3nv01 1nc0mpl3t — d35 v4l3ur5 0nt 3t3 r3fu5335</value>
+  </data>
+  <data name="GitHub_Error_SecondHeader" xml:space="preserve">
+    <value>L'1nv3nt41r3 p0rt3 d3ux l1gn35 « # d0ckp4d: » : n'3n g4rd3 qu'un3, c'35t 3ll3 qu1 n0mm3 l4 c1bl3.</value>
+  </data>
+  <data name="GitHub_Error_AmbiguousParameter" xml:space="preserve">
+    <value>L3 p4r4m3tr3 d'3n-t3t3 « {0} » 35t r3p3t3 0u v1d3 : d0nn3-l3 un3 f015, 4v3c un3 v4l3ur, 0u r3t1r3-l3.</value>
+  </data>
+  <data name="GitHub_Error_Leftovers" xml:space="preserve">
+    <value>{0} : l4 v4l3ur du c0ffr3 c0nt13nt 3nc0r3 {1} {1:plural:marqueur|marqueurs}. R13n n'4 3t3 3nv0y3.</value>
+  </data>
+  <data name="GitHub_Error_ListUnreadable" xml:space="preserve">
+    <value>L4 r3p0n53 d3 G1tHub p0ur {0} 35t 1ll151bl3 : l4 v3r1f1c4t10n n'4 r13n pr0uv3, r13n n'4 3t3 c0mp4r3.</value>
+  </data>
+  <data name="GitHub_Error_SetUncertain" xml:space="preserve">
+    <value>{0} : G1tHub n'4 p45 r3p0ndu 3n {1} 53c0nd35 — l4 v4l3ur 4 pu 3tr3 3cr1t3, 0u n0n. R3l4nc3 l4 v3r1f1c4t10n.</value>
+  </data>
+  <data name="GitHub_Error_SetUnsent" xml:space="preserve">
+    <value>{0} : n0n 3nv0y3, l'3nv01 5'35t 4rr3t3 4v4nt.</value>
   </data>
 </root>

@@ -1542,7 +1542,7 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>{0} appears twice in the inventory (GitHub ignores case).</value>
   </data>
   <data name="GitHub_Error_PlainValue" xml:space="preserve">
-    <value>{0} has a plain value: every line must point to the vault with a bw:item:field marker.</value>
+    <value>{0} must be exactly one bw:item:field marker, with nothing around it: any other text would be sent as a plain value.</value>
   </data>
   <data name="GitHub_Error_UnknownVariable" xml:space="preserve">
     <value>Unknown variable « {0} » (line {1}): define it with a @{0} = … line.</value>
@@ -1612,5 +1612,23 @@ Force them to stop? Unsaved work may be lost.</value></data>
   </data>
   <data name="GitHub_Partial_Title" xml:space="preserve">
     <value>Incomplete send — some values were refused</value>
+  </data>
+  <data name="GitHub_Error_SecondHeader" xml:space="preserve">
+    <value>The inventory has two « # dockpad: » lines: keep only one, it names the target.</value>
+  </data>
+  <data name="GitHub_Error_AmbiguousParameter" xml:space="preserve">
+    <value>The header parameter « {0} » is repeated or empty: give it once, with a value, or remove it.</value>
+  </data>
+  <data name="GitHub_Error_Leftovers" xml:space="preserve">
+    <value>{0}: the vault value still contains {1} {1:plural:marker|markers}. Nothing was sent.</value>
+  </data>
+  <data name="GitHub_Error_ListUnreadable" xml:space="preserve">
+    <value>GitHub's answer for {0} could not be read: the check proved nothing, nothing was compared.</value>
+  </data>
+  <data name="GitHub_Error_SetUncertain" xml:space="preserve">
+    <value>{0}: GitHub did not answer within {1} seconds — the value may or may not have been written. Run the check again.</value>
+  </data>
+  <data name="GitHub_Error_SetUnsent" xml:space="preserve">
+    <value>{0}: not sent, the send stopped before it.</value>
   </data>
 </root>

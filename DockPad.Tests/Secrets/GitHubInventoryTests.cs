@@ -251,8 +251,9 @@ public class GitHubInventoryTests
         var (values, missing) = inventory.Render(m => SecretLookup.Found($"v-{m.Field}"));
 
         Assert.Empty(missing);
-        Assert.Equal(["FIREFOX_JWT_ISSUER", "EDGE_API_KEY"], values!.Select(v => v.Name));
-        Assert.Equal("v-EDGE_API_KEY", values![1].Value);
+        var rendered = values ?? throw new InvalidOperationException("rendu attendu");
+        Assert.Equal(["FIREFOX_JWT_ISSUER", "EDGE_API_KEY"], rendered.Select(v => v.Name));
+        Assert.Equal("v-EDGE_API_KEY", rendered[1].Value);
     }
 
     [Fact]
@@ -269,7 +270,7 @@ public class GitHubInventoryTests
     }
 
     [Fact]
-    public void UneValeurSurPlusieursLignesEstTransmiseTelleQuelle()
+    public void UneValeurSurPlusieursLignesEstRendueTelleQuelle()
     {
         var inventory = Parsed("""
             # dockpad: github-secrets repo=a/b
@@ -279,7 +280,61 @@ public class GitHubInventoryTests
 
         var (values, _) = inventory.Render(_ => SecretLookup.Found(pem));
 
-        Assert.Equal(pem, values![0].Value);
+        // Rendue intacte. À l'envoi, gh retire lui-même les retours à la ligne de fin : limite de
+        // gh, documentée dans Secrets/README.md, sans effet sur une clé PEM.
+        Assert.Equal(pem, (values ?? throw new InvalidOperationException("rendu attendu"))[0].Value);
+    }
+
+    [Theory]
+    [InlineData("X=en-clair{{ bw:i:f }}")]
+    [InlineData("X={{ bw:i:f }}{{ bw:j:g }}")]
+    [InlineData("X={{ bw:i:f }} suffixe")]
+    public void UneValeurEstUnMarqueurEtRienDAutre(string line)
+    {
+        Refused("# dockpad: github-secrets repo=a/b\n" + line);
+    }
+
+    [Fact]
+    public void UneVariableNApportePasDeTexteEnClairAutourDuMarqueur()
+    {
+        Refused("""
+            # dockpad: github-secrets repo=a/b
+            @prefixe = public-
+            X=${prefixe}{{ bw:i:f }}
+            """);
+    }
+
+    [Fact]
+    public void UnSecondEnTeteEstRefuse()
+    {
+        Refused("""
+            # dockpad: github-secrets repo=a/b
+            # dockpad: github-secrets repo=c/d
+            X={{ bw:i:f }}
+            """);
+    }
+
+    [Theory]
+    [InlineData("repo=a/b repo=c/d")]
+    [InlineData("repo=a/b environment=")]
+    [InlineData("repo=a/b environment=un environment=deux")]
+    public void UnParametreRepeteOuVideEstRefuse(string parameters)
+    {
+        Refused("# dockpad: github-secrets " + parameters + "\nX={{ bw:i:f }}");
+    }
+
+    [Fact]
+    public void UneValeurDuCoffreQuiPorteUnMarqueurBloqueLEnvoi()
+    {
+        var inventory = Parsed(Secrets);
+
+        var (values, missing) = inventory.Render(m => SecretLookup.Found(
+            m.Field == "EDGE_API_KEY" ? "abc{{ bw:autre:champ }}" : "ok"));
+
+        Assert.Null(values);
+        var failure = Assert.Single(missing);
+        Assert.Contains("EDGE_API_KEY", failure);
+        Assert.DoesNotContain("abc", failure);
     }
 
     // ───────────── Comparaison ─────────────
@@ -296,7 +351,8 @@ public class GitHubInventoryTests
         ]);
 
         Assert.Equal(["FIREFOX_JWT_ISSUER"], check.Missing);
-        Assert.Equal(["OLD_TOKEN"], check.Extra);
+        Assert.Equal(["OLD_TOKEN"], check.Extra.Select(e => e.Name));
+        Assert.Equal(updated, check.Extra[0].UpdatedAt);
         Assert.Equal(["EDGE_API_KEY"], check.Present.Select(p => p.Name));
         Assert.Equal(updated, check.Present[0].UpdatedAt);
     }

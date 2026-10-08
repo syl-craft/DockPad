@@ -51,7 +51,7 @@ public class GitHubCliTests : IDisposable
             [{"name":"EDGE_API_KEY","updatedAt":"2026-09-01T10:00:00Z"},{"name":"X","updatedAt":null}]
             """;
 
-        var entries = GitHubCli.ParseList(stdout);
+        var entries = GitHubCli.ParseList(stdout) ?? throw new InvalidOperationException("liste attendue");
 
         Assert.Equal(["EDGE_API_KEY", "X"], entries.Select(e => e.Name));
         Assert.Equal(new DateTimeOffset(2026, 9, 1, 10, 0, 0, TimeSpan.Zero), entries[0].UpdatedAt);
@@ -59,9 +59,18 @@ public class GitHubCliTests : IDisposable
     }
 
     [Fact]
-    public void UneSortieIllisibleNeDonneRien()
+    public void UneSortieIllisibleNEstPasUneListeVide()
     {
-        Assert.Empty(GitHubCli.ParseList("pas du json"));
+        // Lue comme vide, elle ferait annoncer chaque nom « à créer » : une vérification réussie
+        // qui n'a rien vérifié.
+        Assert.Null(GitHubCli.ParseList("pas du json"));
+        Assert.Null(GitHubCli.ParseList("[{tronqué"));
+    }
+
+    [Fact]
+    public void UneListeVideEstUneReponseValide()
+    {
+        Assert.Equal([], GitHubCli.ParseList("[]") ?? throw new InvalidOperationException("liste attendue"));
     }
 
     [Fact]

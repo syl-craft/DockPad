@@ -89,11 +89,17 @@ public static class GitHubCli
 
     // ───────────── Décodage ─────────────
 
-    /// <summary>Ce que <c>gh … list --json name,updatedAt</c> rend, ou rien si la sortie est illisible.</summary>
-    public static IReadOnlyList<GitHubRemoteEntry> ParseList(string stdout)
+    /// <summary>
+    /// Ce que <c>gh … list --json name,updatedAt</c> rend, ou <c>null</c> si la sortie est illisible.
+    /// </summary>
+    /// <remarks>
+    /// <c>null</c> et non une liste vide : une sortie illisible lue comme « rien sur GitHub »
+    /// annoncerait chaque nom à créer et aucun en trop — une vérification réussie qui n'a rien vérifié.
+    /// </remarks>
+    public static IReadOnlyList<GitHubRemoteEntry>? ParseList(string stdout)
     {
         var start = stdout.IndexOf('[');
-        if (start < 0) return [];
+        if (start < 0) return null;
 
         try
         {
@@ -112,8 +118,8 @@ public static class GitHubCli
                         : null))
             .ToList();
         }
-        catch (JsonException) { return []; }
-        catch (InvalidOperationException) { return []; }
+        catch (JsonException) { return null; }
+        catch (InvalidOperationException) { return null; }
     }
 
     // ───────────── Exécution ─────────────
@@ -124,6 +130,11 @@ public static class GitHubCli
     /// </summary>
     /// <remarks>
     /// <c>GH_PROMPT_DISABLED</c> : sans terminal, une question interactive bloquerait jusqu'au délai.
+    /// </remarks>
+    /// <remarks>
+    /// <b>Les modes debug hérités sont retirés.</b> <c>GH_DEBUG=api</c> fait écrire à <c>gh</c> le
+    /// corps de ses requêtes HTTP sur l'erreur standard — donc la valeur d'une variable envoyée — et
+    /// l'erreur standard est un diagnostic qui finit au journal.
     /// </remarks>
     public static async Task<CliResult> RunAsync(
         string exe, IReadOnlyList<string> arguments, CancellationToken token, string? stdin = null)
@@ -144,6 +155,8 @@ public static class GitHubCli
         psi.Environment["GH_PROMPT_DISABLED"] = "1";
         psi.Environment["GH_NO_UPDATE_NOTIFIER"] = "1";
         psi.Environment["NO_COLOR"] = "1";
+        psi.Environment.Remove("GH_DEBUG");
+        psi.Environment.Remove("DEBUG");
 
         using var process = Process.Start(psi)
             ?? throw new InvalidOperationException("The GitHub CLI could not be started.");

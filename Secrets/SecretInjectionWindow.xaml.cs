@@ -695,11 +695,17 @@ public partial class SecretInjectionWindow : Window
             return;
         }
 
-        var refused = outcome.Refused.Select(name => Loc.F("GitHub_Error_SetRefused", name)).ToList();
+        List<string> problems =
+        [
+            .. outcome.Refused.Select(name => Loc.F("GitHub_Error_SetRefused", name)),
+            .. (outcome.Uncertain ?? []).Select(name => Loc.F("GitHub_Error_SetUncertain", name, GitHubCli.TimeoutSeconds)),
+            .. (outcome.Unsent ?? []).Select(name => Loc.F("GitHub_Error_SetUnsent", name)),
+        ];
 
-        if (outcome.Sent.Count == 0) { ShowFailure(InjectionReport.Failed([.. refused, .. notes])); return; }
+        // L'écran d'échec dit « rien n'a été envoyé » : il n'est juste que si rien n'a pu partir.
+        if (!outcome.ReachedGitHub) { ShowFailure(InjectionReport.Failed([.. problems, .. notes])); return; }
 
-        ShowResult(InjectionReport.Sent(outcome, [.. notes, .. refused]));
+        ShowResult(InjectionReport.Sent(outcome, [.. notes, .. problems]));
     }
 
     private void ShowGitHubTimeout() =>
@@ -721,14 +727,15 @@ public partial class SecretInjectionWindow : Window
         ListGitHubMissing.ItemsSource = check.Missing;
         BlocGitHubMissing.Visibility = Vis(check.Missing.Count > 0);
 
-        ListGitHubPresent.ItemsSource = check.Present
-            .Select(p => GitHubInventory.AgeInDays(p.UpdatedAt, now) is { } days
-                ? Loc.F("GitHub_Check_Age", p.Name, days)
-                : p.Name)
-            .ToList();
+        string Aged(GitHubRemoteEntry entry) =>
+            GitHubInventory.AgeInDays(entry.UpdatedAt, now) is { } days
+                ? Loc.F("GitHub_Check_Age", entry.Name, days)
+                : entry.Name;
+
+        ListGitHubPresent.ItemsSource = check.Present.Select(Aged).ToList();
         BlocGitHubPresent.Visibility = Vis(check.Present.Count > 0);
 
-        ListGitHubExtra.ItemsSource = check.Extra;
+        ListGitHubExtra.ItemsSource = check.Extra.Select(Aged).ToList();
         BlocGitHubExtra.Visibility = Vis(check.Extra.Count > 0);
 
         Show(PanelGitHub);
