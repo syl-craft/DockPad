@@ -1505,4 +1505,112 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Update_ProfileInside" xml:space="preserve"><value>Votre profil se trouve dans le dossier de l’application. Déplacez-le hors de ce dossier et adaptez DOCKPAD_PROFILE_DIR avant la mise à jour.</value></data>
   <data name="Update_CloseDialogs" xml:space="preserve"><value>Terminez votre travail et fermez les autres fenêtres de dialogue de DockPad avant la mise à jour.</value></data>
   <data name="Update_DownloadLatest" xml:space="preserve"><value>Télécharger la dernière version</value></data>
+  <data name="GitHub_Error_Unreadable" xml:space="preserve">
+    <value>La ligne {0} de l'inventaire n'est ni une ligne NOM=marqueur, ni @variable = valeur, ni un commentaire.</value>
+  </data>
+  <data name="GitHub_Error_NoHeader" xml:space="preserve">
+    <value>L'inventaire n'a pas de ligne « # dockpad: github-secrets » ou « # dockpad: github-variables ».</value>
+  </data>
+  <data name="GitHub_Error_NoEntries" xml:space="preserve">
+    <value>L'inventaire ne liste aucun secret ni aucune variable.</value>
+  </data>
+  <data name="GitHub_Error_VariableRedefined" xml:space="preserve">
+    <value>La variable @{0} est définie deux fois.</value>
+  </data>
+  <data name="GitHub_Error_VariableMarker" xml:space="preserve">
+    <value>La variable @{0} contient un marqueur du coffre : une variable est une valeur littérale, le marqueur se place sur une ligne NOM=.</value>
+  </data>
+  <data name="GitHub_Error_UnknownKind" xml:space="preserve">
+    <value>Type d'inventaire inconnu « {0} » : github-secrets ou github-variables attendu.</value>
+  </data>
+  <data name="GitHub_Error_UnknownParameter" xml:space="preserve">
+    <value>Paramètre d'en-tête inconnu « {0} » : seuls repo= et environment= sont acceptés.</value>
+  </data>
+  <data name="GitHub_Error_RepoMissing" xml:space="preserve">
+    <value>L'en-tête ne nomme pas le dépôt : ajoute repo=propriétaire/nom.</value>
+  </data>
+  <data name="GitHub_Error_RepoInvalid" xml:space="preserve">
+    <value>« {0} » n'est pas un dépôt de la forme propriétaire/nom.</value>
+  </data>
+  <data name="GitHub_Error_BadName" xml:space="preserve">
+    <value>« {0} » (ligne {1}) n'est pas un nom GitHub valide : lettres, chiffres et souligné, sans chiffre en tête.</value>
+  </data>
+  <data name="GitHub_Error_ReservedName" xml:space="preserve">
+    <value>{0} : GitHub réserve le préfixe GITHUB_.</value>
+  </data>
+  <data name="GitHub_Error_DuplicateName" xml:space="preserve">
+    <value>{0} apparaît deux fois dans l'inventaire (GitHub ignore la casse).</value>
+  </data>
+  <data name="GitHub_Error_PlainValue" xml:space="preserve">
+    <value>{0} porte une valeur en clair : chaque ligne doit pointer vers le coffre avec un marqueur bw:item:champ.</value>
+  </data>
+  <data name="GitHub_Error_UnknownVariable" xml:space="preserve">
+    <value>Variable inconnue « {0} » (ligne {1}) : définis-la par une ligne @{0} = ….</value>
+  </data>
+  <data name="GitHub_Target_Environment" xml:space="preserve">
+    <value>{0} · environnement {1}</value>
+  </data>
+  <data name="GitHub_Error_CliMissing" xml:space="preserve">
+    <value>La CLI GitHub (gh) est introuvable. Installe-la avec « winget install GitHub.cli ».</value>
+  </data>
+  <data name="GitHub_Error_NotLoggedIn" xml:space="preserve">
+    <value>La CLI GitHub n'est pas connectée. Lance « gh auth login » avec le compte propriétaire du dépôt.</value>
+  </data>
+  <data name="GitHub_Error_ListFailed" xml:space="preserve">
+    <value>GitHub a refusé de lister {0} : vérifie le dépôt, l'environnement et les droits du compte.</value>
+  </data>
+  <data name="GitHub_Error_SetRefused" xml:space="preserve">
+    <value>{0} : GitHub a refusé la valeur (détail dans le journal).</value>
+  </data>
+  <data name="GitHub_Error_CliFailed" xml:space="preserve">
+    <value>La CLI GitHub n'a pas répondu comme prévu.</value>
+  </data>
+  <data name="GitHub_Error_Timeout" xml:space="preserve">
+    <value>GitHub n'a pas répondu en {0} secondes. Certaines valeurs ont pu partir : relance la vérification.</value>
+  </data>
+  <data name="GitHub_State_Checking" xml:space="preserve">
+    <value>Comparaison de l'inventaire avec GitHub…</value>
+  </data>
+  <data name="GitHub_State_Sending" xml:space="preserve">
+    <value>Envoi vers GitHub…</value>
+  </data>
+  <data name="GitHub_Check_TitleSecrets" xml:space="preserve">
+    <value>{0} {0:plural:secret|secrets} dans l'inventaire</value>
+  </data>
+  <data name="GitHub_Check_TitleVariables" xml:space="preserve">
+    <value>{0} {0:plural:variable|variables} dans l'inventaire</value>
+  </data>
+  <data name="GitHub_Check_Age" xml:space="preserve">
+    <value>{0} — mis à jour il y a {1} {1:plural:jour|jours}</value>
+  </data>
+  <data name="GitHub_Check_Missing" xml:space="preserve">
+    <value>Absents de GitHub — seront créés :</value>
+  </data>
+  <data name="GitHub_Check_Present" xml:space="preserve">
+    <value>Déjà sur GitHub — seront écrasés :</value>
+  </data>
+  <data name="GitHub_Check_Extra" xml:space="preserve">
+    <value>Sur GitHub mais absents de l'inventaire — laissés tels quels :</value>
+  </data>
+  <data name="GitHub_Check_Hint" xml:space="preserve">
+    <value>Continue pour déverrouiller le coffre et envoyer les valeurs. Rien n'a encore été lu dans le coffre.</value>
+  </data>
+  <data name="GitHub_Result_Secrets" xml:space="preserve">
+    <value>{0} {0:plural:secret envoyé|secrets envoyés}</value>
+  </data>
+  <data name="GitHub_Result_Variables" xml:space="preserve">
+    <value>{0} {0:plural:variable envoyée|variables envoyées}</value>
+  </data>
+  <data name="GitHub_Result_Target" xml:space="preserve">
+    <value>Envoyés vers</value>
+  </data>
+  <data name="Inject_Failed_Hint_GitHub" xml:space="preserve">
+    <value>Un jeu partiel serait pire que rien : rien n'a été envoyé à GitHub.</value>
+  </data>
+  <data name="GitHub_Result_Title" xml:space="preserve">
+    <value>Envoi terminé</value>
+  </data>
+  <data name="GitHub_Partial_Title" xml:space="preserve">
+    <value>Envoi incomplet — des valeurs ont été refusées</value>
+  </data>
 </root>

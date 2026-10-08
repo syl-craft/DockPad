@@ -1501,6 +1501,17 @@ menu contextuel.
 Le client de bureau Bitwarden ne fournit **pas** la CLI — deux produits distincts, et c'est la
 première erreur qu'on fait ; le texte d'aide le dit.
 
+#### Inventaires GitHub (`.vault`)
+Un fichier dont une ligne commence par `# dockpad: github-secrets` (ou `github-variables`) alimente
+les secrets ou variables d'un dépôt GitHub, et d'un environnement s'il est nommé, par `gh`. Détail
+et règles dans `Secrets/README.md` ; l'essentiel :
+
+- variables `@nom = valeur` citées par `${nom}` (dépôt, nom d'item, préfixe) — littéraux jamais envoyés ;
+- vérification (`gh … list`) **avant** le mot de passe : créés, écrasés avec leur âge, en trop
+  signalés et jamais supprimés ;
+- rendu tout ou rien, valeur par l'**entrée standard** de `gh … set`, jamais en argument ;
+- `GitHubCli` seul à lancer `gh.exe` ; captures `DialogShot inject-github` et `inject-github-sent`.
+
 #### Ce qui n'est pas fait, et pourquoi
 - **Aucun outil MCP.** Le réflexe du dépôt est d'exposer chaque service d'action au serveur MCP ; ici
   le produit est un secret en clair, qui n'a rien à faire dans une réponse lue par un modèle
@@ -1513,7 +1524,7 @@ première erreur qu'on fait ; le texte d'aide le dit.
 
 #### Captures
 `DialogShot.exe inject <fr|en> <png>` (saisie du mot de passe), `inject-failed` (compte-rendu
-d'échec), `inject-choice` (choix des sorties), `inject-files` (les deux, complet), `inject-partial` (**rendu incomplet** : clés absentes,
+d'échec), `inject-choice` (choix des sorties), `inject-files` (les deux, complet), `inject-github` (vérification d'un inventaire GitHub), `inject-github-sent`, `inject-partial` (**rendu incomplet** : clés absentes,
 fichiers écrits, fichiers périmés et leur bouton de suppression) et `inject-create` (**formulaire de
 création** : un item neuf, un item existant à compléter, choix de collection) — les états qui
 valent une relecture. `inject-partial` est le plus important parmi les comptes-rendus : c'est le

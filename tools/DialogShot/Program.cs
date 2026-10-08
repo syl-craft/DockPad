@@ -39,7 +39,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|bindings|grid> <fr|en> <chemin.png> [onglet]");
+            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en> <chemin.png> [onglet]");
             return;
         }
 
@@ -140,6 +140,8 @@ internal static class Program
             "inject-partial" => InjectionPartialWindow(),
             "inject-choice" => InjectionChoiceWindow(),
             "inject-create" => InjectionCreateWindow(),
+            "inject-github" => InjectionGitHubWindow(),
+            "inject-github-sent" => InjectionGitHubSentWindow(),
             _ => throw new ArgumentException($"fenêtre inconnue : {target}"),
         };
 
@@ -295,6 +297,58 @@ internal static class Program
             _ => DockPad.Secrets.SecretLookup.Missing("absent"), Classify, writer, warning: null);
 
         Invoke(window, "ShowCreate", session);
+        return window;
+    }
+
+    /// <summary>Un inventaire de demonstration : noms neutres, aucune valeur.</summary>
+    private const string DemoInventory = """
+        # dockpad: github-secrets repo=${owner}/${project} environment=stores
+        @owner = exemple
+        @project = mon-extension
+        @item = web-store-apps
+        FIREFOX_JWT_ISSUER={{ bw:${item}:FIREFOX_JWT_ISSUER }}
+        FIREFOX_JWT_SECRET={{ bw:${item}:FIREFOX_JWT_SECRET }}
+        EDGE_CLIENT_ID={{ bw:${item}:EDGE_CLIENT_ID }}
+        EDGE_API_KEY={{ bw:${item}:EDGE_API_KEY }}
+        CHROME_SERVICE_ACCOUNT_PRIVATE_KEY={{ bw:${item}:notes }}
+        """;
+
+    /// <summary>
+    /// La VERIFICATION d'un inventaire GitHub, avant le mot de passe : a creer, a ecraser avec leur
+    /// age, et ce qui n'est que sur GitHub. Ni gh, ni coffre.
+    /// </summary>
+    private static Window InjectionGitHubWindow()
+    {
+        var window = new DockPad.Secrets.SecretInjectionWindow(
+            Path.Combine(Path.GetTempPath(), "stores.secrets.vault"));
+
+        var inventory = DockPad.Secrets.GitHubInventory.Parse(DemoInventory).Inventory
+            ?? throw new InvalidOperationException("inventaire de demonstration invalide");
+        var now = DateTimeOffset.Now;
+
+        var check = inventory.Compare([
+            new("FIREFOX_JWT_ISSUER", now.AddDays(-12)),
+            new("FIREFOX_JWT_SECRET", now.AddDays(-12)),
+            new("EDGE_API_KEY", now.AddDays(-64)),
+            new("OLD_CHROME_REFRESH_TOKEN", now.AddDays(-200)),
+        ]);
+
+        Invoke(window, "ShowGitHub", inventory, check);
+        return window;
+    }
+
+    /// <summary>Le compte-rendu d'un envoi vers GitHub : des noms, jamais une valeur.</summary>
+    private static Window InjectionGitHubSentWindow()
+    {
+        var window = new DockPad.Secrets.SecretInjectionWindow(
+            Path.Combine(Path.GetTempPath(), "stores.secrets.vault"));
+
+        var outcome = new DockPad.Secrets.GitHubSendOutcome(DockPad.Secrets.GitHubTargetKind.Secrets,
+            "exemple/mon-extension · environnement stores",
+            ["FIREFOX_JWT_ISSUER", "FIREFOX_JWT_SECRET", "EDGE_CLIENT_ID", "EDGE_API_KEY", "CHROME_SERVICE_ACCOUNT_PRIVATE_KEY"],
+            []);
+
+        Invoke(window, "ShowResult", DockPad.Secrets.InjectionReport.Sent(outcome, []));
         return window;
     }
 

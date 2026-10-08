@@ -37,11 +37,12 @@ public class SecretBoundaryGuardTests
         RegexOptions.Compiled);
 
     /// <summary>
-    /// Les deux façons dont la CLI Bitwarden accepte un secret <b>en clair sur la ligne de
-    /// commande</b>. <c>--passwordenv</c> n'en fait pas partie : il reçoit un <i>nom</i> de variable.
+    /// Les façons dont une CLI accepte un secret <b>en clair sur la ligne de commande</b> : les deux
+    /// de Bitwarden, et le <c>--body</c> de <c>gh secret set</c> — la valeur passe par l'entrée
+    /// standard. <c>--passwordenv</c> n'en fait pas partie : il reçoit un <i>nom</i> de variable.
     /// </summary>
     private static readonly Regex SecretOnCommandLine =
-        new(@"--session|--password(?!env)", RegexOptions.Compiled);
+        new(@"--session|--password(?!env)|--body", RegexOptions.Compiled);
 
     /// <summary>
     /// Les seuls littéraux portant « password » ou « session » qui peuvent être un argument : ce

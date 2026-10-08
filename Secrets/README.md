@@ -170,6 +170,43 @@ l'écriture, donc la clé doit survivre à la saisie : elle vit dans la fermetur
 rendu par `OpenAsync`, jamais dans un champ de la fenêtre ni du service, et disparaît à
 `InjectionSession.Close()` — à la fin de l'injection, ou à la fermeture de la fenêtre.
 
+## Inventaires GitHub (`.vault`)
+
+Un fichier qui porte une ligne `# dockpad: github-secrets` ou `# dockpad: github-variables` est un
+**inventaire** : chaque ligne `NOM={{ bw:item:champ }}` alimente un secret ou une variable de GitHub
+Actions, par `gh`. Le même clic droit, la même fenêtre, le même mot de passe maître.
+
+```ini
+# dockpad: github-secrets repo=${owner}/${projet} environment=stores
+@owner = syl-craft
+@projet = cadranote
+@item = syl-craft-web-store-apps
+EDGE_API_KEY={{ bw:${item}:EDGE_API_KEY }}
+CHROME_EXTENSION_ID={{ bw:${item}:${projet}-CHROME_EXTENSION_ID }}
+```
+
+- **L'en-tête tranche avant les marqueurs** (`SecretPlan`) : sans lui, un inventaire partirait dans
+  le presse-papier. Un type mal orthographié est refusé, pas renvoyé vers le presse-papier
+- **`environment=` est facultatif** : absent, ce sont les secrets et variables du dépôt
+- **Variables `@nom = valeur`**, citées par `${nom}` dans l'en-tête et les lignes. Des littéraux,
+  jamais envoyés à GitHub ; une variable ne cite que celles définies avant elle, ne porte pas de
+  marqueur, et une variable inconnue ou redéfinie est un refus
+- **Aucune valeur en clair** : une ligne sans marqueur est refusée, même pour un identifiant public
+- **La vérification précède le mot de passe** : `gh … list --json name,updatedAt` ne lit que des
+  noms. L'écran dit ce qui sera créé, écrasé (avec l'âge, pour voir venir une clé qui expire) et ce
+  qui n'est que sur GitHub — **signalé, jamais supprimé**
+- **Rendu tout ou rien** (`RenderStrict`) : une valeur manquante, et rien ne part. La session du
+  coffre est refermée **avant** les appels à `gh`
+- **La valeur passe par l'entrée standard de `gh … set`**, en UTF-8 sans BOM, jamais en argument :
+  la garde « rien en ligne de commande » interdit le drapeau de corps dans tout le dossier. Un refus
+  de GitHub sur une ligne n'arrête pas les autres : il est nommé, et l'écran passe en ambre
+- `GitHubCli` est le seul point qui lance `gh.exe`, calqué sur `BitwardenCli` plutôt que de partager
+  son lanceur : celui-là porte l'environnement secret de `bw`, et le toucher ferait relire sa chaîne
+  d'audit
+
+**Non automatisé, et c'est nommé** : l'envoi réel (`gh … set`). Vérifié en lecture seule sur
+`gh … list` ; l'écriture se vérifie à la main sur un dépôt de test.
+
 ## Syntaxe des marqueurs
 
 ```
@@ -197,6 +234,9 @@ clic droit  →  App  →  SecretInjection.Handle
                                │    │    └─ SecretFieldResolver   PUR — l'ordre des champs
                                │    ├─ SecretCreationPlan  PUR — ce que le formulaire propose, groupé par item
                                │    ├─ BwItemPatch         PUR — la fiche envoyée à create/edit, sans rien perdre
+                               │    ├─ GitHubInventory     PUR — inventaire .vault : en-tête, variables, rendu strict, comparaison
+                               │    ├─ GitHubSyncService   vérification puis envoi, ligne par ligne
+                               │    │    └─ GitHubCli      le seul point qui lance gh.exe (valeur par stdin)
                                │    └─ SecretTemplate      PUR — marqueurs, substitution, deux filets
                                └─ ClipboardGuard           copie marquée, empreinte, minuteur
 ```

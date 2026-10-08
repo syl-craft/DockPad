@@ -1505,4 +1505,112 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Update_ProfileInside" xml:space="preserve"><value>V0tr3 pr0f1l 53 tr0uv3 d4n5 l3 d05513r d3 l’4ppl1c4t10n. D3pl4c3z-l3 h0r5 d3 c3 d05513r 3t 4d4pt3z D0CKP4D_PR0F1L3_D1R 4v4nt l4 m153 4 j0ur.</value></data>
   <data name="Update_CloseDialogs" xml:space="preserve"><value>T3rm1n3z v0tr3 tr4v41l 3t f3rm3z l35 4utr35 f3n3tr35 d3 d14l0gu3 d3 D0ckP4d 4v4nt l4 m153 4 j0ur.</value></data>
   <data name="Update_DownloadLatest" xml:space="preserve"><value>T3l3ch4rg3r l4 d3rn13r3 v3r510n</value></data>
+  <data name="GitHub_Error_Unreadable" xml:space="preserve">
+    <value>L4 l1gn3 {0} d3 l'1nv3nt41r3 n'35t n1 un3 l1gn3 N0M=m4rqu3ur, n1 @v4r14bl3 = v4l3ur, n1 un c0mm3nt41r3.</value>
+  </data>
+  <data name="GitHub_Error_NoHeader" xml:space="preserve">
+    <value>L'1nv3nt41r3 n'4 p45 d3 l1gn3 « # d0ckp4d: g1thub-53cr3t5 » 0u « # d0ckp4d: g1thub-v4r14bl35 ».</value>
+  </data>
+  <data name="GitHub_Error_NoEntries" xml:space="preserve">
+    <value>L'1nv3nt41r3 n3 l15t3 4ucun 53cr3t n1 4ucun3 v4r14bl3.</value>
+  </data>
+  <data name="GitHub_Error_VariableRedefined" xml:space="preserve">
+    <value>L4 v4r14bl3 @{0} 35t d3f1n13 d3ux f015.</value>
+  </data>
+  <data name="GitHub_Error_VariableMarker" xml:space="preserve">
+    <value>L4 v4r14bl3 @{0} c0nt13nt un m4rqu3ur du c0ffr3 : un3 v4r14bl3 35t un3 v4l3ur l1tt3r4l3, l3 m4rqu3ur 53 pl4c3 5ur un3 l1gn3 N0M=.</value>
+  </data>
+  <data name="GitHub_Error_UnknownKind" xml:space="preserve">
+    <value>Typ3 d'1nv3nt41r3 1nc0nnu « {0} » : g1thub-53cr3t5 0u g1thub-v4r14bl35 4tt3ndu.</value>
+  </data>
+  <data name="GitHub_Error_UnknownParameter" xml:space="preserve">
+    <value>P4r4m3tr3 d'3n-t3t3 1nc0nnu « {0} » : 53ul5 r3p0= 3t 3nv1r0nm3nt= 50nt 4cc3pt35.</value>
+  </data>
+  <data name="GitHub_Error_RepoMissing" xml:space="preserve">
+    <value>L'3n-t3t3 n3 n0mm3 p45 l3 d3p0t : 4j0ut3 r3p0=pr0pr13t41r3/n0m.</value>
+  </data>
+  <data name="GitHub_Error_RepoInvalid" xml:space="preserve">
+    <value>« {0} » n'35t p45 un d3p0t d3 l4 f0rm3 pr0pr13t41r3/n0m.</value>
+  </data>
+  <data name="GitHub_Error_BadName" xml:space="preserve">
+    <value>« {0} » (l1gn3 {1}) n'35t p45 un n0m G1tHub v4l1d3 : l3ttr35, ch1ffr35 3t 50ul1gn3, 54n5 ch1ffr3 3n t3t3.</value>
+  </data>
+  <data name="GitHub_Error_ReservedName" xml:space="preserve">
+    <value>{0} : G1tHub r353rv3 l3 pr3f1x3 G1THUB_.</value>
+  </data>
+  <data name="GitHub_Error_DuplicateName" xml:space="preserve">
+    <value>{0} 4pp4r41t d3ux f015 d4n5 l'1nv3nt41r3 (G1tHub 1gn0r3 l4 c4553).</value>
+  </data>
+  <data name="GitHub_Error_PlainValue" xml:space="preserve">
+    <value>{0} p0rt3 un3 v4l3ur 3n cl41r : ch4qu3 l1gn3 d01t p01nt3r v3r5 l3 c0ffr3 4v3c un m4rqu3ur bw:1t3m:ch4mp.</value>
+  </data>
+  <data name="GitHub_Error_UnknownVariable" xml:space="preserve">
+    <value>V4r14bl3 1nc0nnu3 « {0} » (l1gn3 {1}) : d3f1n15-l4 p4r un3 l1gn3 @{0} = ….</value>
+  </data>
+  <data name="GitHub_Target_Environment" xml:space="preserve">
+    <value>{0} · 3nv1r0nn3m3nt {1}</value>
+  </data>
+  <data name="GitHub_Error_CliMissing" xml:space="preserve">
+    <value>L4 CL1 G1tHub (gh) 35t 1ntr0uv4bl3. 1n5t4ll3-l4 4v3c « w1ng3t 1n5t4ll G1tHub.cl1 ».</value>
+  </data>
+  <data name="GitHub_Error_NotLoggedIn" xml:space="preserve">
+    <value>L4 CL1 G1tHub n'35t p45 c0nn3ct33. L4nc3 « gh 4uth l0g1n » 4v3c l3 c0mpt3 pr0pr13t41r3 du d3p0t.</value>
+  </data>
+  <data name="GitHub_Error_ListFailed" xml:space="preserve">
+    <value>G1tHub 4 r3fu53 d3 l15t3r {0} : v3r1f13 l3 d3p0t, l'3nv1r0nn3m3nt 3t l35 dr01t5 du c0mpt3.</value>
+  </data>
+  <data name="GitHub_Error_SetRefused" xml:space="preserve">
+    <value>{0} : G1tHub 4 r3fu53 l4 v4l3ur (d3t41l d4n5 l3 j0urn4l).</value>
+  </data>
+  <data name="GitHub_Error_CliFailed" xml:space="preserve">
+    <value>L4 CL1 G1tHub n'4 p45 r3p0ndu c0mm3 pr3vu.</value>
+  </data>
+  <data name="GitHub_Error_Timeout" xml:space="preserve">
+    <value>G1tHub n'4 p45 r3p0ndu 3n {0} 53c0nd35. C3rt41n35 v4l3ur5 0nt pu p4rt1r : r3l4nc3 l4 v3r1f1c4t10n.</value>
+  </data>
+  <data name="GitHub_State_Checking" xml:space="preserve">
+    <value>C0mp4r4150n d3 l'1nv3nt41r3 4v3c G1tHub…</value>
+  </data>
+  <data name="GitHub_State_Sending" xml:space="preserve">
+    <value>3nv01 v3r5 G1tHub…</value>
+  </data>
+  <data name="GitHub_Check_TitleSecrets" xml:space="preserve">
+    <value>{0} {0:plural:secret|secrets} d4n5 l'1nv3nt41r3</value>
+  </data>
+  <data name="GitHub_Check_TitleVariables" xml:space="preserve">
+    <value>{0} {0:plural:variable|variables} d4n5 l'1nv3nt41r3</value>
+  </data>
+  <data name="GitHub_Check_Age" xml:space="preserve">
+    <value>{0} — m15 4 j0ur 1l y 4 {1} {1:plural:jour|jours}</value>
+  </data>
+  <data name="GitHub_Check_Missing" xml:space="preserve">
+    <value>4b53nt5 d3 G1tHub — 53r0nt cr335 :</value>
+  </data>
+  <data name="GitHub_Check_Present" xml:space="preserve">
+    <value>D3j4 5ur G1tHub — 53r0nt 3cr4535 :</value>
+  </data>
+  <data name="GitHub_Check_Extra" xml:space="preserve">
+    <value>5ur G1tHub m415 4b53nt5 d3 l'1nv3nt41r3 — l415535 t3l5 qu3l5 :</value>
+  </data>
+  <data name="GitHub_Check_Hint" xml:space="preserve">
+    <value>C0nt1nu3 p0ur d3v3rr0u1ll3r l3 c0ffr3 3t 3nv0y3r l35 v4l3ur5. R13n n'4 3nc0r3 3t3 lu d4n5 l3 c0ffr3.</value>
+  </data>
+  <data name="GitHub_Result_Secrets" xml:space="preserve">
+    <value>{0} {0:plural:secret envoyé|secrets envoyés}</value>
+  </data>
+  <data name="GitHub_Result_Variables" xml:space="preserve">
+    <value>{0} {0:plural:variable envoyée|variables envoyées}</value>
+  </data>
+  <data name="GitHub_Result_Target" xml:space="preserve">
+    <value>3nv0y35 v3r5</value>
+  </data>
+  <data name="Inject_Failed_Hint_GitHub" xml:space="preserve">
+    <value>Un j3u p4rt13l 53r41t p1r3 qu3 r13n : r13n n'4 3t3 3nv0y3 4 G1tHub.</value>
+  </data>
+  <data name="GitHub_Result_Title" xml:space="preserve">
+    <value>3nv01 t3rm1n3</value>
+  </data>
+  <data name="GitHub_Partial_Title" xml:space="preserve">
+    <value>3nv01 1nc0mpl3t — d35 v4l3ur5 0nt 3t3 r3fu5335</value>
+  </data>
 </root>

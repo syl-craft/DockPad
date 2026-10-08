@@ -14,6 +14,12 @@ public enum SecretMode
 
     /// <summary>Les deux à la fois : on produit les deux.</summary>
     Both,
+
+    /// <summary>
+    /// Un inventaire <c>.vault</c> (en-tête <c># dockpad: github-…</c>) : secrets ou variables
+    /// envoyés à GitHub Actions.
+    /// </summary>
+    GitHub,
 }
 
 /// <summary>
@@ -39,6 +45,10 @@ public static class SecretPlan
 {
     public static SecretMode Of(string content)
     {
+        // L'en-tête tranche avant tout : un inventaire porte des marqueurs, et sans lui il partirait
+        // dans le presse-papier.
+        if (GitHubInventory.Declares(content)) return SecretMode.GitHub;
+
         var hasMarkers = SecretTemplate.FindMarkers(content).Count > 0;
         var hasAnnotations = ComposeSecrets.Extract(content).HasAnnotations;
 
