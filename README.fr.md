@@ -384,6 +384,22 @@ que d'aller chercher ailleurs une valeur que personne n'a demandée.
 Une **valeur vide compte comme absente** : le champ existe mais ne porte rien, ce qui produirait une
 ligne syntaxiquement valide et fonctionnellement fausse.
 
+**Une pièce jointe, une propriété JSON.** `@<nom>` à la place du champ désigne une **pièce jointe** de
+l'item, par son nom de fichier (sans distinction de casse), et `|json:<chemin>` en extrait une seule
+propriété — d'une pièce jointe, d'un champ ou des notes :
+
+```
+{{ bw:web-store:@service-account.json }}                     la pièce jointe entière
+{{ bw:web-store:@service-account.json|json:private_key }}     une propriété
+{{ bw:infra:config|json:servers.0.host }}                     chemin pointé, index de tableau en base 0
+```
+
+Une chaîne JSON est rendue décodée (les `\n` deviennent de vrais retours à la ligne), un nombre ou un
+booléen tel qu'il est écrit. `null`, un objet, un tableau, un chemin absent, un JSON invalide, une
+pièce jointe absente, en double, binaire ou de plus de 4 Mo : le marqueur échoue en le nommant. Seules
+les pièces jointes citées sont téléchargées, et jamais écrites sur le disque. Un tel marqueur n'est
+jamais proposé à la création.
+
 **Deux formes échappent au remplacement :**
 
 | Écrit | Effet |
@@ -418,6 +434,10 @@ destinations de même nom font refuser le lot avant toute écriture.
 
 `item` + `field` et `template` sont **exclusifs** — les deux ensemble sont un refus, il n'y a qu'un
 fichier à produire ; aucun des deux également.
+
+`attachment:` remplace `field:` pour lire une pièce jointe, et `select:` extrait une propriété JSON de
+l'un ou de l'autre — l'annotation se résout comme le marqueur `{{ bw:item:@pièce-jointe|json:chemin }}`.
+`field` et `attachment` ensemble sont un refus, `select` à côté d'un `template` aussi.
 
 `template:` sert aux fichiers de **structure** dont seules quelques valeurs sont sensibles. Le modèle
 reste versionné à sa place, `secrets/` ne contient que du produit — et s'ignore lui-même par un

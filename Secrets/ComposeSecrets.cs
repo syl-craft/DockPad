@@ -85,17 +85,29 @@ public static class ComposeSecrets
             var key = Scalar(nameNode) ?? "";
             var item = Scalar(Child(annotation, "item"));
             var field = Scalar(Child(annotation, "field"));
+            var attachment = Scalar(Child(annotation, "attachment"));
+            var select = Scalar(Child(annotation, "select"));
             var template = Scalar(Child(annotation, "template"));
 
-            var hasValue = !string.IsNullOrWhiteSpace(item) && !string.IsNullOrWhiteSpace(field);
+            var hasField = !string.IsNullOrWhiteSpace(field);
+            var hasAttachment = !string.IsNullOrWhiteSpace(attachment);
+            var hasSelect = !string.IsNullOrWhiteSpace(select);
+            var hasValue = !string.IsNullOrWhiteSpace(item) && (hasField || hasAttachment);
             var hasTemplate = !string.IsNullOrWhiteSpace(template);
 
             // Deux sources pour un meme fichier : refus, jamais un choix implicite. Meme
             // raisonnement que les deux modes d'un fichier — sauf qu'ici on ne PEUT pas faire les
-            // deux, il n'y a qu'un fichier a produire.
-            if (hasValue && hasTemplate)
+            // deux, il n'y a qu'un fichier a produire. `select` extrait d'une valeur du coffre :
+            // il n'a rien a extraire d'un modele.
+            if (hasTemplate && (hasField || hasAttachment || hasSelect))
             {
                 failures.Add(Loc.F("Inject_Error_SecretBothSources", key));
+                continue;
+            }
+
+            if (hasField && hasAttachment)
+            {
+                failures.Add(Loc.F("Inject_Error_SecretFieldAndAttachment", key));
                 continue;
             }
 
@@ -116,10 +128,20 @@ public static class ComposeSecrets
 
             entries.Add(hasTemplate
                 ? new ComposeSecret(key, BaseName(file), null, template)
-                : new ComposeSecret(key, BaseName(file), new SecretMarker(item!, field!)));
+                : new ComposeSecret(key, BaseName(file), new SecretMarker(item!, MarkerField(field, attachment, select))));
         }
 
         return new ComposeScan(entries, failures, null);
+    }
+
+    /// <summary>
+    /// Le champ du marqueur équivalent : l'annotation se résout exactement comme <c>{{ bw:item:champ }}</c>.
+    /// </summary>
+    private static string MarkerField(string? field, string? attachment, string? select)
+    {
+        var source = string.IsNullOrWhiteSpace(attachment) ? field?.Trim() : "@" + attachment.Trim();
+
+        return string.IsNullOrWhiteSpace(select) ? source ?? "" : $"{source}|json:{select.Trim()}";
     }
 
     /// <summary>

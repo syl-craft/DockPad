@@ -162,6 +162,13 @@ public static class BitwardenCli
 
     public static IReadOnlyList<BwItem> ParseItems(string stdout) => ParseArray<BwItem>(stdout);
 
+    /// <summary>
+    /// La lecture d'une pièce jointe sur stdout. Sans <c>--raw</c>, la CLI l'écrirait dans le dossier
+    /// courant ; et elle reçoit l'identifiant, la CLI cherchant sinon une sous-chaîne du nom.
+    /// </summary>
+    public static string[] AttachmentArguments(SecretAttachmentRead read) =>
+        ["get", "attachment", read.AttachmentId, "--itemid", read.ItemId, "--raw"];
+
     public static IReadOnlyList<BwOrganization> ParseOrganizations(string stdout) =>
         ParseArray<BwOrganization>(stdout);
 

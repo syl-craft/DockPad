@@ -420,6 +420,21 @@ a value nobody asked for.
 An **empty value counts as missing**: the field exists but holds nothing, which would produce a line
 that is syntactically valid and functionally wrong.
 
+**An attachment, a JSON property.** `@<name>` in place of the field targets an **attachment** of the
+item, by file name (case-insensitively), and `|json:<path>` extracts a single property from it — from
+an attachment, a field or the notes:
+
+```
+{{ bw:web-store:@service-account.json }}                     the whole attachment
+{{ bw:web-store:@service-account.json|json:private_key }}     one property
+{{ bw:infra:config|json:servers.0.host }}                     dotted path, zero-based array index
+```
+
+A JSON string is rendered decoded (`\n` become real line breaks), a number or a boolean as written.
+`null`, an object, an array, a missing path, invalid JSON, an attachment that is missing, duplicated,
+binary or larger than 4 MB: the marker fails and says so. Only the attachments a marker cites are
+downloaded, and never written to disk. Such a marker is never offered for creation.
+
 **Two forms escape replacement:**
 
 | Written | Effect |
@@ -455,6 +470,10 @@ get the batch refused before anything is written.
 
 `item` + `field` and `template` are **exclusive** — both together are a refusal, there is only one
 file to produce; neither of them is a refusal too.
+
+`attachment:` replaces `field:` to read an attachment, and `select:` extracts a JSON property from
+either — the annotation resolves exactly like the marker `{{ bw:item:@attachment|json:path }}`.
+`field` and `attachment` together are a refusal, and so is `select` next to a `template`.
 
 `template:` is for **structure** files where only a few values are sensitive. The template stays
 versioned where it is, `secrets/` only holds output — and ignores itself through a `.gitignore`

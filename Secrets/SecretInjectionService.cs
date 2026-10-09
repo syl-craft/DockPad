@@ -331,7 +331,8 @@ public static class SecretInjectionService
             entries = scanned;
         }
 
-        var opening = await Source.OpenAsync(masterPassword, syncFirst, token).ConfigureAwait(false);
+        var demanded = SecretCreationPlan.Demanded(content, mode, entries, templates);
+        var opening = await Source.OpenAsync(masterPassword, syncFirst, demanded, token).ConfigureAwait(false);
         if (opening.Failure is { } refused)
             return (null, InjectionReport.Fail(refused.Message, refused.Diagnostic));
 

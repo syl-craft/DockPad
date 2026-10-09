@@ -237,6 +237,22 @@ CHROME_EXTENSION_ID={{ bw:${item}:${projet}-CHROME_EXTENSION_ID }}
 `username`, `notes`, `totp`. Un champ personnalisé vide ne retombe pas sur le champ standard du même
 nom : il existe, il est vide, et on le dit.
 
+`<champ>` peut aussi être `@<nom>`, une **pièce jointe** de l'item par son nom de fichier, et porter
+`|json:<chemin>` pour n'en garder qu'une propriété (`@service-account.json|json:private_key`,
+`config|json:servers.0.host`). `x-bw` dit la même chose avec `attachment:` et `select:`.
+
+- **C'est la seule transformation qu'une valeur subit** (`SecretJsonSelector`). Tout autre suffixe
+  `|…` fait échouer le marqueur : un filtre inconnu ne rend jamais la valeur brute.
+- **Seules les pièces jointes citées sont lues**, après `list items`, par
+  `bw get attachment <id> --itemid <id> --raw` : sans `--raw`, la CLI écrirait le fichier dans le
+  dossier courant. On passe l'identifiant, la CLI cherchant sinon une sous-chaîne du nom. Le contenu
+  vit dans le `SecretVault`, jamais sur le disque ni au journal.
+- **Refusées avant lecture** : une pièce jointe absente, en double ou de plus de 4 Mo. **Après** :
+  un contenu binaire (U+FFFD ou caractère nul dans la sortie décodée en UTF-8).
+- **Les échecs nomment l'item, la source et le chemin**, jamais un fragment du document : le message
+  d'une `JsonException` n'est pas repris.
+- **Jamais proposé à la création** : le formulaire n'écrit que des champs entiers.
+
 **En YAML, toujours placer un marqueur à l'intérieur d'une chaîne entre guillemets** — une accolade
 double en début de valeur serait lue comme un dictionnaire.
 
