@@ -30,6 +30,7 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Serveur MCP** : Claude (Claude Code / Claude Desktop) peut gérer la grille, les pages et les navigateurs
 - **Bandeau Usage IA** : consommation de jetons de Claude Code, Codex, Gemini et Copilot, sous la grille
 - **Injection de secrets** : clic droit sur un fichier → ses marqueurs `{{ bw:… }}` sont remplacés par les valeurs de Vaultwarden, dans le presse-papier ou dans des fichiers de secrets
+- **Secrets et variables GitHub** : un fichier `.vault` liste des références au coffre, DockPad envoie les valeurs dans un environnement GitHub Actions
 - **Icône systray** — l'application tourne en arrière-plan, instance unique (Mutex)
 - **Démarrage automatique** avec Windows configurable
 - **Mises à jour intégrées** : recherche automatique désactivable, téléchargement et redémarrage depuis l'application, gestion des processus bloquants avec consentement
@@ -355,7 +356,8 @@ Les espaces autour des `:` et des accolades sont facultatifs — `{{bw:item:cham
 `}}` suffisent à délimiter.
 
 Un marqueur se remplace **dans n'importe quel fichier**, pas seulement du YAML — un `.env`, un
-`Dockerfile`, un script. C'est le contenu qui décide, jamais l'extension.
+`Dockerfile`, un script. C'est le contenu qui décide, jamais l'extension — sauf `.vault`, qui est
+toujours un [inventaire GitHub](#secrets-et-variables-github-depuis-vaultwarden).
 
 **L'item est cherché par son nom exact**, sans tenir compte de la casse :
 
@@ -450,11 +452,53 @@ Les fichiers dont la clé a disparu du coffre sont **signalés, jamais supprimé
 - [ ] Clic droit sur un fichier portant des marqueurs → **Injecter les secrets…**
 - [ ] Laisser cochée **Synchroniser le coffre avant d'injecter** : la CLI lit un cache local, et sans elle un item que tu viens de modifier n'est pas encore visible
 
+## Secrets et variables GitHub depuis Vaultwarden
+
+Un fichier **`.vault`** liste les secrets — ou les variables — d'un environnement GitHub Actions,
+avec pour chacun une **référence au coffre** et jamais une valeur. Clic droit → **Injecter les
+secrets…** : DockPad le compare à GitHub, déverrouille le coffre, puis envoie les valeurs par la CLI
+GitHub.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/13-github-sync-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/13-github-sync-light.gif" alt="Démo : un fichier .vault comparé à GitHub, puis envoyé à GitHub Actions" width="960">
+</picture>
+
+```ini
+# github-variables repo=${owner}/${project} environment=stores
+@owner = example
+@project = my-extension
+@item = web-store-apps
+CHROME_EXTENSION_ID={{ bw:${item}:my-extension-CHROME_EXTENSION_ID }}
+EDGE_PRODUCT_ID={{ bw:${item}:my-extension-EDGE_PRODUCT_ID }}
+```
+
+- **C'est l'extension `.vault` qui décide** : un tel fichier est toujours un inventaire, jamais rendu
+  dans le presse-papier. Son en-tête — `# github-secrets` ou `# github-variables` — nomme la cible :
+  le dépôt, et l'environnement s'il y en a un (sans `environment=`, les secrets du dépôt lui-même)
+- **Les variables** `@nom = valeur`, citées par `${nom}` dans l'en-tête et les marqueurs, évitent
+  de répéter le dépôt ou l'item. Ce sont des littéraux, jamais envoyés à GitHub
+- **Une ligne, c'est un marqueur et rien d'autre** : du texte autour partirait en clair sur GitHub,
+  il est donc refusé
+- **Vérifié avant de déverrouiller le coffre** : DockPad montre ce qui sera créé, ce qui sera écrasé
+  — avec son âge, pour voir venir une clé qui expire — et ce qui n'existe que sur GitHub. Ce dernier
+  groupe est **signalé, jamais supprimé**
+- **Tout ou rien** : un seul marqueur non résolu et rien ne part. Chaque valeur passe par l'**entrée
+  standard** de `gh secret set` / `gh variable set`, jamais par une ligne de commande
+
+### Activer sur un ordinateur
+
+- [ ] Tout ce que demande l'injection de secrets ci-dessus (CLI Bitwarden, connexion, entrée de menu)
+- [ ] Installer la **CLI GitHub** — `winget install GitHub.cli` — puis `gh auth login` avec le compte propriétaire du dépôt
+- [ ] **☰ → Paramètres → onglet Secrets → CLI GitHub** : laisser vide pour la détection automatique, ou **Détecter**
+- [ ] Clic droit sur un fichier `.vault` → **Injecter les secrets…**
+
 ## Prérequis
 
 - Windows 10/11 x64
 - [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (Desktop)
 - *Pour l'injection de secrets uniquement* : la [CLI Bitwarden](https://bitwarden.com/help/cli/), sous GPL-3.0, à installer séparément — `winget install Bitwarden.CLI`
+- *Pour les secrets et variables GitHub uniquement* : la [CLI GitHub](https://cli.github.com/), sous MIT, à installer séparément — `winget install GitHub.cli`
 
 ## Installation
 
