@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.27.0] — 2026-10-09
+
+### Nouveautés
+
+- **Secrets et variables GitHub depuis Vaultwarden** : un fichier `.vault` liste les secrets — ou les variables — d'un environnement GitHub Actions, avec pour chacun une référence au coffre et jamais une valeur. Clic droit → **Injecter les secrets…** : DockPad compare l'inventaire à GitHub, déverrouille le coffre, puis envoie les valeurs par la CLI GitHub.
+  - L'en-tête `# github-secrets repo=… environment=…` (ou `# github-variables`) nomme la cible ; sans `environment=`, ce sont les secrets du dépôt lui-même.
+  - Des variables `@nom = valeur`, citées par `${nom}`, évitent de répéter le dépôt ou le nom d'item. Ce sont des littéraux, jamais envoyés à GitHub.
+  - Avant le mot de passe maître, la fenêtre montre ce qui sera créé, ce qui sera écrasé — avec son âge, pour voir venir une clé qui expire — et ce qui n'existe que sur GitHub, signalé et jamais supprimé.
+  - Tout ou rien : un seul marqueur non résolu, et rien ne part. Chaque valeur passe par l'entrée standard de `gh`, jamais par une ligne de commande.
+  - Un fichier `.vault` est toujours traité comme un inventaire : mal formé, il est refusé avec le motif, jamais rendu dans le presse-papier.
+- **CLI GitHub dans les Options** : onglet **Secrets**, champ **CLI GitHub** avec un bouton **Détecter**. Vide, DockPad cherche `gh.exe` dans le `PATH` puis dans le dossier d'installation de GitHub CLI.
+
+### Documentation
+
+- Nouvelle section du README, en anglais et en français, avec une démonstration animée de la synchronisation.
+
 ## [1.26.1] — 2026-10-01
 
 ### Corrections
