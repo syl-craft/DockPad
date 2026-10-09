@@ -1509,7 +1509,7 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
     <value>L4 l1gn3 {0} d3 l'1nv3nt41r3 n'35t n1 un3 l1gn3 N0M=m4rqu3ur, n1 @v4r14bl3 = v4l3ur, n1 un c0mm3nt41r3.</value>
   </data>
   <data name="GitHub_Error_NoHeader" xml:space="preserve">
-    <value>L'1nv3nt41r3 n'4 p45 d3 l1gn3 « # d0ckp4d: g1thub-53cr3t5 » 0u « # d0ckp4d: g1thub-v4r14bl35 ».</value>
+    <value>L'1nv3nt41r3 n'4 p45 d3 l1gn3 « # g1thub-53cr3t5 » 0u « # g1thub-v4r14bl35 ».</value>
   </data>
   <data name="GitHub_Error_NoEntries" xml:space="preserve">
     <value>L'1nv3nt41r3 n3 l15t3 4ucun 53cr3t n1 4ucun3 v4r14bl3.</value>
@@ -1614,7 +1614,7 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
     <value>3nv01 1nc0mpl3t — d35 v4l3ur5 0nt 3t3 r3fu5335</value>
   </data>
   <data name="GitHub_Error_SecondHeader" xml:space="preserve">
-    <value>L'1nv3nt41r3 p0rt3 d3ux l1gn35 « # d0ckp4d: » : n'3n g4rd3 qu'un3, c'35t 3ll3 qu1 n0mm3 l4 c1bl3.</value>
+    <value>L'1nv3nt41r3 p0rt3 d3ux l1gn35 « # g1thub-… » : n'3n g4rd3 qu'un3, c'35t 3ll3 qu1 n0mm3 l4 c1bl3.</value>
   </data>
   <data name="GitHub_Error_AmbiguousParameter" xml:space="preserve">
     <value>L3 p4r4m3tr3 d'3n-t3t3 « {0} » 35t r3p3t3 0u v1d3 : d0nn3-l3 un3 f015, 4v3c un3 v4l3ur, 0u r3t1r3-l3.</value>
@@ -1630,5 +1630,14 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   </data>
   <data name="GitHub_Error_SetUnsent" xml:space="preserve">
     <value>{0} : n0n 3nv0y3, l'3nv01 5'35t 4rr3t3 4v4nt.</value>
+  </data>
+  <data name="Settings_Inject_GhPath" xml:space="preserve">
+    <value>CL1 G1tHub</value>
+  </data>
+  <data name="Settings_Inject_GhHint" xml:space="preserve">
+    <value>53rt 4ux 1nv3nt41r35 .v4ult qu1 4l1m3nt3nt G1tHub 4ct10n5. V1d3 = d3t3ct10n 4ut0m4t1qu3 (P4TH, pu15 l3 d05513r d'1n5t4ll4t10n d3 G1tHub CL1). C0nn3ct3-t01 un3 f015 4v3c « gh 4uth l0g1n ».</value>
+  </data>
+  <data name="Settings_Inject_GhDetectFailed" xml:space="preserve">
+    <value>gh.3x3 1ntr0uv4bl3</value>
   </data>
 </root>

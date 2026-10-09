@@ -46,7 +46,7 @@ public static class GitHubSyncService
     /// <summary><c>gh</c> est-il là et connecté ? Rien n'est lu ni écrit sur GitHub.</summary>
     public static async Task<(string? Exe, InjectionReport? Failure)> PreflightAsync(CancellationToken token)
     {
-        var exe = GitHubCli.Locate();
+        var exe = GitHubCli.Locate(AppSettingsService.Current.GitHubCliPath);
         if (exe == null) return (null, InjectionReport.Fail(Loc.T("GitHub_Error_CliMissing")));
 
         var status = await GitHubCli.RunAsync(exe, ["auth", "status"], token).ConfigureAwait(false);
@@ -93,7 +93,7 @@ public static class GitHubSyncService
     public static async Task<GitHubSendOutcome> SendAsync(
         GitHubInventory inventory, IReadOnlyList<GitHubValue> values, CancellationToken token)
     {
-        var exe = GitHubCli.Locate()
+        var exe = GitHubCli.Locate(AppSettingsService.Current.GitHubCliPath)
             ?? throw new InvalidOperationException("The GitHub CLI disappeared between the check and the send.");
 
         var sent = new List<string>();

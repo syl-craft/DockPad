@@ -302,7 +302,7 @@ internal static class Program
 
     /// <summary>Un inventaire de demonstration : noms neutres, aucune valeur.</summary>
     private const string DemoInventory = """
-        # dockpad: github-secrets repo=${owner}/${project} environment=stores
+        # github-secrets repo=${owner}/${project} environment=stores
         @owner = exemple
         @project = mon-extension
         @item = web-store-apps

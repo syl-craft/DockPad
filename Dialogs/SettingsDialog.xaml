@@ -158,6 +158,24 @@
                     <TextBlock Text="{loc:T Settings_Inject_CliHint}" Margin="0,0,0,14"
                                Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
+                    <!-- La CLI GitHub sert aux inventaires .vault : meme patron que celle de
+                         Bitwarden, vide = detection, chemin disparu = detection. -->
+                    <TextBlock Text="{loc:T Settings_Inject_GhPath}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="TxtGhPath" Grid.Column="0" FontFamily="Consolas" FontSize="12"
+                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
+                        <Button x:Name="BtnDetectGh" Grid.Column="1" Content="{loc:T Settings_Inject_Detect}"
+                                Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                Click="DetectGh_Click"/>
+                    </Grid>
+                    <TextBlock Text="{loc:T Settings_Inject_GhHint}" Margin="0,0,0,14"
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+
                     <TextBlock Text="{loc:T Settings_Inject_Org}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
                     <TextBox x:Name="TxtVaultOrg" Padding="6,5" FontSize="12"
                              BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>

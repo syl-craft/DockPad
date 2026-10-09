@@ -45,7 +45,16 @@ public sealed record GitHubCheck(
 /// </remarks>
 public sealed class GitHubInventory
 {
-    private static readonly Regex Header = new(@"^\s*#\s*dockpad:\s*(?<kind>\S*)(?<rest>.*)$",
+    /// <summary>
+    /// <c># github-secrets …</c> ou <c># github-variables …</c> — et leurs fautes de frappe au
+    /// singulier, reconnues pour être <b>refusées</b>.
+    /// </summary>
+    /// <remarks>
+    /// L'en-tête nomme la cible et non l'outil : DockPad n'est qu'un des outils qui savent lire ce
+    /// fichier. Le motif reste étroit pour qu'un commentaire ordinaire — <c># github-token du CI</c> —
+    /// ne transforme pas un <c>.env</c> en inventaire.
+    /// </remarks>
+    private static readonly Regex Header = new(@"^\s*#\s*(?<kind>github-(?:secrets?|variables?|vars?))(?=\s|$)(?<rest>.*)$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex Variable = new(@"^\s*@(?<name>[A-Za-z_][A-Za-z0-9_-]*)\s*=\s*(?<value>.*?)\s*$",
@@ -84,7 +93,7 @@ public sealed class GitHubInventory
     /// </summary>
     public string MarkersText => string.Join("\n", Entries.Select(e => e.Template));
 
-    /// <summary>Le fichier se déclare-t-il inventaire ? Une ligne <c># dockpad:</c> suffit.</summary>
+    /// <summary>Le fichier se déclare-t-il inventaire ? Une ligne <c># github-secrets</c> ou <c># github-variables</c> suffit.</summary>
     /// <remarks>
     /// Le type n'est pas vérifié ici : une faute de frappe (<c>github-secret</c>) doit être refusée
     /// par <see cref="Parse"/>, pas faire retomber le fichier — qui porte des marqueurs — vers le

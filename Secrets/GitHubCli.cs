@@ -41,14 +41,25 @@ public static class GitHubCli
 
     // ───────────── Localisation ─────────────
 
-    /// <summary>Le chemin de <c>gh.exe</c> : le <c>PATH</c>, puis le dossier d'installation par défaut.</summary>
+    /// <summary>
+    /// Le chemin de <c>gh.exe</c> : celui qui est réglé s'il existe, sinon le <c>PATH</c>, sinon le
+    /// dossier d'installation par défaut.
+    /// </summary>
     /// <remarks>
+    /// <para>
+    /// Un chemin réglé qui n'existe plus retombe sur la détection, comme pour <c>bw</c> : une
+    /// désinstallation ou un déplacement ne doit pas rendre la fonctionnalité muette.
+    /// </para>
+    /// <para>
     /// Le dossier d'installation est cherché <b>même quand le <c>PATH</c> échoue</b> : celui d'un
     /// processus est figé à son démarrage, et DockPad tourne des semaines — un <c>gh</c> installé
     /// entre-temps n'y apparaîtrait pas.
+    /// </para>
     /// </remarks>
-    public static string? FindExecutable(string pathVariable, string programFiles)
+    public static string? FindExecutable(string configured, string pathVariable, string programFiles)
     {
+        if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured)) return configured;
+
         foreach (var dir in pathVariable.Split(';', StringSplitOptions.RemoveEmptyEntries))
         {
             try
@@ -68,7 +79,10 @@ public static class GitHubCli
         return File.Exists(installed) ? installed : null;
     }
 
-    public static string? Locate() => FindExecutable(
+    /// <summary>Le chemin résolu depuis le réglage, ou <c>null</c> si <c>gh</c> est introuvable.</summary>
+    /// <param name="configured">Le chemin réglé dans les Options ; vide = détection seule.</param>
+    public static string? Locate(string configured) => FindExecutable(
+        configured,
         Environment.GetEnvironmentVariable("PATH") ?? "",
         Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
 

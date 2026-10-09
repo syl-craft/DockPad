@@ -16,7 +16,7 @@ public enum SecretMode
     Both,
 
     /// <summary>
-    /// Un inventaire <c>.vault</c> (en-tête <c># dockpad: github-…</c>) : secrets ou variables
+    /// Un inventaire <c>.vault</c> (en-tête <c># github-secrets</c> ou <c># github-variables</c>) : secrets ou variables
     /// envoyés à GitHub Actions.
     /// </summary>
     GitHub,

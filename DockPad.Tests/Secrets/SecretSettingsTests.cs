@@ -36,6 +36,7 @@ public class SecretSettingsTests : IDisposable
         var read = AppSettingsService.LoadFrom(File_, registry: _ => null);
 
         Assert.Equal("", read.BitwardenCliPath);
+        Assert.Equal("", read.GitHubCliPath);
         Assert.Equal(90, read.ClipboardClearSeconds);
         Assert.Equal("", read.VaultOrganization);
         Assert.Equal("", read.VaultCollection);
@@ -75,6 +76,7 @@ public class SecretSettingsTests : IDisposable
         AppSettingsService.SaveTo(File_, new AppSettings
         {
             BitwardenCliPath = @"C:\bw\bw.exe",
+            GitHubCliPath = @"C:\gh\gh.exe",
             ClipboardClearSeconds = 0,
             VaultOrganization = "Infra maison",
             VaultCollection = "infra",
@@ -83,6 +85,7 @@ public class SecretSettingsTests : IDisposable
         var read = AppSettingsService.LoadFrom(File_, registry: _ => null);
 
         Assert.Equal(@"C:\bw\bw.exe", read.BitwardenCliPath);
+        Assert.Equal(@"C:\gh\gh.exe", read.GitHubCliPath);
         Assert.Equal(0, read.ClipboardClearSeconds);
         Assert.Equal("Infra maison", read.VaultOrganization);
         Assert.Equal("infra", read.VaultCollection);
@@ -98,6 +101,7 @@ public class SecretSettingsTests : IDisposable
         AppSettingsService.FromRegistry(name => { lus.Add(name); return null; });
 
         Assert.DoesNotContain("BitwardenCliPath", lus);
+        Assert.DoesNotContain("GitHubCliPath", lus);
         Assert.DoesNotContain("ClipboardClearSeconds", lus);
         Assert.DoesNotContain("VaultOrganization", lus);
         Assert.DoesNotContain("VaultCollection", lus);

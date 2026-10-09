@@ -114,6 +114,11 @@ public static class SettingsService
     public static void SaveBitwardenCliPath(string path) =>
         AppSettingsService.Update(s => s.BitwardenCliPath = path.Trim().Trim('"'));
 
+    public static string LoadGitHubCliPath() => AppSettingsService.Current.GitHubCliPath;
+
+    public static void SaveGitHubCliPath(string path) =>
+        AppSettingsService.Update(s => s.GitHubCliPath = path.Trim().Trim('"'));
+
     public static int LoadClipboardClearSeconds() => AppSettingsService.Current.ClipboardClearSeconds;
 
     /// <summary>Borné à un jour : au-delà, le réglage ne protège plus rien.</summary>

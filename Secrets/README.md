@@ -14,9 +14,9 @@ Quatre matières ne franchissent jamais cette frontière :
 3. les valeurs lues dans le coffre ;
 4. le texte rendu.
 
-`AppSettings` porte cinq réglages de la fonctionnalité (chemin de `bw.exe`, délai d'effacement,
+`AppSettings` porte six réglages de la fonctionnalité (chemins de `bw.exe` et de `gh.exe`, délai d'effacement,
 organisation, collection par défaut, synchro avant injection) et vit **dehors** : ce sont des
-préférences — un chemin, un nombre, deux noms, une case — jamais de la matière secrète.
+préférences — deux chemins, un nombre, deux noms, une case — jamais de la matière secrète.
 
 ## La surface d'entrée
 
@@ -172,12 +172,12 @@ rendu par `OpenAsync`, jamais dans un champ de la fenêtre ni du service, et dis
 
 ## Inventaires GitHub (`.vault`)
 
-Un fichier qui porte une ligne `# dockpad: github-secrets` ou `# dockpad: github-variables` est un
+Un fichier qui porte une ligne `# github-secrets` ou `# github-variables` est un
 **inventaire** : chaque ligne `NOM={{ bw:item:champ }}` alimente un secret ou une variable de GitHub
 Actions, par `gh`. Le même clic droit, la même fenêtre, le même mot de passe maître.
 
 ```ini
-# dockpad: github-secrets repo=${owner}/${projet} environment=stores
+# github-secrets repo=${owner}/${projet} environment=stores
 @owner = syl-craft
 @projet = cadranote
 @item = syl-craft-web-store-apps
@@ -185,6 +185,9 @@ EDGE_API_KEY={{ bw:${item}:EDGE_API_KEY }}
 CHROME_EXTENSION_ID={{ bw:${item}:${projet}-CHROME_EXTENSION_ID }}
 ```
 
+- **L'en-tête nomme la cible, pas l'outil** : `# github-secrets`, et non `# dockpad: …`. Le fichier
+  décrit ce qu'il alimente ; DockPad n'est qu'un des outils qui savent le lire. Il peut se trouver
+  n'importe où dans le fichier, une seule fois
 - **L'en-tête tranche avant les marqueurs** (`SecretPlan`) : sans lui, un inventaire partirait dans
   le presse-papier. Un type mal orthographié est refusé, pas renvoyé vers le presse-papier
 - **`environment=` est facultatif** : absent, ce sont les secrets et variables du dépôt

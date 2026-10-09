@@ -13,7 +13,7 @@ public class GitHubInventoryTests
 
     private const string Secrets = """
         # .github/stores.secrets.vault
-        # dockpad: github-secrets repo=syl-craft/cadranote environment=stores
+        # github-secrets repo=syl-craft/cadranote environment=stores
         FIREFOX_JWT_ISSUER={{ bw:web-store:FIREFOX_JWT_ISSUER }}
         EDGE_API_KEY={{ bw:web-store:EDGE_API_KEY }}
         """;
@@ -51,13 +51,39 @@ public class GitHubInventoryTests
         Assert.Equal(SecretMode.Clipboard, SecretPlan.Of(env));
     }
 
+    [Theory]
+    [InlineData("# github-token du CI")]
+    [InlineData("# github-secrets-old : ancien jeu")]
+    [InlineData("# voir github-secrets dans le wiki")]
+    public void UnCommentaireOrdinaireNeDeclarePasDInventaire(string comment)
+    {
+        // Le motif reste étroit : un .env commenté ne doit pas basculer en mode GitHub.
+        var env = comment + "\nTOKEN={{ bw:ntfy:token }}";
+
+        Assert.False(GitHubInventory.Declares(env));
+        Assert.Equal(SecretMode.Clipboard, SecretPlan.Of(env));
+    }
+
+    [Fact]
+    public void LEnTeteNEstPasObligatoirementEnPremiereLigne()
+    {
+        var inventory = Parsed("""
+            # Secrets de publication sur les stores
+
+            # github-secrets repo=a/b
+            X={{ bw:i:f }}
+            """);
+
+        Assert.Equal("a/b", inventory.Repo);
+    }
+
     [Fact]
     public void UnTypeInconnuEstRefuseEtNonRenduDansLePressePapier()
     {
         // Une faute de frappe dans l'en-tête ne doit pas faire basculer le fichier vers le
         // presse-papier : il porte des marqueurs, et c'est ce qui se serait passé en silence.
         const string content = """
-            # dockpad: github-secret repo=a/b
+            # github-secret repo=a/b
             X={{ bw:i:f }}
             """;
 
@@ -82,7 +108,7 @@ public class GitHubInventoryTests
     public void SansEnvironnementCibleLeDepot()
     {
         var inventory = Parsed("""
-            # dockpad: github-variables repo=syl-craft/cadranote
+            # github-variables repo=syl-craft/cadranote
             CHROME_EXTENSION_ID={{ bw:web-store:CHROME_EXTENSION_ID }}
             """);
 
@@ -94,7 +120,7 @@ public class GitHubInventoryTests
     public void LeDepotEstObligatoire()
     {
         Refused("""
-            # dockpad: github-secrets environment=stores
+            # github-secrets environment=stores
             X={{ bw:i:f }}
             """);
     }
@@ -105,14 +131,14 @@ public class GitHubInventoryTests
     [InlineData("a/b/c")]
     public void UnDepotMalFormeEstRefuse(string repo)
     {
-        Refused("# dockpad: github-secrets repo=" + repo + "\nX={{ bw:i:f }}");
+        Refused("# github-secrets repo=" + repo + "\nX={{ bw:i:f }}");
     }
 
     [Fact]
     public void UnParametreInconnuEstRefuse()
     {
         Assert.Contains(Refused("""
-            # dockpad: github-secrets repo=a/b env=stores
+            # github-secrets repo=a/b env=stores
             X={{ bw:i:f }}
             """), f => f.Contains("env"));
     }
@@ -123,7 +149,7 @@ public class GitHubInventoryTests
     public void LesVariablesSeCitentDansLEnTeteEtDansLesMarqueurs()
     {
         var inventory = Parsed("""
-            # dockpad: github-variables repo=${owner}/${project} environment=stores
+            # github-variables repo=${owner}/${project} environment=stores
             @owner = syl-craft
             @project = cadranote
             @item = syl-craft-web-store-apps
@@ -140,7 +166,7 @@ public class GitHubInventoryTests
     public void UneVariablePeutCiterUneVariableDejaDefinie()
     {
         var inventory = Parsed("""
-            # dockpad: github-secrets repo=${repo}
+            # github-secrets repo=${repo}
             @owner = syl-craft
             @repo = ${owner}/cadranote
             X={{ bw:i:f }}
@@ -153,7 +179,7 @@ public class GitHubInventoryTests
     public void UneVariableInconnueEstRefuseeEtNommee()
     {
         Assert.Contains(Refused("""
-            # dockpad: github-secrets repo=a/b
+            # github-secrets repo=a/b
             X={{ bw:${item}:f }}
             """), f => f.Contains("item"));
     }
@@ -162,7 +188,7 @@ public class GitHubInventoryTests
     public void UneVariableRedefinieEstRefusee()
     {
         Refused("""
-            # dockpad: github-secrets repo=a/b
+            # github-secrets repo=a/b
             @item = un
             @item = deux
             X={{ bw:${item}:f }}
@@ -175,7 +201,7 @@ public class GitHubInventoryTests
         // Une variable est un littéral : la laisser porter un marqueur ferait d'elle une seconde
         // façon d'écrire une valeur du coffre, résolue on ne sait plus où.
         Refused("""
-            # dockpad: github-secrets repo=a/b
+            # github-secrets repo=a/b
             @valeur = {{ bw:i:f }}
             X=${valeur}
             """);
@@ -187,7 +213,7 @@ public class GitHubInventoryTests
     public void UneValeurEnClairEstRefusee()
     {
         Assert.Contains(Refused("""
-            # dockpad: github-variables repo=a/b
+            # github-variables repo=a/b
             PUBLIC_ID=abc123
             """), f => f.Contains("PUBLIC_ID"));
     }
@@ -198,14 +224,14 @@ public class GitHubInventoryTests
     [InlineData("MON NOM")]
     public void UnNomInvalidePourGitHubEstRefuse(string name)
     {
-        Refused("# dockpad: github-secrets repo=a/b\n" + name + "={{ bw:i:f }}");
+        Refused("# github-secrets repo=a/b\n" + name + "={{ bw:i:f }}");
     }
 
     [Fact]
     public void LePrefixeGitHubEstReserve()
     {
         Refused("""
-            # dockpad: github-secrets repo=a/b
+            # github-secrets repo=a/b
             GITHUB_TOKEN={{ bw:i:f }}
             """);
     }
@@ -216,7 +242,7 @@ public class GitHubInventoryTests
         // GitHub met les noms de secrets en majuscules : deux lignes de casse différente visent le
         // même secret, et la seconde écraserait la première sans le dire.
         Refused("""
-            # dockpad: github-secrets repo=a/b
+            # github-secrets repo=a/b
             TOKEN={{ bw:i:f }}
             token={{ bw:i:g }}
             """);
@@ -225,14 +251,14 @@ public class GitHubInventoryTests
     [Fact]
     public void UnInventaireSansLigneEstRefuse()
     {
-        Refused("# dockpad: github-secrets repo=a/b");
+        Refused("# github-secrets repo=a/b");
     }
 
     [Fact]
     public void LesCommentairesEtLignesVidesSontIgnores()
     {
         var inventory = Parsed("""
-            # dockpad: github-secrets repo=a/b
+            # github-secrets repo=a/b
 
             # la clé du compte de service
             KEY={{ bw:i:notes }}
@@ -273,7 +299,7 @@ public class GitHubInventoryTests
     public void UneValeurSurPlusieursLignesEstRendueTelleQuelle()
     {
         var inventory = Parsed("""
-            # dockpad: github-secrets repo=a/b
+            # github-secrets repo=a/b
             KEY={{ bw:i:notes }}
             """);
         const string pem = "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n";
@@ -291,14 +317,14 @@ public class GitHubInventoryTests
     [InlineData("X={{ bw:i:f }} suffixe")]
     public void UneValeurEstUnMarqueurEtRienDAutre(string line)
     {
-        Refused("# dockpad: github-secrets repo=a/b\n" + line);
+        Refused("# github-secrets repo=a/b\n" + line);
     }
 
     [Fact]
     public void UneVariableNApportePasDeTexteEnClairAutourDuMarqueur()
     {
         Refused("""
-            # dockpad: github-secrets repo=a/b
+            # github-secrets repo=a/b
             @prefixe = public-
             X=${prefixe}{{ bw:i:f }}
             """);
@@ -308,8 +334,8 @@ public class GitHubInventoryTests
     public void UnSecondEnTeteEstRefuse()
     {
         Refused("""
-            # dockpad: github-secrets repo=a/b
-            # dockpad: github-secrets repo=c/d
+            # github-secrets repo=a/b
+            # github-secrets repo=c/d
             X={{ bw:i:f }}
             """);
     }
@@ -320,7 +346,7 @@ public class GitHubInventoryTests
     [InlineData("repo=a/b environment=un environment=deux")]
     public void UnParametreRepeteOuVideEstRefuse(string parameters)
     {
-        Refused("# dockpad: github-secrets " + parameters + "\nX={{ bw:i:f }}");
+        Refused("# github-secrets " + parameters + "\nX={{ bw:i:f }}");
     }
 
     [Fact]

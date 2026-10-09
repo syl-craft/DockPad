@@ -1509,7 +1509,7 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>Line {0} of the inventory is neither a NAME=marker line, nor @variable = value, nor a comment.</value>
   </data>
   <data name="GitHub_Error_NoHeader" xml:space="preserve">
-    <value>The inventory has no « # dockpad: github-secrets » or « # dockpad: github-variables » line.</value>
+    <value>The inventory has no « # github-secrets » or « # github-variables » line.</value>
   </data>
   <data name="GitHub_Error_NoEntries" xml:space="preserve">
     <value>The inventory lists no secret or variable.</value>
@@ -1614,7 +1614,7 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>Incomplete send — some values were refused</value>
   </data>
   <data name="GitHub_Error_SecondHeader" xml:space="preserve">
-    <value>The inventory has two « # dockpad: » lines: keep only one, it names the target.</value>
+    <value>The inventory has two « # github-… » lines: keep only one, it names the target.</value>
   </data>
   <data name="GitHub_Error_AmbiguousParameter" xml:space="preserve">
     <value>The header parameter « {0} » is repeated or empty: give it once, with a value, or remove it.</value>
@@ -1630,5 +1630,14 @@ Force them to stop? Unsaved work may be lost.</value></data>
   </data>
   <data name="GitHub_Error_SetUnsent" xml:space="preserve">
     <value>{0}: not sent, the send stopped before it.</value>
+  </data>
+  <data name="Settings_Inject_GhPath" xml:space="preserve">
+    <value>GitHub CLI</value>
+  </data>
+  <data name="Settings_Inject_GhHint" xml:space="preserve">
+    <value>Used by .vault inventories that feed GitHub Actions. Empty = automatic detection (PATH, then the GitHub CLI install folder). Log in once with « gh auth login ».</value>
+  </data>
+  <data name="Settings_Inject_GhDetectFailed" xml:space="preserve">
+    <value>gh.exe not found</value>
   </data>
 </root>

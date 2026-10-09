@@ -1509,7 +1509,7 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>La ligne {0} de l'inventaire n'est ni une ligne NOM=marqueur, ni @variable = valeur, ni un commentaire.</value>
   </data>
   <data name="GitHub_Error_NoHeader" xml:space="preserve">
-    <value>L'inventaire n'a pas de ligne « # dockpad: github-secrets » ou « # dockpad: github-variables ».</value>
+    <value>L'inventaire n'a pas de ligne « # github-secrets » ou « # github-variables ».</value>
   </data>
   <data name="GitHub_Error_NoEntries" xml:space="preserve">
     <value>L'inventaire ne liste aucun secret ni aucune variable.</value>
@@ -1614,7 +1614,7 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>Envoi incomplet — des valeurs ont été refusées</value>
   </data>
   <data name="GitHub_Error_SecondHeader" xml:space="preserve">
-    <value>L'inventaire porte deux lignes « # dockpad: » : n'en garde qu'une, c'est elle qui nomme la cible.</value>
+    <value>L'inventaire porte deux lignes « # github-… » : n'en garde qu'une, c'est elle qui nomme la cible.</value>
   </data>
   <data name="GitHub_Error_AmbiguousParameter" xml:space="preserve">
     <value>Le paramètre d'en-tête « {0} » est répété ou vide : donne-le une fois, avec une valeur, ou retire-le.</value>
@@ -1630,5 +1630,14 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   </data>
   <data name="GitHub_Error_SetUnsent" xml:space="preserve">
     <value>{0} : non envoyé, l'envoi s'est arrêté avant.</value>
+  </data>
+  <data name="Settings_Inject_GhPath" xml:space="preserve">
+    <value>CLI GitHub</value>
+  </data>
+  <data name="Settings_Inject_GhHint" xml:space="preserve">
+    <value>Sert aux inventaires .vault qui alimentent GitHub Actions. Vide = détection automatique (PATH, puis le dossier d'installation de GitHub CLI). Connecte-toi une fois avec « gh auth login ».</value>
+  </data>
+  <data name="Settings_Inject_GhDetectFailed" xml:space="preserve">
+    <value>gh.exe introuvable</value>
   </data>
 </root>

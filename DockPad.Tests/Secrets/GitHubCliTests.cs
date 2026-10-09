@@ -80,7 +80,30 @@ public class GitHubCliTests : IDisposable
         var gh = Path.Combine(bin, "gh.exe");
         File.WriteAllText(gh, "");
 
-        Assert.Equal(gh, GitHubCli.FindExecutable($@"C:\nulle-part;{bin}", programFiles: ""));
+        Assert.Equal(gh, GitHubCli.FindExecutable(configured: "", pathVariable: $@"C:\nulle-part;{bin}", programFiles: ""));
+    }
+
+    [Fact]
+    public void LeCheminRegleGagneSIlExiste()
+    {
+        var configured = Path.Combine(_root, "portable", "gh.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(configured) ?? _root);
+        File.WriteAllText(configured, "");
+        var folder = Directory.CreateDirectory(Path.Combine(_root, "GitHub CLI")).FullName;
+        File.WriteAllText(Path.Combine(folder, "gh.exe"), "");
+
+        Assert.Equal(configured, GitHubCli.FindExecutable(configured, pathVariable: "", programFiles: _root));
+    }
+
+    [Fact]
+    public void UnCheminRegleDisparuRetombeSurLaDetection()
+    {
+        var folder = Directory.CreateDirectory(Path.Combine(_root, "GitHub CLI")).FullName;
+        var installed = Path.Combine(folder, "gh.exe");
+        File.WriteAllText(installed, "");
+
+        Assert.Equal(installed,
+            GitHubCli.FindExecutable(Path.Combine(_root, "disparu", "gh.exe"), pathVariable: "", programFiles: _root));
     }
 
     [Fact]
@@ -90,12 +113,12 @@ public class GitHubCliTests : IDisposable
         var gh = Path.Combine(folder, "gh.exe");
         File.WriteAllText(gh, "");
 
-        Assert.Equal(gh, GitHubCli.FindExecutable("", programFiles: _root));
+        Assert.Equal(gh, GitHubCli.FindExecutable(configured: "", pathVariable: "", programFiles: _root));
     }
 
     [Fact]
     public void IntrouvableRendNull()
     {
-        Assert.Null(GitHubCli.FindExecutable("", programFiles: _root));
+        Assert.Null(GitHubCli.FindExecutable(configured: "", pathVariable: "", programFiles: _root));
     }
 }

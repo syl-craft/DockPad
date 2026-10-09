@@ -1071,7 +1071,7 @@ matières ne franchissent jamais la frontière : mot de passe maître, clé de s
 coffre, texte rendu. Le dossier porte son propre `README.md`, en tête. La fenêtre y vit aussi, et
 non dans `Dialogs/` — c'est elle qui reçoit le mot de passe.
 
-`AppSettings` reste dehors avec ses cinq réglages (`BitwardenCliPath`, `ClipboardClearSeconds`,
+`AppSettings` reste dehors avec ses six réglages (`BitwardenCliPath`, `GitHubCliPath`, `ClipboardClearSeconds`,
 `VaultOrganization`, `VaultCollection`, `SyncVaultBeforeInject`) : ce sont des préférences, jamais
 de la matière secrète. Elles **n'entrent pas**
 dans `FromRegistry` — la reprise ne concerne que les huit réglages qui ont réellement vécu dans le
@@ -1502,7 +1502,7 @@ Le client de bureau Bitwarden ne fournit **pas** la CLI — deux produits distin
 première erreur qu'on fait ; le texte d'aide le dit.
 
 #### Inventaires GitHub (`.vault`)
-Un fichier dont une ligne commence par `# dockpad: github-secrets` (ou `github-variables`) alimente
+Un fichier dont une ligne commence par `# github-secrets` (ou `# github-variables`) alimente
 les secrets ou variables d'un dépôt GitHub, et d'un environnement s'il est nommé, par `gh`. Détail
 et règles dans `Secrets/README.md` ; l'essentiel :
 
