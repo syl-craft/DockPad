@@ -1,0 +1,237 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — GitHub secrets from Vaultwarden</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .ex-bar { height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--border); font-size: 15px; color: var(--text-subtle); }
+  .ex-bar b { color: var(--text); font-weight: 600; }
+  .ex-h { display: flex; padding: 10px 20px 6px; font-size: 13px; color: var(--text-hint); border-bottom: 1px solid var(--separator); }
+  .ex-r { height: 46px; display: flex; align-items: center; gap: 14px; padding: 0 20px; font-size: 16px; color: var(--text); }
+  .ex-r .c2 { margin-left: auto; width: 170px; color: var(--text-hint); font-size: 14px; }
+  .ex-r img, .ex-r svg { width: 24px; height: 24px; }
+  .ex-r.sel { background: var(--accent-tint); }
+  .code { position: absolute; inset: 0; background: var(--surface-card); padding: 22px 26px; font-size: 17px; line-height: 33px; color: var(--text-secondary); white-space: pre; }
+  .code .c { color: var(--text-faint); } .code .h { color: #8B5CC4; font-weight: 600; }
+  .code .v { color: #0B7A75; } .code .n { color: var(--text); font-weight: 600; }
+  .code .m { color: #B26A00; }
+  :root[data-theme="dark"] .code .v { color: #4EC9B0; }
+  :root[data-theme="dark"] .code .h { color: #C4ADE0; }
+  :root[data-theme="dark"] .code .m { color: #FFC46B; }
+
+  .dlg-wrap { position: absolute; left: 1000px; top: 150px; transform: scale(1.3); transform-origin: 0 0; }
+  .dlg { width: 520px; height: 470px; background: var(--surface); border-radius: 8px; overflow: hidden; box-shadow: var(--window-shadow); border: 1px solid var(--border); position: relative; color: var(--text); }
+  .dlg-h { background: var(--accent); color: #fff; padding: 12px 20px 12px; height: 66px; }
+  .dlg-h .t { font-size: 16px; font-weight: 600; } .dlg-h .f { font-size: 11.5px; margin-top: 4px; opacity: .9; }
+  .dlg-b { position: absolute; left: 0; right: 0; top: 66px; bottom: 64px; padding: 20px 24px; font-size: 13px; }
+  .dlg-f { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: var(--surface-card); border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; padding: 0 20px; }
+  .dlg-f .v { font-size: 11px; color: var(--text-faint); margin-right: auto; }
+  .btn { height: 32px; padding: 0 16px; border-radius: 4px; display: inline-flex; align-items: center; font-size: 13px; }
+  .btn.p { background: var(--accent); color: #fff; } .btn.s { background: var(--surface-muted); color: var(--text); border: 1px solid var(--border-strong); }
+  .pw { height: 32px; margin-top: 8px; border: 1px solid var(--border-strong); background: var(--surface-card); border-radius: 3px; padding: 0 10px;
+    display: flex; align-items: center; font-size: 16px; letter-spacing: 3px; color: var(--text); }
+  .pw.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .chk { display: flex; gap: 8px; margin-top: 18px; align-items: flex-start; }
+  .chk .box { width: 16px; height: 16px; border-radius: 3px; background: var(--accent); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; flex: none; margin-top: 1px; }
+  .ttl { font-weight: 600; font-size: 14px; }
+  .tgt { font-size: 12px; color: var(--text-detail); margin-top: 4px; }
+  .lbl { font-size: 11.5px; color: var(--text-detail); margin-top: 14px; margin-bottom: 3px; }
+  .nm { font-size: 12.5px; line-height: 19px; color: var(--text); }
+  .hint { color: var(--text-detail); font-size: 11.5px; margin-top: 3px; line-height: 15px; }
+  .prog { height: 4px; border-radius: 2px; background: var(--gauge-track); overflow: hidden; margin-top: 14px; position: relative; }
+  .prog i { position: absolute; top: 0; bottom: 0; width: 30%; background: var(--accent); border-radius: 2px; }
+  .ok { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: #1E7D34; }
+  :root[data-theme="dark"] .ok { color: #6FD68A; }
+  .ok .dot { width: 18px; height: 18px; border-radius: 50%; background: #34A853; color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .sent .nm { opacity: 0; }
+  /* La page de l'environnement, sur la mise en page de GitHub (Primer) : en-tete de depot, onglets,
+     menu des reglages. Couleurs Primer clair / sombre. Le logo GitHub (Octicons mark-github) est une
+     exception explicite a la regle « sans marque » des clips, demandee pour celui-ci. */
+  .gh { --g-bg:#ffffff; --g-head:#f6f8fa; --g-bd:#d1d9e0; --g-tx:#1f2328; --g-mu:#59636e; --g-ac:#0969da;
+        --g-sel:#fd8c73; --g-btn:#1f883d; --g-nav:#eff2f5; --g-new:#dafbe1; --g-newt:#1a7f37;
+        position: absolute; inset: 0; background: var(--g-bg); color: var(--g-tx);
+        font-family: -apple-system, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+  :root[data-theme="dark"] .gh { --g-bg:#0d1117; --g-head:#010409; --g-bd:#3d444d; --g-tx:#f0f6fc; --g-mu:#9198a1;
+        --g-ac:#4493f8; --g-btn:#238636; --g-nav:#151b23; --g-new:#12261e; --g-newt:#3fb950; }
+  .gh-url { height: 40px; display: flex; align-items: center; padding: 0 12px; background: var(--surface-card); border-bottom: 1px solid var(--border); }
+  .gh-url div { flex: 1; height: 28px; border-radius: 14px; background: var(--surface); display: flex; align-items: center; padding: 0 14px; font-size: 12.5px; color: var(--text-subtle); }
+  .gh-top { background: var(--g-head); border-bottom: 1px solid var(--g-bd); padding: 10px 16px 0; }
+  .gh-repo { display: flex; align-items: center; gap: 8px; font-size: 15px; height: 30px; }
+  .gh-repo .bk { width: 16px; height: 16px; color: var(--g-mu); }
+  .gh-repo .mark { width: 28px; height: 28px; color: var(--g-tx); margin-right: 8px; }
+  .gh-repo .own { color: var(--g-tx); } .gh-repo .sl { color: var(--g-mu); } .gh-repo b { font-weight: 600; }
+  .gh-repo .pub { margin-left: 4px; font-size: 11px; color: var(--g-mu); border: 1px solid var(--g-bd); border-radius: 10px; padding: 0 7px; }
+  .gh-tabs { display: flex; gap: 2px; margin-top: 8px; font-size: 13px; }
+  .gh-tabs span { padding: 7px 9px 9px; color: var(--g-tx); border-bottom: 2px solid transparent; display: flex; gap: 6px; align-items: center; }
+  .gh-tabs span i { font-style: normal; color: var(--g-mu); font-size: 12px; }
+  .gh-tabs span.on { border-bottom-color: var(--g-sel); font-weight: 600; }
+  .gh-main { display: flex; padding: 18px 16px; gap: 18px; }
+  .gh-nav { width: 168px; flex: none; font-size: 12.5px; }
+  .gh-nav div { padding: 5px 10px; border-radius: 6px; color: var(--g-tx); position: relative; }
+  .gh-nav div.h { color: var(--g-mu); font-size: 11.5px; font-weight: 600; padding-top: 10px; }
+  .gh-nav div.on { background: var(--g-nav); font-weight: 600; }
+  .gh-nav div.on::before { content: ''; position: absolute; left: -6px; top: 5px; bottom: 5px; width: 4px; border-radius: 4px; background: var(--g-ac); }
+  .gh-cnt { flex: 1; min-width: 0; }
+  .gh-crumb { font-size: 19px; padding-bottom: 8px; border-bottom: 1px solid var(--g-bd); }
+  .gh-crumb a { color: var(--g-ac); }
+  .gh-sec { display: flex; align-items: center; margin-top: 16px; font-size: 14px; font-weight: 600; }
+  .gh-sec .add { margin-left: auto; font-size: 12px; font-weight: 600; color: #fff; background: var(--g-btn); border-radius: 6px; padding: 4px 10px; }
+  .gh-desc { font-size: 12px; color: var(--g-mu); margin-top: 4px; }
+  .gh-tbl { margin-top: 10px; border: 1px solid var(--g-bd); border-radius: 6px; overflow: hidden; }
+  .gh-row { display: flex; align-items: center; padding: 0 12px; font-size: 12.5px; overflow: hidden; border-top: 1px solid var(--g-bd); }
+  .gh-row:first-child { border-top: 0; }
+  .gh-row .ic { width: 20px; color: var(--g-mu); }
+  .gh-row .when { margin-left: auto; font-size: 12px; color: var(--g-mu); }
+  .gh-row .new { margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--g-newt); background: var(--g-new); border-radius: 10px; padding: 0 7px; }
+  .wcount { margin-top: 12px; font-size: 12px; color: var(--text-detail); }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, E, style, el } from '../shared/engine.js';
+import { stage, icon, cursor, renderCursor, legend, appWindow, centerOf, renderPop } from '../shared/ui.js';
+
+const DOC = `<svg viewBox="0 0 24 24"><path d="M6 2h8l5 5v15H6z" fill="var(--surface-card)" stroke="var(--text-hint)" stroke-width="1.3"/><path d="M14 2v5h5" fill="none" stroke="var(--text-hint)" stroke-width="1.3"/><path d="M9 12h7M9 15h7M9 18h5" stroke="#8B5CC4" stroke-width="1.3"/></svg>`;
+const NAMES = ['CHROME_EXTENSION_ID', 'CHROME_PUBLISHER_ID', 'CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL', 'FIREFOX_EXTENSION_ID', 'EDGE_PRODUCT_ID'];
+// Instants ou chaque valeur part, dans l'ordre de l'inventaire : la ligne arrive sur la page de
+// l'environnement GitHub au meme moment. FIREFOX_EXTENSION_ID existe deja, elle est mise a jour.
+const SENT = [7.4, 7.65, 7.9, 8.15, 8.4];
+const EXISTING = 3;
+const DONE = 8.7;
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+
+    // Le fichier : des noms GitHub et des references au coffre, aucune valeur.
+    const line = (n, field) => `<span class="n">${n}</span>=<span class="m">{{ bw:\${item}:${field} }}</span>`;
+    const source = appWindow(camera, { w: 820, h: 620, icon: 'notepad', title: 'stores.vars.vault', body: `<div class="code mono"><span class="h"># github-variables repo=\${owner}/\${project} environment=stores</span>
+<span class="v">@owner</span> = example
+<span class="v">@project</span> = my-extension
+<span class="v">@item</span> = web-store-apps
+${line(NAMES[0], 'my-extension-CHROME_EXTENSION_ID')}
+${line(NAMES[1], 'CHROME_PUBLISHER_ID')}
+${line(NAMES[2], 'CHROME_CLIENT_EMAIL')}
+${line(NAMES[3], 'my-extension-FIREFOX_ID')}
+${line(NAMES[4], 'my-extension-EDGE_PRODUCT_ID')}
+<span class="c"># names and references only — no value in the repo</span></div>` });
+    style(source, { left: '120px', top: '180px' });
+
+    const files = [['folder', 'workflows', 'File folder'], [null, 'stores.secrets.vault', 'VAULT file'], [null, 'stores.vars.vault', 'VAULT file']];
+    const explorer = appWindow(camera, { w: 820, h: 620, icon: 'explorer', title: '.github', body: `
+      <div class="ex-bar">my-extension <span>›</span> <b>.github</b></div>
+      <div class="ex-h"><span style="padding-left:38px">Name</span><span style="margin-left:auto;width:170px">Type</span></div>
+      ${files.map(([ic, n, ty], i) => `<div class="ex-r" data-i="${i}">${ic ? `<img src="${icon(ic)}">` : DOC}<span>${n}</span><span class="c2">${ty}</span></div>`).join('')}` });
+    style(explorer, { left: '120px', top: '180px' });
+
+    const menu = el(`<div class="cmenu" style="left:0;top:0;min-width:250px;font-size:15px">
+      <div class="it"><span class="g"></span>Open</div><div class="it"><span class="g"></span>Open with</div>
+      <div class="it"><span class="g"></span>Copy as path</div><div class="sepr"></div>
+      <div class="it inj"><span class="g sym">🔑</span>Inject secrets…</div></div>`);
+    camera.appendChild(menu);
+
+    const dlg = el(`<div class="dlg-wrap"><div class="dlg">
+      <div class="dlg-h"><div class="t">Secret injection</div><div class="f mono">stores.vars.vault</div></div>
+      <div class="dlg-b s-check">
+        <div class="ttl">5 variables in the inventory</div>
+        <div class="tgt mono">example/my-extension · environment stores</div>
+        <div class="lbl">Not on GitHub yet — will be created:</div>
+        ${NAMES.filter((_, i) => i !== 3).map(n => `<div class="nm mono">${n}</div>`).join('')}
+        <div class="lbl">Already on GitHub — will be overwritten:</div>
+        <div class="nm mono">FIREFOX_EXTENSION_ID — updated 12 days ago</div>
+        <div class="hint" style="margin-top:16px">Continue to unlock the vault and send the values. Nothing has been read from the vault yet.</div>
+      </div>
+      <div class="dlg-b s-unlock">
+        <div>Master password</div><div class="pw"></div>
+        <div class="chk"><span class="box">✓</span><div>Refresh the vault before injecting<div class="hint">The CLI reads a local cache: without this, an item you just changed in the vault is not visible yet.</div></div></div>
+      </div>
+      <div class="dlg-b s-work"><div class="ttl">Sending to GitHub…</div><div class="prog"><i></i></div><div class="wcount mono"></div></div>
+      <div class="dlg-b s-done sent"><div class="ok"><span class="dot">✓</span>Sent to GitHub</div>
+        <div class="hint" style="margin-top:6px;font-size:12.5px">5 variables sent</div>
+        <div class="lbl">Sent to</div><div class="tgt mono" style="margin-top:0">example/my-extension · environment stores</div>
+        <div style="margin-top:10px">${NAMES.map(n => `<div class="nm mono">${n}</div>`).join('')}</div>
+      </div>
+      <div class="dlg-f"><span class="v mono">v1.26.1</span><span class="btn p go">Continue</span><span class="btn s">Cancel</span></div>
+    </div></div>`);
+    camera.appendChild(dlg);
+
+    // La page de l'environnement, cote GitHub : navigateur generique, sans marque. Des noms et des
+    // dates, jamais une valeur — ce que montre aussi la vraie page pour un secret.
+    const browser = appWindow(camera, { w: 820, h: 620, icon: 'chrome', title: 'Environment stores · example/my-extension', body: `<div class="gh">
+      <div class="gh-url"><div class="mono">github.com/example/my-extension/settings/environments/stores</div></div><div class="gh-top"><div class="gh-repo"><svg class="mark" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg><svg class="bk" viewBox="0 0 16 16"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5v-1.5h1.75v-2h-8a1 1 0 0 0-.71 1.71.75.75 0 0 1-1.06 1.06A2.49 2.49 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.71A2.49 2.49 0 0 1 4.5 9h8Z" fill="currentColor"/></svg><span class="own">example</span><span class="sl">/</span><b>my-extension</b><span class="pub">Public</span></div><div class="gh-tabs"><span>&lt;&gt; Code</span><span>Issues <i>3</i></span><span>Pull requests <i>1</i></span><span>Actions</span><span>Projects</span><span>Security</span><span class="on">⚙ Settings</span></div></div><div class="gh-main"><div class="gh-nav"><div class="">General</div><div class="">Collaborators</div><div class="h">Code and automation</div><div class="">Branches</div><div class="">Rules</div><div class="">Actions</div><div class="">Webhooks</div><div class="on">Environments</div><div class="">Pages</div><div class="h">Security</div><div class="">Secrets and variables</div></div><div class="gh-cnt"><div class="gh-crumb"><a>Environments</a> / Configure stores</div><div class="gh-sec">Environment variables <span class="add">Add environment variable</span></div><div class="gh-desc">Variables are used for non-sensitive configuration data. <span class="cnt">1</span> in this environment.</div><div class="gh-tbl">${NAMES.map((n, i) => `<div class="gh-row" data-g="${i}"><span class="ic sym">⚙</span><span class="mono">${n}</span><span class="when">${i === EXISTING ? 'Updated 12 days ago' : 'Updated now'}</span><span class="new">new</span></div>`).join('')}</div></div></div></div></div>` });
+    style(browser, { left: '120px', top: '180px' });
+
+    const row = centerOf(explorer.querySelector('[data-i="2"]'));
+    style(menu, { left: `${row.l + 260}px`, top: `${row.y + 4}px` });
+    const inj = centerOf(menu.querySelector('.inj'));
+    const go = centerOf(dlg.querySelector('.go'));
+    const cur = cursor(camera);
+    return { st, source, explorer, browser, menu, dlg, row, inj, go, cur, leg: legend(st) };
+  },
+
+  render(t, x) {
+    // Le fichier, puis l'Explorateur ; retour au fichier pour boucler.
+    // Le fichier, l'Explorateur, puis la page GitHub pendant l'envoi ; retour au fichier pour boucler.
+    const toExplorer = prog(t, 2.6, 2.95);
+    const toBrowser = prog(t, 6.95, 7.3);
+    const back = prog(t, 9.3, 9.75);
+    const wSource = Math.max(1 - toExplorer, back);
+    const wExplorer = toExplorer * (1 - toBrowser);
+    const wBrowser = toBrowser * (1 - back);
+    style(x.source, { opacity: wSource, visibility: wSource > 0 ? 'visible' : 'hidden' });
+    style(x.explorer, { opacity: wExplorer, visibility: wExplorer > 0 ? 'visible' : 'hidden' });
+    style(x.browser, { opacity: wBrowser, visibility: wBrowser > 0 ? 'visible' : 'hidden' });
+
+    // Chaque ligne arrive a l'instant de son envoi ; celle qui existait passe a « Updated now ».
+    let count = 1;
+    x.browser.querySelectorAll('.gh-row').forEach((r, i) => {
+      const p = prog(t, SENT[i], SENT[i] + .3, E.out);
+      const flash = env(t, SENT[i], SENT[i] + .25, .9);
+      if (i === EXISTING) {
+        style(r, { height: '36px', opacity: 1 });
+        r.querySelector('.when').textContent = p > .5 ? 'Updated now' : 'Updated 12 days ago';
+        r.querySelector('.new').style.display = 'none';
+      } else {
+        if (t >= SENT[i]) count++;
+        style(r, { height: `${36 * p}px`, opacity: p, borderTopWidth: p > 0 ? '1px' : '0' });
+      }
+      r.style.background = `color-mix(in srgb, var(--accent) ${Math.round(flash * 14)}%, transparent)`;
+    });
+    x.browser.querySelector('.cnt').textContent = `${count}`;
+    x.explorer.querySelector('[data-i="2"]').classList.toggle('sel', t >= 3.2 && t < 9.3);
+
+    renderPop(x.menu, t, [3.25, 3.4], [3.85, 3.95], .94);
+    x.menu.querySelector('.inj').classList.toggle('sel', t >= 3.65);
+
+    // Verification, mot de passe, envoi, compte-rendu.
+    renderPop(x.dlg.firstChild, t, [4.0, 4.3], [9.2, 9.45]);
+    const state = t < 5.75 ? 'check' : t < 6.95 ? 'unlock' : t < DONE ? 'work' : 'done';
+    x.dlg.querySelector('.wcount').textContent = `${SENT.filter(s => t >= s).length} / 5`;
+    ['check', 'unlock', 'work', 'done'].forEach(s => x.dlg.querySelector(`.s-${s}`).style.display = s === state ? 'block' : 'none');
+    x.dlg.querySelector('.pw').textContent = '•'.repeat(Math.floor(Math.max(0, Math.min(1, (t - 6.0) / .6)) * 12));
+    x.dlg.querySelector('.pw').classList.toggle('focus', state === 'unlock');
+    const f = x.dlg.querySelector('.dlg-f');
+    f.querySelector('.go').style.display = state === 'check' || state === 'unlock' ? 'inline-flex' : 'none';
+    f.querySelector('.go').textContent = state === 'unlock' ? 'Unlock' : 'Continue';
+    f.querySelector('.s').textContent = state === 'done' ? 'Close' : 'Cancel';
+    x.dlg.querySelector('.prog i').style.left = `${((t * 1.4) % 1.3) * 100 - 30}%`;
+    x.dlg.querySelectorAll('.sent .nm').forEach((n, i) => {
+      const p = prog(t, SENT[i], SENT[i] + .2, E.out);
+      style(n, { opacity: p, transform: `translateX(${(1 - p) * 8}px)` });
+    });
+    const pop = env(t, 7.9, 8.2, .15);
+    x.dlg.querySelector('.ok').style.transform = `scale(${1 + pop * .04})`;
+
+    renderCursor(x.cur, t, [
+      [.2, 1600, 960], [3.0, x.row.x - 150, x.row.y], [3.4, x.row.x - 150, x.row.y],
+      [3.7, x.inj.x - 40, x.inj.y], [4.2, x.inj.x - 40, x.inj.y], [5.4, x.go.x, x.go.y],
+      [6.9, x.go.x, x.go.y], [7.6, 1600, 960],
+    ], [3.25, 3.9, 5.7, 6.9], [.2, 7.5]);
+
+    x.leg(t, [
+      [.3, 2.55, 'A .vault file: GitHub names and vault references, no values'],
+      [4.3, 5.7, 'Checked against GitHub before the vault is unlocked'],
+      [7.4, 9.2, 'Each value lands in the GitHub environment, sent through stdin'],
+    ]);
+  },
+});
+</script></body></html>

@@ -1,4 +1,6 @@
-﻿namespace DockPad.Secrets;
+﻿using System.IO;
+
+namespace DockPad.Secrets;
 
 /// <summary>Ce que le fichier demande qu'on fasse de lui.</summary>
 public enum SecretMode
@@ -14,6 +16,11 @@ public enum SecretMode
 
     /// <summary>Les deux à la fois : on produit les deux.</summary>
     Both,
+
+    /// <summary>
+    /// Un fichier <c>.vault</c> : un inventaire de secrets ou de variables envoyés à GitHub Actions.
+    /// </summary>
+    GitHub,
 }
 
 /// <summary>
@@ -37,6 +44,25 @@ public enum SecretMode
 /// </remarks>
 public static class SecretPlan
 {
+    /// <summary>L'extension d'un inventaire GitHub.</summary>
+    public const string InventoryExtension = ".vault";
+
+    /// <summary>
+    /// Le mode d'un fichier : l'extension <c>.vault</c> d'abord, le contenu ensuite.
+    /// </summary>
+    /// <remarks>
+    /// <b>L'extension tranche avant le contenu.</b> Un inventaire porte des marqueurs : décidé sur le
+    /// seul contenu, un <c>.vault</c> à l'en-tête mal écrit partait dans le presse-papier sans un
+    /// mot — c'est arrivé. Un <c>.vault</c> est un inventaire, toujours ; s'il est mal formé, il est
+    /// refusé en disant pourquoi. Hors d'un <c>.vault</c>, une ligne <c># github-secrets</c> n'est
+    /// qu'un commentaire.
+    /// </remarks>
+    public static SecretMode Of(string path, string content) =>
+        string.Equals(Path.GetExtension(path), InventoryExtension, StringComparison.OrdinalIgnoreCase)
+            ? SecretMode.GitHub
+            : Of(content);
+
+    /// <summary>Le mode décidé sur le seul contenu, hors inventaire.</summary>
     public static SecretMode Of(string content)
     {
         var hasMarkers = SecretTemplate.FindMarkers(content).Count > 0;

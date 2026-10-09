@@ -36,6 +36,9 @@ public partial class SecretInjectionWindow : Window
     private readonly CancellationTokenSource _cancellation = new();
     private string? _content;
     private SecretMode _mode;
+
+    /// <summary>L'inventaire analysé, en mode GitHub — nul dans les autres modes.</summary>
+    private GitHubInventory? _inventory;
     private string? _writtenFolder;
     private InjectionReport? _report;
 
@@ -122,12 +125,19 @@ public partial class SecretInjectionWindow : Window
             var (content, failure, mode) = await Task.Run(() =>
             {
                 var (text, error) = SecretInjectionService.ReadTemplate(_filePath);
-                return (text, error, text is null ? SecretMode.None : SecretPlan.Of(text));
+                return (text, error, text is null ? SecretMode.None : SecretPlan.Of(_filePath, text));
             }).ConfigureAwait(true);
 
             if (failure is not null) { ShowFailure(failure); return; }
             _content = content;
             _mode = mode;
+
+            if (_mode == SecretMode.GitHub)
+            {
+                var (inventory, failures) = GitHubInventory.Parse(content ?? "");
+                if (inventory == null) { ShowFailure(InjectionReport.Failed(failures)); return; }
+                _inventory = inventory;
+            }
 
             if (Refusal() is { } refusal) { ShowFailure(refusal); return; }
         }
@@ -151,6 +161,10 @@ public partial class SecretInjectionWindow : Window
 
         // Le fichier porte les deux formats : on demande lesquels produire, AVANT le mot de passe.
         if (_mode == SecretMode.Both) { ShowChoice(); return; }
+
+        // Un inventaire se compare à GitHub AVANT le mot de passe : la vérification ne lit que des
+        // noms, et c'est elle qui dit ce que l'envoi va créer, écraser ou laisser.
+        if (_inventory != null) { await CheckGitHubAsync(_inventory); return; }
 
         ShowUnlock(error: null);
     }
@@ -227,7 +241,7 @@ public partial class SecretInjectionWindow : Window
         try
         {
             opened = await SecretInjectionService.OpenAsync(
-                _content!, Path.GetDirectoryName(_filePath)!, _mode, password, sync,
+                _inventory?.MarkersText ?? _content!, Path.GetDirectoryName(_filePath)!, _mode, password, sync,
                 _cancellation.Token).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (Timeout()) { ShowTimeout(); return; }
@@ -263,6 +277,14 @@ public partial class SecretInjectionWindow : Window
         // qu'impossible à combler d'ici.
         if (_session.Writer is { CanCreateItems: false } && _session.Creatable.Any(r => r.IsNew))
             _session.Note(Loc.T("Inject_Create_NoCollection"));
+
+        await FinishAsync();
+    }
+
+    /// <summary>Rend puis montre — ou, pour un inventaire, rend puis envoie à GitHub.</summary>
+    private async Task FinishAsync()
+    {
+        if (_inventory != null) { await SendToGitHubAsync(_inventory); return; }
 
         Finish();
     }
@@ -522,10 +544,10 @@ public partial class SecretInjectionWindow : Window
     }
 
     /// <summary>Passer, c'est aussi oublier ce qui a été tapé : rien ne reste dans les contrôles.</summary>
-    private void SkipCreate_Click(object sender, RoutedEventArgs e)
+    private async void SkipCreate_Click(object sender, RoutedEventArgs e)
     {
         ClearInputs();
-        Finish();
+        await FinishAsync();
     }
 
     private async void Create_Click(object sender, RoutedEventArgs e)
@@ -562,7 +584,7 @@ public partial class SecretInjectionWindow : Window
         // presse-papier armé pour personne.
         if (_closed) { AbandonSession(); return; }
 
-        Finish();
+        await FinishAsync();
     }
 
     /// <summary>
@@ -601,6 +623,130 @@ public partial class SecretInjectionWindow : Window
     private void CloseLabel(string key) { _closeKey = key; ApplyCloseLabel(); }
 
     private void ApplyCloseLabel() => BtnClose.Content = Loc.T(_closeKey);
+
+    // ───────────── L'inventaire GitHub ─────────────
+
+    /// <summary>Compare l'inventaire à GitHub, sans toucher au coffre, puis montre ce que l'envoi fera.</summary>
+    private async Task CheckGitHubAsync(GitHubInventory inventory)
+    {
+        ShowBusy(Loc.T("GitHub_State_Checking"));
+
+        (GitHubCheck? Check, InjectionReport? Failure) compared;
+        try
+        {
+            compared = await GitHubSyncService.CheckAsync(inventory, _cancellation.Token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (Timeout()) { ShowGitHubTimeout(); return; }
+        catch (OperationCanceledException) { return; }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Vérification de l'inventaire sur GitHub");
+            ShowFailure(InjectionReport.Fail(Loc.T("GitHub_Error_CliFailed"), ex.GetType().Name));
+            return;
+        }
+
+        if (compared.Check is not { } check)
+        {
+            ShowFailure(compared.Failure ?? InjectionReport.Fail(Loc.T("GitHub_Error_CliFailed")));
+            return;
+        }
+
+        ShowGitHub(inventory, check);
+    }
+
+    /// <summary>
+    /// Rend l'inventaire, referme le coffre, puis envoie.
+    /// </summary>
+    /// <remarks>
+    /// La session est fermée <b>avant</b> les appels à <c>gh</c> : une fois les valeurs rendues, la
+    /// clé du coffre ne sert plus à rien, et elle n'a pas à survivre à un aller-retour réseau.
+    /// </remarks>
+    private async Task SendToGitHubAsync(GitHubInventory inventory)
+    {
+        var session = _session ?? throw new InvalidOperationException("No open vault session to send from.");
+
+        IReadOnlyList<GitHubValue>? values;
+        IReadOnlyList<string> missing;
+        try { (values, missing) = inventory.Render(session.Lookup); }
+        finally
+        {
+            session.Close();
+            _session = null;
+        }
+
+        // Synchro ratée, écriture refusée : ce que la session savait déjà manquer.
+        var notes = session.Missing.ToList();
+
+        if (values == null) { ShowFailure(InjectionReport.Failed([.. missing, .. notes])); return; }
+
+        ShowBusy(Loc.T("GitHub_State_Sending"));
+
+        GitHubSendOutcome outcome;
+        try
+        {
+            outcome = await GitHubSyncService.SendAsync(inventory, values, _cancellation.Token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (Timeout()) { ShowGitHubTimeout(); return; }
+        catch (OperationCanceledException) { return; }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Envoi de l'inventaire vers GitHub");
+            ShowFailure(InjectionReport.Fail(Loc.T("GitHub_Error_CliFailed"), ex.GetType().Name));
+            return;
+        }
+
+        List<string> problems =
+        [
+            .. outcome.Refused.Select(name => Loc.F("GitHub_Error_SetRefused", name)),
+            .. (outcome.Uncertain ?? []).Select(name => Loc.F("GitHub_Error_SetUncertain", name, GitHubCli.TimeoutSeconds)),
+            .. (outcome.Unsent ?? []).Select(name => Loc.F("GitHub_Error_SetUnsent", name)),
+        ];
+
+        // L'écran d'échec dit « rien n'a été envoyé » : il n'est juste que si rien n'a pu partir.
+        if (!outcome.ReachedGitHub) { ShowFailure(InjectionReport.Failed([.. problems, .. notes])); return; }
+
+        ShowResult(InjectionReport.Sent(outcome, [.. notes, .. problems]));
+    }
+
+    private void ShowGitHubTimeout() =>
+        ShowFailure(InjectionReport.Fail(Loc.F("GitHub_Error_Timeout", GitHubCli.TimeoutSeconds)));
+
+    /// <summary>
+    /// Ce que l'envoi fera : créer les absents, écraser les présents — avec leur âge —, et laisser ce
+    /// qui n'est que sur GitHub. Des noms et des dates, jamais une valeur.
+    /// </summary>
+    private void ShowGitHub(GitHubInventory inventory, GitHubCheck check)
+    {
+        var now = DateTimeOffset.Now;
+
+        TxtGitHubTitle.Text = Loc.F(
+            inventory.Kind == GitHubTargetKind.Secrets ? "GitHub_Check_TitleSecrets" : "GitHub_Check_TitleVariables",
+            inventory.Entries.Count);
+        TxtGitHubTarget.Text = GitHubSyncService.TargetLabel(inventory);
+
+        ListGitHubMissing.ItemsSource = check.Missing;
+        BlocGitHubMissing.Visibility = Vis(check.Missing.Count > 0);
+
+        // Moins de vingt-quatre heures ne s'écrit pas « il y a 0 jour ». Ni « aujourd'hui » : une
+        // valeur posée hier soir a moins d'un jour sans être d'aujourd'hui.
+        string Aged(GitHubRemoteEntry entry) => GitHubInventory.AgeInDays(entry.UpdatedAt, now) switch
+        {
+            null => entry.Name,
+            0 => Loc.F("GitHub_Check_AgeRecent", entry.Name),
+            var days => Loc.F("GitHub_Check_Age", entry.Name, days),
+        };
+
+        ListGitHubPresent.ItemsSource = check.Present.Select(Aged).ToList();
+        BlocGitHubPresent.Visibility = Vis(check.Present.Count > 0);
+
+        ListGitHubExtra.ItemsSource = check.Extra.Select(Aged).ToList();
+        BlocGitHubExtra.Visibility = Vis(check.Extra.Count > 0);
+
+        Show(PanelGitHub);
+        Buttons(unlock: false, proceed: true);
+        BtnContinue.IsEnabled = true;
+        CloseLabel("Common_Cancel");
+    }
 
     // ───────────── Les états ─────────────
 
@@ -655,6 +801,9 @@ public partial class SecretInjectionWindow : Window
         var files = ChkFiles.IsChecked == true;
         var clipboard = ChkClipboard.IsChecked == true;
 
+        // Un inventaire passe par ici après sa vérification : rien à choisir, on déverrouille.
+        if (_mode == SecretMode.GitHub) { ShowUnlock(error: null); return; }
+
         if (!files && !clipboard) return;
 
         _mode = files && clipboard ? SecretMode.Both
@@ -704,11 +853,19 @@ public partial class SecretInjectionWindow : Window
         // Des noms et des nombres, jamais une valeur.
         LogService.Info($"Injection {(report.Complete ? "terminée" : "incomplète")} : {Path.GetFileName(_filePath)}, {report.Missing.Count} manque(s), {written.Count} fichier(s), {stale.Count} périmé(s)");
 
-        TxtResultTitle.Text = Loc.T(report.Complete ? "Inject_Result_Title" : "Inject_Partial_Title");
+        // Des ternaires et non un switch : le garde des clés lit les arguments de Loc.T, et ne
+        // verrait pas les clés d'une expression switch.
+        TxtResultTitle.Text = report.GitHub != null
+            ? Loc.T(report.Complete ? "GitHub_Result_Title" : "GitHub_Partial_Title")
+            : Loc.T(report.Complete ? "Inject_Result_Title" : "Inject_Partial_Title");
         TxtResultTitle.SetResourceReference(ForegroundProperty,
             report.Complete ? "Brush.Text" : "Brush.WarnTextStrong");
 
-        TxtResultSummary.Text = Summary(report.Render, written.Count);
+        TxtResultSummary.Text = Summary(report.Render, written.Count, report.GitHub);
+
+        TxtGitHubSentTarget.Text = report.GitHub?.Target ?? "";
+        ListGitHubSent.ItemsSource = report.GitHub?.Sent ?? [];
+        BlocGitHubSent.Visibility = Vis(report.GitHub is { Sent.Count: > 0 });
 
 
         ListMissing.ItemsSource = report.Missing;
@@ -820,12 +977,15 @@ public partial class SecretInjectionWindow : Window
     /// avec deux, il faudrait l'union des items des deux, sinon il surestimerait. Ce sur quoi
     /// l'utilisateur agit, ce sont les deux comptes de sorties.
     /// </remarks>
-    private static string Summary(SecretRenderResult? render, int written)
+    private static string Summary(SecretRenderResult? render, int written, GitHubSendOutcome? github)
     {
         var parts = new List<string>();
 
         if (render is not null) parts.Add(Loc.F("Inject_Result_Markers", render.MarkerCount));
         if (written > 0) parts.Add(Loc.F("Inject_Result_Files", written));
+        if (github != null)
+            parts.Add(Loc.F(github.Kind == GitHubTargetKind.Secrets ? "GitHub_Result_Secrets" : "GitHub_Result_Variables",
+                github.Sent.Count));
 
         return string.Join(", ", parts);
     }
@@ -871,6 +1031,7 @@ public partial class SecretInjectionWindow : Window
         BlocMissing.Visibility = Visibility.Collapsed;
         BlocWritten.Visibility = Visibility.Collapsed;
         BlocStale.Visibility = Visibility.Collapsed;
+        BlocGitHubSent.Visibility = Visibility.Collapsed;
 
         Show(PanelResult);
         Buttons(unlock: false);
@@ -879,13 +1040,17 @@ public partial class SecretInjectionWindow : Window
 
     private void ShowFailure(InjectionReport report)
     {
+        TxtFailedTitle.Text = Loc.T(_mode == SecretMode.GitHub ? "GitHub_Failed_Title" : "Inject_Failed_Title");
         ListFailures.ItemsSource = report.Failures;
 
         // La consolation doit parler de ce qui n'a pas eu lieu. En mode fichiers, invoquer le
         // presse-papier décrivait une opération qui n'était de toute façon pas prévue.
-        TxtFailedHint.Text = _mode is SecretMode.Files or SecretMode.Both
-            ? Loc.T("Inject_Failed_Hint_Files")
-            : Loc.T("Inject_Failed_Hint");
+        TxtFailedHint.Text = _mode switch
+        {
+            SecretMode.Files or SecretMode.Both => Loc.T("Inject_Failed_Hint_Files"),
+            SecretMode.GitHub => Loc.T("Inject_Failed_Hint_GitHub"),
+            _ => Loc.T("Inject_Failed_Hint"),
+        };
 
         TxtDiagnostic.Text = report.Diagnostic ?? "";
         TxtDiagnostic.Visibility = report.Diagnostic is null ? Visibility.Collapsed : Visibility.Visible;
@@ -900,7 +1065,7 @@ public partial class SecretInjectionWindow : Window
 
     private void Show(UIElement panel)
     {
-        foreach (var candidate in new UIElement[] { PanelBusy, PanelChoice, PanelCreate, PanelUnlock, PanelResult, PanelFailed })
+        foreach (var candidate in new UIElement[] { PanelBusy, PanelChoice, PanelGitHub, PanelCreate, PanelUnlock, PanelResult, PanelFailed })
             candidate.Visibility = candidate == panel ? Visibility.Visible : Visibility.Collapsed;
     }
 

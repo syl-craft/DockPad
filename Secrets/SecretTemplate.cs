@@ -68,6 +68,10 @@ public static class SecretTemplate
             .Select(m => new SecretMarker(m.Groups[1].Value.Trim(), m.Groups[2].Value))
             .ToList();
 
+    /// <summary>Le texte est-il un marqueur, et rien d'autre, aux espaces de bord près ?</summary>
+    public static bool IsSingleMarker(string text) =>
+        MarkerPattern.Match(text.Trim()) is { Success: true } match && match.Length == text.Trim().Length;
+
     /// <summary>Ce qui ressemble encore à un marqueur après rendu — le second filet.</summary>
     public static IReadOnlyList<string> FindLeftovers(string rendered) =>
         LeftoverPattern.Matches(rendered)

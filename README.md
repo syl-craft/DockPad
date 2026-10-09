@@ -30,6 +30,7 @@ A WPF application (.NET 8, x64): a **quick launch bar** for Windows, with a mana
 - **MCP server**: Claude (Claude Code / Claude Desktop) can manage the grid, the pages and the browsers
 - **AI usage panel**: token consumption of Claude Code, Codex, Gemini and Copilot, under the grid
 - **Secret injection**: right-click a file → its `{{ bw:… }}` markers are replaced with values from Vaultwarden, into the clipboard or into secret files
+- **GitHub secrets and variables**: a `.vault` file lists vault references, DockPad sends the values to a GitHub Actions environment
 - **System tray icon** — the application runs in the background, single instance (Mutex)
 - **Start with Windows**, configurable
 - **Built-in updates**: optional automatic check, download and restart from the application, handling of blocking processes with consent
@@ -391,7 +392,8 @@ accepts spaces** (`{{ bw:Home infra:token }}`), the field name does not: the `:`
 enough to delimit it.
 
 A marker is replaced **in any file**, not just YAML — a `.env`, a `Dockerfile`, a script. The content
-decides, never the extension.
+decides, never the extension — except `.vault`, which is always a
+[GitHub inventory](#github-secrets-and-variables-from-vaultwarden).
 
 **The item is looked up by its exact name**, case-insensitively:
 
@@ -491,11 +493,53 @@ vault that is temporarily unreachable must not destroy a deployment that works.
 - [ ] Right-click a file carrying markers → **Inject secrets…**
 - [ ] Keep **Refresh the vault before injecting** ticked: the CLI reads a local cache, and without it an item you have just changed is not visible yet
 
+## GitHub secrets and variables from Vaultwarden
+
+A **`.vault`** file lists the secrets — or the variables — of a GitHub Actions environment, with a
+**reference to the vault** for each one and never a value. Right-click it → **Inject secrets…**:
+DockPad compares it with GitHub, unlocks the vault, then sends the values with the GitHub CLI.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/13-github-sync-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/13-github-sync-light.gif" alt="Demo: a .vault file compared with GitHub, then sent to GitHub Actions" width="960">
+</picture>
+
+```ini
+# github-variables repo=${owner}/${project} environment=stores
+@owner = example
+@project = my-extension
+@item = web-store-apps
+CHROME_EXTENSION_ID={{ bw:${item}:my-extension-CHROME_EXTENSION_ID }}
+EDGE_PRODUCT_ID={{ bw:${item}:my-extension-EDGE_PRODUCT_ID }}
+```
+
+- **The `.vault` extension decides**: such a file is always an inventory, never rendered to the
+  clipboard. Its header — `# github-secrets` or `# github-variables` — names the target: the
+  repository, and the environment if there is one (without `environment=`, the repository's own
+  secrets)
+- **Variables** `@name = value`, quoted as `${name}` in the header and in the markers, avoid
+  repeating the repository or the item. They are plain text and are never sent to GitHub
+- **Each line is one marker and nothing else**: any text around it would reach GitHub in clear, so it
+  is refused
+- **Checked before the vault is unlocked**: DockPad shows what will be created, what will be
+  overwritten — with its age, to see an expiring key coming — and what exists only on GitHub. That
+  last group is **reported, never deleted**
+- **All or nothing**: a single unresolved marker and nothing is sent. Each value goes through the
+  **standard input** of `gh secret set` / `gh variable set`, never on a command line
+
+### Enabling it on a computer
+
+- [ ] Everything from secret injection above (Bitwarden CLI, login, context menu entry)
+- [ ] Install the **GitHub CLI** — `winget install GitHub.cli` — then `gh auth login` with the account that owns the repository
+- [ ] **☰ → Settings → Secrets tab → GitHub CLI**: leave empty for automatic detection, or **Detect**
+- [ ] Right-click a `.vault` file → **Inject secrets…**
+
 ## Requirements
 
 - Windows 10/11 x64
 - [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (Desktop)
 - *For secret injection only*: the [Bitwarden CLI](https://bitwarden.com/help/cli/), under GPL-3.0, installed separately — `winget install Bitwarden.CLI`
+- *For GitHub secrets and variables only*: the [GitHub CLI](https://cli.github.com/), under MIT, installed separately — `winget install GitHub.cli`
 
 ## Installation
 

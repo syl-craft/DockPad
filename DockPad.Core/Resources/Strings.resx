@@ -1505,4 +1505,145 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Update_ProfileInside" xml:space="preserve"><value>Your profile is inside the application folder. Move it outside that folder and update DOCKPAD_PROFILE_DIR before updating.</value></data>
   <data name="Update_CloseDialogs" xml:space="preserve"><value>Finish your work and close the other DockPad dialogs before updating.</value></data>
   <data name="Update_DownloadLatest" xml:space="preserve"><value>Download latest release</value></data>
+  <data name="GitHub_Error_Unreadable" xml:space="preserve">
+    <value>Line {0} of the inventory is neither a NAME=marker line, nor @variable = value, nor a comment.</value>
+  </data>
+  <data name="GitHub_Error_NoHeader" xml:space="preserve">
+    <value>The inventory has no « # github-secrets » or « # github-variables » line.</value>
+  </data>
+  <data name="GitHub_Error_NoEntries" xml:space="preserve">
+    <value>The inventory lists no secret or variable.</value>
+  </data>
+  <data name="GitHub_Error_VariableRedefined" xml:space="preserve">
+    <value>The variable @{0} is defined twice.</value>
+  </data>
+  <data name="GitHub_Error_VariableMarker" xml:space="preserve">
+    <value>The variable @{0} contains a vault marker: a variable is a plain value, the marker belongs on a NAME= line.</value>
+  </data>
+  <data name="GitHub_Error_UnknownKind" xml:space="preserve">
+    <value>Unknown inventory type « {0} »: expected github-secrets or github-variables.</value>
+  </data>
+  <data name="GitHub_Error_UnknownParameter" xml:space="preserve">
+    <value>Unknown header parameter « {0} »: only repo= and environment= are accepted.</value>
+  </data>
+  <data name="GitHub_Error_RepoMissing" xml:space="preserve">
+    <value>The header does not name the repository: add repo=owner/name.</value>
+  </data>
+  <data name="GitHub_Error_RepoInvalid" xml:space="preserve">
+    <value>« {0} » is not a repository in the owner/name form.</value>
+  </data>
+  <data name="GitHub_Error_BadName" xml:space="preserve">
+    <value>« {0} » (line {1}) is not a valid GitHub name: letters, digits and underscore, not starting with a digit.</value>
+  </data>
+  <data name="GitHub_Error_ReservedName" xml:space="preserve">
+    <value>{0}: GitHub reserves the GITHUB_ prefix.</value>
+  </data>
+  <data name="GitHub_Error_DuplicateName" xml:space="preserve">
+    <value>{0} appears twice in the inventory (GitHub ignores case).</value>
+  </data>
+  <data name="GitHub_Error_PlainValue" xml:space="preserve">
+    <value>{0} must be exactly one bw:item:field marker, with nothing around it: any other text would be sent as a plain value.</value>
+  </data>
+  <data name="GitHub_Error_UnknownVariable" xml:space="preserve">
+    <value>Unknown variable « {0} » (line {1}): define it with a @{0} = … line.</value>
+  </data>
+  <data name="GitHub_Target_Environment" xml:space="preserve">
+    <value>{0} · environment {1}</value>
+  </data>
+  <data name="GitHub_Error_CliMissing" xml:space="preserve">
+    <value>The GitHub CLI (gh) cannot be found. Install it with « winget install GitHub.cli ».</value>
+  </data>
+  <data name="GitHub_Error_NotLoggedIn" xml:space="preserve">
+    <value>The GitHub CLI is not logged in. Run « gh auth login » with the account that owns the repository.</value>
+  </data>
+  <data name="GitHub_Error_ListFailed" xml:space="preserve">
+    <value>GitHub refused to list {0}: check the repository, the environment and the account rights.</value>
+  </data>
+  <data name="GitHub_Error_SetRefused" xml:space="preserve">
+    <value>{0}: GitHub refused the value (details in the log).</value>
+  </data>
+  <data name="GitHub_Error_CliFailed" xml:space="preserve">
+    <value>The GitHub CLI did not answer as expected.</value>
+  </data>
+  <data name="GitHub_Error_Timeout" xml:space="preserve">
+    <value>GitHub did not answer within {0} seconds. Some values may already have been sent: run the check again.</value>
+  </data>
+  <data name="GitHub_State_Checking" xml:space="preserve">
+    <value>Comparing the inventory with GitHub…</value>
+  </data>
+  <data name="GitHub_State_Sending" xml:space="preserve">
+    <value>Sending to GitHub…</value>
+  </data>
+  <data name="GitHub_Check_TitleSecrets" xml:space="preserve">
+    <value>{0} {0:plural:secret|secrets} in the inventory</value>
+  </data>
+  <data name="GitHub_Check_TitleVariables" xml:space="preserve">
+    <value>{0} {0:plural:variable|variables} in the inventory</value>
+  </data>
+  <data name="GitHub_Check_Age" xml:space="preserve">
+    <value>{0} — updated {1} {1:plural:day|days} ago</value>
+  </data>
+  <data name="GitHub_Check_Missing" xml:space="preserve">
+    <value>Not on GitHub yet — will be created:</value>
+  </data>
+  <data name="GitHub_Check_Present" xml:space="preserve">
+    <value>Already on GitHub — will be overwritten:</value>
+  </data>
+  <data name="GitHub_Check_Extra" xml:space="preserve">
+    <value>On GitHub but not in the inventory — left untouched:</value>
+  </data>
+  <data name="GitHub_Check_Hint" xml:space="preserve">
+    <value>Continue to unlock the vault and send the values. Nothing has been read from the vault yet.</value>
+  </data>
+  <data name="GitHub_Result_Secrets" xml:space="preserve">
+    <value>{0} {0:plural:secret sent|secrets sent}</value>
+  </data>
+  <data name="GitHub_Result_Variables" xml:space="preserve">
+    <value>{0} {0:plural:variable sent|variables sent}</value>
+  </data>
+  <data name="GitHub_Result_Target" xml:space="preserve">
+    <value>Sent to</value>
+  </data>
+  <data name="Inject_Failed_Hint_GitHub" xml:space="preserve">
+    <value>A partial set would be worse than none: nothing was sent to GitHub.</value>
+  </data>
+  <data name="GitHub_Result_Title" xml:space="preserve">
+    <value>Sent to GitHub</value>
+  </data>
+  <data name="GitHub_Partial_Title" xml:space="preserve">
+    <value>Incomplete send — some values were refused</value>
+  </data>
+  <data name="GitHub_Error_SecondHeader" xml:space="preserve">
+    <value>The inventory has two « # github-… » lines: keep only one, it names the target.</value>
+  </data>
+  <data name="GitHub_Error_AmbiguousParameter" xml:space="preserve">
+    <value>The header parameter « {0} » is repeated or empty: give it once, with a value, or remove it.</value>
+  </data>
+  <data name="GitHub_Error_Leftovers" xml:space="preserve">
+    <value>{0}: the vault value still contains {1} {1:plural:marker|markers}. Nothing was sent.</value>
+  </data>
+  <data name="GitHub_Error_ListUnreadable" xml:space="preserve">
+    <value>GitHub's answer for {0} could not be read: the check proved nothing, nothing was compared.</value>
+  </data>
+  <data name="GitHub_Error_SetUncertain" xml:space="preserve">
+    <value>{0}: GitHub did not answer within {1} seconds — the value may or may not have been written. Run the check again.</value>
+  </data>
+  <data name="GitHub_Error_SetUnsent" xml:space="preserve">
+    <value>{0}: not sent, the send stopped before it.</value>
+  </data>
+  <data name="Settings_Inject_GhPath" xml:space="preserve">
+    <value>GitHub CLI</value>
+  </data>
+  <data name="Settings_Inject_GhHint" xml:space="preserve">
+    <value>Used by .vault inventories that feed GitHub Actions. Empty = automatic detection (PATH, then the GitHub CLI install folder). Log in once with « gh auth login ».</value>
+  </data>
+  <data name="Settings_Inject_GhDetectFailed" xml:space="preserve">
+    <value>gh.exe not found</value>
+  </data>
+  <data name="GitHub_Check_AgeRecent" xml:space="preserve">
+    <value>{0} — updated less than a day ago</value>
+  </data>
+  <data name="GitHub_Failed_Title" xml:space="preserve">
+    <value>Nothing was sent to GitHub</value>
+  </data>
 </root>

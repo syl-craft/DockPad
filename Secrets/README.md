@@ -14,9 +14,9 @@ Quatre matières ne franchissent jamais cette frontière :
 3. les valeurs lues dans le coffre ;
 4. le texte rendu.
 
-`AppSettings` porte cinq réglages de la fonctionnalité (chemin de `bw.exe`, délai d'effacement,
+`AppSettings` porte six réglages de la fonctionnalité (chemins de `bw.exe` et de `gh.exe`, délai d'effacement,
 organisation, collection par défaut, synchro avant injection) et vit **dehors** : ce sont des
-préférences — un chemin, un nombre, deux noms, une case — jamais de la matière secrète.
+préférences — deux chemins, un nombre, deux noms, une case — jamais de la matière secrète.
 
 ## La surface d'entrée
 
@@ -170,6 +170,63 @@ l'écriture, donc la clé doit survivre à la saisie : elle vit dans la fermetur
 rendu par `OpenAsync`, jamais dans un champ de la fenêtre ni du service, et disparaît à
 `InjectionSession.Close()` — à la fin de l'injection, ou à la fermeture de la fenêtre.
 
+## Inventaires GitHub (`.vault`)
+
+Un fichier **`.vault`** est un **inventaire** : son en-tête `# github-secrets` ou
+`# github-variables` nomme la cible, et chaque ligne `NOM={{ bw:item:champ }}` alimente un secret ou une variable de GitHub
+Actions, par `gh`. Le même clic droit, la même fenêtre, le même mot de passe maître.
+
+```ini
+# github-secrets repo=${owner}/${projet} environment=stores
+@owner = syl-craft
+@projet = cadranote
+@item = syl-craft-web-store-apps
+EDGE_API_KEY={{ bw:${item}:EDGE_API_KEY }}
+CHROME_EXTENSION_ID={{ bw:${item}:${projet}-CHROME_EXTENSION_ID }}
+```
+
+- **L'en-tête nomme la cible, pas l'outil** : `# github-secrets`, et non `# dockpad: …`. Le fichier
+  décrit ce qu'il alimente ; DockPad n'est qu'un des outils qui savent le lire. Il peut se trouver
+  n'importe où dans le fichier, une seule fois
+- **L'extension `.vault` tranche avant le contenu** (`SecretPlan.Of(chemin, contenu)`). Décidé sur
+  le seul contenu, un `.vault` à l'en-tête mal écrit — l'ancien `# dockpad: …` — est parti dans le
+  presse-papier sans un mot : c'est arrivé. Un `.vault` est un inventaire, toujours ; mal formé, il
+  est refusé en disant pourquoi. Hors d'un `.vault`, une ligne `# github-secrets` n'est qu'un
+  commentaire
+- **`environment=` est facultatif** : absent, ce sont les secrets et variables du dépôt
+- **Variables `@nom = valeur`**, citées par `${nom}` dans l'en-tête et les lignes. Des littéraux,
+  jamais envoyés à GitHub ; une variable ne cite que celles définies avant elle, ne porte pas de
+  marqueur, et une variable inconnue ou redéfinie est un refus
+- **Aucune valeur en clair** : une ligne est **un marqueur et rien d'autre**. Du texte autour —
+  écrit sur la ligne ou apporté par une variable — partirait en clair sur GitHub, et c'est un refus
+- **Une cible sans ambiguïté** : un second en-tête, un paramètre répété ou vide sont refusés —
+  garder l'un des deux en silence pourrait envoyer au mauvais dépôt
+- **La vérification précède le mot de passe** : `gh … list --json name,updatedAt` ne lit que des
+  noms. L'écran dit ce qui sera créé, écrasé (avec l'âge, pour voir venir une clé qui expire) et ce
+  qui n'est que sur GitHub — **signalé, jamais supprimé**
+- **Rendu tout ou rien** (`RenderStrict`) : une valeur manquante, et rien ne part. Le second filet
+  est repassé sur chaque valeur rendue : une valeur du coffre qui porterait un `{{ … }}` bloque
+  l'envoi, comptée et jamais recopiée. La session du coffre est refermée **avant** les appels à `gh`
+- **Une réponse illisible de `gh … list` est un échec**, pas une liste vide : lue comme vide, elle
+  annoncerait chaque nom « à créer » — une vérification réussie qui n'a rien vérifié
+- **Un délai dépassé n'efface pas ce qui est parti** : la ligne en vol est « incertaine », les
+  suivantes « non envoyées », et l'écran d'échec (« rien n'a été envoyé ») n'est montré que si
+  c'est vrai
+- **Les modes debug de `gh` sont retirés de l'environnement** (`GH_DEBUG`, `DEBUG`) : `GH_DEBUG=api`
+  écrit le corps des requêtes — donc la valeur — sur l'erreur standard. Et l'erreur standard d'un
+  `set` refusé ne va pas au journal : seulement le nom et le code
+- **Limite de `gh`** : il retire les retours à la ligne **de fin** de ce qu'il lit sur l'entrée
+  standard. Sans effet sur une clé PEM ; une valeur qui en dépendrait ne peut pas passer par `gh`
+- **La valeur passe par l'entrée standard de `gh … set`**, en UTF-8 sans BOM, jamais en argument :
+  la garde « rien en ligne de commande » interdit `--body` et `-b` dans tout le dossier. Un refus
+  de GitHub sur une ligne n'arrête pas les autres : il est nommé, et l'écran passe en ambre
+- `GitHubCli` est le seul point qui lance `gh.exe`, calqué sur `BitwardenCli` plutôt que de partager
+  son lanceur : celui-là porte l'environnement secret de `bw`, et le toucher ferait relire sa chaîne
+  d'audit
+
+**Non automatisé, et c'est nommé** : l'envoi réel (`gh … set`). Vérifié en lecture seule sur
+`gh … list` ; l'écriture se vérifie à la main sur un dépôt de test.
+
 ## Syntaxe des marqueurs
 
 ```
@@ -197,6 +254,9 @@ clic droit  →  App  →  SecretInjection.Handle
                                │    │    └─ SecretFieldResolver   PUR — l'ordre des champs
                                │    ├─ SecretCreationPlan  PUR — ce que le formulaire propose, groupé par item
                                │    ├─ BwItemPatch         PUR — la fiche envoyée à create/edit, sans rien perdre
+                               │    ├─ GitHubInventory     PUR — inventaire .vault : en-tête, variables, rendu strict, comparaison
+                               │    ├─ GitHubSyncService   vérification puis envoi, ligne par ligne
+                               │    │    └─ GitHubCli      le seul point qui lance gh.exe (valeur par stdin)
                                │    └─ SecretTemplate      PUR — marqueurs, substitution, deux filets
                                └─ ClipboardGuard           copie marquée, empreinte, minuteur
 ```

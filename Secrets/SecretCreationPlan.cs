@@ -40,7 +40,8 @@ public static class SecretCreationPlan
     {
         var demanded = new List<SecretMarker>();
 
-        if (mode is SecretMode.Clipboard or SecretMode.Both)
+        // En mode GitHub, le contenu reçu est déjà la liste des références de l'inventaire.
+        if (mode is SecretMode.Clipboard or SecretMode.Both or SecretMode.GitHub)
             demanded.AddRange(SecretTemplate.FindMarkers(content));
 
         foreach (var entry in entries)

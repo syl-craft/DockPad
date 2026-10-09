@@ -220,7 +220,7 @@ tools/
                                          le câblage de la grille (grid), l'overlay clavier (overlay),
                                          et chronomètre un peuplement (bench)
     UsageShot/                           Outil console : capture le bandeau Usage IA et sa fenêtre de réglages en PNG (doc)
-    MotionDemo/                          Outil Node : les douze motion designs de démonstration (16:9, ≤ 10 s, clair + sombre) → dépôt DockPad-media
+    MotionDemo/                          Outil Node : les treize motion designs de démonstration (16:9, ≤ 10 s, clair + sombre) → dépôt DockPad-media
 ```
 
 ## Fonctionnalités
@@ -1071,7 +1071,7 @@ matières ne franchissent jamais la frontière : mot de passe maître, clé de s
 coffre, texte rendu. Le dossier porte son propre `README.md`, en tête. La fenêtre y vit aussi, et
 non dans `Dialogs/` — c'est elle qui reçoit le mot de passe.
 
-`AppSettings` reste dehors avec ses cinq réglages (`BitwardenCliPath`, `ClipboardClearSeconds`,
+`AppSettings` reste dehors avec ses six réglages (`BitwardenCliPath`, `GitHubCliPath`, `ClipboardClearSeconds`,
 `VaultOrganization`, `VaultCollection`, `SyncVaultBeforeInject`) : ce sont des préférences, jamais
 de la matière secrète. Elles **n'entrent pas**
 dans `FromRegistry` — la reprise ne concerne que les huit réglages qui ont réellement vécu dans le
@@ -1501,6 +1501,19 @@ menu contextuel.
 Le client de bureau Bitwarden ne fournit **pas** la CLI — deux produits distincts, et c'est la
 première erreur qu'on fait ; le texte d'aide le dit.
 
+#### Inventaires GitHub (`.vault`)
+Un fichier **`.vault`** — c'est l'extension qui déclenche, jamais le contenu — alimente les secrets
+ou variables d'un dépôt GitHub, et d'un environnement s'il est nommé, par `gh`. Son en-tête
+`# github-secrets` ou `# github-variables` nomme la cible ; mal formé, il est refusé, jamais rendu
+dans le presse-papier. Détail
+et règles dans `Secrets/README.md` ; l'essentiel :
+
+- variables `@nom = valeur` citées par `${nom}` (dépôt, nom d'item, préfixe) — littéraux jamais envoyés ;
+- vérification (`gh … list`) **avant** le mot de passe : créés, écrasés avec leur âge, en trop
+  signalés et jamais supprimés ;
+- rendu tout ou rien, valeur par l'**entrée standard** de `gh … set`, jamais en argument ;
+- `GitHubCli` seul à lancer `gh.exe` ; captures `DialogShot inject-github` et `inject-github-sent`.
+
 #### Ce qui n'est pas fait, et pourquoi
 - **Aucun outil MCP.** Le réflexe du dépôt est d'exposer chaque service d'action au serveur MCP ; ici
   le produit est un secret en clair, qui n'a rien à faire dans une réponse lue par un modèle
@@ -1513,7 +1526,7 @@ première erreur qu'on fait ; le texte d'aide le dit.
 
 #### Captures
 `DialogShot.exe inject <fr|en> <png>` (saisie du mot de passe), `inject-failed` (compte-rendu
-d'échec), `inject-choice` (choix des sorties), `inject-files` (les deux, complet), `inject-partial` (**rendu incomplet** : clés absentes,
+d'échec), `inject-choice` (choix des sorties), `inject-files` (les deux, complet), `inject-github` (vérification d'un inventaire GitHub), `inject-github-sent`, `inject-partial` (**rendu incomplet** : clés absentes,
 fichiers écrits, fichiers périmés et leur bouton de suppression) et `inject-create` (**formulaire de
 création** : un item neuf, un item existant à compléter, choix de collection) — les états qui
 valent une relecture. `inject-partial` est le plus important parmi les comptes-rendus : c'est le
@@ -1780,10 +1793,10 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 > — `verify-clips.sh` (format, durée, raccord de boucle, planches) et `check-readmes.sh` (parité
 > EN/FR, liens, GIF en ligne).
 
-Douze clips de 10 s au format 16:9, un par fonctionnalité : `01-launcher` (grille, pages,
+Treize clips de 10 s au format 16:9, un par fonctionnalité : `01-launcher` (grille, pages,
 recherche — le GIF d'en-tête du README), `02-browser-picker`, `03-usage`, `04-secrets`,
 `05-keyboard`, `06-composite`, `07-mcp`, `08-favorites`, `09-theme-language`, `10-updates`,
-`11-context-menu`, `12-explorer-drop`. Chacun est rendu en **clair et en sombre**, en MP4 1080p60 et en GIF
+`11-context-menu`, `12-explorer-drop`, `13-github-sync`. Chacun est rendu en **clair et en sombre**, en MP4 1080p60 et en GIF
 960×540. Le README choisit le thème du lecteur avec `<picture><source media="(prefers-color-scheme: dark)">`.
 
 > **Les rendus ne sont pas dans ce dépôt** : ils vivent dans
@@ -1824,7 +1837,8 @@ node render.mjs --serve                   # lecture en boucle dans un navigateur
   (surchargeable par `DOCKPAD_DEMO_ICONS`), puis les icônes extraites des exécutables, puis `Assets\`.
   Elles n'apparaissent que dans les rendus
 - **Données de démonstration uniquement**, environnements tiers (chat, Explorateur, navigateur)
-  génériques et sans marque, et **aucune valeur de secret à l'écran** : un marqueur résolu devient
+  génériques et sans marque — seule exception, le logo GitHub de `13-github-sync`, demandé
+  explicitement —, et **aucune valeur de secret à l'écran** : un marqueur résolu devient
   `••••••••••`
 - `extract-icons.ps1` tourne sous **Windows PowerShell 5.1** et non `pwsh` : `System.Drawing` s'y
   référence sans résolution d'assemblys. Il recopie les octets de la section DIB plutôt que

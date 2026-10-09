@@ -51,6 +51,16 @@ public class AppSettings
     public string BitwardenCliPath { get; set; } = "";
 
     /// <summary>
+    /// Chemin de <c>gh.exe</c>, ou vide pour laisser DockPad le chercher (PATH, puis le dossier
+    /// d'installation de GitHub CLI).
+    /// </summary>
+    /// <remarks>
+    /// Sert aux inventaires <c>.vault</c> qui alimentent GitHub Actions. Même règle que
+    /// <see cref="BitwardenCliPath"/> : un chemin réglé qui n'existe plus retombe sur la détection.
+    /// </remarks>
+    public string GitHubCliPath { get; set; } = "";
+
+    /// <summary>
     /// Délai avant effacement du presse-papier après une injection. Zéro désactive.
     /// </summary>
     /// <remarks>

@@ -45,6 +45,9 @@ public sealed record InjectionReport
     /// <summary>Les fichiers écrits, en mode fichiers.</summary>
     public SecretFilesOutcome? Files { get; private init; }
 
+    /// <summary>Les noms envoyés à GitHub, en mode inventaire.</summary>
+    public GitHubSendOutcome? GitHub { get; private init; }
+
     /// <summary>Ce que le coffre n'a pas su rendre. Nommé, parce que ça vient du fichier source.</summary>
     public IReadOnlyList<string> Missing { get; private init; } = [];
 
@@ -71,6 +74,10 @@ public sealed record InjectionReport
     public static InjectionReport Produced(
         SecretRenderResult? render, SecretFilesOutcome? files, IReadOnlyList<string> missing) =>
         new() { Render = render, Files = files, Missing = missing };
+
+    /// <summary>Ce qu'un inventaire a envoyé à GitHub, avec ses manques.</summary>
+    public static InjectionReport Sent(GitHubSendOutcome outcome, IReadOnlyList<string> missing) =>
+        new() { GitHub = outcome, Missing = missing };
 
     /// <summary>Le cache local a été rafraîchi. Rien n'a été lu, rien n'a été produit.</summary>
     public static InjectionReport Synced() => new() { DidSync = true };

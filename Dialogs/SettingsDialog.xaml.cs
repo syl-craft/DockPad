@@ -67,6 +67,7 @@ public partial class SettingsDialog : Window
         TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
 
         TxtBwPath.Text = SettingsService.LoadBitwardenCliPath();
+        TxtGhPath.Text = SettingsService.LoadGitHubCliPath();
         TxtVaultOrg.Text = SettingsService.LoadVaultOrganization();
         TxtVaultCollection.Text = SettingsService.LoadVaultCollection();
         TxtClearSeconds.Text = SettingsService.LoadClipboardClearSeconds().ToString();
@@ -265,6 +266,7 @@ public partial class SettingsDialog : Window
         SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
 
         SettingsService.SaveBitwardenCliPath(TxtBwPath.Text);
+        SettingsService.SaveGitHubCliPath(TxtGhPath.Text);
         SettingsService.SaveVaultOrganization(TxtVaultOrg.Text);
         SettingsService.SaveVaultCollection(TxtVaultCollection.Text);
         // Une saisie illisible retombe sur le défaut plutôt que de désactiver l'effacement en
@@ -311,6 +313,15 @@ public partial class SettingsDialog : Window
 
         if (found is not null) TxtBwPath.Text = found;
         else ButtonFlash.Flash(BtnDetectBw, Loc.T("Settings_Inject_DetectFailed"), TimeSpan.FromSeconds(2));
+    }
+
+    /// <summary>Cherche <c>gh.exe</c> et remplit le champ — même règle : un échec n'efface rien.</summary>
+    private void DetectGh_Click(object sender, RoutedEventArgs e)
+    {
+        var found = Secrets.GitHubCli.Locate("");
+
+        if (found != null) TxtGhPath.Text = found;
+        else ButtonFlash.Flash(BtnDetectGh, Loc.T("Settings_Inject_GhDetectFailed"), TimeSpan.FromSeconds(2));
     }
 
     /// <summary>
