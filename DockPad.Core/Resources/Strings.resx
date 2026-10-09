@@ -1218,6 +1218,12 @@ This cannot be undone.</value>
   <data name="Inject_Error_SecretFieldAndAttachment" xml:space="preserve">
     <value>Secret « {0} »: the x-bw annotation carries both a field and an attachment. Keep one or the other.</value>
   </data>
+  <data name="Inject_Error_AttachmentSizeUnknown" xml:space="preserve">
+    <value>{0} → attachment '{1}' has no known size, so the size limit cannot be checked</value>
+  </data>
+  <data name="Inject_Error_SecretBadAnnotation" xml:space="preserve">
+    <value>Secret « {0} »: '{1}' in the x-bw annotation must be a non-empty text.</value>
+  </data>
   <data name="Inject_Error_ItemAmbiguous" xml:space="preserve">
     <value>Several items are named '{0}' — rename one to remove the ambiguity.</value>
   </data>

@@ -117,7 +117,7 @@ public sealed class SecretVault(
             if (matches.Count != 1) continue;
 
             var candidates = AttachmentsNamed(matches[0], reference.Name);
-            if (candidates.Count != 1 || IsTooBig(candidates[0])) continue;
+            if (candidates.Count != 1 || IsWithinLimit(candidates[0]) == false) continue;
 
             reads.Add(new SecretAttachmentRead(matches[0].Id, candidates[0].Id));
         }
@@ -144,7 +144,10 @@ public sealed class SecretVault(
         if (candidates.Count > 1)
             return SecretLookup.Missing(Loc.F("Inject_Error_AttachmentAmbiguous", itemName, fileName));
 
-        if (IsTooBig(candidates[0]))
+        if (candidates[0].Size is not { } size || size < 0)
+            return SecretLookup.Missing(Loc.F("Inject_Error_AttachmentSizeUnknown", itemName, fileName));
+
+        if (size > MaxAttachmentBytes)
             return SecretLookup.Missing(Loc.F("Inject_Error_AttachmentTooBig",
                 itemName, fileName, MaxAttachmentBytes / (1024 * 1024)));
 
@@ -181,7 +184,11 @@ public sealed class SecretVault(
         .Where(a => string.Equals(a.FileName, fileName, StringComparison.OrdinalIgnoreCase))
         .ToList();
 
-    private static bool IsTooBig(BwAttachment attachment) => attachment.Size > MaxAttachmentBytes;
+    /// <summary>
+    /// Une taille inconnue ne prouve pas que le plafond est respecté : elle est refusée aussi.
+    /// </summary>
+    private static bool IsWithinLimit(BwAttachment attachment) =>
+        attachment.Size is { } size && size >= 0 && size <= MaxAttachmentBytes;
 
     private List<BwItem> Matches(SecretMarker marker) => items
         .Where(i => string.Equals(i.Name, marker.Item, StringComparison.OrdinalIgnoreCase))

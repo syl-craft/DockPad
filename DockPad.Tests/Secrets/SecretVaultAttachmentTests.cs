@@ -62,6 +62,19 @@ public class SecretVaultAttachmentTests
         Assert.Contains("dump.json", vault.Lookup(new("infra", "@dump.json")).Failure);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData(-1L)]
+    public void UneTailleInconnueOuInvalide_NEstPasTelechargee(long? size)
+    {
+        var vault = Vault(new Dictionary<string, string>(),
+            Item("i1", "infra", new BwAttachment { Id = "a1", FileName = "config.json", Size = size }));
+
+        Assert.Empty(vault.AttachmentsToRead([new("infra", "@config.json")]));
+        Assert.Equal(Loc.F("Inject_Error_AttachmentSizeUnknown", "infra", "config.json"),
+            vault.Lookup(new("infra", "@config.json")).Failure);
+    }
+
     [Fact]
     public void UnePieceJointeAmbigue_NEstPasTelechargee()
     {
@@ -258,11 +271,13 @@ public class SecretVaultAttachmentTests
             CHROME_SERVICE_ACCOUNT_PRIVATE_KEY={{ bw:web-store:@publisher.json|json:private_key }}
             """);
         Assert.Empty(failures);
+        Assert.NotNull(inventory);
 
-        var (values, missing) = inventory!.Render(StoreVault().Lookup);
+        var (values, missing) = inventory.Render(StoreVault().Lookup);
 
         Assert.Empty(missing);
-        Assert.Equal(ExpectedKey, Assert.Single(values!).Value);
+        Assert.NotNull(values);
+        Assert.Equal(ExpectedKey, Assert.Single(values).Value);
     }
 
     [Fact]

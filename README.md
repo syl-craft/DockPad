@@ -432,7 +432,7 @@ an attachment, a field or the notes:
 
 A JSON string is rendered decoded (`\n` become real line breaks), a number or a boolean as written.
 `null`, an object, an array, a missing path, invalid JSON, an attachment that is missing, duplicated,
-binary or larger than 4 MB: the marker fails and says so. Only the attachments a marker cites are
+binary, larger than 4 MB or of unknown size: the marker fails and says so. Only the attachments a marker cites are
 downloaded, and never written to disk. Such a marker is never offered for creation.
 
 **Two forms escape replacement:**

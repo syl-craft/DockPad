@@ -89,6 +89,16 @@ public static class ComposeSecrets
             var select = Scalar(Child(annotation, "select"));
             var template = Scalar(Child(annotation, "template"));
 
+            // Une liste ou une chaîne vide se lirait comme une absence : un `select` perdu ferait
+            // écrire le document entier à la place de la propriété demandée.
+            var malformed = ValueKeys.FirstOrDefault(name =>
+                Child(annotation, name) is { } node && string.IsNullOrWhiteSpace(Scalar(node)));
+            if (malformed != null)
+            {
+                failures.Add(Loc.F("Inject_Error_SecretBadAnnotation", key, malformed));
+                continue;
+            }
+
             var hasField = !string.IsNullOrWhiteSpace(field);
             var hasAttachment = !string.IsNullOrWhiteSpace(attachment);
             var hasSelect = !string.IsNullOrWhiteSpace(select);
@@ -133,6 +143,11 @@ public static class ComposeSecrets
 
         return new ComposeScan(entries, failures, null);
     }
+
+    /// <summary>
+    /// Les annotations qui désignent la valeur : présentes, elles doivent porter un texte non vide.
+    /// </summary>
+    private static readonly string[] ValueKeys = ["field", "attachment", "select"];
 
     /// <summary>
     /// Le champ du marqueur équivalent : l'annotation se résout exactement comme <c>{{ bw:item:champ }}</c>.

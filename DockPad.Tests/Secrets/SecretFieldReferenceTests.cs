@@ -57,10 +57,17 @@ public class SecretFieldReferenceTests
         Assert.Equal("A.JSON", SecretFieldReference.Parse("@A.JSON").Name);
     }
 
+    [Fact]
+    public void LeFiltreSeLitSansEgardALaCasse()
+    {
+        Assert.Equal("k", SecretFieldReference.Parse("notes|JSON:k").JsonPath);
+    }
+
     [Theory]
     [InlineData("@a.json|yaml:k")]
     [InlineData("token|base64")]
     [InlineData("token|json:")]
+    [InlineData("notes|json:k|yaml:x")]
     public void UnFiltreInconnuOuVide_EstSignale(string field)
     {
         var reference = SecretFieldReference.Parse(field);

@@ -1218,6 +1218,12 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_Error_SecretFieldAndAttachment" xml:space="preserve">
     <value>53cr3t « {0} » : l’4nn0t4t10n x-bw p0rt3 4 l4 f015 un ch4mp 3t un3 p13c3 j01nt3. G4rd3 l’un 0u l’4utr3.</value>
   </data>
+  <data name="Inject_Error_AttachmentSizeUnknown" xml:space="preserve">
+    <value>{0} → l4 p13c3 j01nt3 '{1}' n'4 p45 d3 t41ll3 c0nnu3, l3 pl4f0nd n3 p3ut p45 3tr3 v3r1f13</value>
+  </data>
+  <data name="Inject_Error_SecretBadAnnotation" xml:space="preserve">
+    <value>53cr3t « {0} » : '{1}' d4n5 l’4nn0t4t10n x-bw d01t 3tr3 un t3xt3 n0n v1d3.</value>
+  </data>
   <data name="Inject_Error_ItemAmbiguous" xml:space="preserve">
     <value>Plu513ur5 1t3m5 n0mm35 '{0}' — 3n r3n0mm3r un p0ur l3v3r l'4mb1gu1t3.</value>
   </data>

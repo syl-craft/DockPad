@@ -396,7 +396,7 @@ propriété — d'une pièce jointe, d'un champ ou des notes :
 
 Une chaîne JSON est rendue décodée (les `\n` deviennent de vrais retours à la ligne), un nombre ou un
 booléen tel qu'il est écrit. `null`, un objet, un tableau, un chemin absent, un JSON invalide, une
-pièce jointe absente, en double, binaire ou de plus de 4 Mo : le marqueur échoue en le nommant. Seules
+pièce jointe absente, en double, binaire, de plus de 4 Mo ou de taille inconnue : le marqueur échoue en le nommant. Seules
 les pièces jointes citées sont téléchargées, et jamais écrites sur le disque. Un tel marqueur n'est
 jamais proposé à la création.
 

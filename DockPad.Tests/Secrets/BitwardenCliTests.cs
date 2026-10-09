@@ -151,7 +151,8 @@ public class BitwardenCliTests : IDisposable
                 {"id":"a2","fileName":"autre.txt","size":12}]}]
             """);
 
-        var attachments = Assert.Single(items).Attachments!;
+        var attachments = Assert.Single(items).Attachments;
+        Assert.NotNull(attachments);
         Assert.Equal(2, attachments.Count);
         Assert.Equal("a1", attachments[0].Id);
         Assert.Equal("publisher.json", attachments[0].FileName);

@@ -247,7 +247,10 @@ nom : il existe, il est vide, et on le dit.
   `bw get attachment <id> --itemid <id> --raw` : sans `--raw`, la CLI écrirait le fichier dans le
   dossier courant. On passe l'identifiant, la CLI cherchant sinon une sous-chaîne du nom. Le contenu
   vit dans le `SecretVault`, jamais sur le disque ni au journal.
-- **Refusées avant lecture** : une pièce jointe absente, en double ou de plus de 4 Mo. **Après** :
+- **Un `select:` qui n'est pas un texte non vide est un refus**, comme `field:` et `attachment:` :
+  perdu, il ferait écrire le document entier.
+- **Refusées avant lecture** : une pièce jointe absente, en double, de plus de 4 Mo ou de taille
+  inconnue. **Après** :
   un contenu binaire (U+FFFD ou caractère nul dans la sortie décodée en UTF-8).
 - **Les échecs nomment l'item, la source et le chemin**, jamais un fragment du document : le message
   d'une `JsonException` n'est pas repris.

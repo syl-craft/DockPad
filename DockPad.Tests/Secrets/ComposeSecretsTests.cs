@@ -246,6 +246,30 @@ public class ComposeSecretsTests
         Assert.Equal([Loc.F("Inject_Error_SecretFieldAndAttachment", "conflit")], failures);
     }
 
+    /// <summary>
+    /// Un <c>select</c> qui n'est pas un texte non vide ne doit pas disparaître : sans lui, c'est le
+    /// document entier qui serait écrit. Même règle pour <c>field</c> et <c>attachment</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("attachment: a.json\n      select: [private_key]", "select")]
+    [InlineData("attachment: a.json\n      select: \"\"", "select")]
+    [InlineData("field: token\n      attachment: [a.json]", "attachment")]
+    [InlineData("field: [token]", "field")]
+    public void UneAnnotationQuiNEstPasUnTexte_EstRefusee(string annotation, string key)
+    {
+        var (entries, failures, _) = ComposeSecrets.Extract($"""
+            secrets:
+              cle:
+                file: /share/secrets/cle
+                x-bw:
+                  item: infra
+                  {annotation}
+            """);
+
+        Assert.Empty(entries);
+        Assert.Equal([Loc.F("Inject_Error_SecretBadAnnotation", "cle", key)], failures);
+    }
+
     [Fact]
     public void TemplateAvecAttachmentOuSelect_ResteExclusif()
     {

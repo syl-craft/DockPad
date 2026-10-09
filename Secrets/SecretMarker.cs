@@ -43,10 +43,12 @@ public sealed record SecretFieldReference(string Name, bool IsAttachment, string
 
         if (filter == null) return new(name, isAttachment, null, false);
 
-        var isJson = filter.StartsWith(JsonFilter, StringComparison.Ordinal) && filter.Length > JsonFilter.Length;
+        // Un second « | » serait un filtre de plus, jamais un morceau du chemin.
+        var path = filter.StartsWith(JsonFilter, StringComparison.OrdinalIgnoreCase) ? filter[JsonFilter.Length..] : "";
+        var isJson = path.Length > 0 && path.Contains('|') == false;
 
         return isJson
-            ? new(name, isAttachment, filter[JsonFilter.Length..], false)
+            ? new(name, isAttachment, path, false)
             : new(name, isAttachment, null, true);
     }
 }
