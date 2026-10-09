@@ -51,8 +51,8 @@ public sealed class GitHubInventory
     /// </summary>
     /// <remarks>
     /// L'en-tête nomme la cible et non l'outil : DockPad n'est qu'un des outils qui savent lire ce
-    /// fichier. Le motif reste étroit pour qu'un commentaire ordinaire — <c># github-token du CI</c> —
-    /// ne transforme pas un <c>.env</c> en inventaire.
+    /// fichier. Ce n'est pas lui qui fait d'un fichier un inventaire — c'est l'extension
+    /// <c>.vault</c> (<see cref="SecretPlan.Of(string, string)"/>) ; il dit seulement où envoyer.
     /// </remarks>
     private static readonly Regex Header = new(@"^\s*#\s*(?<kind>github-(?:secrets?|variables?|vars?))(?=\s|$)(?<rest>.*)$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -92,14 +92,6 @@ public sealed class GitHubInventory
     /// de création propose quand il manque quelque chose.
     /// </summary>
     public string MarkersText => string.Join("\n", Entries.Select(e => e.Template));
-
-    /// <summary>Le fichier se déclare-t-il inventaire ? Une ligne <c># github-secrets</c> ou <c># github-variables</c> suffit.</summary>
-    /// <remarks>
-    /// Le type n'est pas vérifié ici : une faute de frappe (<c>github-secret</c>) doit être refusée
-    /// par <see cref="Parse"/>, pas faire retomber le fichier — qui porte des marqueurs — vers le
-    /// presse-papier sans un mot.
-    /// </remarks>
-    public static bool Declares(string content) => Lines(content).Where(l => Header.IsMatch(l)).Any();
 
     /// <summary>L'inventaire, ou ce qui l'empêche d'en être un. Jamais les deux.</summary>
     public static (GitHubInventory? Inventory, IReadOnlyList<string> Failures) Parse(string content)

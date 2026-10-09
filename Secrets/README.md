@@ -172,8 +172,8 @@ rendu par `OpenAsync`, jamais dans un champ de la fenêtre ni du service, et dis
 
 ## Inventaires GitHub (`.vault`)
 
-Un fichier qui porte une ligne `# github-secrets` ou `# github-variables` est un
-**inventaire** : chaque ligne `NOM={{ bw:item:champ }}` alimente un secret ou une variable de GitHub
+Un fichier **`.vault`** est un **inventaire** : son en-tête `# github-secrets` ou
+`# github-variables` nomme la cible, et chaque ligne `NOM={{ bw:item:champ }}` alimente un secret ou une variable de GitHub
 Actions, par `gh`. Le même clic droit, la même fenêtre, le même mot de passe maître.
 
 ```ini
@@ -188,8 +188,11 @@ CHROME_EXTENSION_ID={{ bw:${item}:${projet}-CHROME_EXTENSION_ID }}
 - **L'en-tête nomme la cible, pas l'outil** : `# github-secrets`, et non `# dockpad: …`. Le fichier
   décrit ce qu'il alimente ; DockPad n'est qu'un des outils qui savent le lire. Il peut se trouver
   n'importe où dans le fichier, une seule fois
-- **L'en-tête tranche avant les marqueurs** (`SecretPlan`) : sans lui, un inventaire partirait dans
-  le presse-papier. Un type mal orthographié est refusé, pas renvoyé vers le presse-papier
+- **L'extension `.vault` tranche avant le contenu** (`SecretPlan.Of(chemin, contenu)`). Décidé sur
+  le seul contenu, un `.vault` à l'en-tête mal écrit — l'ancien `# dockpad: …` — est parti dans le
+  presse-papier sans un mot : c'est arrivé. Un `.vault` est un inventaire, toujours ; mal formé, il
+  est refusé en disant pourquoi. Hors d'un `.vault`, une ligne `# github-secrets` n'est qu'un
+  commentaire
 - **`environment=` est facultatif** : absent, ce sont les secrets et variables du dépôt
 - **Variables `@nom = valeur`**, citées par `${nom}` dans l'en-tête et les lignes. Des littéraux,
   jamais envoyés à GitHub ; une variable ne cite que celles définies avant elle, ne porte pas de

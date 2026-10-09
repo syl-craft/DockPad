@@ -35,33 +35,35 @@ public class GitHubInventoryTests
 
     // ───────────── Détection ─────────────
 
-    [Fact]
-    public void UnEnTeteDockPadDeclareUnInventaire()
-    {
-        Assert.True(GitHubInventory.Declares(Secrets));
-        Assert.Equal(SecretMode.GitHub, SecretPlan.Of(Secrets));
-    }
-
-    [Fact]
-    public void UnFichierAMarqueursSansEnTeteResteEnPressePapier()
-    {
-        const string env = "TOKEN={{ bw:ntfy:token }}";
-
-        Assert.False(GitHubInventory.Declares(env));
-        Assert.Equal(SecretMode.Clipboard, SecretPlan.Of(env));
-    }
-
     [Theory]
-    [InlineData("# github-token du CI")]
-    [InlineData("# github-secrets-old : ancien jeu")]
-    [InlineData("# voir github-secrets dans le wiki")]
-    public void UnCommentaireOrdinaireNeDeclarePasDInventaire(string comment)
+    [InlineData(@"C:\depot\.github\stores.secrets.vault")]
+    [InlineData(@"C:\depot\STORES.VAULT")]
+    public void LExtensionVaultDeclareUnInventaire(string path)
     {
-        // Le motif reste étroit : un .env commenté ne doit pas basculer en mode GitHub.
-        var env = comment + "\nTOKEN={{ bw:ntfy:token }}";
+        Assert.Equal(SecretMode.GitHub, SecretPlan.Of(path, Secrets));
+    }
 
-        Assert.False(GitHubInventory.Declares(env));
-        Assert.Equal(SecretMode.Clipboard, SecretPlan.Of(env));
+    [Fact]
+    public void UnFichierVaultNePartJamaisDansLePressePapier()
+    {
+        // Le cas vécu : un .vault à l'ancien en-tête « # dockpad: … » portait des marqueurs, et
+        // son rendu est parti dans le presse-papier sans un mot. L'extension tranche avant tout,
+        // et l'inventaire mal formé est refusé en disant pourquoi.
+        const string legacy = """
+            # dockpad: github-variables repo=a/b environment=stores
+            X={{ bw:i:f }}
+            """;
+
+        Assert.Equal(SecretMode.GitHub, SecretPlan.Of(@"C:\depot\stores.vars.vault", legacy));
+        Assert.Contains(Refused(legacy), f => f.Contains("# github-variables"));
+    }
+
+    [Fact]
+    public void UnEnTeteGitHubHorsDUnVaultResteUnCommentaire()
+    {
+        var env = "# github-secrets repo=a/b\nTOKEN={{ bw:ntfy:token }}";
+
+        Assert.Equal(SecretMode.Clipboard, SecretPlan.Of(@"C:\depot\.env", env));
     }
 
     [Fact]
@@ -80,14 +82,12 @@ public class GitHubInventoryTests
     [Fact]
     public void UnTypeInconnuEstRefuseEtNonRenduDansLePressePapier()
     {
-        // Une faute de frappe dans l'en-tête ne doit pas faire basculer le fichier vers le
-        // presse-papier : il porte des marqueurs, et c'est ce qui se serait passé en silence.
+        // Une faute de frappe dans l'en-tête est nommée, pas confondue avec une absence d'en-tête.
         const string content = """
             # github-secret repo=a/b
             X={{ bw:i:f }}
             """;
 
-        Assert.Equal(SecretMode.GitHub, SecretPlan.Of(content));
         Assert.Contains(Refused(content), f => f.Contains("github-secret"));
     }
 

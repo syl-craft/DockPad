@@ -1502,8 +1502,10 @@ Le client de bureau Bitwarden ne fournit **pas** la CLI — deux produits distin
 première erreur qu'on fait ; le texte d'aide le dit.
 
 #### Inventaires GitHub (`.vault`)
-Un fichier dont une ligne commence par `# github-secrets` (ou `# github-variables`) alimente
-les secrets ou variables d'un dépôt GitHub, et d'un environnement s'il est nommé, par `gh`. Détail
+Un fichier **`.vault`** — c'est l'extension qui déclenche, jamais le contenu — alimente les secrets
+ou variables d'un dépôt GitHub, et d'un environnement s'il est nommé, par `gh`. Son en-tête
+`# github-secrets` ou `# github-variables` nomme la cible ; mal formé, il est refusé, jamais rendu
+dans le presse-papier. Détail
 et règles dans `Secrets/README.md` ; l'essentiel :
 
 - variables `@nom = valeur` citées par `${nom}` (dépôt, nom d'item, préfixe) — littéraux jamais envoyés ;

@@ -125,7 +125,7 @@ public partial class SecretInjectionWindow : Window
             var (content, failure, mode) = await Task.Run(() =>
             {
                 var (text, error) = SecretInjectionService.ReadTemplate(_filePath);
-                return (text, error, text is null ? SecretMode.None : SecretPlan.Of(text));
+                return (text, error, text is null ? SecretMode.None : SecretPlan.Of(_filePath, text));
             }).ConfigureAwait(true);
 
             if (failure is not null) { ShowFailure(failure); return; }
