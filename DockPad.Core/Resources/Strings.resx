@@ -1640,4 +1640,10 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Settings_Inject_GhDetectFailed" xml:space="preserve">
     <value>gh.exe not found</value>
   </data>
+  <data name="GitHub_Check_AgeRecent" xml:space="preserve">
+    <value>{0} — updated less than a day ago</value>
+  </data>
+  <data name="GitHub_Failed_Title" xml:space="preserve">
+    <value>Nothing was sent to GitHub</value>
+  </data>
 </root>

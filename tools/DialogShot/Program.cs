@@ -328,7 +328,7 @@ internal static class Program
 
         var check = inventory.Compare([
             new("FIREFOX_JWT_ISSUER", now.AddDays(-12)),
-            new("FIREFOX_JWT_SECRET", now.AddDays(-12)),
+            new("FIREFOX_JWT_SECRET", now.AddHours(-14)),
             new("EDGE_API_KEY", now.AddDays(-64)),
             new("OLD_CHROME_REFRESH_TOKEN", now.AddDays(-200)),
         ]);

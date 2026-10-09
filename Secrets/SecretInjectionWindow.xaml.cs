@@ -727,10 +727,14 @@ public partial class SecretInjectionWindow : Window
         ListGitHubMissing.ItemsSource = check.Missing;
         BlocGitHubMissing.Visibility = Vis(check.Missing.Count > 0);
 
-        string Aged(GitHubRemoteEntry entry) =>
-            GitHubInventory.AgeInDays(entry.UpdatedAt, now) is { } days
-                ? Loc.F("GitHub_Check_Age", entry.Name, days)
-                : entry.Name;
+        // Moins de vingt-quatre heures ne s'écrit pas « il y a 0 jour ». Ni « aujourd'hui » : une
+        // valeur posée hier soir a moins d'un jour sans être d'aujourd'hui.
+        string Aged(GitHubRemoteEntry entry) => GitHubInventory.AgeInDays(entry.UpdatedAt, now) switch
+        {
+            null => entry.Name,
+            0 => Loc.F("GitHub_Check_AgeRecent", entry.Name),
+            var days => Loc.F("GitHub_Check_Age", entry.Name, days),
+        };
 
         ListGitHubPresent.ItemsSource = check.Present.Select(Aged).ToList();
         BlocGitHubPresent.Visibility = Vis(check.Present.Count > 0);
@@ -1036,6 +1040,7 @@ public partial class SecretInjectionWindow : Window
 
     private void ShowFailure(InjectionReport report)
     {
+        TxtFailedTitle.Text = Loc.T(_mode == SecretMode.GitHub ? "GitHub_Failed_Title" : "Inject_Failed_Title");
         ListFailures.ItemsSource = report.Failures;
 
         // La consolation doit parler de ce qui n'a pas eu lieu. En mode fichiers, invoquer le

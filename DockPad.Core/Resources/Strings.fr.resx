@@ -1640,4 +1640,10 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Settings_Inject_GhDetectFailed" xml:space="preserve">
     <value>gh.exe introuvable</value>
   </data>
+  <data name="GitHub_Check_AgeRecent" xml:space="preserve">
+    <value>{0} — mis à jour il y a moins d'un jour</value>
+  </data>
+  <data name="GitHub_Failed_Title" xml:space="preserve">
+    <value>Rien n'a été envoyé à GitHub</value>
+  </data>
 </root>

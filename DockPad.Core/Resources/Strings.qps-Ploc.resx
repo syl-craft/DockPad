@@ -1640,4 +1640,10 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Settings_Inject_GhDetectFailed" xml:space="preserve">
     <value>gh.3x3 1ntr0uv4bl3</value>
   </data>
+  <data name="GitHub_Check_AgeRecent" xml:space="preserve">
+    <value>{0} — m15 4 j0ur 1l y 4 m01n5 d'un j0ur</value>
+  </data>
+  <data name="GitHub_Failed_Title" xml:space="preserve">
+    <value>R13n n'4 3t3 3nv0y3 4 G1tHub</value>
+  </data>
 </root>
