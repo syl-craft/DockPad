@@ -101,6 +101,8 @@ public static class UsageActionService
 
         return new
         {
+            // Nommé par le fournisseur quand le créneau ne dit pas ce qu'il mesure (Antigravity).
+            label = window.Label.Length > 0 ? window.Label : null,
             usedPct = window.UsedPct,
             remainingPct = window.RemainingPct,
             resetsAt = ToIso(window.ResetsAt),

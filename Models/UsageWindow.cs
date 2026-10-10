@@ -19,6 +19,12 @@ public sealed class UsageWindow
     /// </summary>
     public DateTime? ObservedAt { get; init; }
 
+    /// <summary>
+    /// Libellé de la jauge, ou vide pour celui du créneau (« session », « semaine »). Antigravity
+    /// range ses deux réservoirs hebdomadaires dans les deux créneaux : « session » y serait faux.
+    /// </summary>
+    public string Label { get; init; } = "";
+
     /// <summary>Pourcentage restant, ce que l'utilisateur lit réellement sur la jauge.</summary>
     public int RemainingPct => 100 - UsedPct;
 }

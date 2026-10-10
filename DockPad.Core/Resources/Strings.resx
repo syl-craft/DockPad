@@ -1437,6 +1437,12 @@ This cannot be undone.</value>
   <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
     <value>Last local snapshot: {0:g}. Its quota windows have expired. Use Codex to refresh it; token metrics remain available.</value>
   </data>
+  <data name="Usage_Antigravity_QuotaNotice" xml:space="preserve">
+    <value>Antigravity quota unavailable</value>
+  </data>
+  <data name="Usage_Antigravity_QuotaNoticeNote" xml:space="preserve">
+    <value>{0}. DockPad reads the quota while the Antigravity sign-in is valid, and keeps the last reading. Use Antigravity to refresh it.</value>
+  </data>
   <data name="Group_InvalidDestination" xml:space="preserve">
     <value>Choose an empty slot or a shortcut to swap. Groups cannot be nested.</value>
   </data>

@@ -316,9 +316,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
     private void BuildGauges(AiUsage? selected)
     {
-        SessionGauge = Gauge(Loc.T("Usage_Gauge_Session"), selected?.Session);
-        WeekGauge = Gauge(Loc.T("Usage_Gauge_Week"), selected?.Week);
+        SessionGauge = Gauge(LabelOf(selected?.Session, slotLabel: Loc.T("Usage_Gauge_Session")), selected?.Session);
+        WeekGauge = Gauge(LabelOf(selected?.Week, slotLabel: Loc.T("Usage_Gauge_Week")), selected?.Week);
     }
+
+    /// <summary>Le libellé fourni par le fournisseur, sinon celui du créneau.</summary>
+    private static string LabelOf(UsageWindow? window, string slotLabel) =>
+        window?.Label is { Length: > 0 } label ? label : slotLabel;
 
     private UsageGaugeItem Gauge(string label, UsageWindow? window)
     {

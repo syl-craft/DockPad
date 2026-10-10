@@ -22,6 +22,7 @@ public static class UsageProviderRegistry
         new CodexUsageProvider(),
         new GeminiUsageProvider(),
         new CopilotUsageProvider(),
+        new AntigravityUsageProvider(),
         DemoUsageProvider.Default(),
     ];
 }

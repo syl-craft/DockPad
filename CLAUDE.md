@@ -147,6 +147,11 @@ Services/Usage/
     GeminiUsageReader.cs                  Scan des sessions sous chats/, compteurs input/cached/thoughts/tool
     CopilotUsageProvider.cs               Fournisseur Copilot CLI (base SQLite, sans quota ni coût)
     CopilotUsageReader.cs                 Lecture de assistant_usage_events (Microsoft.Data.Sqlite)
+    AntigravityUsageProvider.cs           Fournisseur Antigravity (quota seul, jeton lu jamais renouvele)
+    AntigravityQuota.cs                   PUR — jeton, projet, regroupement des modeles en deux jauges
+    AntigravityQuotaClient.cs             loadCodeAssist puis fetchAvailableModels (cloudcode-pa)
+    AntigravityQuotaStore.cs              Dernier releve dans antigravity-quota.json
+    WindowsCredential.cs                  Lecture d'un identifiant generique du Gestionnaire d'identification
     UsageAggregator.cs                    Agrégation session/jour/mois commune à tous les fournisseurs
     UsageWindows.cs                       Borne basse de scan (début du mois, ou bloc de session)
     DemoUsageProvider.cs                  Jeu de valeurs fixes paramétrable (captures, second onglet)
@@ -799,9 +804,36 @@ Bandeau sous la grille (`Views/UsagePanel.xaml`), 4ᵉ ligne de `QuickAccessWind
 | `CodexUsageProvider` | `~/.codex/{sessions,archived_sessions}/**/rollout-*.jsonl` | oui, relevé local | non |
 | `GeminiUsageProvider` | `~/.gemini/tmp/<hash>/chats/session-*.json{,l}` | non | non |
 | `CopilotUsageProvider` | `~/.copilot/session-store.db` (SQLite) | non | non |
+| `AntigravityUsageProvider` | API Code Assist, jeton du Gestionnaire d'identification | oui, deux réservoirs hebdomadaires | non |
 | `DemoUsageProvider` | valeurs fixes paramétrables | oui | oui |
 
 - **Quotas et coûts** : Claude expose les deux ; Codex expose ses quotas dans les relevés locaux, sans estimation de coût. Gemini et Copilot restent sans jauges ni coût.
+
+#### Quota d'Antigravity (`AntigravityUsageProvider`)
+`POST https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist` (corps `{}`) donne le projet,
+puis `:fetchAvailableModels` avec `{"project":…}` donne `quotaInfo.remainingFraction` et `resetTime`
+par modèle. Aucun quota n'est gardé en local par Antigravity : l'API est la seule source.
+
+- **Deux jauges nommées par le fournisseur**, et non « session » / « semaine » : les deux réservoirs
+  d'Antigravity sont hebdomadaires — Gemini d'un côté, Claude et GPT de l'autre. `UsageWindow.Label`
+  porte le nom ; vide, le bandeau et `dockpad_usage_get` gardent le libellé du créneau. Par réservoir,
+  le modèle **le plus entamé** fait foi. Les modèles sans `resetTime` (`tab_*`, `chat_*`) sont ignorés,
+  et une fraction absente vaut **0** : proto3 omet les zéros, donc absente veut dire épuisé
+- **Le jeton est lu, jamais renouvelé.** Identifiant générique Windows `gemini:antigravity`, durée de
+  vie une heure. Le renouveler demanderait l'identifiant client OAuth d'Antigravity, donc se faire
+  passer pour son application. Expiré → **aucun appel**, et le dernier relevé reste affiché, daté
+  au-delà de quinze minutes, comme celui de Codex. Le quota ne bouge que si l'on se sert
+  d'Antigravity, et ce qui s'en sert renouvelle aussi le jeton
+- **Le dernier relevé survit au redémarrage** (`antigravity-quota.json` dans le profil) : sans lui,
+  un DockPad lancé jeton expiré n'aurait rien à montrer jusqu'au prochain usage d'Antigravity. Le
+  jeton n'y est jamais écrit — un test le vérifie
+- **Le `User-Agent` doit contenir « antigravity »**, n'importe où. Sans ce mot, `loadCodeAssist` rend
+  **200 sans projet** et `fetchAvailableModels` **403** — vérifié sur le compte réel, et c'est ce qui
+  avait fait passer le premier essai manuel, qui l'envoyait par hasard. DockPad s'annonce sous son
+  nom : `DockPad/<version> (antigravity quota reader)`. Choix assumé : c'est un filtre côté serveur
+  que Google peut resserrer ; ce jour-là la lecture échoue proprement, dernier relevé conservé. Le
+  faux serveur des tests reproduit ce filtre, donc tous les tests du fournisseur l'imposent
+- Cadence de cinq minutes et journal des seuls changements de cause, comme pour Claude
 - **L'identité visuelle est déclarée une seule fois par fournisseur** (une constante privée, lue par `Probe()` et par l'instantané) et voyage jusqu'à la fenêtre de réglages via `AiProbe`. Une seconde table de littéraux dans le dialogue aurait montré un rond gris au prochain assistant ajouté, alors que le bandeau lui affichait sa vraie couleur
 - **La précision affichée au survol du coût vient du fournisseur** (`AiUsage.CostNote`), pour la même raison que la devise : lui seul sait comment sa source facture. « Un abonnement Max ou Pro ne facture pas au jeton » n'a aucun sens sur un onglet Codex ou Gemini
 - **Le dossier de départ est injectable** sur les quatre providers réels (repli sur `%USERPROFILE%`) : c'est ce qui rend détection et scan testables sur un dossier temporaire, sans toucher au profil réel
@@ -1709,7 +1741,7 @@ Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) su
 
 ## Profil DockPad (AppPaths)
 
-Toutes les données utilisateur vivent dans un seul dossier, résolu par `AppPaths.ProfileRoot` : `shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`, `browsers.json`, `mcp.json`, `usage.json`, `settings.json`, `icons\`, `logs\`, `.backup\`.
+Toutes les données utilisateur vivent dans un seul dossier, résolu par `AppPaths.ProfileRoot` : `shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`, `browsers.json`, `mcp.json`, `usage.json`, `settings.json`, `antigravity-quota.json`, `icons\`, `logs\`, `.backup\`.
 
 > Les **quatre** premiers vont deux par deux : une grille, c'est un fichier de tuiles et un fichier
 > de pages. `TileStore` est le seul endroit qui fait cette correspondance — ne la refaites pas à la
