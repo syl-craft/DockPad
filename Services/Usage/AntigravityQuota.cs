@@ -48,7 +48,8 @@ public static class AntigravityQuota
     private const string GoogleProvider = "MODEL_PROVIDER_GOOGLE";
 
     /// <summary>
-    /// Jeton d'accès de l'identifiant, ou <c>null</c> s'il est absent, vide, illisible ou expiré.
+    /// Jeton d'accès de l'identifiant, ou <c>null</c> s'il est absent, vide, illisible, sans date
+    /// d'expiration lisible, ou expiré.
     /// Jamais renouvelé ici : le CLI le fait lui-même chaque fois qu'on s'en sert.
     /// </summary>
     public static string? ReadAccessToken(string? credentialJson, DateTimeOffset now)
@@ -68,8 +69,9 @@ public static class AntigravityQuota
                 : null;
             if (string.IsNullOrEmpty(accessToken)) return null;
 
+            // Sans date lisible, rien ne prouve que le jeton est encore valide : on ne l'envoie pas.
             var expiry = ReadDate(token, "expiry");
-            if (expiry != null && expiry.Value <= now + ExpiryMargin) return null;
+            if (expiry == null || expiry.Value <= now + ExpiryMargin) return null;
 
             return accessToken;
         }

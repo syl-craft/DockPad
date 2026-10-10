@@ -60,6 +60,9 @@ public class AntigravityQuotaTests
     [InlineData("pas du json")]
     [InlineData("""{"token":null}""")]
     [InlineData("""{"token":{"access_token":""}}""")]
+    // Sans date lisible, rien ne prouve que le jeton est encore valide : on ne l'envoie pas.
+    [InlineData("""{"token":{"access_token":"abc"}}""")]
+    [InlineData("""{"token":{"access_token":"abc","expiry":"demain"}}""")]
     public void ReadAccessToken_IdentifiantInexploitable_Null(string? credential)
     {
         Assert.Null(AntigravityQuota.ReadAccessToken(credential, Now));
@@ -83,10 +86,10 @@ public class AntigravityQuotaTests
         var reading = AntigravityQuota.ParseModels(Models(gemini: 0.62, thirdParty: 0.25, reset), Now);
 
         Assert.NotNull(reading);
-        Assert.Equal(38, reading.Gemini!.UsedPct);
-        Assert.Equal(reset, reading.Gemini.ResetsAt);
-        Assert.Equal(75, reading.ThirdParty!.UsedPct);
-        Assert.Equal(Now, reading.ObservedAt);
+        Assert.Equal(38, reading?.Gemini?.UsedPct);
+        Assert.Equal(reset, reading?.Gemini?.ResetsAt);
+        Assert.Equal(75, reading?.ThirdParty?.UsedPct);
+        Assert.Equal(Now, reading?.ObservedAt);
     }
 
     [Fact]
@@ -96,7 +99,7 @@ public class AntigravityQuotaTests
         // l'utilisateur, il ne doit pas faire passer la jauge Gemini à 99 %.
         var reading = AntigravityQuota.ParseModels(Models(gemini: 0.9, thirdParty: 1, Now.AddDays(7)), Now);
 
-        Assert.Equal(10, reading!.Gemini!.UsedPct);
+        Assert.Equal(10, reading?.Gemini?.UsedPct);
     }
 
     [Fact]
@@ -110,8 +113,8 @@ public class AntigravityQuotaTests
 
         var reading = AntigravityQuota.ParseModels(json, Now);
 
-        Assert.Equal(100, reading!.Gemini!.UsedPct);
-        Assert.Null(reading.ThirdParty);
+        Assert.Equal(100, reading?.Gemini?.UsedPct);
+        Assert.Null(reading?.ThirdParty);
     }
 
     [Theory]
@@ -130,12 +133,12 @@ public class AntigravityQuotaTests
 
         var (gemini, thirdParty) = AntigravityQuota.Windows(reading, Now.AddMinutes(10));
 
-        Assert.Equal(38, gemini!.UsedPct);
-        Assert.Null(gemini.ObservedAt);
-        Assert.Equal("Gemini", gemini.Label);
-        Assert.Equal(75, thirdParty!.UsedPct);
-        Assert.Equal("Claude · GPT", thirdParty.Label);
-        Assert.Equal(Now.AddDays(7).LocalDateTime, gemini.ResetsAt);
+        Assert.Equal(38, gemini?.UsedPct);
+        Assert.Null(gemini?.ObservedAt);
+        Assert.Equal("Gemini", gemini?.Label);
+        Assert.Equal(75, thirdParty?.UsedPct);
+        Assert.Equal("Claude · GPT", thirdParty?.Label);
+        Assert.Equal(Now.AddDays(7).LocalDateTime, gemini?.ResetsAt);
     }
 
     [Fact]
@@ -145,7 +148,7 @@ public class AntigravityQuotaTests
 
         var (gemini, thirdParty) = AntigravityQuota.Windows(reading, Now.AddHours(3));
 
-        Assert.Equal(Now.LocalDateTime, gemini!.ObservedAt);
+        Assert.Equal(Now.LocalDateTime, gemini?.ObservedAt);
         Assert.Null(thirdParty);
     }
 
@@ -254,13 +257,13 @@ public class AntigravityUsageProviderTests : IDisposable
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Interlocked.Increment(ref Calls);
-            Hosts.Add(request.RequestUri!.Host);
+            Hosts.Add(request.RequestUri?.Host ?? "");
             Authorizations.Add(request.Headers.Authorization?.ToString());
             var userAgent = request.Headers.UserAgent.ToString();
             UserAgents.Add(userAgent);
             var recognized = userAgent.Contains("antigravity", StringComparison.OrdinalIgnoreCase);
 
-            var path = request.RequestUri.AbsolutePath;
+            var path = request.RequestUri?.AbsolutePath ?? "";
             if (path.EndsWith(":loadCodeAssist"))
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -328,13 +331,13 @@ public class AntigravityUsageProviderTests : IDisposable
 
         var usage = await Provider(ValidCredential(), cloud).ReadAsync(CancellationToken.None);
 
-        Assert.Equal("antigravity", usage!.ProviderId);
-        Assert.Equal(38, usage.Session!.UsedPct);
-        Assert.Equal("Gemini", usage.Session.Label);
-        Assert.Null(usage.Session.ObservedAt);
-        Assert.Equal(75, usage.Week!.UsedPct);
-        Assert.Equal("Claude · GPT", usage.Week.Label);
-        Assert.Equal("", usage.QuotaNotice);
+        Assert.Equal("antigravity", usage?.ProviderId);
+        Assert.Equal(38, usage?.Session?.UsedPct);
+        Assert.Equal("Gemini", usage?.Session?.Label);
+        Assert.Null(usage?.Session?.ObservedAt);
+        Assert.Equal(75, usage?.Week?.UsedPct);
+        Assert.Equal("Claude · GPT", usage?.Week?.Label);
+        Assert.Equal("", usage?.QuotaNotice);
         Assert.Equal(2, cloud.Calls);
         Assert.True(File.Exists(StorePath));
     }
@@ -372,23 +375,30 @@ public class AntigravityUsageProviderTests : IDisposable
         AntigravityQuotaStore.Save(StorePath,
             new AntigravityReading(observed, new AntigravityPool(20, _now.AddDays(4)), null));
 
-        var usage = await Provider(ExpiredCredential(), new ThrowIfCalled()).ReadAsync(CancellationToken.None);
+        var cloud = new FakeCloudCode(ModelsNow());
 
-        Assert.Equal(20, usage!.Session!.UsedPct);
-        Assert.Equal(observed.LocalDateTime, usage.Session.ObservedAt);
-        Assert.Null(usage.Week);
-        Assert.Equal("", usage.QuotaNotice);
+        var usage = await Provider(ExpiredCredential(), cloud).ReadAsync(CancellationToken.None);
+
+        // Compté et non levé : le client absorbe les exceptions, un appel interdit passerait inaperçu.
+        Assert.Equal(0, cloud.Calls);
+        Assert.Equal(20, usage?.Session?.UsedPct);
+        Assert.Equal(observed.LocalDateTime, usage?.Session?.ObservedAt);
+        Assert.Null(usage?.Week);
+        Assert.Equal("", usage?.QuotaNotice);
     }
 
     [Fact]
     public async Task ReadAsync_JetonExpireSansReleve_Notice()
     {
-        var usage = await Provider(ExpiredCredential(), new ThrowIfCalled()).ReadAsync(CancellationToken.None);
+        var cloud = new FakeCloudCode(ModelsNow());
 
-        Assert.Null(usage!.Session);
-        Assert.Null(usage.Week);
-        Assert.Equal("Quota Antigravity indisponible", usage.QuotaNotice);
-        Assert.Contains("access token missing or expired", usage.QuotaNoticeNote);
+        var usage = await Provider(ExpiredCredential(), cloud).ReadAsync(CancellationToken.None);
+
+        Assert.Equal(0, cloud.Calls);
+        Assert.Null(usage?.Session);
+        Assert.Null(usage?.Week);
+        Assert.Equal("Quota Antigravity indisponible", usage?.QuotaNotice);
+        Assert.Contains("access token missing or expired", usage?.QuotaNoticeNote);
     }
 
     [Fact]
@@ -403,7 +413,7 @@ public class AntigravityUsageProviderTests : IDisposable
         _now = _now.AddMinutes(4);
         await provider.ReadAsync(CancellationToken.None);
 
-        Assert.Equal(38, cached!.Session!.UsedPct);
+        Assert.Equal(38, cached?.Session?.UsedPct);
         Assert.Equal(4, cloud.Calls);
     }
 
@@ -417,8 +427,8 @@ public class AntigravityUsageProviderTests : IDisposable
         var usage = await Provider(ValidCredential(), new FakeCloudCode("""{"error":{}}""", HttpStatusCode.Forbidden))
             .ReadAsync(CancellationToken.None);
 
-        Assert.Equal(20, usage!.Session!.UsedPct);
-        Assert.Equal(observed.LocalDateTime, usage.Session.ObservedAt);
+        Assert.Equal(20, usage?.Session?.UsedPct);
+        Assert.Equal(observed.LocalDateTime, usage?.Session?.ObservedAt);
     }
 
     [Fact]
@@ -427,8 +437,8 @@ public class AntigravityUsageProviderTests : IDisposable
         var usage = await Provider(ValidCredential(), new FakeCloudCode("{}", HttpStatusCode.Forbidden))
             .ReadAsync(CancellationToken.None);
 
-        Assert.Equal("Quota Antigravity indisponible", usage!.QuotaNotice);
-        Assert.Contains("HTTP 403", usage.QuotaNoticeNote);
+        Assert.Equal("Quota Antigravity indisponible", usage?.QuotaNotice);
+        Assert.Contains("HTTP 403", usage?.QuotaNoticeNote);
     }
 
     [Fact]
@@ -437,7 +447,7 @@ public class AntigravityUsageProviderTests : IDisposable
         var usage = await Provider(ValidCredential(), new FakeCloudCode("""{"models":{}}"""))
             .ReadAsync(CancellationToken.None);
 
-        Assert.Contains("unknown response shape", usage!.QuotaNoticeNote);
+        Assert.Contains("unknown response shape", usage?.QuotaNoticeNote);
         Assert.False(File.Exists(StorePath));
     }
 

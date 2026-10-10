@@ -38,6 +38,8 @@ public sealed class AntigravityUsageProvider : IUsageProvider
     private readonly AntigravityQuotaClient _client;
     private readonly Func<DateTimeOffset> _clock;
 
+    private readonly object _slotGate = new();
+
     private AntigravityReading? _lastReading;
     private bool _storeLoaded;
     private DateTimeOffset? _lastAttempt;
@@ -131,14 +133,19 @@ public sealed class AntigravityUsageProvider : IUsageProvider
     /// </summary>
     private async Task<AntigravityReading?> ReadQuotaAsync(CancellationToken ct)
     {
-        LoadStoredReadingOnce();
-
         var now = _clock();
-        if (_lastAttempt != null && now - _lastAttempt.Value < QuotaMinInterval) return _lastReading;
+        DateTimeOffset? previousAttempt;
 
-        // Le créneau est rendu si l'appel est annulé : une annulation n'a rien tenté.
-        var previousAttempt = _lastAttempt;
-        _lastAttempt = now;
+        // Le bandeau et dockpad_usage_get partagent cette instance et peuvent lire en même temps :
+        // sans verrou, deux lectures franchiraient la garde avant que l'une ait réservé le créneau.
+        lock (_slotGate)
+        {
+            LoadStoredReadingOnce();
+            if (_lastAttempt != null && now - _lastAttempt.Value < QuotaMinInterval) return _lastReading;
+
+            previousAttempt = _lastAttempt;
+            _lastAttempt = now;
+        }
 
         try
         {
@@ -164,7 +171,12 @@ public sealed class AntigravityUsageProvider : IUsageProvider
         }
         catch (OperationCanceledException)
         {
-            _lastAttempt = previousAttempt;
+            // Le créneau est rendu : une annulation n'a rien tenté. Seulement s'il est encore le
+            // nôtre — une lecture plus récente l'a peut-être réservé entre-temps.
+            lock (_slotGate)
+            {
+                if (_lastAttempt == now) _lastAttempt = previousAttempt;
+            }
             throw;
         }
         catch (Exception ex)

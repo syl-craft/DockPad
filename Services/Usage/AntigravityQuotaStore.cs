@@ -30,9 +30,10 @@ public static class AntigravityQuotaStore
         {
             return JsonSerializer.Deserialize<AntigravityReading>(File.ReadAllText(path), JsonOpts);
         }
-        catch (Exception ex) when (ex is JsonException or IOException or NotSupportedException)
+        catch (Exception ex) when (ex is JsonException or IOException or NotSupportedException or UnauthorizedAccessException)
         {
-            // Un cache abîmé n'est pas une panne : la prochaine lecture réussie le réécrit.
+            // Un cache abîmé ou inaccessible n'est pas une panne : la prochaine lecture réussie le
+            // réécrit. Laisser l'erreur remonter ferait disparaître l'onglet entier.
             LogService.Warn(ex, "Lecture du dernier relevé du quota Antigravity");
             return null;
         }
