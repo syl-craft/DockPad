@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.28.0] — 2026-10-10
+
+### Nouveautés
+
+- **Pièces jointes Vaultwarden et propriété JSON** : un marqueur peut désigner une pièce jointe d'un item, `{{ bw:item:@fichier.json }}`, et en extraire une seule propriété avec `|json:chemin` — par exemple la `private_key` d'une clé de compte de service Google, sans la recopier dans les notes.
+  - Le sélecteur vaut aussi pour un champ ou les notes qui contiennent du JSON, avec un chemin pointé et des index de tableau : `config|json:servers.0.host`.
+  - Dans un docker-compose, l'annotation `x-bw` accepte `attachment:` à la place de `field:`, et `select:` pour le chemin.
+  - Seules les pièces jointes citées sont téléchargées, et jamais écrites sur le disque. Une pièce jointe absente, en double, binaire, de plus de 4 Mo ou de taille inconnue, un JSON invalide ou une propriété sans valeur font échouer le marqueur en le nommant, sans jamais afficher un morceau du contenu.
+
+### Documentation
+
+- README, en anglais et en français : la syntaxe des pièces jointes et du sélecteur JSON.
+
 ## [1.27.0] — 2026-10-09
 
 ### Nouveautés
