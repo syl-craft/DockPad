@@ -120,7 +120,9 @@ public interface ISecretSource
     /// <summary>Ouvre le coffre et rend de quoi résoudre les marqueurs.</summary>
     /// <param name="credential">Ce que l'utilisateur a saisi. Ne doit jamais être journalisé.</param>
     /// <param name="refreshFirst">Rafraîchir la vue locale avant de lire, quand la source en a une.</param>
-    Task<SecretSourceOpening> OpenAsync(string credential, bool refreshFirst, CancellationToken token);
+    /// <param name="demanded">Les marqueurs du fichier : seules les pièces jointes qu'ils citent sont lues.</param>
+    Task<SecretSourceOpening> OpenAsync(
+        string credential, bool refreshFirst, IReadOnlyList<SecretMarker> demanded, CancellationToken token);
 
     /// <summary>
     /// Date de la dernière mise à jour de la vue locale, ou <c>null</c> si la source n'en a pas.

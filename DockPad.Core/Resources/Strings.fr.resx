@@ -1191,6 +1191,39 @@ Cette action est irréversible.</value>
   <data name="Inject_Error_ItemMissingVault" xml:space="preserve">
     <value>Item '{0}' absent du coffre. Si tu viens de l'ajouter, lance bw sync — la CLI travaille sur un cache local.</value>
   </data>
+  <data name="Inject_Error_AttachmentMissing" xml:space="preserve">
+    <value>{0} → aucune pièce jointe nommée '{1}'</value>
+  </data>
+  <data name="Inject_Error_AttachmentAmbiguous" xml:space="preserve">
+    <value>{0} → plusieurs pièces jointes nommées '{1}' — en renommer une pour lever l'ambiguïté.</value>
+  </data>
+  <data name="Inject_Error_AttachmentTooBig" xml:space="preserve">
+    <value>{0} → la pièce jointe '{1}' dépasse {2} Mo</value>
+  </data>
+  <data name="Inject_Error_AttachmentUnreadable" xml:space="preserve">
+    <value>{0} → la pièce jointe '{1}' n'a pas pu être lue dans le coffre</value>
+  </data>
+  <data name="Inject_Error_AttachmentBinary" xml:space="preserve">
+    <value>{0} → la pièce jointe '{1}' n'est pas du texte UTF-8</value>
+  </data>
+  <data name="Inject_Error_JsonInvalid" xml:space="preserve">
+    <value>{0} → '{1}' n'est pas du JSON valide</value>
+  </data>
+  <data name="Inject_Error_JsonNoValue" xml:space="preserve">
+    <value>{0} → '{1}' ne porte ni texte, ni nombre, ni booléen à '{2}'</value>
+  </data>
+  <data name="Inject_Error_UnknownFilter" xml:space="preserve">
+    <value>{0} → '{1}' : filtre inconnu, seul |json:chemin est pris en charge</value>
+  </data>
+  <data name="Inject_Error_SecretFieldAndAttachment" xml:space="preserve">
+    <value>Secret « {0} » : l’annotation x-bw porte à la fois un champ et une pièce jointe. Garde l’un ou l’autre.</value>
+  </data>
+  <data name="Inject_Error_AttachmentSizeUnknown" xml:space="preserve">
+    <value>{0} → la pièce jointe '{1}' n'a pas de taille connue, le plafond ne peut pas être vérifié</value>
+  </data>
+  <data name="Inject_Error_SecretBadAnnotation" xml:space="preserve">
+    <value>Secret « {0} » : '{1}' dans l’annotation x-bw doit être un texte non vide.</value>
+  </data>
   <data name="Inject_Error_ItemAmbiguous" xml:space="preserve">
     <value>Plusieurs items nommés '{0}' — en renommer un pour lever l'ambiguïté.</value>
   </data>

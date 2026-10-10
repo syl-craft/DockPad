@@ -980,6 +980,41 @@ L'étape 4 après l'étape 3, jamais avant. La garantie tout-ou-rien est intacte
 - **L'antislash est toujours consommé**, même doublé. Pas de règle de doublement : ce serait une
   seconde syntaxe à retenir pour un cas que personne n'a
 
+#### Pièces jointes et propriété JSON (`SecretFieldReference`, `SecretJsonSelector`)
+
+Le champ d'un marqueur s'écrit `<source>[|json:<chemin>]` : `@<nom>` désigne une **pièce jointe** de
+l'item par son nom de fichier, et `|json:` en extrait une seule propriété — d'une pièce jointe, d'un
+champ ou des notes. Le cas d'origine : une clé de compte de service Google en pièce jointe, dont
+GitHub n'attend que `private_key`. Sans ça, il fallait recopier la clé dans les notes — une seconde
+source à tenir à jour. En `x-bw`, `attachment:` remplace `field:` et `select:` porte le chemin.
+
+- **`MarkerPattern` n'a pas changé** : son groupe de champ acceptait déjà `@`, `|`, `:` et `.`. Le
+  découpage vit dans `SecretFieldReference.Parse`, et l'annotation se ramène au même marqueur — une
+  seule logique de résolution
+- **C'est la première transformation d'une valeur.** Tout autre suffixe `|…` fait échouer le
+  marqueur, un second compris (`|json:k|yaml:x`) : un filtre inconnu toléré rendrait la valeur brute
+  là où l'on attendait une propriété. `|json:` se lit sans égard à la casse
+- **Un `field`, `attachment` ou `select` présent mais qui n'est pas un texte non vide est un refus**
+  (`select: [k]`, `select: ""`). Lu comme une absence, le `select` perdu ferait écrire le document
+  entier à la place de la propriété — dans un fichier que personne ne relit
+- **Seules les pièces jointes citées sont téléchargées**, une fois `list items` lu :
+  `bw get attachment <id> --itemid <id> --raw`. **`--raw` n'est pas décoratif** — sans lui, la CLI
+  écrit le fichier dans son dossier courant, ce qui ferait toucher le disque à un secret. Vérifié
+  dans le source de la CLI (`CliUtils.saveResultToFile`), et figé par un test. On passe
+  l'**identifiant** : la CLI chercherait sinon une sous-chaîne du nom de fichier
+- **Le contenu vit dans le `SecretVault`**, comme la clé de session dans la fermeture du writer, et
+  survit à la relecture qui suit une création : le formulaire ne crée pas de pièce jointe
+- **Refusées avant téléchargement** : absente, en double, plus de 4 Mo **ou de taille inconnue**
+  (taille annoncée par les métadonnées — une taille absente ne prouve pas le plafond). **Binaire** : la sortie de `bw` est décodée en UTF-8, un octet invalide y devient
+  U+FFFD — ce caractère ou un nul suffit à refuser, sans relancer la CLI en octets bruts
+- **Une chaîne JSON est rendue décodée**, un nombre ou un booléen tel qu'écrit ; `null`, objet,
+  tableau, chemin absent échouent. **Le message d'une `JsonException` n'est jamais repris** : il peut
+  citer le document. Un test le vérifie avec une valeur sentinelle
+- **Jamais proposé à la création** (`SecretPresenceKind.NotCreatable`) : écrire une valeur entière
+  là où le marqueur attend une propriété serait faux. `SecretCreationPlan.Build` l'écarte aussi
+- **Un item personnel exige un compte premium** pour lire une pièce jointe, pas un item
+  d'organisation : le refus de la CLI rend la pièce jointe « illisible », diagnostic au journal
+
 #### Mode fichiers : les annotations `x-bw` (`ComposeSecrets`, `SecretFileWriter`)
 `x-` est le mécanisme d'extension prévu par la spécification Compose : Compose ignore ces champs,
 DockPad les lit. Le fichier produit porte le **nom de base de `file:`** — `ts-authkey`, et non la clé

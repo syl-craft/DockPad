@@ -1191,6 +1191,39 @@ This cannot be undone.</value>
   <data name="Inject_Error_ItemMissingVault" xml:space="preserve">
     <value>Item '{0}' is not in the vault. If you have just added it, run bw sync — the CLI works from a local cache.</value>
   </data>
+  <data name="Inject_Error_AttachmentMissing" xml:space="preserve">
+    <value>{0} → no attachment named '{1}'</value>
+  </data>
+  <data name="Inject_Error_AttachmentAmbiguous" xml:space="preserve">
+    <value>{0} → several attachments named '{1}' — rename one to remove the ambiguity.</value>
+  </data>
+  <data name="Inject_Error_AttachmentTooBig" xml:space="preserve">
+    <value>{0} → attachment '{1}' is larger than {2} MB</value>
+  </data>
+  <data name="Inject_Error_AttachmentUnreadable" xml:space="preserve">
+    <value>{0} → attachment '{1}' could not be read from the vault</value>
+  </data>
+  <data name="Inject_Error_AttachmentBinary" xml:space="preserve">
+    <value>{0} → attachment '{1}' is not UTF-8 text</value>
+  </data>
+  <data name="Inject_Error_JsonInvalid" xml:space="preserve">
+    <value>{0} → '{1}' is not valid JSON</value>
+  </data>
+  <data name="Inject_Error_JsonNoValue" xml:space="preserve">
+    <value>{0} → '{1}' has no text, number or boolean at '{2}'</value>
+  </data>
+  <data name="Inject_Error_UnknownFilter" xml:space="preserve">
+    <value>{0} → '{1}': unknown filter, only |json:path is supported</value>
+  </data>
+  <data name="Inject_Error_SecretFieldAndAttachment" xml:space="preserve">
+    <value>Secret « {0} »: the x-bw annotation carries both a field and an attachment. Keep one or the other.</value>
+  </data>
+  <data name="Inject_Error_AttachmentSizeUnknown" xml:space="preserve">
+    <value>{0} → attachment '{1}' has no known size, so the size limit cannot be checked</value>
+  </data>
+  <data name="Inject_Error_SecretBadAnnotation" xml:space="preserve">
+    <value>Secret « {0} »: '{1}' in the x-bw annotation must be a non-empty text.</value>
+  </data>
   <data name="Inject_Error_ItemAmbiguous" xml:space="preserve">
     <value>Several items are named '{0}' — rename one to remove the ambiguity.</value>
   </data>

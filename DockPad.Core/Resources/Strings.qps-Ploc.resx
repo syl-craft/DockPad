@@ -1191,6 +1191,39 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Inject_Error_ItemMissingVault" xml:space="preserve">
     <value>1t3m '{0}' 4b53nt du c0ffr3. 51 tu v13n5 d3 l'4j0ut3r, l4nc3 bw 5ync — l4 CL1 tr4v41ll3 5ur un c4ch3 l0c4l.</value>
   </data>
+  <data name="Inject_Error_AttachmentMissing" xml:space="preserve">
+    <value>{0} → 4ucun3 p13c3 j01nt3 n0mm33 '{1}'</value>
+  </data>
+  <data name="Inject_Error_AttachmentAmbiguous" xml:space="preserve">
+    <value>{0} → plu513ur5 p13c35 j01nt35 n0mm335 '{1}' — 3n r3n0mm3r un3 p0ur l3v3r l'4mb1gu1t3.</value>
+  </data>
+  <data name="Inject_Error_AttachmentTooBig" xml:space="preserve">
+    <value>{0} → l4 p13c3 j01nt3 '{1}' d3p4553 {2} M0</value>
+  </data>
+  <data name="Inject_Error_AttachmentUnreadable" xml:space="preserve">
+    <value>{0} → l4 p13c3 j01nt3 '{1}' n'4 p45 pu 3tr3 lu3 d4n5 l3 c0ffr3</value>
+  </data>
+  <data name="Inject_Error_AttachmentBinary" xml:space="preserve">
+    <value>{0} → l4 p13c3 j01nt3 '{1}' n'35t p45 du t3xt3 UTF-8</value>
+  </data>
+  <data name="Inject_Error_JsonInvalid" xml:space="preserve">
+    <value>{0} → '{1}' n'35t p45 du J50N v4l1d3</value>
+  </data>
+  <data name="Inject_Error_JsonNoValue" xml:space="preserve">
+    <value>{0} → '{1}' n3 p0rt3 n1 t3xt3, n1 n0mbr3, n1 b00l33n 4 '{2}'</value>
+  </data>
+  <data name="Inject_Error_UnknownFilter" xml:space="preserve">
+    <value>{0} → '{1}' : f1ltr3 1nc0nnu, 53ul |j50n:ch3m1n 35t pr15 3n ch4rg3</value>
+  </data>
+  <data name="Inject_Error_SecretFieldAndAttachment" xml:space="preserve">
+    <value>53cr3t « {0} » : l’4nn0t4t10n x-bw p0rt3 4 l4 f015 un ch4mp 3t un3 p13c3 j01nt3. G4rd3 l’un 0u l’4utr3.</value>
+  </data>
+  <data name="Inject_Error_AttachmentSizeUnknown" xml:space="preserve">
+    <value>{0} → l4 p13c3 j01nt3 '{1}' n'4 p45 d3 t41ll3 c0nnu3, l3 pl4f0nd n3 p3ut p45 3tr3 v3r1f13</value>
+  </data>
+  <data name="Inject_Error_SecretBadAnnotation" xml:space="preserve">
+    <value>53cr3t « {0} » : '{1}' d4n5 l’4nn0t4t10n x-bw d01t 3tr3 un t3xt3 n0n v1d3.</value>
+  </data>
   <data name="Inject_Error_ItemAmbiguous" xml:space="preserve">
     <value>Plu513ur5 1t3m5 n0mm35 '{0}' — 3n r3n0mm3r un p0ur l3v3r l'4mb1gu1t3.</value>
   </data>

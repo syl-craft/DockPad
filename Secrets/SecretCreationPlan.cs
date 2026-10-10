@@ -57,7 +57,8 @@ public static class SecretCreationPlan
     /// <summary>Ce que le formulaire propose, groupé par item.</summary>
     /// <remarks>
     /// <see cref="SecretPresenceKind.Ambiguous"/> est exclu : écrire dans l'un des deux items au
-    /// hasard serait pire que ne rien proposer, et l'erreur reste affichée comme avant.
+    /// hasard serait pire que ne rien proposer, et l'erreur reste affichée comme avant. Une pièce
+    /// jointe ou un sélecteur JSON l'est aussi : le formulaire n'écrit que des champs entiers.
     /// </remarks>
     public static IReadOnlyList<SecretItemRequest> Build(
         IEnumerable<SecretMarker> demanded, Func<SecretMarker, SecretPresence> classify)
@@ -66,6 +67,8 @@ public static class SecretCreationPlan
 
         foreach (var marker in demanded.DistinctBy(Key))
         {
+            if (marker.Reference.IsPlain == false) continue;
+
             var presence = classify(marker);
             if (presence.Kind is not (SecretPresenceKind.ItemMissing or SecretPresenceKind.FieldMissing)) continue;
 

@@ -179,4 +179,116 @@ public class ComposeSecretsTests
         Assert.Empty(failures);
         Assert.Single(entries);
     }
+    // ───────────── Pièces jointes et sélecteur ─────────────
+
+    [Fact]
+    public void AttachmentEtSelect_DonnentUnMarqueurDePieceJointe()
+    {
+        var (entries, failures, _) = ComposeSecrets.Extract("""
+            secrets:
+              chrome-key:
+                file: /share/secrets/chrome-key
+                x-bw:
+                  item: web-store
+                  attachment: publisher.json
+                  select: private_key
+            """);
+
+        Assert.Empty(failures);
+        Assert.Equal(new SecretMarker("web-store", "@publisher.json|json:private_key"), Assert.Single(entries).Marker);
+    }
+
+    [Fact]
+    public void AttachmentSeul_DonneLaPieceJointeEntiere()
+    {
+        var (entries, _, _) = ComposeSecrets.Extract("""
+            secrets:
+              config:
+                file: /share/secrets/config.json
+                x-bw:
+                  item: infra
+                  attachment: config.json
+            """);
+
+        Assert.Equal(new SecretMarker("infra", "@config.json"), Assert.Single(entries).Marker);
+    }
+
+    [Fact]
+    public void FieldEtSelect_DonnentUnSelecteurSurLeChamp()
+    {
+        var (entries, _, _) = ComposeSecrets.Extract("""
+            secrets:
+              db-password:
+                file: /share/secrets/db-password
+                x-bw:
+                  item: infra
+                  field: notes
+                  select: database.password
+            """);
+
+        Assert.Equal(new SecretMarker("infra", "notes|json:database.password"), Assert.Single(entries).Marker);
+    }
+
+    [Fact]
+    public void FieldEtAttachmentEnsemble_SontRefuses()
+    {
+        var (entries, failures, _) = ComposeSecrets.Extract("""
+            secrets:
+              conflit:
+                file: /share/secrets/conflit
+                x-bw:
+                  item: infra
+                  field: token
+                  attachment: token.txt
+            """);
+
+        Assert.Empty(entries);
+        Assert.Equal([Loc.F("Inject_Error_SecretFieldAndAttachment", "conflit")], failures);
+    }
+
+    /// <summary>
+    /// Un <c>select</c> qui n'est pas un texte non vide ne doit pas disparaître : sans lui, c'est le
+    /// document entier qui serait écrit. Même règle pour <c>field</c> et <c>attachment</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("attachment: a.json\n      select: [private_key]", "select")]
+    [InlineData("attachment: a.json\n      select: \"\"", "select")]
+    [InlineData("field: token\n      attachment: [a.json]", "attachment")]
+    [InlineData("field: [token]", "field")]
+    public void UneAnnotationQuiNEstPasUnTexte_EstRefusee(string annotation, string key)
+    {
+        var (entries, failures, _) = ComposeSecrets.Extract($"""
+            secrets:
+              cle:
+                file: /share/secrets/cle
+                x-bw:
+                  item: infra
+                  {annotation}
+            """);
+
+        Assert.Empty(entries);
+        Assert.Equal([Loc.F("Inject_Error_SecretBadAnnotation", "cle", key)], failures);
+    }
+
+    [Fact]
+    public void TemplateAvecAttachmentOuSelect_ResteExclusif()
+    {
+        var (entries, failures, _) = ComposeSecrets.Extract("""
+            secrets:
+              a:
+                file: /share/secrets/a
+                x-bw:
+                  item: infra
+                  attachment: a.json
+                  template: templates/a.yml
+              b:
+                file: /share/secrets/b
+                x-bw:
+                  template: templates/b.yml
+                  select: k
+            """);
+
+        Assert.Empty(entries);
+        Assert.Equal([Loc.F("Inject_Error_SecretBothSources", "a"), Loc.F("Inject_Error_SecretBothSources", "b")], failures);
+    }
 }

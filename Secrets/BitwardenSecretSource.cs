@@ -23,8 +23,9 @@ namespace DockPad.Secrets;
 /// injection.
 /// </para>
 /// <para>
-/// <b>Cinq appels pour lire</b> (<c>list collections</c> en plus avec une organisation), <b>puis</b>
-/// <c>create</c> ou <c>get</c>+<c>edit</c> par item et une relecture, seulement si l'on crée. Le
+/// <b>Cinq appels pour lire</b> (<c>list collections</c> en plus avec une organisation), un
+/// <c>get attachment</c> par pièce jointe citée, <b>puis</b> <c>create</c> ou <c>get</c>+<c>edit</c>
+/// par item et une relecture, seulement si l'on crée. Le
 /// script d'origine lançait une recherche par item ; ramener l'ensemble en un appel est plus rapide,
 /// et déplace la résolution du côté testable de la frontière (voir <see cref="SecretVault"/>).
 /// </para>
@@ -143,7 +144,7 @@ public sealed class BitwardenSecretSource : ISecretSource
     /// second mot de passe ni second déverrouillage.
     /// </param>
     public async Task<SecretSourceOpening> OpenAsync(
-        string credential, bool refreshFirst, CancellationToken token)
+        string credential, bool refreshFirst, IReadOnlyList<SecretMarker> demanded, CancellationToken token)
     {
         var exe = Executable();
         if (exe is null)
@@ -203,7 +204,11 @@ public sealed class BitwardenSecretSource : ISecretSource
             return new SecretSourceOpening(null,
                 new SecretSourceFailure(Loc.T("Inject_Error_CliFailed"), Diagnostic(items)));
 
-        var vault = new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured);
+        var listedItems = BitwardenCli.ParseItems(items.Stdout);
+        var attachmentContents = await ReadAttachmentsAsync(exe, session,
+            new SecretVault(listedItems, configured).AttachmentsToRead(demanded), token).ConfigureAwait(false);
+
+        var vault = new SecretVault(listedItems, configured, attachmentContents);
 
         IReadOnlyList<SecretCollection> collections = [];
         if (organisationId is not null)
@@ -226,7 +231,7 @@ public sealed class BitwardenSecretSource : ISecretSource
             organisationId is null ? null : configured,
             collections,
             (creations, collectionId, ct) => WriteAsync(exe, session, arguments, organisationId, configured,
-                creations, collectionId, ct));
+                attachmentContents, creations, collectionId, ct));
 
         return new SecretSourceOpening(vault.Lookup, null, warning, vault.Classify, writer);
     }
@@ -250,7 +255,7 @@ public sealed class BitwardenSecretSource : ISecretSource
     /// </remarks>
     private static async Task<SecretWriteOutcome> WriteAsync(
         string exe, IReadOnlyDictionary<string, string> session, string[] listArguments,
-        string? organisationId, string configured,
+        string? organisationId, string configured, IReadOnlyDictionary<string, string> attachmentContents,
         IReadOnlyList<SecretItemCreation> creations, string? collectionId, CancellationToken token)
     {
         var failures = new List<string>();
@@ -296,7 +301,8 @@ public sealed class BitwardenSecretSource : ISecretSource
         if (!items.Ok)
             throw new InvalidOperationException(Diagnostic(items));
 
-        var vault = new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured);
+        // Le formulaire ne crée pas de pièce jointe : celles déjà lues restent valables.
+        var vault = new SecretVault(BitwardenCli.ParseItems(items.Stdout), configured, attachmentContents);
 
         // Une écriture acceptée n'est pas une valeur conservée : la CLI a pu ignorer un champ sans
         // rien dire. La relecture tranche, et un champ qu'elle ne trouve pas est nommé — des noms,
@@ -312,6 +318,32 @@ public sealed class BitwardenSecretSource : ISecretSource
             }
 
         return new SecretWriteOutcome(vault.Lookup, vault.Classify, failures);
+    }
+
+    /// <summary>
+    /// Le contenu des pièces jointes citées, par identifiant. Une lecture refusée est absente du
+    /// résultat, et le marqueur la dira illisible.
+    /// </summary>
+    /// <remarks>
+    /// Le journal reçoit les identifiants et l'erreur standard, jamais la sortie standard : c'est le contenu.
+    /// </remarks>
+    private static async Task<Dictionary<string, string>> ReadAttachmentsAsync(
+        string exe, IReadOnlyDictionary<string, string> session,
+        IReadOnlyList<SecretAttachmentRead> reads, CancellationToken token)
+    {
+        var contents = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var read in reads)
+        {
+            var result = await RunAsync(exe, BitwardenCli.AttachmentArguments(read), session, token).ConfigureAwait(false);
+
+            if (result.Ok)
+                contents[read.AttachmentId] = result.Stdout;
+            else
+                LogService.Warn(new InvalidOperationException(Diagnostic(result)), $"Lecture de la pièce jointe {read.AttachmentId} de l'item {read.ItemId}");
+        }
+
+        return contents;
     }
 
     /// <summary>La fiche complète, les champs en plus, réécrite. Rien d'autre n'est touché.</summary>

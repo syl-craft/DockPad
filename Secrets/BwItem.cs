@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace DockPad.Secrets;
 
 /// <summary>
@@ -5,8 +7,9 @@ namespace DockPad.Secrets;
 /// </summary>
 /// <remarks>
 /// Volontairement partiel : seuls les champs que la résolution d'un marqueur peut atteindre sont
-/// déclarés. Tout le reste de la fiche — dates, dossiers, historique de mots de passe, pièces
-/// jointes — est de la matière secrète qu'on n'a aucune raison de faire entrer en mémoire.
+/// déclarés. Tout le reste de la fiche — dates, dossiers, historique de mots de passe — est de la
+/// matière secrète qu'on n'a aucune raison de faire entrer en mémoire. Des pièces jointes, seules
+/// les métadonnées sont lues ici ; le contenu ne l'est qu'à la demande d'un marqueur.
 /// </remarks>
 public sealed class BwItem
 {
@@ -23,6 +26,24 @@ public sealed class BwItem
     public BwLogin? Login { get; set; }
 
     public List<BwField>? Fields { get; set; }
+
+    public List<BwAttachment>? Attachments { get; set; }
+}
+
+/// <summary>
+/// Les métadonnées d'une pièce jointe, jamais son contenu.
+/// </summary>
+public sealed class BwAttachment
+{
+    public string Id { get; set; } = "";
+
+    public string? FileName { get; set; }
+
+    /// <summary>
+    /// Taille en octets. La CLI l'écrit en chaîne (<c>"2345"</c>), d'où la lecture tolérante.
+    /// </summary>
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public long? Size { get; set; }
 }
 
 /// <summary>Les champs de connexion d'une fiche.</summary>

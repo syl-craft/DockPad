@@ -143,6 +143,35 @@ public class BitwardenCliTests : IDisposable
     }
 
     [Fact]
+    public void LitLesMetadonneesDesPiecesJointes_TailleEnChaineOuEnNombre()
+    {
+        var items = BitwardenCli.ParseItems("""
+            [{"id":"i1","name":"web-store","attachments":[
+                {"id":"a1","fileName":"publisher.json","size":"2345","sizeName":"2.29 KB","url":"https://x"},
+                {"id":"a2","fileName":"autre.txt","size":12}]}]
+            """);
+
+        var attachments = Assert.Single(items).Attachments;
+        Assert.NotNull(attachments);
+        Assert.Equal(2, attachments.Count);
+        Assert.Equal("a1", attachments[0].Id);
+        Assert.Equal("publisher.json", attachments[0].FileName);
+        Assert.Equal(2345, attachments[0].Size);
+        Assert.Equal(12, attachments[1].Size);
+    }
+
+    /// <summary>
+    /// Sans <c>--raw</c>, la CLI écrit la pièce jointe dans le dossier courant au lieu de la rendre
+    /// sur stdout ; on la désigne par son identifiant, la CLI cherchant sinon une sous-chaîne du nom.
+    /// </summary>
+    [Fact]
+    public void LaLectureDUnePieceJointe_PasseParRawEtParIdentifiants()
+    {
+        Assert.Equal(["get", "attachment", "a1", "--itemid", "i1", "--raw"],
+            BitwardenCli.AttachmentArguments(new SecretAttachmentRead("i1", "a1")));
+    }
+
+    [Fact]
     public void LitLesOrganisationsParNomEtParIdentifiant()
     {
         var orgs = BitwardenCli.ParseOrganizations("""[{"id":"org-1","name":"Infra maison"}]""");
