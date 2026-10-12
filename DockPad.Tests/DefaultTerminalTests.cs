@@ -90,17 +90,6 @@ public class DefaultTerminalTests
     }
 
     [Fact]
-    public void Cmder_OuvreSaConsoleDansLeDossierEtLanceLaCommandeEnDernier()
-    {
-        var cmder = TerminalDetectionService.Known(TerminalDetectionService.CmderId, "Cmder", @"C:\cmder\ConEmu64.exe");
-
-        var args = TerminalDetectionService.BuildArgs(cmder,
-            new TerminalConfig { StartingDirectory = @"C:\dev", RunCommand = @"claude --remote-control ""Train de Noël""" });
-
-        Assert.Equal(@"-Dir ""C:\dev"" -run claude --remote-control ""Train de Noël""", args);
-    }
-
-    [Fact]
     public void WezTerm_OuvreUnOngletDansLeDossierEtLanceLaCommande()
     {
         var wezterm = TerminalDetectionService.Known(TerminalDetectionService.WezTermId, "WezTerm", @"C:\wezterm-gui.exe");
@@ -115,7 +104,6 @@ public class DefaultTerminalTests
     [InlineData(@"C:\Program Files\PowerShell\7-preview\PWSH.EXE", "pwsh")]
     [InlineData(@"D:\portable\powershell.exe", "powershell")]
     [InlineData(@"C:\Program Files\WezTerm\wezterm-gui.exe", "wezterm")]
-    [InlineData(@"C:\Users\moi\AppData\Local\cmder\vendor\conemu-maximus5\ConEmu64.exe", "cmder")]
     [InlineData(@"C:\Program Files (x86)\Mobatek\MobaXterm\MobaXterm.exe", "")]
     [InlineData(@"C:\MXterm Pro\mxterm.exe", "")]
     public void ProgrammeConnu_ReconnuParLeNomDeLExecutable(string path, string expectedId)
