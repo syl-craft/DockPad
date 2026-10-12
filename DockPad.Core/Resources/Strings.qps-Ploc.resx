@@ -1437,6 +1437,12 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
     <value>D3rn13r r3l3v3 l0c4l : {0:g}. 535 f3n3tr35 d3 qu0t4 50nt 3xp1r335. Ut1l153z C0d3x p0ur l'4ctu4l153r ; l35 m3tr1qu35 d3 j3t0n5 r35t3nt d15p0n1bl35.</value>
   </data>
+  <data name="Usage_Antigravity_QuotaNotice" xml:space="preserve">
+    <value>Qu0t4 4nt1gr4v1ty 1nd15p0n1bl3</value>
+  </data>
+  <data name="Usage_Antigravity_QuotaNoticeNote" xml:space="preserve">
+    <value>{0}. D0ckP4d l1t l3 qu0t4 t4nt qu3 l4 c0nn3x10n d'4nt1gr4v1ty 35t v4l1d3, 3t g4rd3 l3 d3rn13r r3l3v3. Ut1l153z 4nt1gr4v1ty p0ur l'4ctu4l153r.</value>
+  </data>
   <data name="Group_InvalidDestination" xml:space="preserve">
     <value>Ch0151553z un3 c453 l1br3 0u un r4cc0urc1 4 3ch4ng3r. Un gr0up3 n3 p3ut p45 3tr3 1mbr1qu3 d4n5 un 4utr3.</value>
   </data>

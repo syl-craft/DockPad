@@ -90,6 +90,19 @@ public class UsageActionServiceTests
     }
 
     [Fact]
+    public void LibelleDeJauge_ExposeQuandLeFournisseurLeNomme()
+    {
+        var antigravity = new FakeProvider("antigravity", Usage("antigravity",
+            session: new UsageWindow { UsedPct = 38, ResetsAt = Now.AddDays(7), Label = "Gemini" },
+            week: new UsageWindow { UsedPct = 75, ResetsAt = Now.AddDays(7) }));
+
+        var entry = Assert.Single(ProvidersOf(Get(null, null, antigravity)));
+
+        Assert.Equal("Gemini", entry.GetProperty("session").GetProperty("label").GetString());
+        Assert.Equal(JsonValueKind.Null, entry.GetProperty("week").GetProperty("label").ValueKind);
+    }
+
+    [Fact]
     public void FenetreAbsente_NullPlutotQueZero()
     {
         var codex = new FakeProvider("codex", Usage("codex", week: new UsageWindow { UsedPct = 27 }));

@@ -1437,6 +1437,12 @@ Cette action est irréversible.</value>
   <data name="Usage_Codex_QuotaLastSeen" xml:space="preserve">
     <value>Dernier relevé local : {0:g}. Ses fenêtres de quota sont expirées. Utilisez Codex pour l'actualiser ; les métriques de jetons restent disponibles.</value>
   </data>
+  <data name="Usage_Antigravity_QuotaNotice" xml:space="preserve">
+    <value>Quota Antigravity indisponible</value>
+  </data>
+  <data name="Usage_Antigravity_QuotaNoticeNote" xml:space="preserve">
+    <value>{0}. DockPad lit le quota tant que la connexion d'Antigravity est valide, et garde le dernier relevé. Utilisez Antigravity pour l'actualiser.</value>
+  </data>
   <data name="Group_InvalidDestination" xml:space="preserve">
     <value>Choisissez une case libre ou un raccourci à échanger. Un groupe ne peut pas être imbriqué dans un autre.</value>
   </data>

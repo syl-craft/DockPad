@@ -175,15 +175,17 @@ public static class DockPadTools
     // ───── Usage IA ─────
 
     [McpServerTool(Name = "dockpad_usage_get")]
-    [Description("Quotas IA lus par DockPad pour chaque assistant qui en expose un (aujourd'hui Claude " +
-                 "et Codex) : pourcentage consommé et restant, heure de remise à zéro (resetsAt, avec son " +
-                 "décalage horaire) et minutes restantes, pour la session de 5 h et la semaine. Chaque " +
+    [Description("Quotas IA lus par DockPad pour chaque assistant qui en expose un (aujourd'hui Claude, " +
+                 "Codex et Antigravity) : pourcentage consommé et restant, heure de remise à zéro (resetsAt, " +
+                 "avec son décalage horaire) et minutes restantes, pour la session de 5 h et la semaine. " +
+                 "label nomme la jauge quand le créneau ne dit pas ce qu'il mesure : Antigravity range " +
+                 "Gemini en session et les modèles tiers en semaine, deux quotas hebdomadaires. Chaque " +
                  "entrée porte l'id de son fournisseur : lis celle qui te concerne. stale = relevé ancien " +
                  "(observedAt) ; quotaAvailable = false avec notice = quota momentanément illisible. " +
                  "Lecture seule ; peut prendre quelques secondes (DockPad relit les journaux locaux).")]
     public static string UsageGet(
-        [Description("Un seul fournisseur (claude, codex, gemini, copilot, demo), lu même s'il est masqué " +
-                     "dans le bandeau. Omis = tous ceux du bandeau qui ont un quota.")] string? provider = null)
+        [Description("Un seul fournisseur (claude, codex, gemini, copilot, antigravity, demo), lu même s'il " +
+                     "est masqué dans le bandeau. Omis = tous ceux du bandeau qui ont un quota.")] string? provider = null)
         => Call("dockpad_usage_get", new { provider });
 
     // ───── Relais pipe ─────

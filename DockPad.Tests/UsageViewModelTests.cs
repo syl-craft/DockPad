@@ -62,6 +62,36 @@ public class UsageViewModelTests
         return config;
     }
 
+    // --- Libellés des jauges
+
+    [Fact]
+    public async Task Gauges_SansLibelleFourni_SessionEtSemaine()
+    {
+        var vm = Build(ConfigFor(("a", false)), Usage("a"));
+        await vm.RefreshAsync();
+
+        Assert.Equal("session", vm.SessionGauge!.Label);
+        Assert.Equal("semaine", vm.WeekGauge!.Label);
+    }
+
+    [Fact]
+    public async Task Gauges_LibelleFourniParLeFournisseur_Repris()
+    {
+        // Antigravity range deux réservoirs hebdomadaires dans les deux créneaux : « session »
+        // y serait faux.
+        var usage = new AiUsage
+        {
+            ProviderId = "a", Name = "a", Glyph = "X", AccentColor = "#123456",
+            Session = new UsageWindow { UsedPct = 38, Label = "Gemini" },
+            Week = new UsageWindow { UsedPct = 75, Label = "Claude · GPT" },
+        };
+        var vm = Build(ConfigFor(("a", false)), usage);
+        await vm.RefreshAsync();
+
+        Assert.Equal("Gemini", vm.SessionGauge!.Label);
+        Assert.Equal("Claude · GPT", vm.WeekGauge!.Label);
+    }
+
     // --- Métriques
 
     [Fact]
