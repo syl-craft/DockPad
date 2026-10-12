@@ -51,6 +51,7 @@ internal static class Program
         var fixture = Path.Combine(Path.GetTempPath(), "dockpad-dialogshot");
         Directory.CreateDirectory(fixture);
         Environment.SetEnvironmentVariable(AppPaths.OverrideVariable, fixture);
+        WriteTerminalFixture(fixture);
 
         var app = new App();
         app.InitializeComponent();
@@ -491,6 +492,35 @@ internal static class Program
     /// <summary>Fond de la fenetre qui porte cet element, ou <c>null</c> s'il n'y en a pas.</summary>
     private static Brush? Backdrop(DependencyObject element) =>
         Window.GetWindow(element)?.Background;
+
+    /// <summary>
+    /// Liste de terminaux de démonstration : sans elle, la détection écrirait les chemins de la
+    /// machine, nom d'utilisateur compris, dans des captures publiées. Alacritty, absent, montre le
+    /// badge « introuvable ».
+    /// </summary>
+    static void WriteTerminalFixture(string fixture)
+    {
+        const string folder = "-w \\\"{folder-name}\\\" new-tab --tabColor {color} --startingDirectory \\\"{folder}\\\"";
+        const string ps = "-NoExit -Command \\\"Set-Location '{folder}'\\\"";
+        File.WriteAllText(Path.Combine(fixture, "terminals.json"), $$"""
+            {
+              "terminals": [
+                { "id": "wt", "name": "Windows Terminal", "detectedName": "Windows Terminal",
+                  "exePath": "%LocalAppData%\\Microsoft\\WindowsApps\\wt.exe",
+                  "folderArgs": "{{folder}}", "commandArgs": "{{folder}} -- {command}", "order": 0 },
+                { "id": "pwsh", "name": "PowerShell 7 (pwsh)", "detectedName": "PowerShell 7 (pwsh)",
+                  "exePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+                  "folderArgs": "{{ps}}", "commandArgs": "-NoExit -Command \"Set-Location '{folder}'; {command-ps}\"", "order": 1 },
+                { "id": "wezterm", "name": "WezTerm", "detectedName": "WezTerm",
+                  "exePath": "C:\\Program Files\\WezTerm\\wezterm-gui.exe",
+                  "folderArgs": "start --new-tab --cwd \"{folder}\"", "commandArgs": "start --new-tab --cwd \"{folder}\" -- {command}", "order": 2 },
+                { "id": "alacritty", "name": "Alacritty",
+                  "exePath": "%LocalAppData%\\Alacritty\\alacritty.exe",
+                  "folderArgs": "--working-directory \"{folder}\"", "commandArgs": "--working-directory \"{folder}\" -e {command}", "order": 3 }
+              ]
+            }
+            """);
+    }
 
     /// <summary>
     /// La fenêtre Terminaux, premier terminal sélectionné : sans sélection, la moitié droite est vide.

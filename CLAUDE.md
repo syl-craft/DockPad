@@ -234,7 +234,7 @@ tools/
                                          le câblage de la grille (grid), l'overlay clavier (overlay),
                                          et chronomètre un peuplement (bench)
     UsageShot/                           Outil console : capture le bandeau Usage IA et sa fenêtre de réglages en PNG (doc)
-    MotionDemo/                          Outil Node : les treize motion designs de démonstration (16:9, ≤ 10 s, clair + sombre) → dépôt DockPad-media
+    MotionDemo/                          Outil Node : les quatorze motion designs de démonstration (16:9, ≤ 10 s, clair + sombre) → dépôt DockPad-media
 ```
 
 ## Fonctionnalités
@@ -2000,10 +2000,10 @@ Pièges WPF contournés dans ces outils — à connaître avant de les étendre 
 > — `verify-clips.sh` (format, durée, raccord de boucle, planches) et `check-readmes.sh` (parité
 > EN/FR, liens, GIF en ligne).
 
-Treize clips de 10 s au format 16:9, un par fonctionnalité : `01-launcher` (grille, pages,
+Quatorze clips de 10 s au format 16:9, un par fonctionnalité : `01-launcher` (grille, pages,
 recherche — le GIF d'en-tête du README), `02-browser-picker`, `03-usage`, `04-secrets`,
 `05-keyboard`, `06-composite`, `07-mcp`, `08-favorites`, `09-theme-language`, `10-updates`,
-`11-context-menu`, `12-explorer-drop`, `13-github-sync`. Chacun est rendu en **clair et en sombre**, en MP4 1080p60 et en GIF
+`11-context-menu`, `12-explorer-drop`, `13-github-sync`, `14-terminals`. Chacun est rendu en **clair et en sombre**, en MP4 1080p60 et en GIF
 960×540. Le README choisit le thème du lecteur avec `<picture><source media="(prefers-color-scheme: dark)">`.
 
 > **Les rendus ne sont pas dans ce dépôt** : ils vivent dans
