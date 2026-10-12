@@ -131,6 +131,8 @@ Services/
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
     TerminalDetectionService.cs          Détection (wt, pwsh, powershell, WezTerm), résolution, arguments à variables
     TerminalCatalog.cs                    PUR — liste des terminaux : reprise, fusion de la détection, proposés, ordre, identifiants
+    TerminalRequest.cs                    PUR — demande --terminal (dossier, commande), noms du tube et du mutex ; compilé aussi dans DockPadTerminal
+    TerminalLaunch.cs                     --terminal avant WPF : relais au résident, sinon lancement sur place
     TerminalConfigService.cs              Load/Save terminals.json (%APPDATA%\DockPad\terminals.json), création à la première lecture
     LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
     UrlPipeService.cs                    Facade sur LinePipeService pour DockPad_UrlPipe
@@ -211,6 +213,7 @@ Dialogs/
     ShortcutDialog.xaml/.cs              Ajout/modification d'une tuile d'accès rapide
     UsageConfigDialog.xaml/.cs           Fenêtre « Usage IA » : réglages du bandeau + fournisseurs détectés
 
+DockPadTerminal/                         Lanceur natif (NativeAOT) des prédéfinis terminal du clic droit, publié à côté de DockPad
 DockPad.Tests/                           Projet xUnit (941 tests) : ActionResult/McpConfig/services d'actions/McpLogService/McpDispatcher/AppPaths
                                          + profils de navigateurs (détection, fusion, mise en page, arguments de lancement)
                                          + Usage IA (formatage, tarifs, quota, fusion, viewmodel)
@@ -300,6 +303,37 @@ résidente stabilisée : **322 → 78 ms** au minimum, **412 → 100 ms** en mé
 > donc qui interdit tout raccourci. Deux conséquences à connaître : `[STAThread]` doit être posé à la
 > main (le `Main` engendré le portait), et `InitializeComponent` reste engendré — c'est déjà ce dont
 > les quatre outils de capture se servent, ce qui rend le patron déjà éprouvé dans ce dépôt.
+
+### Les prédéfinis terminal du clic droit (`DockPadTerminal.exe`, `--terminal`)
+
+Les prédéfinis Claude, Codex, Antigravity et PowerShell écrivent dans le registre
+`"<dossier de DockPad>\DockPadTerminal.exe" --terminal "%V\." -- <commande>`. DockPad ouvre alors le
+terminal **exactement comme une tuile** : terminal par défaut, fenêtre `-w "{folder-name}"`, couleur du
+dossier. Windows ne donne au clic droit que le chemin complet (`%V`) : aucune commande de registre ne
+pouvait nommer la fenêtre d'après le dossier, et un prédéfini ouvrait une autre fenêtre que la tuile
+du même projet.
+
+- **`DockPadTerminal.exe` est natif (NativeAOT, ~2 Mo)** : il ne démarre pas le runtime .NET, et relaie
+  la demande au résident par `DockPad_TerminalPipe` (même protocole que `LinePipeService`). Mesuré
+  (NIN-149, 20 lancements, machine chargée) : **47 ms min, 58 p25, 66 médiane**, contre 109 / 161 / 179
+  pour `DockPad.exe --terminal` — l'écart est le démarrage de .NET, le travail utile tient en quelques ms
+- **Sans résident**, il passe la main à `DockPad.exe --terminal`, que `Program.Main` traite **avant WPF**
+  (`TerminalLaunch.TryHandle`) : lecture des réglages, lancement, sortie (~350 ms, rare : DockPad démarre
+  avec Windows). Le même processus est utilisé si le lanceur natif manque. Jamais l'application complète
+- **`"%V\."` et non `"%V"`** : sur une racine de lecteur, `"D:\"` ferait de `\"` un guillemet échappé
+  et le reste de la ligne rejoindrait le dossier. `TerminalRequest.NormalizeFolder` retire le `\.`
+- **La commande est recomposée** à partir des arguments que Windows a découpés, guillemets rétablis
+  (`--remote-control "…"`, chemins à espaces) : `TerminalRequest.JoinArguments`, testé
+- **`TerminalRequest.cs` est compilé deux fois**, dans DockPad et dans le lanceur : il ne dépend que de la
+  bibliothèque de base. Les noms du tube et du mutex y vivent, et `StartupRelay` reprend celui du mutex —
+  un nom qui divergerait ferait échouer le relais en silence
+- **La commande du registre ne dépend plus du terminal choisi** : changer de terminal ne fait plus passer
+  les prédéfinis à « mise à jour disponible »
+- **Publication** : la cible `PublishTerminalLauncher` de `DockPad.csproj` publie le lanceur dans le même
+  dossier, donc dans le zip et dans le paquet Velopack. L'éditeur de liens NativeAOT trouve MSVC par
+  `vswhere`, absent du `PATH` par défaut : la cible l'y ajoute. En dev, le lanceur doit être publié à la
+  main à côté de l'exe (`dotnet publish DockPadTerminal -c Release -o bin\Debug\net8.0-windows`), sinon les
+  prédéfinis appellent `DockPad.exe` directement
 
 > **Le raccourci global, lui, n'avait rien à gagner** : mesuré à **1–2 ms** entre le message et la
 > fenêtre au premier plan. `BringToFront()` réveille une fenêtre déjà construite, ne repeuple pas la
@@ -1613,10 +1647,10 @@ rédacteur d'`inject-create` est d'ailleurs factice et ne sera jamais appelé.
 
 | Nom | Cible | Commande |
 | ----- | ------- | --------- |
-| Ouvrir un terminal Claude | FolderBackground | `wt.exe -w "%V" new-tab --tabColor <couleur> --startingDirectory "%V" -- claude` (avec Windows Terminal ; le terminal et ses arguments suivent la fenêtre 💻 Terminaux et le réglage « Terminal par défaut ») |
-| Ouvrir un terminal Codex | FolderBackground | `wt.exe -w "%V" new-tab --tabColor <couleur> --startingDirectory "%V" -- "<chemin absolu de codex.exe>"` (nom nu `codex` en repli) (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône : **le logo ChatGPT**, extrait une seule fois en `.ico` dans `%APPDATA%\DockPad\icons\`. Le seul exécutable qui le porte vit sous `WindowsApps\OpenAI.ChatGPT-Desktop_<version>_…`, chemin qui deviendrait faux à la prochaine mise à jour de ChatGPT et laisserait une icône cassée dans le menu de Windows ; la copie du profil, elle, survit aux mises à jour **et** à la désinstallation. `WindowsApps` ne s'énumère pas (ACL), mais Windows publie `PackageRootFolder` sous une clé HKCU lisible sans privilège. **On y cherche le préfixe `OpenAI.` et non `OpenAI.ChatGPT`** : l'application s'est appelée `OpenAI.ChatGPT-Desktop`, puis `OpenAI.Codex` tout en gardant « ChatGPT » pour nom affiché et `ChatGPT.exe` pour binaire — chercher le nom du paquet, c'est suivre une décision de l'éditeur. **Et l'exécutable est exigé par son nom, pas préféré** : le paquet en contient sept, dont `chrome_proxy.exe`, un service d'élévation et un `Codex.exe` qui n'a justement pas d'icône ; un repli « premier venu » poserait l'un d'eux sans qu'on le voie. **Le logo est réextrait à chaque construction et réécrit seulement s'il a changé** : un cache posé une fois pour toutes serait faux le jour où l'éditeur change de logo. À défaut de ChatGPT, on retombe sur `codex.exe` — cherché comme `bw.exe` l'est : `PATH`, puis les racines d'installation en récursif (`%LOCALAPPDATA%\Programs\OpenAI`, `Microsoft\WinGet\Packages`), puis le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`. **Le disque est consulté même quand le `PATH` échoue** : celui d'un processus est figé à son démarrage, donc Codex installé pendant que DockPad tourne n'y apparaît pas — cas vécu. Ni `codex.exe` ni son équivalent npm n'embarquent d'icône, mesuré |
-| Ouvrir un terminal Antigravity | FolderBackground | `wt.exe -w "%V" new-tab --tabColor <couleur> --startingDirectory "%V" -- "%LocalAppData%\agy\bin\agy.exe"` (avec Windows Terminal ; suit le réglage « Terminal par défaut » ; chemin absolu résolu, décalque de Codex). **Proposé seulement si `agy.exe` existe** : son installateur ne l'ajoute pas au `PATH`, aucun nom nu ne peut servir de repli. **Icône : le logo du bandeau Usage IA**, rendu en `.ico` dans `%APPDATA%\DockPad\icons\antigravity.ico` (`ProviderLogos.RenderPng` puis `BuildIco`) — `agy.exe` n'embarque aucune icône. Le tracé (Lobe Icons, MIT) et le bleu `#1A73E8` vivent **une seule fois** dans `ProviderLogos`, lus par `ProviderIcon.xaml` en `x:Static` : ceux de Claude et Codex restent en ressources XAML, le bandeau étant leur seul usage. Réécrit seulement si le rendu a changé, comme le logo ChatGPT |
-| Ouvrir dans PowerShell | FolderBackground | `wt.exe -w "%V" new-tab --tabColor <couleur> --startingDirectory "%V"` (avec Windows Terminal ; suit le réglage « Terminal par défaut ») |
+| Ouvrir un terminal Claude | FolderBackground | `DockPadTerminal.exe --terminal "%V\." -- claude` : DockPad ouvre le terminal par défaut comme une tuile (voir « Les prédéfinis terminal du clic droit ») |
+| Ouvrir un terminal Codex | FolderBackground | `DockPadTerminal.exe --terminal "%V\." -- "<chemin absolu de codex.exe>"` (nom nu `codex` en repli) (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône : **le logo ChatGPT**, extrait une seule fois en `.ico` dans `%APPDATA%\DockPad\icons\`. Le seul exécutable qui le porte vit sous `WindowsApps\OpenAI.ChatGPT-Desktop_<version>_…`, chemin qui deviendrait faux à la prochaine mise à jour de ChatGPT et laisserait une icône cassée dans le menu de Windows ; la copie du profil, elle, survit aux mises à jour **et** à la désinstallation. `WindowsApps` ne s'énumère pas (ACL), mais Windows publie `PackageRootFolder` sous une clé HKCU lisible sans privilège. **On y cherche le préfixe `OpenAI.` et non `OpenAI.ChatGPT`** : l'application s'est appelée `OpenAI.ChatGPT-Desktop`, puis `OpenAI.Codex` tout en gardant « ChatGPT » pour nom affiché et `ChatGPT.exe` pour binaire — chercher le nom du paquet, c'est suivre une décision de l'éditeur. **Et l'exécutable est exigé par son nom, pas préféré** : le paquet en contient sept, dont `chrome_proxy.exe`, un service d'élévation et un `Codex.exe` qui n'a justement pas d'icône ; un repli « premier venu » poserait l'un d'eux sans qu'on le voie. **Le logo est réextrait à chaque construction et réécrit seulement s'il a changé** : un cache posé une fois pour toutes serait faux le jour où l'éditeur change de logo. À défaut de ChatGPT, on retombe sur `codex.exe` — cherché comme `bw.exe` l'est : `PATH`, puis les racines d'installation en récursif (`%LOCALAPPDATA%\Programs\OpenAI`, `Microsoft\WinGet\Packages`), puis le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`. **Le disque est consulté même quand le `PATH` échoue** : celui d'un processus est figé à son démarrage, donc Codex installé pendant que DockPad tourne n'y apparaît pas — cas vécu. Ni `codex.exe` ni son équivalent npm n'embarquent d'icône, mesuré |
+| Ouvrir un terminal Antigravity | FolderBackground | `DockPadTerminal.exe --terminal "%V\." -- "%LocalAppData%\agy\bin\agy.exe"` (avec Windows Terminal ; suit le réglage « Terminal par défaut » ; chemin absolu résolu, décalque de Codex). **Proposé seulement si `agy.exe` existe** : son installateur ne l'ajoute pas au `PATH`, aucun nom nu ne peut servir de repli. **Icône : le logo du bandeau Usage IA**, rendu en `.ico` dans `%APPDATA%\DockPad\icons\antigravity.ico` (`ProviderLogos.RenderPng` puis `BuildIco`) — `agy.exe` n'embarque aucune icône. Le tracé (Lobe Icons, MIT) et le bleu `#1A73E8` vivent **une seule fois** dans `ProviderLogos`, lus par `ProviderIcon.xaml` en `x:Static` : ceux de Claude et Codex restent en ressources XAML, le bandeau étant leur seul usage. Réécrit seulement si le rendu a changé, comme le logo ChatGPT |
+| Ouvrir dans PowerShell | FolderBackground | `DockPadTerminal.exe --terminal "%V\."` : le terminal par défaut ouvert sur le dossier |
 | Ouvrir dans Visual Studio Code | FolderBackground | `code "%V"` |
 | Ouvrir dans SQL Server Management Studio | FolderBackground | `ssms.exe "%V"` |
 | Ouvrir dans GitHub Desktop | FolderBackground | `"%LocalAppData%\GitHubDesktop\GitHubDesktop.exe" --cli-open="%V\."` (flag interne utilisé par le shim `github` — ajoute ET ouvre le dépôt, sans fenêtre console ; écrit en `REG_EXPAND_SZ` car install per-user vs clé HKCR machine-wide ; `\.` neutralise le backslash final des racines de lecteur ; proposé uniquement si GitHub Desktop ≥ 3.4.14 est installé) |
@@ -1658,8 +1692,8 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
   celui d'un terminal détectable
 - **Windows Terminal ouvre une fenêtre par dossier** : `-w "{folder-name}" new-tab --tabColor {color}
   --startingDirectory "{folder}" -- {command}`. `-w <nom>` vise la fenêtre de ce nom et la crée si elle
-  n'existe pas : les tuiles d'un même projet se regroupent. Dans un prédéfini le dossier n'est connu qu'au
-  clic, la fenêtre porte donc le chemin complet et la couleur est la même pour tous
+  n'existe pas : les tuiles d'un même projet se regroupent, et les prédéfinis du clic droit avec elles,
+  puisqu'ils passent par DockPad
 - **Couleur choisie par tuile** (`terminal.tabColor`, `#RGB` ou `#RRGGBB`) : champ et palette dans la
   fenêtre d'une tuile Terminal ; vide ou invalide, la couleur du dossier
 - **`Resolve(réglage, proposés)` est pur** : les proposés sont les terminaux visibles dont le programme
@@ -1668,8 +1702,9 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
   terminal qui serait lancé à sa place faisait croire que le réglage marchait
 - **Le `terminal.exePath`, `newTab` et `extraArgs` d'une tuile ne sont plus lus.** Ils restent écrits,
   pour une version antérieure de DockPad. La fenêtre d'une tuile n'a plus que le dossier, la commande et la couleur d'onglet
-- **Changer les arguments par défaut d'un terminal change les commandes des prédéfinis installés** : ils
-  s'affichent « mise à jour disponible » jusqu'à leur réinstallation. C'est arrivé au passage à `-w "{folder-name}"`
+- **Les prédéfinis ne portent plus la commande du terminal** : ils passent par `DockPadTerminal.exe`
+  (voir « Les prédéfinis terminal du clic droit »), donc changer de terminal ou d'arguments ne demande
+  plus de les réinstaller
 - **Changer de terminal fait passer les prédéfinis installés à « mise à jour disponible »**, par le
   `CompareStatus` existant
 - Aucun terminal installé → message `Quick_NoTerminal` au lancement d'une tuile ; un prédéfini retombe

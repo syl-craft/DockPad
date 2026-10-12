@@ -96,7 +96,7 @@ public static class ShortcutLauncher
             new TerminalConfig { StartingDirectory = folder, RunCommand = command })));
 
     // Le programme d'un terminal personnalisé peut porter %LocalAppData%, que Process.Start ne développe pas.
-    private static void Start(LaunchPlan plan) =>
+    public static void Start(LaunchPlan plan) =>
         Process.Start(new ProcessStartInfo(Environment.ExpandEnvironmentVariables(plan.FileName), plan.Arguments)
         {
             UseShellExecute = true,

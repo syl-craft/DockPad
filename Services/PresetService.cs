@@ -37,7 +37,7 @@ public static class PresetService
 
         string icon = claudeExe ?? "";
 
-        string command = TerminalCommand(DefaultTerminal(), ClaudeRunCommand(SettingsService.LoadClaudeArgs()));
+        string command = LauncherCommand(LauncherExe, ClaudeRunCommand(SettingsService.LoadClaudeArgs()));
 
         return new PresetEntry
         {
@@ -67,7 +67,7 @@ public static class PresetService
     /// </remarks>
     private static PresetEntry BuildCodexTerminal()
     {
-        string command = TerminalCommand(DefaultTerminal(), CodexRunCommand(FindCodexExe()));
+        string command = LauncherCommand(LauncherExe, CodexRunCommand(FindCodexExe()));
 
         return new PresetEntry
         {
@@ -144,7 +144,7 @@ public static class PresetService
         {
             DisplayName = Loc.T("Preset_AntigravityTerminal_Name"),
             RegistryKey = "OpenAntigravityTerminal",
-            Command = TerminalCommand(DefaultTerminal(), $"\"{agyExe}\""),
+            Command = LauncherCommand(LauncherExe, $"\"{agyExe}\""),
             IconPath = AntigravityIconPath() ?? "",
             Target = ContextMenuTarget.FolderBackground,
             Description = Loc.T("Preset_AntigravityTerminal_Desc")
@@ -173,12 +173,26 @@ public static class PresetService
     }
 
     /// <summary>
-    /// Windows PowerShell par son nom nu, quand aucun terminal n'est détecté.
+    /// Ligne de commande d'un prédéfini terminal : le lanceur reçoit le dossier cliqué et la commande, et
+    /// DockPad ouvre le terminal par défaut comme pour une tuile (fenêtre et couleur du dossier).
     /// </summary>
-    public static readonly TerminalInfo FallbackTerminal = TerminalDetectionService.Known(
-        TerminalDetectionService.WindowsPowerShellId, "Windows PowerShell", "powershell.exe");
+    /// <remarks>
+    /// <c>%V\.</c> et non <c>%V</c> : sur une racine de lecteur, <c>"D:\"</c> ferait de <c>\"</c> un
+    /// guillemet échappé. La commande ne dépend plus du terminal choisi : en changer ne demande pas de
+    /// réinstaller les prédéfinis.
+    /// </remarks>
+    public static string LauncherCommand(string dockPadExe, string runCommand) => runCommand == ""
+        ? $"\"{dockPadExe}\" {TerminalRequest.Flag} \"%V\\.\""
+        : $"\"{dockPadExe}\" {TerminalRequest.Flag} \"%V\\.\" -- {runCommand}";
 
-    private static TerminalInfo DefaultTerminal() => TerminalDetectionService.ResolveDefault() ?? FallbackTerminal;
+    /// <summary>
+    /// Le lanceur natif <c>DockPadTerminal.exe</c>, posé à côté de DockPad à la publication ; à
+    /// défaut, DockPad lui-même, qui traite <c>--terminal</c> plus lentement (démarrage de .NET).
+    /// </summary>
+    private static string LauncherExe =>
+        Path.Combine(AppContext.BaseDirectory, "DockPadTerminal.exe") is var launcher && File.Exists(launcher)
+            ? launcher
+            : Updates.AppInstallation.Executable;
 
     /// <summary>
     /// Le logo ChatGPT, extrait <b>une seule fois</b> dans le store d'icônes du profil.
@@ -460,7 +474,7 @@ public static class PresetService
             ?? FindExe("powershell.exe",
                 Path.Combine(system, @"WindowsPowerShell\v1.0\powershell.exe"));
 
-        string command = TerminalCommand(DefaultTerminal(), runCommand: "");
+        string command = LauncherCommand(LauncherExe, runCommand: "");
 
         string icon = psExe ?? "";
 

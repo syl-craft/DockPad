@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Lanceur natif des prédéfinis terminal du clic droit. NativeAOT : aucun runtime .NET à démarrer,
+    ~40 ms entre le clic et la demande reçue par DockPad, contre ~150 pour DockPad.exe. Publié à côté
+    de DockPad par la cible PublishTerminalLauncher de DockPad.csproj.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DockPad</RootNamespace>
+    <AssemblyName>DockPadTerminal</AssemblyName>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DebugType>none</DebugType>
+    <ApplicationIcon>..\app.ico</ApplicationIcon>
+    <Version>1.28.0</Version>
+    <Product>DockPad</Product>
+    <Copyright>Copyright (c) 2026 syl-craft</Copyright>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- La lecture de la demande et les noms du tube et du mutex : les mêmes sources que DockPad. -->
+    <Compile Include="..\Services\TerminalRequest.cs" Link="TerminalRequest.cs" />
+  </ItemGroup>
+</Project>
