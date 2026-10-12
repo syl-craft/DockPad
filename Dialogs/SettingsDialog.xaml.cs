@@ -36,6 +36,13 @@ public partial class SettingsDialog : Window
     private readonly List<Models.TerminalInfo> _detected = TerminalDetectionService.Detect();
 
     /// <summary>
+    /// Terminaux déclarés dans la section <c>terminals</c> de <c>settings.json</c> : modifiables là seulement.
+    /// </summary>
+    private readonly List<Models.TerminalInfo> _declared = TerminalDetectionService.Declared(
+        SettingsService.LoadTerminalDefinitions(),
+        exists: path => System.IO.File.Exists(Environment.ExpandEnvironmentVariables(path)));
+
+    /// <summary>
     /// Copies de travail des arguments, par terminal détecté : écrites seulement à Sauvegarder.
     /// </summary>
     private readonly Dictionary<string, Models.TerminalSettings> _terminalTemplates;
@@ -217,6 +224,7 @@ public partial class SettingsDialog : Window
     {
         var choices = new List<TerminalChoice> { new("", Loc.T("Settings_Terminal_Auto")) };
         choices.AddRange(_detected.Select(t => new TerminalChoice(t.Id, t.DisplayName)));
+        choices.AddRange(_declared.Select(t => new TerminalChoice(t.Id, t.DisplayName)));
         choices.Add(new TerminalChoice(TerminalDetectionService.CustomId, Loc.T("Settings_Terminal_Custom")));
         if (choices.All(c => c.Tag != selected))
             choices.Add(new TerminalChoice(selected, Loc.F("Settings_Terminal_Missing", selected)));
@@ -238,7 +246,9 @@ public partial class SettingsDialog : Window
         CustomTerminalSelected ? _customTerminal : _terminalTemplates.GetValueOrDefault(SelectedTerminalTag);
 
     private List<Models.TerminalInfo> EditedInstalled() =>
-        _detected.Select(t => TerminalDetectionService.WithTemplates(t, _terminalTemplates[t.Id])).ToList();
+        _detected.Select(t => TerminalDetectionService.WithTemplates(t, _terminalTemplates[t.Id])).Concat(_declared).ToList();
+
+    private bool DeclaredTerminalSelected => _declared.Any(t => t.Id == SelectedTerminalTag);
 
     /// <summary>
     /// Le terminal que lancerait le choix affiché, enregistré ou non ; un programme ajouté
@@ -261,7 +271,8 @@ public partial class SettingsDialog : Window
         var shown = edited == null ? ChosenTerminal() : null;
         string exePath = CustomTerminalSelected
             ? _customTerminal.ExePath
-            : _detected.Where(t => t.Id == SelectedTerminalTag).Select(t => t.ExePath).FirstOrDefault() ?? shown?.ExePath ?? "";
+            : _detected.Concat(_declared).Where(t => t.Id == SelectedTerminalTag).Select(t => t.ExePath).FirstOrDefault()
+              ?? shown?.ExePath ?? "";
 
         _showingTerminal = true;
         TxtTerminalExe.Text         = exePath;
@@ -272,7 +283,8 @@ public partial class SettingsDialog : Window
         TxtTerminalExe.IsReadOnly         = !CustomTerminalSelected;
         TxtTerminalFolderArgs.IsReadOnly  = edited == null;
         TxtTerminalCommandArgs.IsReadOnly = edited == null;
-        TxtTerminalAutoNote.Visibility = edited == null ? Visibility.Visible : Visibility.Collapsed;
+        TxtTerminalAutoNote.Visibility = edited == null && !DeclaredTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
+        TxtTerminalJsonNote.Visibility = DeclaredTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
         BtnBrowseTerminal.Visibility   = CustomTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
         BtnResetTerminal.Visibility    = edited != null && !CustomTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
 

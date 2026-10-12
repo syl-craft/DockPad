@@ -1707,7 +1707,7 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>Programs (*.exe)|*.exe</value>
   </data>
   <data name="Settings_Terminal_ArgsHint" xml:space="preserve">
-    <value>Variables: {folder} = folder, {command} = command to run, {command-ps} = the same command prepared for PowerShell -Command "…". The program path accepts %LocalAppData% and other environment variables.</value>
+    <value>Variables: {folder} = folder, {folder-name} = its last segment, {name} = tile name (folder name for a preset), {color} = tab colour derived from the folder name, {command} = command to run, {command-ps} = the same command prepared for PowerShell -Command "…". The program path accepts %LocalAppData% and other environment variables.</value>
   </data>
   <data name="Settings_Terminal_NoCommand" xml:space="preserve">
     <value>Without {command} or {command-ps}, Terminal tiles and the Claude and Codex presets open the program without running their command.</value>
@@ -1735,5 +1735,20 @@ Force them to stop? Unsaved work may be lost.</value></data>
   </data>
   <data name="Settings_Terminal_AutoNote" xml:space="preserve">
     <value>Automatic uses the first installed terminal, with the arguments set for it.</value>
+  </data>
+  <data name="Shortcut_TabColor" xml:space="preserve">
+    <value>Tab colour</value>
+  </data>
+  <data name="Shortcut_TabColor_Auto" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="Shortcut_TabColor_Hint" xml:space="preserve">
+    <value>Used by the {color} variable of the terminal. Empty: a colour derived from the folder name.</value>
+  </data>
+  <data name="Shortcut_Err_TabColor" xml:space="preserve">
+    <value>Invalid colour: use #RGB or #RRGGBB, or leave it empty.</value>
+  </data>
+  <data name="Settings_Terminal_JsonNote" xml:space="preserve">
+    <value>Declared in the terminals section of settings.json: edit it there, then reopen the Options.</value>
   </data>
 </root>

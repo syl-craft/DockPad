@@ -134,7 +134,7 @@ internal static class Program
             "shortcut-terminal" => new ShortcutDialog(new DockPad.Models.ShortcutEntry
             {
                 Name = "Demo", Type = DockPad.Models.ShortcutType.OpenTerminal, Command = @"C:\dev\Demo",
-                Terminal = new DockPad.Models.TerminalConfig { StartingDirectory = @"C:\dev\Demo", RunCommand = "claude" },
+                Terminal = new DockPad.Models.TerminalConfig { StartingDirectory = @"C:\dev\Demo", RunCommand = "claude", TabColor = "#E37400" },
             }),
             "entry" => new EntryDialog(),
             // La fenetre d'injection traverse quatre etats, dont deux valent une relecture : la

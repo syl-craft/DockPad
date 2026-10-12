@@ -193,6 +193,142 @@ public class DefaultTerminalTests
         Assert.Equal(@"""powershell.exe"" -NoExit -Command ""Set-Location '%V'; claude""", cmd);
     }
 
+    // -- Terminaux déclarés dans settings.json -----------------------------------
+
+    private static TerminalDefinition Definition(string id, string exe, string name = "") =>
+        new() { Id = id, Name = name, ExePath = exe, FolderArgs = @"start --cwd ""{folder}""", CommandArgs = @"start --cwd ""{folder}"" -- {command}" };
+
+    [Fact]
+    public void TerminalDeclare_EstProposeAvecSonNom()
+    {
+        var declared = TerminalDetectionService.Declared([Definition("wezterm", @"C:\WezTerm\wezterm.exe", "WezTerm")], exists: _ => true);
+
+        var wezterm = Assert.Single(declared);
+        Assert.Equal("WezTerm", wezterm.DisplayName);
+        Assert.Equal(@"start --cwd ""C:\dev"" -- claude",
+            TerminalDetectionService.BuildArgs(wezterm, new TerminalConfig { StartingDirectory = @"C:\dev", RunCommand = "claude" }));
+    }
+
+    [Fact]
+    public void TerminalDeclare_SansNom_PrendSonIdentifiant()
+    {
+        var declared = TerminalDetectionService.Declared([Definition("tabby", @"C:\Tabby.exe")], exists: _ => true);
+
+        Assert.Equal("tabby", Assert.Single(declared).DisplayName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("wt")]
+    [InlineData("PWSH")]
+    [InlineData("custom")]
+    public void TerminalDeclare_IdentifiantReserve_EstEcarte(string id)
+    {
+        Assert.Empty(TerminalDetectionService.Declared([Definition(id, @"C:\x.exe")], exists: _ => true));
+    }
+
+    [Fact]
+    public void TerminalDeclare_ProgrammeAbsentOuDoublon_EstEcarteSansBloquerLesAutres()
+    {
+        var declared = TerminalDetectionService.Declared(
+        [
+            Definition("absent", @"C:\nulle-part.exe"),
+            Definition("wezterm", @"C:\wezterm.exe"),
+            Definition("WEZTERM", @"C:\autre.exe"),
+        ], exists: path => path != @"C:\nulle-part.exe");
+
+        Assert.Equal(["wezterm"], declared.Select(t => t.Id));
+    }
+
+    [Fact]
+    public void TerminalDeclare_EstRetenuQuandIlEstChoisi()
+    {
+        var wezterm = Assert.Single(TerminalDetectionService.Declared([Definition("wezterm", @"C:\wezterm.exe")], exists: _ => true));
+
+        Assert.Same(wezterm, TerminalDetectionService.Resolve("wezterm", custom: null, [Wt, wezterm]));
+    }
+
+    // -- Nom de fenêtre (wt -w) ------------------------------------------------
+
+    [Fact]
+    public void NomDeTuile_RegroupeLesOngletsDansUneFenetreNommee()
+    {
+        var wt = TerminalDetectionService.WithTemplates(Wt, new TerminalSettings
+        {
+            FolderArgs  = @"-w ""{name}"" new-tab --startingDirectory ""{folder}""",
+            CommandArgs = @"-w ""{name}"" new-tab --startingDirectory ""{folder}"" -- {command}",
+        });
+        var cfg = new TerminalConfig { StartingDirectory = @"C:\dev\Shope", RunCommand = "claude" };
+
+        var args = TerminalDetectionService.BuildArgs(wt, cfg, "Shope - specs");
+
+        Assert.Equal(@"-w ""Shope - specs"" new-tab --startingDirectory ""C:\dev\Shope"" -- claude", args);
+    }
+
+    [Theory]
+    [InlineData(@"C:\dev\DockPad", "DockPad")]
+    [InlineData(@"C:\dev\DockPad\", "DockPad")]
+    [InlineData(@"D:\", @"D:\")]
+    [InlineData("%V", "%V")]
+    public void NomDuDossier_EstSonDernierSegment(string folder, string expected)
+    {
+        Assert.Equal(expected, TerminalDetectionService.FolderName(folder));
+    }
+
+    [Fact]
+    public void SansNomDeTuile_NameVautLeNomDuDossier()
+    {
+        string args = TerminalDetectionService.Expand(@"-w ""{name}""", @"C:\dev\DockPad", command: "");
+
+        Assert.Equal(@"-w ""DockPad""", args);
+    }
+
+    [Fact]
+    public void CouleurChoisieParLaTuile_RemplaceCelleDuDossier()
+    {
+        var args = TerminalDetectionService.BuildArgs(Wt,
+            new TerminalConfig { StartingDirectory = @"C:\dev\DockPad", RunCommand = "claude", TabColor = "#FF8800" }, "DockPad");
+
+        Assert.Contains("--tabColor #FF8800", args);
+    }
+
+    [Theory]
+    [InlineData("rouge")]
+    [InlineData("#12345")]
+    [InlineData("")]
+    public void CouleurInvalideOuVide_PrendCelleDuDossier(string color)
+    {
+        var args = TerminalDetectionService.BuildArgs(Wt,
+            new TerminalConfig { StartingDirectory = @"C:\dev\DockPad", TabColor = color });
+
+        Assert.Contains($"--tabColor {TerminalDetectionService.TabColor("DockPad")}", args);
+    }
+
+    [Theory]
+    [InlineData("#F80", true)]
+    [InlineData("#ff8800", true)]
+    [InlineData("ff8800", false)]
+    [InlineData("#GG0000", false)]
+    public void CouleurDOnglet_FormatsAcceptesParWindowsTerminal(string color, bool valid)
+    {
+        Assert.Equal(valid, TerminalDetectionService.IsTabColor(color));
+    }
+
+    [Fact]
+    public void CouleurDOnglet_StablePourUnMemeDossier_SansEgardALaCasse()
+    {
+        Assert.Equal(TerminalDetectionService.TabColor("DockPad"), TerminalDetectionService.TabColor("dockpad"));
+        Assert.Matches("^#[0-9A-F]{6}$", TerminalDetectionService.TabColor("DockPad"));
+    }
+
+    [Fact]
+    public void CouleurDOnglet_VarieDUnProjetALAutre()
+    {
+        string[] projects = ["DockPad", "Shope-stage", "Tandoor", "AudioBox-Pro", "Backup-All-2", "Qnap"];
+
+        Assert.True(projects.Select(TerminalDetectionService.TabColor).Distinct().Count() > 1);
+    }
+
     // -- Avec quelle commande --------------------------------------------------
 
     [Fact]
@@ -239,6 +375,6 @@ public class DefaultTerminalTests
 
         var args = TerminalDetectionService.BuildArgs(Wt, cfg);
 
-        Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev"" -- claude --remote-control ""Train de Noël""", args);
+        Assert.Equal($@"-w ""dev"" new-tab --tabColor {TerminalDetectionService.TabColor("dev")} --startingDirectory ""C:\dev"" -- claude --remote-control ""Train de Noël""", args);
     }
 }

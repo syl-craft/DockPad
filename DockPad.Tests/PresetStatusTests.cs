@@ -334,24 +334,24 @@ public class PresetStatusTests
         Assert.Equal(@"""C:\powershell.exe"" -NoExit -Command ""Set-Location '%V'; & \""C:\Program Files\codex.exe\""""", cmd);
     }
 
-    // -- Windows Terminal en automatique : les commandes d'avant, a l'octet pres ---------------
+    // -- Windows Terminal : une fenetre par dossier, et sa couleur d'onglet ---------------------
     //
-    // Un ecart d'un seul caractere ferait afficher « mise a jour disponible » sur des entrees
-    // installees qui fonctionnent, a la premiere ouverture apres la mise a jour de DockPad.
+    // Dans un predefini le dossier n'est connu qu'au clic (%V) : la fenetre porte son chemin
+    // complet, et la couleur est la meme pour tous.
 
     [Fact]
-    public void CommandeClaude_SousWindowsTerminal_InchangeeDepuisLaVersionPrecedente()
+    public void CommandeClaude_SousWindowsTerminal_OuvreLaFenetreDuDossier()
     {
         var cmd = PresetService.TerminalCommand(Wt, "claude --enable-auto-mode");
 
-        Assert.Equal(@"""C:\wt.exe"" -w 0 new-tab --startingDirectory ""%V"" -- claude --enable-auto-mode", cmd);
+        Assert.Equal($@"""C:\wt.exe"" -w ""%V"" new-tab --tabColor {TerminalDetectionService.TabColor("%V")} --startingDirectory ""%V"" -- claude --enable-auto-mode", cmd);
     }
 
     [Fact]
-    public void CommandePowerShell_SousWindowsTerminal_InchangeeDepuisLaVersionPrecedente()
+    public void CommandePowerShell_SousWindowsTerminal_OuvreLaFenetreDuDossier()
     {
         var cmd = PresetService.TerminalCommand(Wt, runCommand: "");
 
-        Assert.Equal(@"""C:\wt.exe"" -w 0 new-tab --startingDirectory ""%V""", cmd);
+        Assert.Equal($@"""C:\wt.exe"" -w ""%V"" new-tab --tabColor {TerminalDetectionService.TabColor("%V")} --startingDirectory ""%V""", cmd);
     }
 }

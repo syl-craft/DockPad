@@ -1707,7 +1707,7 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>Programmes (*.exe)|*.exe</value>
   </data>
   <data name="Settings_Terminal_ArgsHint" xml:space="preserve">
-    <value>Variables : {folder} = dossier, {command} = commande à lancer, {command-ps} = la même commande préparée pour le -Command "…" de PowerShell. Le chemin du programme accepte %LocalAppData% et les autres variables d’environnement.</value>
+    <value>Variables : {folder} = dossier, {folder-name} = son dernier segment, {name} = nom de la tuile (le dossier pour un prédéfini), {color} = couleur d’onglet tirée du nom du dossier, {command} = commande à lancer, {command-ps} = la même commande préparée pour le -Command "…" de PowerShell. Le chemin du programme accepte %LocalAppData% et les autres variables d’environnement.</value>
   </data>
   <data name="Settings_Terminal_NoCommand" xml:space="preserve">
     <value>Sans {command} ni {command-ps}, les tuiles Terminal et les prédéfinis Claude et Codex ouvrent le programme sans lancer leur commande.</value>
@@ -1735,5 +1735,20 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   </data>
   <data name="Settings_Terminal_AutoNote" xml:space="preserve">
     <value>Automatique prend le premier terminal installé, avec les arguments réglés pour lui.</value>
+  </data>
+  <data name="Shortcut_TabColor" xml:space="preserve">
+    <value>Couleur de l’onglet</value>
+  </data>
+  <data name="Shortcut_TabColor_Auto" xml:space="preserve">
+    <value>Automatique</value>
+  </data>
+  <data name="Shortcut_TabColor_Hint" xml:space="preserve">
+    <value>Utilisée par la variable {color} du terminal. Vide : une couleur tirée du nom du dossier.</value>
+  </data>
+  <data name="Shortcut_Err_TabColor" xml:space="preserve">
+    <value>Couleur invalide : utilisez #RGB ou #RRGGBB, ou laissez le champ vide.</value>
+  </data>
+  <data name="Settings_Terminal_JsonNote" xml:space="preserve">
+    <value>Déclaré dans la section terminals de settings.json : modifiez-le là, puis rouvrez les Options.</value>
   </data>
 </root>

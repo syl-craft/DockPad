@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
         Title="{loc:T Settings_Title}"
-        Width="1000" Height="660" MinWidth="820" MinHeight="480"
+        Width="1000" Height="860" MinWidth="820" MinHeight="480"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
@@ -135,7 +135,10 @@
                         <TextBlock Text="{loc:T Settings_Terminal_Default}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
                         <ComboBox x:Name="CmbDefaultTerminal" AutomationProperties.Name="{loc:T Settings_Terminal_Default}"
                                   SelectionChanged="DefaultTerminal_Changed"/>
-                        <TextBlock x:Name="TxtTerminalAutoNote" Text="{loc:T Settings_Terminal_AutoNote}" Margin="0,6,0,0"
+                        <TextBlock x:Name="TxtTerminalJsonNote" Text="{loc:T Settings_Terminal_JsonNote}" Margin="0,6,0,0"
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"
+                               Visibility="Collapsed"/>
+                    <TextBlock x:Name="TxtTerminalAutoNote" Text="{loc:T Settings_Terminal_AutoNote}" Margin="0,6,0,0"
                                    Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
                         <TextBlock Text="{loc:T Settings_Terminal_Program}" Foreground="{DynamicResource Brush.TextLabel}"

@@ -41,7 +41,7 @@ public static class ShortcutLauncher
         // Le programme enregistré dans la tuile n'est pas lu : toutes suivent le terminal des Options.
         ShortcutType.OpenTerminal => terminal == null
             ? null
-            : new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal, TerminalConfigOf(entry))),
+            : new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal, TerminalConfigOf(entry), entry.Name)),
 
         ShortcutType.SwitchToProcess => null,
 
@@ -59,7 +59,7 @@ public static class ShortcutLauncher
             ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             : cfg.StartingDirectory;
 
-        return new TerminalConfig { StartingDirectory = folder, RunCommand = cfg.RunCommand };
+        return new TerminalConfig { StartingDirectory = folder, RunCommand = cfg.RunCommand, TabColor = cfg.TabColor };
     }
 
     /// <summary>

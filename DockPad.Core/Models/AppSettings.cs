@@ -51,6 +51,11 @@ public class AppSettings
     public TerminalSettings CustomTerminal { get; set; } = new();
 
     /// <summary>
+    /// Terminaux déclarés à la main dans le fichier, ajoutés à la liste des Options.
+    /// </summary>
+    public List<TerminalDefinition> Terminals { get; set; } = new();
+
+    /// <summary>
     /// Télécharger l'icône du site pour les tuiles web. Vrai par défaut : un réglage réseau qu'on
     /// n'a jamais vu ne peut pas avoir été refusé.
     /// </summary>

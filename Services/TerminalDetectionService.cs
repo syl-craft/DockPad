@@ -25,6 +25,9 @@ public static class TerminalDetectionService
     public const string FolderToken            = "{folder}";
     public const string CommandToken           = "{command}";
     public const string PowerShellCommandToken = "{command-ps}";
+    public const string NameToken              = "{name}";
+    public const string FolderNameToken        = "{folder-name}";
+    public const string ColorToken             = "{color}";
 
     /// <summary>
     /// Terminaux installés, avec les arguments de DockPad, dans l'ordre du mode Automatique.
@@ -78,8 +81,8 @@ public static class TerminalDetectionService
     {
         WindowsTerminalId => new()
         {
-            FolderArgs  = "-w 0 new-tab --startingDirectory \"{folder}\"",
-            CommandArgs = "-w 0 new-tab --startingDirectory \"{folder}\" -- {command}",
+            FolderArgs  = "-w \"{folder-name}\" new-tab --tabColor {color} --startingDirectory \"{folder}\"",
+            CommandArgs = "-w \"{folder-name}\" new-tab --tabColor {color} --startingDirectory \"{folder}\" -- {command}",
         },
         PowerShell7Id or WindowsPowerShellId => new()
         {
@@ -149,10 +152,45 @@ public static class TerminalDetectionService
     }
 
     /// <summary>
-    /// Terminaux installés, avec les arguments modifiés dans <paramref name="templates"/>.
+    /// Terminaux installés, avec les arguments modifiés dans <paramref name="templates"/>, puis
+    /// ceux déclarés dans <c>settings.json</c>.
     /// </summary>
-    public static List<TerminalInfo> Installed(IReadOnlyDictionary<string, TerminalSettings> templates) =>
-        Detect().Select(t => WithTemplates(t, templates.GetValueOrDefault(t.Id))).ToList();
+    public static List<TerminalInfo> Installed(IReadOnlyDictionary<string, TerminalSettings> templates,
+                                               IReadOnlyList<TerminalDefinition> definitions)
+    {
+        var installed = Detect().Select(t => WithTemplates(t, templates.GetValueOrDefault(t.Id))).ToList();
+        installed.AddRange(Declared(definitions, exists: path => File.Exists(Environment.ExpandEnvironmentVariables(path))));
+        return installed;
+    }
+
+    /// <summary>
+    /// Les terminaux déclarés utilisables : identifiant libre et unique, programme présent. Une
+    /// entrée qui ne l'est pas est écartée, sans empêcher les autres d'être proposées.
+    /// </summary>
+    public static List<TerminalInfo> Declared(IReadOnlyList<TerminalDefinition> definitions, Func<string, bool> exists)
+    {
+        string[] reserved = ["", WindowsTerminalId, PowerShell7Id, WindowsPowerShellId, CustomId];
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var declared = new List<TerminalInfo>();
+
+        foreach (var definition in definitions)
+        {
+            string id = definition.Id.Trim();
+            string exePath = definition.ExePath.Trim().Trim('"');
+            if (reserved.Contains(id, StringComparer.OrdinalIgnoreCase) || !seen.Add(id)) continue;
+            if (exePath == "" || !exists(exePath)) continue;
+
+            declared.Add(new TerminalInfo
+            {
+                Id = id,
+                DisplayName = string.IsNullOrWhiteSpace(definition.Name) ? id : definition.Name.Trim(),
+                ExePath = exePath,
+                FolderArgs = definition.FolderArgs.Trim(),
+                CommandArgs = definition.CommandArgs.Trim(),
+            });
+        }
+        return declared;
+    }
 
     /// <summary>
     /// Le terminal à lancer selon les Options, ou <c>null</c> si aucun n'est installé.
@@ -160,30 +198,82 @@ public static class TerminalDetectionService
     public static TerminalInfo? ResolveDefault() =>
         Resolve(SettingsService.LoadDefaultTerminal(),
                 ExistingCustomTerminal(SettingsService.LoadCustomTerminal()),
-                Installed(SettingsService.LoadTerminalTemplates()));
+                Installed(SettingsService.LoadTerminalTemplates(), SettingsService.LoadTerminalDefinitions()));
 
     /// <summary>
     /// Arguments qui ouvrent <paramref name="terminal"/> dans le dossier de la config et y lancent sa commande.
     /// </summary>
     /// <remarks>
     /// L'onglet et les arguments supplémentaires d'une tuile ne sont pas lus : le modèle du terminal décide.
+    /// <paramref name="name"/> est le nom de la tuile ; vide, <c>{name}</c> vaut le nom du dossier.
     /// </remarks>
-    public static string BuildArgs(TerminalInfo terminal, TerminalConfig cfg)
+    public static string BuildArgs(TerminalInfo terminal, TerminalConfig cfg, string name = "")
     {
         string command = cfg.RunCommand.Trim();
         string template = command == "" ? terminal.FolderArgs : terminal.CommandArgs;
 
-        return Expand(template, cfg.StartingDirectory, command);
+        return Expand(template, cfg.StartingDirectory, command, name, cfg.TabColor);
     }
 
     /// <summary>
-    /// Le modèle avec <c>{folder}</c>, <c>{command}</c> et <c>{command-ps}</c> remplacés.
+    /// Le modèle avec <c>{folder}</c>, <c>{folder-name}</c>, <c>{name}</c>, <c>{color}</c>,
+    /// <c>{command}</c> et <c>{command-ps}</c> remplacés.
     /// </summary>
-    public static string Expand(string template, string folder, string command) =>
-        template.Replace(FolderToken, folder)
-                .Replace(PowerShellCommandToken, ForPowerShell(command))
-                .Replace(CommandToken, command)
-                .Trim();
+    public static string Expand(string template, string folder, string command, string name = "", string color = "")
+    {
+        string folderName = FolderName(folder);
+        string tabColor = IsTabColor(color) ? color.Trim() : TabColor(folderName);
+
+        return template.Replace(FolderNameToken, folderName)
+                       .Replace(FolderToken, folder)
+                       .Replace(ColorToken, tabColor)
+                       .Replace(NameToken, string.IsNullOrWhiteSpace(name) ? folderName : name.Trim())
+                       .Replace(PowerShellCommandToken, ForPowerShell(command))
+                       .Replace(CommandToken, command)
+                       .Trim();
+    }
+
+    /// <summary>
+    /// Teintes distinctes, assez soutenues pour se lire sur un onglet clair comme sombre.
+    /// </summary>
+    public static readonly IReadOnlyList<string> TabColors =
+    [
+        "#1A73E8", "#188038", "#D93025", "#E37400", "#9334E6",
+        "#12B5CB", "#E52592", "#F9AB00", "#00897B", "#7CB342",
+    ];
+
+    /// <summary>
+    /// Couleur d'onglet d'un dossier, toujours la même pour un même nom, d'une session à l'autre.
+    /// </summary>
+    /// <remarks>
+    /// FNV-1a sur le nom en minuscules, et non <c>GetHashCode</c>, qui change à chaque démarrage.
+    /// </remarks>
+    public static string TabColor(string folderName)
+    {
+        uint hash = 2166136261;
+        foreach (char c in folderName.ToLowerInvariant())
+        {
+            hash ^= c;
+            hash *= 16777619;
+        }
+        return TabColors[(int)(hash % (uint)TabColors.Count)];
+    }
+
+    /// <summary>
+    /// Vrai pour une couleur que Windows Terminal accepte : <c>#RGB</c> ou <c>#RRGGBB</c>.
+    /// </summary>
+    public static bool IsTabColor(string color) =>
+        System.Text.RegularExpressions.Regex.IsMatch(color.Trim(), "^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$");
+
+    /// <summary>
+    /// Le dernier segment du dossier ; une racine de lecteur, ou <c>%V</c> qui n'est connu qu'au clic,
+    /// reste entier.
+    /// </summary>
+    public static string FolderName(string folder)
+    {
+        string name = Path.GetFileName(folder.TrimEnd('\\', '/'));
+        return name == "" ? folder : name;
+    }
 
     /// <summary>
     /// La commande telle qu'elle doit figurer dans un <c>-Command "…"</c> de PowerShell : guillemets

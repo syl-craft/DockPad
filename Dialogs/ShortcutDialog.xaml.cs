@@ -36,6 +36,7 @@ public partial class ShortcutDialog : Window
                     RunCommand        = existing.Terminal.RunCommand,
                     NewTab            = existing.Terminal.NewTab,
                     ExtraArgs         = existing.Terminal.ExtraArgs,
+                    TabColor          = existing.Terminal.TabColor,
                 },
                 ProcessSwitch = existing.ProcessSwitch == null ? null : new ProcessSwitchConfig
                 {
@@ -58,6 +59,7 @@ public partial class ShortcutDialog : Window
             : IconStoreService.ResolveProfilePath(Entry.IconProfilePath) ?? "";
 
         TxtTerminalName.Text = _terminal?.DisplayName ?? Loc.T("Shortcut_Terminal_None");
+        FillTabColorSwatches();
         if (Entry.Type == ShortcutType.OpenTerminal)
             RestoreTerminalFields(Entry.Terminal ?? new TerminalConfig { StartingDirectory = Entry.Command });
 
@@ -128,6 +130,43 @@ public partial class ShortcutDialog : Window
     {
         TxtTerminalDir.Text       = cfg.StartingDirectory;
         TxtTerminalCommand.Text   = cfg.RunCommand;
+        TxtTabColor.Text          = cfg.TabColor;
+    }
+
+    /// <summary>
+    /// Une pastille par teinte de la palette : un clic la reporte dans le champ.
+    /// </summary>
+    private void FillTabColorSwatches()
+    {
+        foreach (string color in TerminalDetectionService.TabColors)
+        {
+            var swatch = new Button
+            {
+                Width = 22, Height = 22, Margin = new Thickness(0, 0, 6, 6), Padding = new Thickness(0),
+                Background = ColorBrush(color), BorderThickness = new Thickness(0), Tag = color, ToolTip = color,
+                Cursor = System.Windows.Input.Cursors.Hand,
+            };
+            System.Windows.Automation.AutomationProperties.SetName(swatch, color);
+            swatch.Click += (_, _) => TxtTabColor.Text = color;
+            PnlTabColors.Children.Add(swatch);
+        }
+    }
+
+    private void TabColorAuto_Click(object sender, RoutedEventArgs e) => TxtTabColor.Text = "";
+
+    /// <summary>
+    /// La couleur choisie, ou celle tirée du nom du dossier quand le champ est vide.
+    /// </summary>
+    private string EffectiveTabColor() => TerminalDetectionService.IsTabColor(TxtTabColor.Text)
+        ? TxtTabColor.Text.Trim()
+        : TerminalDetectionService.TabColor(TerminalDetectionService.FolderName(TxtTerminalDir.Text.Trim()));
+
+    private static System.Windows.Media.SolidColorBrush ColorBrush(string color)
+    {
+        var brush = new System.Windows.Media.SolidColorBrush(
+            (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
+        brush.Freeze();
+        return brush;
     }
 
     // ── Terminal ──────────────────────────────────────────────────────────────
@@ -204,10 +243,11 @@ public partial class ShortcutDialog : Window
 
     private void UpdatePreview()
     {
-        if (TxtCmdPreview == null) return;
+        if (TxtCmdPreview == null || BdTabColor == null) return;
+        BdTabColor.Background = ColorBrush(EffectiveTabColor());
         if (_terminal == null) { TxtCmdPreview.Text = ""; return; }
 
-        var args = TerminalDetectionService.BuildArgs(_terminal, BuildTerminalConfig());
+        var args = TerminalDetectionService.BuildArgs(_terminal, BuildTerminalConfig(), TxtName.Text);
         TxtCmdPreview.Text = string.IsNullOrEmpty(args)
             ? $"\"{_terminal.ExePath}\""
             : $"\"{_terminal.ExePath}\" {args}";
@@ -224,6 +264,7 @@ public partial class ShortcutDialog : Window
             ExePath           = _terminal?.ExePath ?? "",
             StartingDirectory = TxtTerminalDir.Text.Trim(),
             RunCommand        = TxtTerminalCommand.Text.Trim(),
+            TabColor          = TxtTabColor.Text.Trim(),
             // Plus lus : le modèle du terminal décide. Gardés pour une version antérieure de DockPad.
             NewTab            = Entry.Terminal?.NewTab ?? true,
             ExtraArgs         = Entry.Terminal?.ExtraArgs ?? "",
@@ -318,6 +359,12 @@ public partial class ShortcutDialog : Window
             if (_terminal == null)
             {
                 AppDialog.Warning(Loc.T("Quick_NoTerminal"), owner: this);
+                return;
+            }
+            if (TxtTabColor.Text.Trim() != "" && !TerminalDetectionService.IsTabColor(TxtTabColor.Text))
+            {
+                AppDialog.Warning(Loc.T("Shortcut_Err_TabColor"), owner: this);
+                TxtTabColor.Focus();
                 return;
             }
             var cfg = BuildTerminalConfig();
