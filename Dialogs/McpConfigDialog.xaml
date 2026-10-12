@@ -3,10 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
         Title="{loc:T Mcp_Title}"
-        Width="620" Height="680"
+        Width="1000" Height="520"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize" MinWidth="560" MinHeight="500"
+        ResizeMode="CanResize" MinWidth="820" MinHeight="420"
         Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Window.Resources>
@@ -39,63 +39,73 @@
             <TabItem Header="{loc:T Mcp_Tab_Options}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="8,14,8,12">
-                    <CheckBox x:Name="ChkEnabled" Content="{loc:T Mcp_Enable}"
-                              FontSize="13" Checked="Option_Changed" Unchecked="Option_Changed"/>
-                    <TextBlock Text="{loc:T Mcp_Enable_Hint}"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,2,0,12" TextWrapping="Wrap"/>
+                <Grid Margin="8,14,8,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <CheckBox x:Name="ChkEnabled" Content="{loc:T Mcp_Enable}"
+                                  FontSize="13" Checked="Option_Changed" Unchecked="Option_Changed"/>
+                        <TextBlock Text="{loc:T Mcp_Enable_Hint}"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,2,0,12" TextWrapping="Wrap"/>
 
-                    <CheckBox x:Name="ChkAllowDelete" Content="{loc:T Mcp_AllowDelete}"
-                              FontSize="13" Checked="Option_Changed" Unchecked="Option_Changed"/>
-                    <TextBlock Text="{loc:T Mcp_AllowDelete_Hint}"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,2,0,16" TextWrapping="Wrap"/>
+                        <CheckBox x:Name="ChkAllowDelete" Content="{loc:T Mcp_AllowDelete}"
+                                  FontSize="13" Checked="Option_Changed" Unchecked="Option_Changed"/>
+                        <TextBlock Text="{loc:T Mcp_AllowDelete_Hint}"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,2,0,16" TextWrapping="Wrap"/>
 
-                    <Separator Margin="0,0,0,14"/>
+                        <Separator Margin="0,0,0,14"/>
 
-                    <TextBlock Text="{loc:T Mcp_Register_ClaudeCode}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
-                    <CheckBox x:Name="ChkUserScope" Content="{loc:T Mcp_Register_AllProjects}"
-                              FontSize="12" IsChecked="True" Margin="0,0,0,6"
-                              Checked="Scope_Changed" Unchecked="Scope_Changed"/>
-                    <TextBlock Text="{loc:T Mcp_Register_Scope_Hint}"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,-2,0,8" TextWrapping="Wrap"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="TxtClaudeCodeCmd" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
-                                 FontSize="11" Padding="6,4" TextWrapping="Wrap"/>
-                        <Button x:Name="BtnCopyCmd" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
-                                Style="{StaticResource SecondaryButton}" Click="CopyCmd_Click"/>
-                    </Grid>
+                        <TextBlock Text="{loc:T Mcp_Register_ClaudeCode}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
+                        <CheckBox x:Name="ChkUserScope" Content="{loc:T Mcp_Register_AllProjects}"
+                                  FontSize="12" IsChecked="True" Margin="0,0,0,6"
+                                  Checked="Scope_Changed" Unchecked="Scope_Changed"/>
+                        <TextBlock Text="{loc:T Mcp_Register_Scope_Hint}"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="22,-2,0,8" TextWrapping="Wrap"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtClaudeCodeCmd" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
+                                     FontSize="11" Padding="6,4" TextWrapping="Wrap"/>
+                            <Button x:Name="BtnCopyCmd" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
+                                    Style="{StaticResource SecondaryButton}" Click="CopyCmd_Click"/>
+                        </Grid>
+                    </StackPanel>
+                    <Border Grid.Column="1" Width="1" HorizontalAlignment="Center"
+                            Background="{DynamicResource Brush.Border}"/>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{loc:T Mcp_UpdatePath}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,2"/>
+                        <TextBlock Text="{loc:T Mcp_UpdatePath_Hint}"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtClaudeCodeRemove" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
+                                     FontSize="11" Padding="6,4" Text="claude mcp remove dockpad"/>
+                            <Button x:Name="BtnCopyRemove" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
+                                    Style="{StaticResource SecondaryButton}" Click="CopyRemove_Click"/>
+                        </Grid>
 
-                    <TextBlock Text="{loc:T Mcp_UpdatePath}" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,2"/>
-                    <TextBlock Text="{loc:T Mcp_UpdatePath_Hint}"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="TxtClaudeCodeRemove" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
-                                 FontSize="11" Padding="6,4" Text="claude mcp remove dockpad"/>
-                        <Button x:Name="BtnCopyRemove" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
-                                Style="{StaticResource SecondaryButton}" Click="CopyRemove_Click"/>
-                    </Grid>
-
-                    <TextBlock Text="{loc:T Mcp_ClaudeDesktop}" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,6"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="TxtClaudeDesktopCfg" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
-                                 FontSize="11" Padding="6,4" TextWrapping="Wrap" AcceptsReturn="True"
-                                 VerticalScrollBarVisibility="Auto" MaxHeight="140"/>
-                        <Button x:Name="BtnCopyCfg" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
-                                VerticalAlignment="Top" Style="{StaticResource SecondaryButton}" Click="CopyCfg_Click"/>
-                    </Grid>
-                </StackPanel>
+                        <TextBlock Text="{loc:T Mcp_ClaudeDesktop}" FontWeight="SemiBold" FontSize="13" Margin="0,14,0,6"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtClaudeDesktopCfg" Grid.Column="0" IsReadOnly="True" FontFamily="Consolas"
+                                     FontSize="11" Padding="6,4" TextWrapping="Wrap" AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto" MaxHeight="140"/>
+                            <Button x:Name="BtnCopyCfg" Grid.Column="1" Content="{loc:T Common_Copy}" Margin="8,0,0,0"
+                                    VerticalAlignment="Top" Style="{StaticResource SecondaryButton}" Click="CopyCfg_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
                 </ScrollViewer>
             </TabItem>
 

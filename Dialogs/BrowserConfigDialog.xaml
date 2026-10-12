@@ -3,10 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
         Title="{loc:T Browsers_Title}"
-        Width="680" Height="760"
+        Width="1100" Height="620"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize" MinWidth="640" MinHeight="600"
+        ResizeMode="CanResize" MinWidth="900" MinHeight="480"
         Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
@@ -28,163 +28,167 @@
             <!-- ══ Onglet Navigateurs ══ -->
             <TabItem Header="{loc:T Browsers_Tab_Browsers}">
                 <Grid Margin="8,14,8,12">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <!-- Titre + redétection -->
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <TextBlock Text="{loc:T Browsers_PopupList}" FontWeight="SemiBold" FontSize="13"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="{loc:T Browsers_Redetect}" Style="{StaticResource SecondaryButton}"
+                                    HorizontalAlignment="Right" Padding="8,4" Click="Redetect_Click"
+                                    ToolTip="{loc:T Browsers_Redetect_Tip}"/>
+                        </Grid>
 
-                    <!-- Section enregistrement -->
-                    <StackPanel Grid.Row="0">
-                        <TextBlock Text="{loc:T Browsers_UrlInterception}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
-                        <TextBlock x:Name="TxtRegStatus" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
-                                   TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Button x:Name="BtnRegister" Content="{loc:T Browsers_Register}"
-                                    Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
-                                    Click="Register_Click"/>
-                            <Button Content="{loc:T Browsers_WindowsSettings}" Style="{StaticResource SecondaryButton}"
-                                    Click="OpenSettings_Click"
-                                    ToolTip="{loc:T Browsers_WindowsSettings_Tip}"/>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <TextBlock Text="{loc:T Browsers_AutoOpen}" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
-                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBox x:Name="TxtAutoOpen" Width="50" Padding="6,4" FontSize="12"
-                                     HorizontalContentAlignment="Center"
-                                     TextChanged="AutoOpen_TextChanged"/>
-                            <TextBlock Text="{loc:T Browsers_AutoOpen_Hint}"
-                                       Foreground="{DynamicResource Brush.TextHint}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </StackPanel>
-                    </StackPanel>
-
-                    <Separator Grid.Row="1" Margin="0,16,0,14"/>
-
-                    <!-- Titre + redétection -->
-                    <Grid Grid.Row="2" Margin="0,0,0,8">
-                        <TextBlock Text="{loc:T Browsers_PopupList}" FontWeight="SemiBold" FontSize="13"
-                                   VerticalAlignment="Center"/>
-                        <Button Content="{loc:T Browsers_Redetect}" Style="{StaticResource SecondaryButton}"
-                                HorizontalAlignment="Right" Padding="8,4" Click="Redetect_Click"
-                                ToolTip="{loc:T Browsers_Redetect_Tip}"/>
-                    </Grid>
-
-                    <!-- Liste + actions -->
-                    <Grid Grid.Row="3">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <ListBox x:Name="LstBrowsers" Grid.Column="0"
-                                 SelectionChanged="LstBrowsers_SelectionChanged"
-                                 HorizontalContentAlignment="Stretch"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="2,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="28"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- Filet d'indentation des profils (largeur nulle si masqué) -->
-                                        <Border Grid.Column="0" Width="14" Margin="2,1,8,1"
-                                                BorderBrush="{DynamicResource Brush.BorderList}" BorderThickness="1,0,0,0"
-                                                SnapsToDevicePixels="True" UseLayoutRounding="True">
-                                            <!-- Visibilité par le Style et non en attribut : une valeur
-                                                 locale bat les Setter des DataTrigger. -->
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsChild}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                        </Border>
-
-                                        <CheckBox Grid.Column="1" IsChecked="{Binding Visible, Mode=OneTime}"
-                                                  VerticalAlignment="Center" Margin="0,0,8,0"
-                                                  Click="VisibleCheck_Click"
-                                                  ToolTip="{loc:T Browsers_Visible_Tip}"/>
-                                        <Image Grid.Column="2" Source="{Binding Icon}" Width="20" Height="20"/>
-                                        <StackPanel Grid.Column="3" Margin="8,0,0,0">
-                                            <TextBlock Text="{Binding Name}" FontSize="12"/>
-                                            <TextBlock Text="{Binding Detail}" FontSize="10" Foreground="{DynamicResource Brush.TextFaint}"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="4" Text="{Binding HiddenLabel}" FontSize="10"
-                                                   Foreground="{DynamicResource Brush.Danger}" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-
-                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                            <Button x:Name="BtnUp"     Content="▲"  Width="34" Height="30" Padding="0" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Up_Click"     ToolTip="{loc:T Common_MoveUp}" AutomationProperties.Name="{loc:T Common_MoveUp}"/>
-                            <Button x:Name="BtnDown"   Content="▼"  Width="34" Height="30" Padding="0" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Down_Click"   ToolTip="{loc:T Common_MoveDown}" AutomationProperties.Name="{loc:T Common_MoveDown}"/>
-                            <Button x:Name="BtnDelete" Content="🗑" Width="34" Height="30" Padding="0" Margin="0,0,0,12" Style="{StaticResource SecondaryButton}" Click="Delete_Click" ToolTip="{loc:T Common_Delete}" AutomationProperties.Name="{loc:T Common_Delete}"/>
-                            <Button Content="➕" Width="34" Height="30" Padding="0" Style="{StaticResource SecondaryButton}" Click="Add_Click" ToolTip="{loc:T Browsers_Add_Tip}" AutomationProperties.Name="{loc:T Browsers_Add_Tip}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Édition de l'entrée sélectionnée (désactivé sans sélection) -->
-                    <Border x:Name="PnlEdit" Grid.Row="4" IsEnabled="False"
-                            Background="{DynamicResource Brush.SurfaceCard}" CornerRadius="6" Padding="12" Margin="0,10,0,0"
-                            BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
-                            SnapsToDevicePixels="True" UseLayoutRounding="True">
-                        <Grid>
+                        <!-- Liste + actions -->
+                        <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Browsers_Name}" Foreground="{DynamicResource Brush.TextLabel}"
-                                       VerticalAlignment="Center" Margin="0,0,10,8"/>
-                            <TextBox  x:Name="TxtName" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
-                                      Padding="6,4" Margin="0,0,0,8"/>
+                            <ListBox x:Name="LstBrowsers" Grid.Column="0"
+                                     SelectionChanged="LstBrowsers_SelectionChanged"
+                                     HorizontalContentAlignment="Stretch"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="2,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="28"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Browsers_Exe}" Foreground="{DynamicResource Brush.TextLabel}"
-                                       VerticalAlignment="Center" Margin="0,0,10,8"/>
-                            <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
-                                      Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
-                            <Button   x:Name="BtnBrowseExe" Grid.Row="1" Grid.Column="2" Content="…" Width="30"
-                              AutomationProperties.Name="{loc:T Browsers_Exe}"
-                                      Padding="0" Margin="0,0,0,8"
-                                      Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
+                                            <!-- Filet d'indentation des profils (largeur nulle si masqué) -->
+                                            <Border Grid.Column="0" Width="14" Margin="2,1,8,1"
+                                                    BorderBrush="{DynamicResource Brush.BorderList}" BorderThickness="1,0,0,0"
+                                                    SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                                <!-- Visibilité par le Style et non en attribut : une valeur
+                                                     locale bat les Setter des DataTrigger. -->
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsChild}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:T Browsers_Args}" Foreground="{DynamicResource Brush.TextLabel}"
-                                       VerticalAlignment="Center" Margin="0,0,10,8"/>
-                            <TextBox  x:Name="TxtArgs" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                                      Padding="6,4" Margin="0,0,0,8" FontFamily="Consolas" FontSize="11"
-                                      ToolTip="{loc:T Browsers_Args_Tip}"/>
+                                            <CheckBox Grid.Column="1" IsChecked="{Binding Visible, Mode=OneTime}"
+                                                      VerticalAlignment="Center" Margin="0,0,8,0"
+                                                      Click="VisibleCheck_Click"
+                                                      ToolTip="{loc:T Browsers_Visible_Tip}"/>
+                                            <Image Grid.Column="2" Source="{Binding Icon}" Width="20" Height="20"/>
+                                            <StackPanel Grid.Column="3" Margin="8,0,0,0">
+                                                <TextBlock Text="{Binding Name}" FontSize="12"/>
+                                                <TextBlock Text="{Binding Detail}" FontSize="10" Foreground="{DynamicResource Brush.TextFaint}"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="4" Text="{Binding HiddenLabel}" FontSize="10"
+                                                       Foreground="{DynamicResource Brush.Danger}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
 
-                            <TextBlock x:Name="TxtProfileInfo" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
-                                       Visibility="Collapsed" Foreground="{DynamicResource Brush.TextHint}" FontSize="11"
-                                       TextWrapping="Wrap" Margin="0,0,0,8"/>
-
-                            <Button   x:Name="BtnApply" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
-                                      Content="{loc:T Common_Apply}" HorizontalAlignment="Right"
-                                      Style="{StaticResource PrimaryButton}" Click="Apply_Click"/>
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                <Button x:Name="BtnUp"     Content="▲"  Width="34" Height="30" Padding="0" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Up_Click"     ToolTip="{loc:T Common_MoveUp}" AutomationProperties.Name="{loc:T Common_MoveUp}"/>
+                                <Button x:Name="BtnDown"   Content="▼"  Width="34" Height="30" Padding="0" Margin="0,0,0,4" Style="{StaticResource SecondaryButton}" Click="Down_Click"   ToolTip="{loc:T Common_MoveDown}" AutomationProperties.Name="{loc:T Common_MoveDown}"/>
+                                <Button x:Name="BtnDelete" Content="🗑" Width="34" Height="30" Padding="0" Margin="0,0,0,12" Style="{StaticResource SecondaryButton}" Click="Delete_Click" ToolTip="{loc:T Common_Delete}" AutomationProperties.Name="{loc:T Common_Delete}"/>
+                                <Button Content="➕" Width="34" Height="30" Padding="0" Style="{StaticResource SecondaryButton}" Click="Add_Click" ToolTip="{loc:T Browsers_Add_Tip}" AutomationProperties.Name="{loc:T Browsers_Add_Tip}"/>
+                            </StackPanel>
                         </Grid>
-                    </Border>
+                    </Grid>
+                    <Border Grid.Column="1" Width="1" HorizontalAlignment="Center"
+                            Background="{DynamicResource Brush.Border}"/>
+                    <StackPanel Grid.Column="2">
+                        <!-- Section enregistrement -->
+                        <StackPanel>
+                            <TextBlock Text="{loc:T Browsers_UrlInterception}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                            <TextBlock x:Name="TxtRegStatus" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
+                                       TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Button x:Name="BtnRegister" Content="{loc:T Browsers_Register}"
+                                        Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                                        Click="Register_Click"/>
+                                <Button Content="{loc:T Browsers_WindowsSettings}" Style="{StaticResource SecondaryButton}"
+                                        Click="OpenSettings_Click"
+                                        ToolTip="{loc:T Browsers_WindowsSettings_Tip}"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <TextBlock Text="{loc:T Browsers_AutoOpen}" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBox x:Name="TxtAutoOpen" Width="50" Padding="6,4" FontSize="12"
+                                         HorizontalContentAlignment="Center"
+                                         TextChanged="AutoOpen_TextChanged"/>
+                                <TextBlock Text="{loc:T Browsers_AutoOpen_Hint}"
+                                           Foreground="{DynamicResource Brush.TextHint}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <Separator Margin="0,16,0,14"/>
+                        <!-- Édition de l'entrée sélectionnée (désactivé sans sélection) -->
+                        <Border x:Name="PnlEdit" IsEnabled="False"
+                                Background="{DynamicResource Brush.SurfaceCard}" CornerRadius="6" Padding="12"
+                                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Browsers_Name}" Foreground="{DynamicResource Brush.TextLabel}"
+                                           VerticalAlignment="Center" Margin="0,0,10,8"/>
+                                <TextBox  x:Name="TxtName" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                                          Padding="6,4" Margin="0,0,0,8"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Browsers_Exe}" Foreground="{DynamicResource Brush.TextLabel}"
+                                           VerticalAlignment="Center" Margin="0,0,10,8"/>
+                                <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
+                                          Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
+                                <Button   x:Name="BtnBrowseExe" Grid.Row="1" Grid.Column="2" Content="…" Width="30"
+                                  AutomationProperties.Name="{loc:T Browsers_Exe}"
+                                          Padding="0" Margin="0,0,0,8"
+                                          Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:T Browsers_Args}" Foreground="{DynamicResource Brush.TextLabel}"
+                                           VerticalAlignment="Center" Margin="0,0,10,8"/>
+                                <TextBox  x:Name="TxtArgs" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                          Padding="6,4" Margin="0,0,0,8" FontFamily="Consolas" FontSize="11"
+                                          ToolTip="{loc:T Browsers_Args_Tip}"/>
+
+                                <TextBlock x:Name="TxtProfileInfo" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                           Visibility="Collapsed" Foreground="{DynamicResource Brush.TextHint}" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                                <Button   x:Name="BtnApply" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                                          Content="{loc:T Common_Apply}" HorizontalAlignment="Right"
+                                          Style="{StaticResource PrimaryButton}" Click="Apply_Click"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
                 </Grid>
             </TabItem>
 
