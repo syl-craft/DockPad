@@ -580,7 +580,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 - **Réseau — Télécharger l'icône du site pour les raccourcis web** : voir *Icône automatique des tuiles web* ci-dessus
-- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (Windows Terminal, puis PowerShell 7, puis Windows PowerShell), l'un des trois s'il est installé, ou un **chemin personnalisé** (`wt.exe`, `pwsh.exe` ou `powershell.exe` installés ailleurs). La commande réellement lancée par le prédéfini Claude s'affiche sous la liste. Stocké dans `settings.json` (`defaultTerminal` : `wt`, `pwsh`, `powershell`, `custom` ; `""` = automatique ; `customTerminalPath`). Voir « Terminal par défaut » ci-dessous
+- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (Windows Terminal, puis PowerShell 7, puis Windows PowerShell), l'un des trois s'il est installé, ou **un autre programme**. Pour chacun : le programme, deux modèles d'arguments à variables, la commande finale du prédéfini Claude, et un bouton **Tester** qui la lance dans le dossier utilisateur. Voir « Terminal par défaut » ci-dessous
 - **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
 ### Sélecteur de navigateur
@@ -1617,31 +1617,40 @@ rédacteur d'`inject-create` est d'ailleurs factice et ne sera jamais appelé.
 ### Terminal par défaut (`TerminalDetectionService`)
 
 Un seul réglage décide du terminal des prédéfinis Claude, Codex et PowerShell **et** de toutes les
-tuiles `OpenTerminal`. Changer de terminal ne demande donc ni de modifier les tuiles une par une, ni
-de réécrire leurs fichiers.
+tuiles `OpenTerminal`. Changer de terminal ne demande ni de modifier les tuiles une par une, ni de
+réécrire leurs fichiers.
 
-- **`Resolve(réglage, installés)` est pur** : le terminal choisi s'il est installé, sinon le premier
-  dans l'ordre de `Detect()` — vide, inconnu (`cmd` d'une version antérieure) ou désinstallé valent
-  Automatique. `ResolveDefault()` le compose avec le réglage et la détection
-- **Un chemin personnalisé est reconnu au nom de l'exécutable** (`CustomTerminal`, pur) : seuls
-  `wt.exe`, `pwsh.exe` et `powershell.exe` savent recevoir un dossier et une commande. Introuvable ou
-  non reconnu, il bloque *Sauvegarder* avec un message ; s'il disparaît ensuite, il vaut Automatique
-- **`BuildArgs(terminal, config)` est le seul constructeur d'arguments**, pour les prédéfinis (dossier
-  `%V`) comme pour les tuiles. Sous PowerShell, un chemin entre guillemets en tête de commande est
-  préfixé de `&` — sinon PowerShell l'affiche au lieu de l'exécuter — et les guillemets sont échappés
-  en `\"`, sans quoi ils fermeraient ceux de `-Command`
-- **Le `terminal.exePath` d'une tuile n'est plus lu au lancement.** Il reste écrit (le terminal du
-  moment, pour l'icône) et dans les fichiers existants : un retour arrière de version retrouve ses
-  tuiles. La fenêtre d'une tuile n'a plus de choix de terminal, seulement le nom de celui des Options
-- **En Automatique avec Windows Terminal, les commandes sont celles d'avant à l'octet près** : un
-  écart ferait afficher « mise à jour disponible » sur des prédéfinis installés qui fonctionnent. Des
-  tests le figent, pour les prédéfinis comme pour les tuiles
+**Tous les terminaux se décrivent de la même façon** : un programme et deux modèles d'arguments, l'un
+pour ouvrir un dossier, l'autre pour y lancer aussi une commande. Deux modèles et non un seul avec une
+syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
+
+| Variable | Remplacée par |
+|---|---|
+| `{folder}` | le dossier (`%V` dans un prédéfini) |
+| `{command}` | la commande à lancer, telle quelle |
+| `{command-ps}` | la même, préparée pour `-Command "…"` de PowerShell : guillemets échappés en `\"`, `&` devant un chemin entre guillemets — sans quoi `--remote-control "…"` et Codex dans `Program Files` cassent |
+
+- **Les modèles de Windows Terminal et de PowerShell sont ceux de DockPad** (`DefaultTemplates`), modifiables
+  dans les Options avec *Rétablir*. Seuls ceux qui diffèrent sont écrits (`terminalTemplates`)
+- **Un autre programme** prend n'importe quel exécutable ; son chemin accepte `%LocalAppData%` et les
+  autres variables d'environnement, gardées telles quelles : le registre les développe, le lanceur des
+  tuiles aussi (`ShortcutLauncher.Start`). *Parcourir* préremplit les modèles de DockPad si c'est un
+  terminal connu, sinon `"{folder}"` seul
+- **Un modèle sans `{command}` ni `{command-ps}` est accepté, avec un avertissement** : c'est le cas de
+  MXterm Pro, qui n'accepte qu'un dossier — les tuiles Claude l'ouvrent sans lancer leur commande
+- **`Resolve(réglage, programme ajouté, installés)` est pur** : vide, inconnu (`cmd` d'une version
+  antérieure), désinstallé ou programme introuvable valent Automatique. Dans les Options, un programme
+  introuvable n'affiche **aucune** commande de repli et grise *Tester* : montrer le terminal qui serait
+  lancé à sa place faisait croire que le réglage marchait
+- **Le `terminal.exePath`, `newTab` et `extraArgs` d'une tuile ne sont plus lus.** Ils restent écrits,
+  pour une version antérieure de DockPad. La fenêtre d'une tuile n'a plus que le dossier et la commande
+- **En Automatique avec Windows Terminal, les commandes sont celles d'avant à l'octet près** : un écart
+  ferait afficher « mise à jour disponible » sur des prédéfinis installés qui fonctionnent. Des tests le
+  figent, pour les prédéfinis comme pour les tuiles
 - **Changer de terminal fait passer les prédéfinis installés à « mise à jour disponible »**, par le
-  `CompareStatus` existant : réinstaller depuis la fenêtre des prédéfinis écrit la nouvelle commande
-- **Ni Invite de commandes, ni Git Bash, ni MXterm Pro** : on ne sait pas y passer à la fois un
-  dossier et une commande. MXterm Pro n'accepte qu'un dossier, sans commande documentée
-- Aucun terminal installé → message `Quick_NoTerminal` au lancement d'une tuile ; un prédéfini
-  retombe sur `powershell.exe` par son nom nu
+  `CompareStatus` existant
+- Aucun terminal installé → message `Quick_NoTerminal` au lancement d'une tuile ; un prédéfini retombe
+  sur `powershell.exe` par son nom nu
 
 ## Format JSON raccourcis rapides
 
@@ -1658,7 +1667,7 @@ de réécrire leurs fichiers.
 ```
 
 - `type` optionnel — défaut `RunCommand` (rétrocompatible)
-- `terminal` présent uniquement pour `OpenTerminal` — son `exePath` n'est pas lu au lancement : le terminal est celui des Options
+- `terminal` présent uniquement pour `OpenTerminal` — seuls `startingDirectory` et `runCommand` sont lus : le terminal et ses arguments sont ceux des Options
 - `processSwitch` présent uniquement pour `SwitchToProcess`
 - `iconProfilePath` chemin relatif au profil (`%APPDATA%\DockPad\`), prioritaire sur `iconPath`
 - Colonnes : 0–5 | Lignes : 0–3 | `page` commence à 0
@@ -1731,8 +1740,9 @@ emportait pas.
   "triggerFirst": "Ctrl",
   "triggerSecond": "Shift",
   "claudeArgs": "--enable-auto-mode",
-  "defaultTerminal": "",
-  "customTerminalPath": "",
+  "defaultTerminal": "custom",
+  "terminalTemplates": { "wt": { "folderArgs": "-d \"{folder}\"", "commandArgs": "-d \"{folder}\" -- {command}" } },
+  "customTerminal": { "exePath": "%LocalAppData%\\MXterm Pro\\mxterm.exe", "folderArgs": "\"{folder}\"", "commandArgs": "\"{folder}\"" },
   "autoFavicon": true,
   "bitwardenCliPath": "",
   "clipboardClearSeconds": 90,

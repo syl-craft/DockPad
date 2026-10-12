@@ -114,17 +114,6 @@
                              ToolTip="{loc:T Shortcut_RunCommand_Tip}"
                              TextChanged="TerminalField_Changed"/>
 
-                    <!-- Nouvel onglet (Windows Terminal uniquement) -->
-                    <CheckBox x:Name="ChkNewTab" Content="{loc:T Shortcut_NewTab}"
-                              Margin="0,0,0,16" IsChecked="True"
-                              Checked="TerminalField_Changed" Unchecked="TerminalField_Changed"/>
-
-                    <!-- Paramètres libres -->
-                    <Label Content="{loc:T Shortcut_ExtraArgs}"/>
-                    <TextBox x:Name="TxtTerminalExtraArgs" Margin="0,0,0,16"
-                             ToolTip="{loc:T Shortcut_ExtraArgs_Tip}"
-                             TextChanged="TerminalField_Changed"/>
-
                     <!-- Aperçu de la commande générée -->
                     <Border Background="{DynamicResource Brush.SurfaceHover}" BorderBrush="{DynamicResource Brush.SeparatorStrong}" BorderThickness="1" CornerRadius="4" Padding="10,8"
                             SnapsToDevicePixels="True" UseLayoutRounding="True">

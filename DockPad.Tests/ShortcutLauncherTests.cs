@@ -53,9 +53,9 @@ public class ShortcutLauncherTests
     }
 
     private static readonly TerminalInfo Wt =
-        new() { Id = TerminalDetectionService.WindowsTerminalId, ExePath = @"C:\wt.exe" };
+        TerminalDetectionService.Known(TerminalDetectionService.WindowsTerminalId, "WindowsTerminalId", @"C:\wt.exe");
     private static readonly TerminalInfo Pwsh =
-        new() { Id = TerminalDetectionService.PowerShell7Id, ExePath = @"C:\pwsh.exe" };
+        TerminalDetectionService.Known(TerminalDetectionService.PowerShell7Id, "PowerShell7Id", @"C:\pwsh.exe");
 
     [Fact]
     public void Terminal_LanceLeTerminalDesOptions_PasCeluiEnregistreDansLaTuile()

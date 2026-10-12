@@ -58,7 +58,6 @@ public partial class ShortcutDialog : Window
             : IconStoreService.ResolveProfilePath(Entry.IconProfilePath) ?? "";
 
         TxtTerminalName.Text = _terminal?.DisplayName ?? Loc.T("Shortcut_Terminal_None");
-        ChkNewTab.Visibility = _terminal?.SupportsNewTab == true ? Visibility.Visible : Visibility.Collapsed;
         if (Entry.Type == ShortcutType.OpenTerminal)
             RestoreTerminalFields(Entry.Terminal ?? new TerminalConfig { StartingDirectory = Entry.Command });
 
@@ -129,8 +128,6 @@ public partial class ShortcutDialog : Window
     {
         TxtTerminalDir.Text       = cfg.StartingDirectory;
         TxtTerminalCommand.Text   = cfg.RunCommand;
-        ChkNewTab.IsChecked       = cfg.NewTab;
-        TxtTerminalExtraArgs.Text = cfg.ExtraArgs;
     }
 
     // ── Terminal ──────────────────────────────────────────────────────────────
@@ -227,8 +224,9 @@ public partial class ShortcutDialog : Window
             ExePath           = _terminal?.ExePath ?? "",
             StartingDirectory = TxtTerminalDir.Text.Trim(),
             RunCommand        = TxtTerminalCommand.Text.Trim(),
-            NewTab            = ChkNewTab.IsChecked == true,
-            ExtraArgs         = TxtTerminalExtraArgs.Text.Trim(),
+            // Plus lus : le modèle du terminal décide. Gardés pour une version antérieure de DockPad.
+            NewTab            = Entry.Terminal?.NewTab ?? true,
+            ExtraArgs         = Entry.Terminal?.ExtraArgs ?? "",
         };
     }
 

@@ -304,9 +304,9 @@ public class PresetStatusTests
     // Le nom nu ne se resout que si le P@H du LANCEUR est a jour — ce qu'on ne controle pas.
 
     private static readonly TerminalInfo Wt =
-        new() { Id = TerminalDetectionService.WindowsTerminalId, ExePath = @"C:\wt.exe" };
+        TerminalDetectionService.Known(TerminalDetectionService.WindowsTerminalId, "WindowsTerminalId", @"C:\wt.exe");
     private static readonly TerminalInfo WindowsPowerShell =
-        new() { Id = TerminalDetectionService.WindowsPowerShellId, ExePath = @"C:\powershell.exe" };
+        TerminalDetectionService.Known(TerminalDetectionService.WindowsPowerShellId, "WindowsPowerShellId", @"C:\powershell.exe");
 
     [Fact]
     public void CodexCommande_UtiliseLeCheminAbsoluQuandOnLeConnait()

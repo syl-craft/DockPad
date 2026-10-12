@@ -7,6 +7,10 @@ namespace DockPad.Services;
 /// <summary>
 /// Le terminal par défaut des Options, lancé par les prédéfinis et par toutes les tuiles Terminal.
 /// </summary>
+/// <remarks>
+/// Tous les terminaux, détectés ou ajoutés, se décrivent de la même façon : un programme et deux
+/// modèles d'arguments, l'un pour ouvrir un dossier, l'autre pour y lancer aussi une commande.
+/// </remarks>
 public static class TerminalDetectionService
 {
     public const string WindowsTerminalId   = "wt";
@@ -14,12 +18,16 @@ public static class TerminalDetectionService
     public const string WindowsPowerShellId = "powershell";
 
     /// <summary>
-    /// Valeur du réglage quand le terminal est désigné par un chemin choisi dans les Options.
+    /// Valeur du réglage quand le terminal est un programme ajouté dans les Options.
     /// </summary>
     public const string CustomId = "custom";
 
+    public const string FolderToken            = "{folder}";
+    public const string CommandToken           = "{command}";
+    public const string PowerShellCommandToken = "{command-ps}";
+
     /// <summary>
-    /// Terminaux installés, dans l'ordre du mode Automatique.
+    /// Terminaux installés, avec les arguments de DockPad, dans l'ordre du mode Automatique.
     /// </summary>
     public static List<TerminalInfo> Detect()
     {
@@ -30,28 +38,105 @@ public static class TerminalDetectionService
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Microsoft", "WindowsApps", "wt.exe");
         if (File.Exists(wtPath))
-            list.Add(new TerminalInfo { Id = WindowsTerminalId, DisplayName = "Windows Terminal", ExePath = wtPath });
+            list.Add(Known(WindowsTerminalId, "Windows Terminal", wtPath));
 
         // PowerShell 7
         var pwshPath = FirstExisting(
             @"C:\Program Files\PowerShell\7\pwsh.exe",
             @"C:\Program Files (x86)\PowerShell\7\pwsh.exe") ?? WhereExe("pwsh.exe");
         if (pwshPath != null)
-            list.Add(new TerminalInfo { Id = PowerShell7Id, DisplayName = "PowerShell 7 (pwsh)", ExePath = pwshPath });
+            list.Add(Known(PowerShell7Id, "PowerShell 7 (pwsh)", pwshPath));
 
         // Windows PowerShell
         var poshPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.System),
             "WindowsPowerShell", "v1.0", "powershell.exe");
         if (File.Exists(poshPath))
-            list.Add(new TerminalInfo { Id = WindowsPowerShellId, DisplayName = "Windows PowerShell", ExePath = poshPath });
+            list.Add(Known(WindowsPowerShellId, "Windows PowerShell", poshPath));
 
         return list;
     }
 
     /// <summary>
+    /// Un terminal connu avec les arguments de DockPad.
+    /// </summary>
+    public static TerminalInfo Known(string id, string name, string exePath)
+    {
+        var templates = DefaultTemplates(id);
+        return new TerminalInfo
+        {
+            Id = id, DisplayName = name, ExePath = exePath,
+            FolderArgs = templates.FolderArgs, CommandArgs = templates.CommandArgs,
+        };
+    }
+
+    /// <summary>
+    /// Arguments de DockPad pour un terminal ; un programme inconnu ne reçoit que le dossier.
+    /// </summary>
+    public static TerminalSettings DefaultTemplates(string id) => id switch
+    {
+        WindowsTerminalId => new()
+        {
+            FolderArgs  = "-w 0 new-tab --startingDirectory \"{folder}\"",
+            CommandArgs = "-w 0 new-tab --startingDirectory \"{folder}\" -- {command}",
+        },
+        PowerShell7Id or WindowsPowerShellId => new()
+        {
+            FolderArgs  = "-NoExit -Command \"Set-Location '{folder}'\"",
+            CommandArgs = "-NoExit -Command \"Set-Location '{folder}'; {command-ps}\"",
+        },
+        _ => new()
+        {
+            FolderArgs  = "\"{folder}\"",
+            CommandArgs = "\"{folder}\"",
+        },
+    };
+
+    /// <summary>
+    /// Identifiant du terminal connu dont c'est le programme, ou <see cref="CustomId"/>.
+    /// </summary>
+    public static string KnownIdOf(string exePath) => Path.GetFileName(exePath).ToLowerInvariant() switch
+    {
+        "wt.exe"         => WindowsTerminalId,
+        "pwsh.exe"       => PowerShell7Id,
+        "powershell.exe" => WindowsPowerShellId,
+        _                => CustomId,
+    };
+
+    /// <summary>
+    /// Le terminal avec les arguments modifiés dans les Options, s'il y en a.
+    /// </summary>
+    public static TerminalInfo WithTemplates(TerminalInfo terminal, TerminalSettings? edited) => edited == null
+        ? terminal
+        : new TerminalInfo
+        {
+            Id = terminal.Id, DisplayName = terminal.DisplayName, ExePath = terminal.ExePath,
+            FolderArgs = edited.FolderArgs, CommandArgs = edited.CommandArgs,
+        };
+
+    /// <summary>
+    /// Le programme ajouté dans les Options, ou <c>null</c> sans programme.
+    /// </summary>
+    public static TerminalInfo? CustomTerminal(TerminalSettings custom) => string.IsNullOrWhiteSpace(custom.ExePath)
+        ? null
+        : new TerminalInfo
+        {
+            Id = CustomId, DisplayName = custom.ExePath, ExePath = custom.ExePath.Trim().Trim('"'),
+            FolderArgs = custom.FolderArgs.Trim(), CommandArgs = custom.CommandArgs.Trim(),
+        };
+
+    /// <summary>
+    /// Le programme ajouté s'il existe sur le disque, sinon <c>null</c>. Son chemin garde ses
+    /// variables d'environnement, que le registre développe lui-même.
+    /// </summary>
+    public static TerminalInfo? ExistingCustomTerminal(TerminalSettings custom) =>
+        CustomTerminal(custom) is { } terminal && File.Exists(Environment.ExpandEnvironmentVariables(terminal.ExePath))
+            ? terminal
+            : null;
+
+    /// <summary>
     /// Le terminal choisi s'il est disponible, sinon le premier installé : vide, inconnu, désinstallé
-    /// ou chemin personnalisé invalide (<paramref name="custom"/> nul) valent Automatique.
+    /// ou programme ajouté introuvable (<paramref name="custom"/> nul) valent Automatique.
     /// </summary>
     public static TerminalInfo? Resolve(string setting, TerminalInfo? custom, IReadOnlyList<TerminalInfo> installed)
     {
@@ -63,84 +148,51 @@ public static class TerminalDetectionService
     }
 
     /// <summary>
-    /// Le terminal désigné par un chemin, reconnu au nom de l'exécutable ; <c>null</c> pour tout
-    /// autre programme, auquel on ne saurait passer ni le dossier ni la commande.
+    /// Terminaux installés, avec les arguments modifiés dans <paramref name="templates"/>.
     /// </summary>
-    public static TerminalInfo? CustomTerminal(string path)
-    {
-        string? id = Path.GetFileName(path).ToLowerInvariant() switch
-        {
-            "wt.exe"         => WindowsTerminalId,
-            "pwsh.exe"       => PowerShell7Id,
-            "powershell.exe" => WindowsPowerShellId,
-            _                => null,
-        };
-
-        return id == null ? null : new TerminalInfo { Id = id, DisplayName = path, ExePath = path };
-    }
-
-    /// <summary>
-    /// Le chemin personnalisé s'il existe et désigne un terminal reconnu, sinon <c>null</c>.
-    /// </summary>
-    public static TerminalInfo? ExistingCustomTerminal(string path) =>
-        File.Exists(path) ? CustomTerminal(path) : null;
+    public static List<TerminalInfo> Installed(IReadOnlyDictionary<string, TerminalSettings> templates) =>
+        Detect().Select(t => WithTemplates(t, templates.GetValueOrDefault(t.Id))).ToList();
 
     /// <summary>
     /// Le terminal à lancer selon les Options, ou <c>null</c> si aucun n'est installé.
     /// </summary>
     public static TerminalInfo? ResolveDefault() =>
         Resolve(SettingsService.LoadDefaultTerminal(),
-                ExistingCustomTerminal(SettingsService.LoadCustomTerminalPath()),
-                Detect());
+                ExistingCustomTerminal(SettingsService.LoadCustomTerminal()),
+                Installed(SettingsService.LoadTerminalTemplates()));
 
     /// <summary>
     /// Arguments qui ouvrent <paramref name="terminal"/> dans le dossier de la config et y lancent sa commande.
     /// </summary>
-    public static string BuildArgs(TerminalInfo terminal, TerminalConfig cfg) => terminal.Id switch
+    /// <remarks>
+    /// L'onglet et les arguments supplémentaires d'une tuile ne sont pas lus : le modèle du terminal décide.
+    /// </remarks>
+    public static string BuildArgs(TerminalInfo terminal, TerminalConfig cfg)
     {
-        WindowsTerminalId => BuildWtArgs(cfg),
-        _                 => BuildPowerShellArgs(cfg),
-    };
+        string command = cfg.RunCommand.Trim();
+        string template = command == "" ? terminal.FolderArgs : terminal.CommandArgs;
 
-    private static string BuildWtArgs(TerminalConfig cfg)
-    {
-        var parts = new List<string>();
-        if (cfg.NewTab) parts.Add("-w 0 new-tab");
-        if (!string.IsNullOrWhiteSpace(cfg.StartingDirectory))
-            parts.Add($"--startingDirectory \"{cfg.StartingDirectory}\"");
-        if (!string.IsNullOrWhiteSpace(cfg.ExtraArgs))
-            parts.Add(cfg.ExtraArgs.Trim());
-        if (!string.IsNullOrWhiteSpace(cfg.RunCommand))
-            parts.Add($"-- {cfg.RunCommand.Trim()}");
-        return string.Join(" ", parts);
-    }
-
-    private static string BuildPowerShellArgs(TerminalConfig cfg)
-    {
-        var cmds = new List<string>();
-        if (!string.IsNullOrWhiteSpace(cfg.StartingDirectory))
-            cmds.Add($"Set-Location '{cfg.StartingDirectory}'");
-        if (!string.IsNullOrWhiteSpace(cfg.RunCommand))
-            cmds.Add(PowerShellCall(cfg.RunCommand.Trim()));
-
-        var parts = new List<string> { "-NoExit" };
-        if (cmds.Count > 0)
-        {
-            // Échappés, les guillemets de la commande ne ferment pas ceux de -Command.
-            string script = string.Join("; ", cmds).Replace("\"", "\\\"");
-            parts.Add($"-Command \"{script}\"");
-        }
-        if (!string.IsNullOrWhiteSpace(cfg.ExtraArgs))
-            parts.Add(cfg.ExtraArgs.Trim());
-        return string.Join(" ", parts);
+        return Expand(template, cfg.StartingDirectory, command);
     }
 
     /// <summary>
-    /// Préfixe d'un <c>&amp;</c> une commande qui commence par un chemin entre guillemets, que
-    /// PowerShell afficherait sinon comme une chaîne au lieu de l'exécuter.
+    /// Le modèle avec <c>{folder}</c>, <c>{command}</c> et <c>{command-ps}</c> remplacés.
     /// </summary>
-    private static string PowerShellCall(string command) =>
-        command.StartsWith('"') ? $"& {command}" : command;
+    public static string Expand(string template, string folder, string command) =>
+        template.Replace(FolderToken, folder)
+                .Replace(PowerShellCommandToken, ForPowerShell(command))
+                .Replace(CommandToken, command)
+                .Trim();
+
+    /// <summary>
+    /// La commande telle qu'elle doit figurer dans un <c>-Command "…"</c> de PowerShell : guillemets
+    /// échappés, et <c>&amp;</c> devant un chemin entre guillemets, qu'il afficherait sinon sans l'exécuter.
+    /// </summary>
+    private static string ForPowerShell(string command)
+    {
+        string call = command.StartsWith('"') ? $"& {command}" : command;
+        return call.Replace("\"", "\\\"");
+    }
 
     private static string? FirstExisting(params string[] paths)
     {

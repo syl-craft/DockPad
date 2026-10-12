@@ -36,14 +36,19 @@ public class AppSettings
 
     /// <summary>
     /// Terminal des prédéfinis et des tuiles Terminal (<c>wt</c>, <c>pwsh</c>, <c>powershell</c>,
-    /// <c>custom</c> pour <see cref="CustomTerminalPath"/>), ou vide pour « automatique ».
+    /// <c>custom</c> pour <see cref="CustomTerminal"/>), ou vide pour « automatique ».
     /// </summary>
     public string DefaultTerminal { get; set; } = "";
 
     /// <summary>
-    /// Chemin de <c>wt.exe</c>, <c>pwsh.exe</c> ou <c>powershell.exe</c>, lu quand <see cref="DefaultTerminal"/> vaut <c>custom</c>.
+    /// Arguments modifiés des terminaux détectés, par identifiant ; absent = ceux de DockPad.
     /// </summary>
-    public string CustomTerminalPath { get; set; } = "";
+    public Dictionary<string, TerminalSettings> TerminalTemplates { get; set; } = new();
+
+    /// <summary>
+    /// Programme lancé quand <see cref="DefaultTerminal"/> vaut <c>custom</c>.
+    /// </summary>
+    public TerminalSettings CustomTerminal { get; set; } = new();
 
     /// <summary>
     /// Télécharger l'icône du site pour les tuiles web. Vrai par défaut : un réglage réseau qu'on

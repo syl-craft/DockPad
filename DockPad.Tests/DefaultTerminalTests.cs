@@ -1,3 +1,4 @@
+using System.IO;
 using DockPad.Models;
 using DockPad.Services;
 
@@ -13,11 +14,11 @@ namespace DockPad.Tests;
 public class DefaultTerminalTests
 {
     private static readonly TerminalInfo Wt =
-        new() { Id = TerminalDetectionService.WindowsTerminalId, ExePath = @"C:\wt.exe" };
+        TerminalDetectionService.Known(TerminalDetectionService.WindowsTerminalId, "WindowsTerminalId", @"C:\wt.exe");
     private static readonly TerminalInfo Pwsh =
-        new() { Id = TerminalDetectionService.PowerShell7Id, ExePath = @"C:\pwsh.exe" };
+        TerminalDetectionService.Known(TerminalDetectionService.PowerShell7Id, "PowerShell7Id", @"C:\pwsh.exe");
     private static readonly TerminalInfo WindowsPowerShell =
-        new() { Id = TerminalDetectionService.WindowsPowerShellId, ExePath = @"C:\powershell.exe" };
+        TerminalDetectionService.Known(TerminalDetectionService.WindowsPowerShellId, "WindowsPowerShellId", @"C:\powershell.exe");
 
     // -- Quel terminal ---------------------------------------------------------
 
@@ -62,33 +63,90 @@ public class DefaultTerminalTests
         Assert.Null(TerminalDetectionService.Resolve("", custom: null, []));
     }
 
-    // -- Chemin personnalisé --------------------------------------------------
+    // -- Programme ajouté et modèles d'arguments -------------------------------
 
-    [Theory]
-    [InlineData(@"D:\Outils\Terminal\wt.exe", "wt")]
-    [InlineData(@"C:\Program Files\PowerShell\7-preview\PWSH.EXE", "pwsh")]
-    [InlineData(@"D:\portable\powershell.exe", "powershell")]
-    public void CheminPersonnalise_ReconnuParLeNomDeLExecutable(string path, string expectedId)
+    private static TerminalSettings Custom(string exe, string folderArgs, string commandArgs) =>
+        new() { ExePath = exe, FolderArgs = folderArgs, CommandArgs = commandArgs };
+
+    [Fact]
+    public void ProgrammeAjoute_SansCommande_SuitLeModeleDuDossier()
     {
-        var custom = TerminalDetectionService.CustomTerminal(path);
+        // MXterm Pro ne prend qu'un dossier.
+        var mxterm = TerminalDetectionService.CustomTerminal(Custom(@"C:\MXterm Pro\mxterm.exe", @"""{folder}""", @"""{folder}"""));
 
-        Assert.Equal(expectedId, custom!.Id);
-        Assert.Equal(path, custom.ExePath);
-    }
+        var args = TerminalDetectionService.BuildArgs(mxterm!, new TerminalConfig { StartingDirectory = @"C:\dev\Demo" });
 
-    [Theory]
-    [InlineData(@"C:\Program Files\Git\bin\bash.exe")]   // ni dossier ni commande transmissibles
-    [InlineData(@"C:\Windows\System32\cmd.exe")]
-    [InlineData("")]
-    public void CheminPersonnalise_NonReconnu_NeRendRien(string path)
-    {
-        Assert.Null(TerminalDetectionService.CustomTerminal(path));
+        Assert.Equal(TerminalDetectionService.CustomId, mxterm!.Id);
+        Assert.Equal(@"""C:\dev\Demo""", args);
     }
 
     [Fact]
-    public void CheminPersonnalise_EstRetenuQuandIlEstChoisi()
+    public void ProgrammeAjoute_AvecCommande_SuitLeModeleDeLaCommande()
     {
-        var custom = TerminalDetectionService.CustomTerminal(@"D:\pwsh-preview\pwsh.exe");
+        var alacritty = TerminalDetectionService.CustomTerminal(Custom(@"C:\alacritty.exe",
+            @"--working-directory ""{folder}""", @"--working-directory ""{folder}"" -e {command}"));
+        var cfg = new TerminalConfig { StartingDirectory = "%V", RunCommand = @"""C:\codex.exe""" };
+
+        Assert.Equal(@"--working-directory ""%V"" -e ""C:\codex.exe""", TerminalDetectionService.BuildArgs(alacritty!, cfg));
+    }
+
+    [Fact]
+    public void ModeleModifie_RemplaceCeuxDeDockPad()
+    {
+        var wt = TerminalDetectionService.WithTemplates(Wt,
+            new TerminalSettings { FolderArgs = @"-d ""{folder}""", CommandArgs = @"-d ""{folder}"" {command}" });
+
+        var args = TerminalDetectionService.BuildArgs(wt, new TerminalConfig { StartingDirectory = @"C:\dev", RunCommand = "claude" });
+
+        Assert.Equal(@"-d ""C:\dev"" claude", args);
+    }
+
+    [Theory]
+    [InlineData(@"D:\Outils\wt.exe", "wt")]
+    [InlineData(@"C:\Program Files\PowerShell\7-preview\PWSH.EXE", "pwsh")]
+    [InlineData(@"D:\portable\powershell.exe", "powershell")]
+    [InlineData(@"C:\MXterm Pro\mxterm.exe", "custom")]
+    public void ProgrammeConnu_ReconnuParLeNomDeLExecutable(string path, string expectedId)
+    {
+        Assert.Equal(expectedId, TerminalDetectionService.KnownIdOf(path));
+    }
+
+    [Fact]
+    public void CheminAvecVariableDEnvironnement_EstTrouveEtGardeTelQuel()
+    {
+        // Gardée non développée, la variable suit l'utilisateur dans une clé de registre machine.
+        string file = Path.Combine(Path.GetTempPath(), $"dockpad-term-{Guid.NewGuid():N}.exe");
+        File.WriteAllText(file, "");
+        try
+        {
+            string withVariable = Path.Combine("%TEMP%", Path.GetFileName(file));
+
+            var custom = TerminalDetectionService.ExistingCustomTerminal(Custom(withVariable, @"""{folder}""", @"""{folder}"""));
+
+            Assert.Equal(withVariable, custom!.ExePath);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public void ProgrammeIntrouvable_NeRendRien()
+    {
+        Assert.Null(TerminalDetectionService.ExistingCustomTerminal(Custom(@"C:\nulle-part\absent.exe", "", "")));
+    }
+
+    [Fact]
+    public void ProgrammeVide_NeRendRien()
+    {
+        Assert.Null(TerminalDetectionService.CustomTerminal(Custom("", @"""{folder}""", "")));
+    }
+
+    [Fact]
+    public void ProgrammeAjoute_EstRetenuQuandIlEstChoisi()
+    {
+        var custom = TerminalDetectionService.CustomTerminal(Custom(@"D:\pwsh-preview\pwsh.exe", "", ""));
 
         var resolved = TerminalDetectionService.Resolve(TerminalDetectionService.CustomId, custom, [Wt, Pwsh]);
 
@@ -96,7 +154,7 @@ public class DefaultTerminalTests
     }
 
     [Fact]
-    public void CheminPersonnaliseInvalide_SeComporteCommeAutomatique()
+    public void ProgrammeAjouteIntrouvable_SeComporteCommeAutomatique()
     {
         var resolved = TerminalDetectionService.Resolve(TerminalDetectionService.CustomId, custom: null, [Wt, Pwsh]);
 

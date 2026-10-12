@@ -76,8 +76,19 @@ public static class ShortcutLauncher
     /// </summary>
     public static void RunCommandLine(string command) => Start(SplitCommand(command));
 
+    /// <summary>
+    /// Ouvre <paramref name="terminal"/> sur un dossier et y lance une commande : le bouton Tester des Options.
+    /// </summary>
+    public static void OpenTerminal(TerminalInfo terminal, string folder, string command) =>
+        Start(new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal,
+            new TerminalConfig { StartingDirectory = folder, RunCommand = command })));
+
+    // Le programme d'un terminal personnalisé peut porter %LocalAppData%, que Process.Start ne développe pas.
     private static void Start(LaunchPlan plan) =>
-        Process.Start(new ProcessStartInfo(plan.FileName, plan.Arguments) { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo(Environment.ExpandEnvironmentVariables(plan.FileName), plan.Arguments)
+        {
+            UseShellExecute = true,
+        });
 
     /// <summary>
     /// Sépare l'exécutable de ses arguments. Un chemin entre guillemets peut contenir des espaces :

@@ -783,12 +783,6 @@ Cette action est irréversible.</value>
   <data name="Shortcut_Exe_Tip" xml:space="preserve">
     <value>Chemin complet vers l'exécutable</value>
   </data>
-  <data name="Shortcut_ExtraArgs" xml:space="preserve">
-    <value>Paramètres libres (optionnel)</value>
-  </data>
-  <data name="Shortcut_ExtraArgs_Tip" xml:space="preserve">
-    <value>Arguments supplémentaires insérés avant la commande à lancer</value>
-  </data>
   <data name="Shortcut_FieldLabel_Process" xml:space="preserve">
     <value>nom du processus</value>
   </data>
@@ -809,9 +803,6 @@ Cette action est irréversible.</value>
   </data>
   <data name="Shortcut_Name" xml:space="preserve">
     <value>Nom *</value>
-  </data>
-  <data name="Shortcut_NewTab" xml:space="preserve">
-    <value>Ouvrir dans un nouvel onglet</value>
   </data>
   <data name="Shortcut_Params" xml:space="preserve">
     <value>Paramètres (optionnel)</value>
@@ -1695,18 +1686,48 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>Ouvert par les tuiles Terminal et par les prédéfinis Claude, Codex et PowerShell. Après un changement, réinstallez ces prédéfinis depuis ☰ → Raccourcis prédéfinis.</value>
   </data>
   <data name="Settings_Terminal_Custom" xml:space="preserve">
-    <value>Chemin personnalisé…</value>
+    <value>Autre programme…</value>
   </data>
   <data name="Settings_Terminal_Browse" xml:space="preserve">
     <value>Parcourir…</value>
   </data>
   <data name="Settings_Terminal_CustomInvalid" xml:space="preserve">
-    <value>Choisissez un wt.exe, pwsh.exe ou powershell.exe existant : DockPad ne sait passer le dossier et la commande qu’à ceux-là.</value>
+    <value>Programme introuvable.</value>
   </data>
   <data name="Settings_Terminal_Preview" xml:space="preserve">
-    <value>Commande lancée (prédéfini Claude) :</value>
+    <value>Commande finale (prédéfini Claude, %V = dossier cliqué)</value>
   </data>
   <data name="Settings_Terminal_PickFilter" xml:space="preserve">
-    <value>Terminaux (wt.exe, pwsh.exe, powershell.exe)|wt.exe;pwsh.exe;powershell.exe</value>
+    <value>Programmes (*.exe)|*.exe</value>
+  </data>
+  <data name="Settings_Terminal_ArgsHint" xml:space="preserve">
+    <value>Variables : {folder} = dossier, {command} = commande à lancer, {command-ps} = la même commande préparée pour le -Command "…" de PowerShell. Le chemin du programme accepte %LocalAppData% et les autres variables d’environnement.</value>
+  </data>
+  <data name="Settings_Terminal_NoCommand" xml:space="preserve">
+    <value>Sans {command} ni {command-ps}, les tuiles Terminal et les prédéfinis Claude et Codex ouvrent le programme sans lancer leur commande.</value>
+  </data>
+  <data name="Settings_Terminal_Test" xml:space="preserve">
+    <value>Tester</value>
+  </data>
+  <data name="Settings_Terminal_TestTip" xml:space="preserve">
+    <value>Lance cette commande dans votre dossier utilisateur</value>
+  </data>
+  <data name="Settings_Terminal_TestFailed" xml:space="preserve">
+    <value>Le terminal n’a pas pu être lancé : {0}</value>
+  </data>
+  <data name="Settings_Terminal_Program" xml:space="preserve">
+    <value>Programme</value>
+  </data>
+  <data name="Settings_Terminal_FolderArgs" xml:space="preserve">
+    <value>Arguments pour ouvrir un dossier</value>
+  </data>
+  <data name="Settings_Terminal_CommandArgs" xml:space="preserve">
+    <value>Arguments pour ouvrir un dossier et lancer une commande</value>
+  </data>
+  <data name="Settings_Terminal_Reset" xml:space="preserve">
+    <value>Rétablir les arguments de DockPad</value>
+  </data>
+  <data name="Settings_Terminal_AutoNote" xml:space="preserve">
+    <value>Automatique prend le premier terminal installé, avec les arguments réglés pour lui.</value>
   </data>
 </root>

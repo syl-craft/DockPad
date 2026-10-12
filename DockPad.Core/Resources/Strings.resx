@@ -783,12 +783,6 @@ This cannot be undone.</value>
   <data name="Shortcut_Exe_Tip" xml:space="preserve">
     <value>Full path to the executable</value>
   </data>
-  <data name="Shortcut_ExtraArgs" xml:space="preserve">
-    <value>Free parameters (optional)</value>
-  </data>
-  <data name="Shortcut_ExtraArgs_Tip" xml:space="preserve">
-    <value>Extra arguments inserted before the command to run</value>
-  </data>
   <data name="Shortcut_FieldLabel_Process" xml:space="preserve">
     <value>process name</value>
   </data>
@@ -809,9 +803,6 @@ This cannot be undone.</value>
   </data>
   <data name="Shortcut_Name" xml:space="preserve">
     <value>Name *</value>
-  </data>
-  <data name="Shortcut_NewTab" xml:space="preserve">
-    <value>Open in a new tab</value>
   </data>
   <data name="Shortcut_Params" xml:space="preserve">
     <value>Parameters (optional)</value>
@@ -1695,18 +1686,48 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>Opened by Terminal tiles and by the Claude, Codex and PowerShell presets. After a change, reinstall those presets from ☰ → Presets.</value>
   </data>
   <data name="Settings_Terminal_Custom" xml:space="preserve">
-    <value>Custom path…</value>
+    <value>Other program…</value>
   </data>
   <data name="Settings_Terminal_Browse" xml:space="preserve">
     <value>Browse…</value>
   </data>
   <data name="Settings_Terminal_CustomInvalid" xml:space="preserve">
-    <value>Choose an existing wt.exe, pwsh.exe or powershell.exe: DockPad only knows how to pass them the folder and the command.</value>
+    <value>Program not found.</value>
   </data>
   <data name="Settings_Terminal_Preview" xml:space="preserve">
-    <value>Command launched (Claude preset):</value>
+    <value>Final command (Claude preset, %V = clicked folder)</value>
   </data>
   <data name="Settings_Terminal_PickFilter" xml:space="preserve">
-    <value>Terminals (wt.exe, pwsh.exe, powershell.exe)|wt.exe;pwsh.exe;powershell.exe</value>
+    <value>Programs (*.exe)|*.exe</value>
+  </data>
+  <data name="Settings_Terminal_ArgsHint" xml:space="preserve">
+    <value>Variables: {folder} = folder, {command} = command to run, {command-ps} = the same command prepared for PowerShell -Command "…". The program path accepts %LocalAppData% and other environment variables.</value>
+  </data>
+  <data name="Settings_Terminal_NoCommand" xml:space="preserve">
+    <value>Without {command} or {command-ps}, Terminal tiles and the Claude and Codex presets open the program without running their command.</value>
+  </data>
+  <data name="Settings_Terminal_Test" xml:space="preserve">
+    <value>Test</value>
+  </data>
+  <data name="Settings_Terminal_TestTip" xml:space="preserve">
+    <value>Runs this command in your user folder</value>
+  </data>
+  <data name="Settings_Terminal_TestFailed" xml:space="preserve">
+    <value>The terminal could not be started: {0}</value>
+  </data>
+  <data name="Settings_Terminal_Program" xml:space="preserve">
+    <value>Program</value>
+  </data>
+  <data name="Settings_Terminal_FolderArgs" xml:space="preserve">
+    <value>Arguments to open a folder</value>
+  </data>
+  <data name="Settings_Terminal_CommandArgs" xml:space="preserve">
+    <value>Arguments to open a folder and run a command</value>
+  </data>
+  <data name="Settings_Terminal_Reset" xml:space="preserve">
+    <value>Restore DockPad arguments</value>
+  </data>
+  <data name="Settings_Terminal_AutoNote" xml:space="preserve">
+    <value>Automatic uses the first installed terminal, with the arguments set for it.</value>
   </data>
 </root>

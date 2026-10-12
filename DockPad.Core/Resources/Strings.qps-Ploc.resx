@@ -783,12 +783,6 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Shortcut_Exe_Tip" xml:space="preserve">
     <value>Ch3m1n c0mpl3t v3r5 l'3x3cut4bl3</value>
   </data>
-  <data name="Shortcut_ExtraArgs" xml:space="preserve">
-    <value>P4r4m3tr35 l1br35 (0pt10nn3l)</value>
-  </data>
-  <data name="Shortcut_ExtraArgs_Tip" xml:space="preserve">
-    <value>4rgum3nt5 5uppl3m3nt41r35 1n53r35 4v4nt l4 c0mm4nd3 4 l4nc3r</value>
-  </data>
   <data name="Shortcut_FieldLabel_Process" xml:space="preserve">
     <value>n0m du pr0c355u5</value>
   </data>
@@ -809,9 +803,6 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   </data>
   <data name="Shortcut_Name" xml:space="preserve">
     <value>N0m *</value>
-  </data>
-  <data name="Shortcut_NewTab" xml:space="preserve">
-    <value>0uvr1r d4n5 un n0uv3l 0ngl3t</value>
   </data>
   <data name="Shortcut_Params" xml:space="preserve">
     <value>P4r4m3tr35 (0pt10nn3l)</value>
@@ -1695,18 +1686,48 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
     <value>0uv3rt p4r l35 tu1l35 T3rm1n4l 3t p4r l35 pr3d3f1n15 Cl4ud3, C0d3x 3t P0w3r5h3ll. 4pr35 un ch4ng3m3nt, r31n5t4ll3z c35 pr3d3f1n15 d3pu15 ☰ → R4cc0urc15 pr3d3f1n15.</value>
   </data>
   <data name="Settings_Terminal_Custom" xml:space="preserve">
-    <value>Ch3m1n p3r50nn4l153…</value>
+    <value>4utr3 pr0gr4mm3…</value>
   </data>
   <data name="Settings_Terminal_Browse" xml:space="preserve">
     <value>P4rc0ur1r…</value>
   </data>
   <data name="Settings_Terminal_CustomInvalid" xml:space="preserve">
-    <value>Ch0151553z un wt.3x3, pw5h.3x3 0u p0w3r5h3ll.3x3 3x15t4nt : D0ckP4d n3 541t p4553r l3 d05513r 3t l4 c0mm4nd3 qu’4 c3ux-l4.</value>
+    <value>Pr0gr4mm3 1ntr0uv4bl3.</value>
   </data>
   <data name="Settings_Terminal_Preview" xml:space="preserve">
-    <value>C0mm4nd3 l4nc33 (pr3d3f1n1 Cl4ud3) :</value>
+    <value>C0mm4nd3 f1n4l3 (pr3d3f1n1 Cl4ud3, %V = d05513r cl1qu3)</value>
   </data>
   <data name="Settings_Terminal_PickFilter" xml:space="preserve">
-    <value>T3rm1n4ux (wt.3x3, pw5h.3x3, p0w3r5h3ll.3x3)|wt.3x3;pw5h.3x3;p0w3r5h3ll.3x3</value>
+    <value>Pr0gr4mm35 (*.3x3)|*.3x3</value>
+  </data>
+  <data name="Settings_Terminal_ArgsHint" xml:space="preserve">
+    <value>V4r14bl35 : {folder} = d05513r, {command} = c0mm4nd3 4 l4nc3r, {command-ps} = l4 m3m3 c0mm4nd3 pr3p4r33 p0ur l3 -C0mm4nd "…" d3 P0w3r5h3ll. L3 ch3m1n du pr0gr4mm3 4cc3pt3 %L0c4l4ppD4t4% 3t l35 4utr35 v4r14bl35 d’3nv1r0nn3m3nt.</value>
+  </data>
+  <data name="Settings_Terminal_NoCommand" xml:space="preserve">
+    <value>54n5 {command} n1 {command-ps}, l35 tu1l35 T3rm1n4l 3t l35 pr3d3f1n15 Cl4ud3 3t C0d3x 0uvr3nt l3 pr0gr4mm3 54n5 l4nc3r l3ur c0mm4nd3.</value>
+  </data>
+  <data name="Settings_Terminal_Test" xml:space="preserve">
+    <value>T35t3r</value>
+  </data>
+  <data name="Settings_Terminal_TestTip" xml:space="preserve">
+    <value>L4nc3 c3tt3 c0mm4nd3 d4n5 v0tr3 d05513r ut1l154t3ur</value>
+  </data>
+  <data name="Settings_Terminal_TestFailed" xml:space="preserve">
+    <value>L3 t3rm1n4l n’4 p45 pu 3tr3 l4nc3 : {0}</value>
+  </data>
+  <data name="Settings_Terminal_Program" xml:space="preserve">
+    <value>Pr0gr4mm3</value>
+  </data>
+  <data name="Settings_Terminal_FolderArgs" xml:space="preserve">
+    <value>4rgum3nt5 p0ur 0uvr1r un d05513r</value>
+  </data>
+  <data name="Settings_Terminal_CommandArgs" xml:space="preserve">
+    <value>4rgum3nt5 p0ur 0uvr1r un d05513r 3t l4nc3r un3 c0mm4nd3</value>
+  </data>
+  <data name="Settings_Terminal_Reset" xml:space="preserve">
+    <value>R3t4bl1r l35 4rgum3nt5 d3 D0ckP4d</value>
+  </data>
+  <data name="Settings_Terminal_AutoNote" xml:space="preserve">
+    <value>4ut0m4t1qu3 pr3nd l3 pr3m13r t3rm1n4l 1n5t4ll3, 4v3c l35 4rgum3nt5 r3gl35 p0ur lu1.</value>
   </data>
 </root>
