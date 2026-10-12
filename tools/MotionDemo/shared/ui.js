@@ -413,7 +413,7 @@ export function layoutPager(dock, count, active = 0) {
 export function quickMenu(dock) {
   const rows = [
     ['h', 'Context menu'], ['☰', 'Manage', 'manage'], ['📋', 'Predefined shortcuts', 'presets'], '-',
-    ['h', 'Settings'], ['⚙', 'Options', 'options'], ['🌐', 'Browsers'], ['🔌', 'MCP server'], ['📊', 'AI usage'], '-',
+    ['h', 'Settings'], ['⚙', 'Options', 'options'], ['🌐', 'Browsers'], ['💻', 'Terminals', 'terminals'], ['🔌', 'MCP server'], ['📊', 'AI usage'], '-',
     ['h', 'Secrets'], ['🔑', 'Secret settings'], ['↻', 'Synchronise the vault'], '-',
     ['h', 'Configuration'], ['↺', 'Refresh'], ['✎', 'Edit'], ['💾', 'Save'], ['📁', 'Show the folder'], '-',
     ['⟳', 'Updates', 'updates'], ['✕', 'Quit the application'],

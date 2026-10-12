@@ -332,6 +332,11 @@ ouvrent tous le même terminal, choisi dans **☰ Menu → Options → Intégrat
 navigateurs : les terminaux détectés (Windows Terminal, PowerShell 7, Windows PowerShell, WezTerm), une
 case pour en masquer un, **↻ Redétecter**, et **➕** pour ajouter n'importe quel autre programme.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/14-terminals-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/14-terminals-light.gif" alt="Démonstration : la fenêtre Terminaux, puis des tuiles Terminal qui ouvrent une fenêtre Windows Terminal et une couleur d'onglet par projet" width="960">
+</picture>
+
 Chaque terminal est un programme et deux modèles d'arguments — pour ouvrir un dossier, et pour ouvrir
 un dossier et y lancer une commande — avec des variables : `{folder}`, `{folder-name}`, `{name}` (la
 tuile), `{color}`, `{command}`, et `{command-ps}` (la commande préparée pour le `-Command` de

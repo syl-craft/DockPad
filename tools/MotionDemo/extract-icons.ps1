@@ -70,6 +70,8 @@ $candidates = [ordered]@{
     explorer   = @("$env:WINDIR\explorer.exe")
     taskmgr    = @("$env:WINDIR\System32\Taskmgr.exe")
     terminal   = @("$env:LOCALAPPDATA\Microsoft\WindowsApps\wt.exe")
+    wezterm    = @("$env:ProgramFiles\WezTerm\wezterm-gui.exe")
+    powershell5 = @("$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe")
 }
 
 foreach ($name in $candidates.Keys) {

@@ -1,0 +1,154 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Terminals</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .tw { position: absolute; inset: 0; display: flex; gap: 0; padding: 18px 24px; }
+  .tw .col { flex: 1; min-width: 0; }
+  .tw .div { width: 1px; background: var(--border); margin: 0 22px; }
+  .tw .hd { display: flex; align-items: center; margin-bottom: 8px; }
+  .tw .hd b { font-size: 14px; } .tw .hd .rd { margin-left: auto; font-size: 13px; color: var(--text); }
+  .tw .list { border: 1px solid var(--border); border-radius: 4px; background: var(--surface-card); height: 400px; }
+  .tw .row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; }
+  .tw .row.sel { background: var(--accent-selected); }
+  .tw .row img { width: 22px; height: 22px; }
+  .tw .row .n { font-size: 13px; } .tw .row .p { font-size: 10px; color: var(--text-faint); }
+  .tw .row .badge { margin-left: auto; }
+  .tw .lab { font-size: 13px; color: var(--text-subtle); margin: 10px 0 4px; }
+  .tw .lab:first-child { margin-top: 0; }
+  .tw .fld { border: 1px solid var(--border-hover); border-radius: 3px; padding: 6px 9px; font-size: 12.5px; background: var(--surface-card); }
+  .tw .fld .hl { border-radius: 3px; padding: 0 2px; }
+  .tw .pre { background: var(--surface-muted); }
+  .tw .act { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+  .wt { position: absolute; width: 840px; height: 470px; border-radius: 10px; overflow: hidden; background: #202020;
+    border: 1px solid #3A3A3A; box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+  .wt .strip { height: 42px; display: flex; align-items: flex-end; gap: 2px; padding: 0 10px; background: #2B2B2B; }
+  .wt .tab { height: 34px; width: 210px; overflow: hidden; white-space: nowrap; flex: none; border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 9px; padding: 0 12px;
+    font-size: 13px; color: #fff; transform-origin: 0 100%; }
+  .wt .tab img { width: 16px; height: 16px; }
+  .wt .tab.off { filter: brightness(.72); }
+  .wt .name { margin-left: auto; align-self: center; color: #9A9A9A; font-size: 12px; padding-right: 6px; }
+  .wt .term { position: absolute; left: 0; right: 0; top: 42px; bottom: 0; background: #0C0C0C; color: #CCCCCC;
+    font-size: 17px; line-height: 27px; padding: 18px 22px; }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, env, track, E, style, el } from '../shared/engine.js';
+import { stage, buildDock, placeDock, showPage, renderUsage, quickMenu, dialog, cursor, renderCursor, legend, renderPop, centerOf,
+  renderLaunch, tileCenter, tileState, resetTiles, icon } from '../shared/ui.js';
+
+const S = 1.2, DX = (1920 - 850 * S) / 2, DX2 = 60, DY = 70;
+// Fenêtre Terminaux : libellés de Strings.resx. Terminaux détectés sur un poste de démonstration.
+const TERMS = [
+  ['terminal', 'Windows Terminal', '%LocalAppData%\\Microsoft\\WindowsApps\\wt.exe'],
+  ['powershell', 'PowerShell 7 (pwsh)', 'C:\\Program Files\\PowerShell\\7\\pwsh.exe'],
+  ['powershell5', 'Windows PowerShell', 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'],
+  ['wezterm', 'WezTerm', 'C:\\Program Files\\WezTerm\\wezterm-gui.exe'],
+];
+const W = '-w &quot;{folder-name}&quot;', C = '--tabColor {color}';
+const ARGS = (cmd) => `<span class="hl hw">${W.replace(/&quot;/g, '"')}</span> new-tab <span class="hl hc">${C}</span> --startingDirectory "{folder}"${cmd ? ' -- {command}' : ''}`;
+// Tuiles Terminal de la grille ; DockPad et Shop sont deux projets, donc deux fenêtres et deux couleurs (palette de DockPad).
+const T = (r, c, name, ic, type) => ({ r, c, name, icon: ic, type });
+const PAGE = [
+  T(0, 0, 'DockPad', 'claude-code', 'term'), T(0, 1, 'Codex', 'terminal', 'term'), T(0, 2, 'Shop', 'claude-code', 'term'),
+  T(0, 3, 'PowerShell', 'powershell', 'term'), T(0, 4, 'VS Code', 'vscode', 'run'), T(0, 5, 'Bambu Studio', 'bambu-studio', 'run'),
+  T(1, 0, 'C:\\dev', 'folder', 'folder'), T(1, 1, 'Projects', 'folder', 'folder'), T(1, 2, 'Documents', 'folder', 'folder'),
+  T(2, 0, 'Pull requests', 'pull-requests', 'url'), T(2, 1, 'Board', 'task-board', 'url'), T(2, 2, 'Gmail', 'gmail', 'url'),
+  T(3, 0, 'Task Manager', 'taskmgr', 'proc'), T(3, 1, 'Notepad', 'notepad', 'run'),
+];
+const ORANGE = '#E37400', GREEN = '#188038';
+const DEFAULT = 3.75, SLIDE = [4.7, 5.25], TILE1 = 5.65, TILE2 = 6.85, TILE3 = 7.95;
+
+const wtWindow = (layer, folder, tabs) => {
+  const w = el(`<div class="wt"><div class="strip">${tabs.map(([ic, n, col]) =>
+    `<div class="tab" style="background:${col}"><img src="${icon(ic)}">${n}</div>`).join('')}<span class="name">${folder}</span></div>
+    <div class="term mono"></div></div>`);
+  layer.appendChild(w);
+  return w;
+};
+
+clip({
+  duration: 10,
+  async build() {
+    const { st, camera } = stage();
+    const dock = buildDock(camera, { usage: 'single', pages: [PAGE] });
+    placeDock(dock, DX, DY, S);
+    showPage(dock, 0);
+    renderUsage(dock.usage, 'claude');
+    const menu = quickMenu(dock);
+    const layer = el('<div class="layer" style="z-index:40"></div>');
+    camera.appendChild(layer);
+
+    const rows = TERMS.map(([ic, n, p], i) => `<div class="row ${i === 0 ? 'sel' : ''}"><span class="cbx on">✓</span><img src="${icon(ic)}">
+      <div><div class="n">${n}</div><div class="p mono">${p}</div></div><span class="badge"></span></div>`).join('');
+    const body = `<div class="tw">
+      <div class="col"><div class="hd"><b>Terminals offered</b><span class="rd">↻ Detect again</span></div><div class="list">${rows}</div></div>
+      <div class="div"></div>
+      <div class="col">
+        <div class="lab">Name</div><div class="fld">Windows Terminal</div>
+        <div class="lab">Program</div><div class="fld mono">%LocalAppData%\\Microsoft\\WindowsApps\\wt.exe</div>
+        <div class="lab">Arguments to open a folder</div><div class="fld mono">${ARGS(false)}</div>
+        <div class="lab">Arguments to open a folder and run a command</div><div class="fld mono">${ARGS(true)}</div>
+        <div class="lab">Final command (Claude preset, %V = clicked folder)</div>
+        <div class="fld mono pre">"wt.exe" -w "DockPad" new-tab --tabColor ${ORANGE} --startingDirectory "C:\\dev\\DockPad" -- claude</div>
+        <div class="act"><span class="bt">Test</span><span class="bt b-def">★ Use as default</span><span class="bt p">✔ Apply</span></div>
+      </div></div>`;
+    const tw = dialog(layer, { w: 1120, h: 590, title: 'Terminals', body, x: 270, y: 150, scale: 1.12,
+      footer: '<span class="bt">Close</span>' });
+
+    const win1 = wtWindow(camera, 'DockPad', [['claude-code', 'Claude Code', ORANGE], ['terminal', 'Codex', ORANGE]]);
+    const win2 = wtWindow(camera, 'Shop', [['claude-code', 'Claude Code', GREEN]]);
+    const pts = { menu: centerOf(dock.btn('menu')), item: centerOf(menu.item('terminals')), def: centerOf(tw.querySelector('.b-def')) };
+    const cur = cursor(camera);
+    return { st, dock, menu, tw, win1, win2, pts, cur, leg: legend(st) };
+  },
+
+  render(t, x) {
+    // La grille entre, puis glisse à gauche pour laisser la place aux fenêtres Windows Terminal.
+    const show = prog(t, 0, .4, E.out) * (1 - prog(t, 9.45, 9.85, E.in));
+    const dx = track(t, [[SLIDE[0], DX], [SLIDE[1], DX2]]);
+    placeDock(x.dock, dx, DY, S, { opacity: show, scale: .96 + .04 * show });
+    renderPop(x.menu.el, t, [.7, .85], [1.35, 1.45], .96);
+    x.menu.item('terminals').classList.toggle('sel', t >= 1.15);
+
+    // Fenêtre Terminaux : les arguments qui regroupent et colorent s'allument, puis « Use as default ».
+    renderPop(x.tw.firstElementChild, t, [1.4, 1.7], [4.45, 4.75]);
+    const glow = env(t, 2.2, 3.5, .3);
+    x.tw.querySelectorAll('.hl').forEach(h => {
+      h.style.background = `color-mix(in srgb, ${h.classList.contains('hc') ? ORANGE : '#0078D4'} ${Math.round(glow * 28)}%, transparent)`;
+    });
+    const badge = x.tw.querySelector('.row .badge');
+    badge.className = `badge ${t >= DEFAULT ? 'ok' : ''}`;
+    badge.textContent = t >= DEFAULT ? 'default' : '';
+    badge.style.transform = `scale(${1 + env(t, DEFAULT, DEFAULT + .3, .08) * .15})`;
+
+    // Trois tuiles Terminal : la même fenêtre pour DockPad, une autre pour Shop.
+    resetTiles(x.dock);
+    const tile = (r, c) => { const p = tileCenter(r, c); return { x: DX2 + p.x * S, y: DY + p.y * S }; };
+    const box = (r, c) => { const p = tile(r, c); return { x: p.x - 54 * S, y: p.y - 45 * S, w: 108 * S, h: 90 * S }; };
+    [[0, 0, TILE1], [0, 1, TILE2], [0, 2, TILE3]].forEach(([r, c, tc]) =>
+      tileState(x.dock.tiles[0][`${r}:${c}`], env(t, tc - .45, tc + .15, .1), env(t, tc - .06, tc + .08, .03), env(t, tc + .02, tc + .4, .1)));
+
+    const to1 = { x: 1020, y: 180, w: 840, h: 470 }, to2 = { x: 1060, y: 470, w: 840, h: 470 };
+    renderLaunch(x.win1, t, box(0, 0), to1, [TILE1 + .08, TILE1 + .5], [9.2, 9.6]);
+    renderLaunch(x.win2, t, box(0, 2), to2, [TILE3 + .08, TILE3 + .5], [9.2, 9.6]);
+    const tabs = x.win1.querySelectorAll('.tab');
+    const second = prog(t, TILE2 + .1, TILE2 + .4, E.outBack);
+    style(tabs[1], { width: `${210 * Math.max(0, second)}px`, padding: second > .05 ? '' : '0', opacity: Math.min(1, second * 2) });
+    tabs[0].classList.toggle('off', t >= TILE2 + .1);
+    x.win1.querySelector('.term').innerHTML = t < TILE2 + .1
+      ? '<span style="color:#D97757">✻</span> Welcome back<br><br><span style="color:#6A9955">cwd:</span> C:\\dev\\DockPad'
+      : '<span style="color:#10A37F">&gt;_</span> Codex<br><br><span style="color:#6A9955">cwd:</span> C:\\dev\\DockPad';
+    x.win2.querySelector('.term').innerHTML = '<span style="color:#D97757">✻</span> Welcome back<br><br><span style="color:#6A9955">cwd:</span> C:\\dev\\Shop';
+
+    const p = x.pts, a = tile(0, 0), b = tile(0, 1), c = tile(0, 2);
+    renderCursor(x.cur, t, [
+      [.2, 1560, 960], [.6, p.menu.x, p.menu.y], [.8, p.menu.x, p.menu.y], [1.15, p.item.x - 40, p.item.y], [1.4, p.item.x - 40, p.item.y],
+      [2.4, 1180, 560], [3.3, p.def.x, p.def.y], [DEFAULT + .1, p.def.x, p.def.y],
+      [5.3, a.x, a.y], [TILE1 + .1, a.x, a.y], [TILE2 - .3, b.x, b.y], [TILE2 + .1, b.x, b.y],
+      [TILE3 - .3, c.x, c.y], [TILE3 + .2, c.x, c.y], [8.8, 820, 900],
+    ], [.75, 1.35, DEFAULT, TILE1, TILE2, TILE3], [.2, 8.9]);
+
+    x.leg(t, [[.4, 4.55, 'Choose your terminal: detected, or any program'], [4.75, 9.4, 'One window and one tab colour per project']]);
+  },
+});
+</script></body></html>

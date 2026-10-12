@@ -363,6 +363,11 @@ terminals…** opens **☰ → Settings → 💻 Terminals**, built like the bro
 terminals (Windows Terminal, PowerShell 7, Windows PowerShell, WezTerm), a box to hide one, **↻ Detect
 again**, and **➕** to add any other program.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/14-terminals-dark.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/14-terminals-light.gif" alt="Demo: the Terminals window, then terminal tiles opening one Windows Terminal window and one tab colour per project" width="960">
+</picture>
+
 Each terminal is a program and two argument templates — to open a folder, and to open a folder and run
 a command — with variables: `{folder}`, `{folder-name}`, `{name}` (the tile), `{color}`, `{command}`, and
 `{command-ps}` (the command prepared for PowerShell `-Command`). **Test** runs the final command.
