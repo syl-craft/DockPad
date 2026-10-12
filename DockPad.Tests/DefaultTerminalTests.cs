@@ -229,6 +229,37 @@ public class DefaultTerminalTests
     }
 
     [Fact]
+    public void CouleurChoisieParLaTuile_RemplaceCelleDuDossier()
+    {
+        var args = TerminalDetectionService.BuildArgs(Wt,
+            new TerminalConfig { StartingDirectory = @"C:\dev\DockPad", RunCommand = "claude", TabColor = "#FF8800" }, "DockPad");
+
+        Assert.Contains("--tabColor #FF8800", args);
+    }
+
+    [Theory]
+    [InlineData("rouge")]
+    [InlineData("#12345")]
+    [InlineData("")]
+    public void CouleurInvalideOuVide_PrendCelleDuDossier(string color)
+    {
+        var args = TerminalDetectionService.BuildArgs(Wt,
+            new TerminalConfig { StartingDirectory = @"C:\dev\DockPad", TabColor = color });
+
+        Assert.Contains($"--tabColor {TerminalDetectionService.TabColor("DockPad")}", args);
+    }
+
+    [Theory]
+    [InlineData("#F80", true)]
+    [InlineData("#ff8800", true)]
+    [InlineData("ff8800", false)]
+    [InlineData("#GG0000", false)]
+    public void CouleurDOnglet_FormatsAcceptesParWindowsTerminal(string color, bool valid)
+    {
+        Assert.Equal(valid, TerminalDetectionService.IsTabColor(color));
+    }
+
+    [Fact]
     public void CouleurDOnglet_StablePourUnMemeDossier_SansEgardALaCasse()
     {
         Assert.Equal(TerminalDetectionService.TabColor("DockPad"), TerminalDetectionService.TabColor("dockpad"));

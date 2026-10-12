@@ -177,20 +177,21 @@ public static class TerminalDetectionService
         string command = cfg.RunCommand.Trim();
         string template = command == "" ? terminal.FolderArgs : terminal.CommandArgs;
 
-        return Expand(template, cfg.StartingDirectory, command, name);
+        return Expand(template, cfg.StartingDirectory, command, name, cfg.TabColor);
     }
 
     /// <summary>
     /// Le modèle avec <c>{folder}</c>, <c>{folder-name}</c>, <c>{name}</c>, <c>{color}</c>,
     /// <c>{command}</c> et <c>{command-ps}</c> remplacés.
     /// </summary>
-    public static string Expand(string template, string folder, string command, string name = "")
+    public static string Expand(string template, string folder, string command, string name = "", string color = "")
     {
         string folderName = FolderName(folder);
+        string tabColor = IsTabColor(color) ? color.Trim() : TabColor(folderName);
 
         return template.Replace(FolderNameToken, folderName)
                        .Replace(FolderToken, folder)
-                       .Replace(ColorToken, TabColor(folderName))
+                       .Replace(ColorToken, tabColor)
                        .Replace(NameToken, string.IsNullOrWhiteSpace(name) ? folderName : name.Trim())
                        .Replace(PowerShellCommandToken, ForPowerShell(command))
                        .Replace(CommandToken, command)
@@ -200,7 +201,7 @@ public static class TerminalDetectionService
     /// <summary>
     /// Teintes distinctes, assez soutenues pour se lire sur un onglet clair comme sombre.
     /// </summary>
-    private static readonly string[] TabColors =
+    public static readonly IReadOnlyList<string> TabColors =
     [
         "#1A73E8", "#188038", "#D93025", "#E37400", "#9334E6",
         "#12B5CB", "#E52592", "#F9AB00", "#00897B", "#7CB342",
@@ -220,8 +221,14 @@ public static class TerminalDetectionService
             hash ^= c;
             hash *= 16777619;
         }
-        return TabColors[hash % (uint)TabColors.Length];
+        return TabColors[(int)(hash % (uint)TabColors.Count)];
     }
+
+    /// <summary>
+    /// Vrai pour une couleur que Windows Terminal accepte : <c>#RGB</c> ou <c>#RRGGBB</c>.
+    /// </summary>
+    public static bool IsTabColor(string color) =>
+        System.Text.RegularExpressions.Regex.IsMatch(color.Trim(), "^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$");
 
     /// <summary>
     /// Le dernier segment du dossier ; une racine de lecteur, ou <c>%V</c> qui n'est connu qu'au clic,

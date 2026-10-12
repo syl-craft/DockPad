@@ -1736,4 +1736,16 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Settings_Terminal_AutoNote" xml:space="preserve">
     <value>Automatique prend le premier terminal installé, avec les arguments réglés pour lui.</value>
   </data>
+  <data name="Shortcut_TabColor" xml:space="preserve">
+    <value>Couleur de l’onglet</value>
+  </data>
+  <data name="Shortcut_TabColor_Auto" xml:space="preserve">
+    <value>Automatique</value>
+  </data>
+  <data name="Shortcut_TabColor_Hint" xml:space="preserve">
+    <value>Utilisée par la variable {color} du terminal. Vide : une couleur tirée du nom du dossier.</value>
+  </data>
+  <data name="Shortcut_Err_TabColor" xml:space="preserve">
+    <value>Couleur invalide : utilisez #RGB ou #RRGGBB, ou laissez le champ vide.</value>
+  </data>
 </root>

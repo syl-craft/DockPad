@@ -114,6 +114,23 @@
                              ToolTip="{loc:T Shortcut_RunCommand_Tip}"
                              TextChanged="TerminalField_Changed"/>
 
+                    <!-- Couleur de l'onglet : la variable {color} du terminal -->
+                    <Label Content="{loc:T Shortcut_TabColor}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <Border x:Name="BdTabColor" Width="26" Height="26" CornerRadius="4" Margin="0,0,8,0"
+                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                        <TextBox x:Name="TxtTabColor" Width="110" FontFamily="Consolas"
+                                 AutomationProperties.Name="{loc:T Shortcut_TabColor}"
+                                 TextChanged="TerminalField_Changed"/>
+                        <Button Content="{loc:T Shortcut_TabColor_Auto}" Margin="8,0,0,0"
+                                Style="{StaticResource SecondaryButton}" Click="TabColorAuto_Click"
+                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
+                    </StackPanel>
+                    <WrapPanel x:Name="PnlTabColors" Margin="0,0,0,4"/>
+                    <TextBlock Text="{loc:T Shortcut_TabColor_Hint}" Margin="0,0,0,16" TextWrapping="Wrap"
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11"/>
+
                     <!-- Aperçu de la commande générée -->
                     <Border Background="{DynamicResource Brush.SurfaceHover}" BorderBrush="{DynamicResource Brush.SeparatorStrong}" BorderThickness="1" CornerRadius="4" Padding="10,8"
                             SnapsToDevicePixels="True" UseLayoutRounding="True">

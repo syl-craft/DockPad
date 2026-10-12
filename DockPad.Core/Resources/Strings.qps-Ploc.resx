@@ -1736,4 +1736,16 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Settings_Terminal_AutoNote" xml:space="preserve">
     <value>4ut0m4t1qu3 pr3nd l3 pr3m13r t3rm1n4l 1n5t4ll3, 4v3c l35 4rgum3nt5 r3gl35 p0ur lu1.</value>
   </data>
+  <data name="Shortcut_TabColor" xml:space="preserve">
+    <value>C0ul3ur d3 l’0ngl3t</value>
+  </data>
+  <data name="Shortcut_TabColor_Auto" xml:space="preserve">
+    <value>4ut0m4t1qu3</value>
+  </data>
+  <data name="Shortcut_TabColor_Hint" xml:space="preserve">
+    <value>Ut1l1533 p4r l4 v4r14bl3 {color} du t3rm1n4l. V1d3 : un3 c0ul3ur t1r33 du n0m du d05513r.</value>
+  </data>
+  <data name="Shortcut_Err_TabColor" xml:space="preserve">
+    <value>C0ul3ur 1nv4l1d3 : ut1l153z #RGB 0u #RRGGBB, 0u l41553z l3 ch4mp v1d3.</value>
+  </data>
 </root>

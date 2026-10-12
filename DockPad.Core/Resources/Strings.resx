@@ -1736,4 +1736,16 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Settings_Terminal_AutoNote" xml:space="preserve">
     <value>Automatic uses the first installed terminal, with the arguments set for it.</value>
   </data>
+  <data name="Shortcut_TabColor" xml:space="preserve">
+    <value>Tab colour</value>
+  </data>
+  <data name="Shortcut_TabColor_Auto" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="Shortcut_TabColor_Hint" xml:space="preserve">
+    <value>Used by the {color} variable of the terminal. Empty: a colour derived from the folder name.</value>
+  </data>
+  <data name="Shortcut_Err_TabColor" xml:space="preserve">
+    <value>Invalid colour: use #RGB or #RRGGBB, or leave it empty.</value>
+  </data>
 </root>

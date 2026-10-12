@@ -59,7 +59,7 @@ public static class ShortcutLauncher
             ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             : cfg.StartingDirectory;
 
-        return new TerminalConfig { StartingDirectory = folder, RunCommand = cfg.RunCommand };
+        return new TerminalConfig { StartingDirectory = folder, RunCommand = cfg.RunCommand, TabColor = cfg.TabColor };
     }
 
     /// <summary>
