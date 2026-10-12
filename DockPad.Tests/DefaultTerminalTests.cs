@@ -148,15 +148,6 @@ public class DefaultTerminalTests
         }
     }
 
-    [Fact]
-    public void RepliDesPredefinis_OuvreLeDossierEtLanceLaCommande()
-    {
-        // Sans terminal détecté, le prédéfini Claude doit encore ouvrir le dossier et lancer claude.
-        var cmd = PresetService.TerminalCommand(PresetService.FallbackTerminal, "claude");
-
-        Assert.Equal(@"""powershell.exe"" -NoExit -Command ""Set-Location '%V'; claude""", cmd);
-    }
-
     // -- Nom de fenêtre (wt -w) ------------------------------------------------
 
     [Fact]

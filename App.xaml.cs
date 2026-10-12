@@ -16,7 +16,8 @@ public partial class App : Application
         if (IsExiting) return;
         IsExiting = true;
         await System.Threading.Tasks.Task.WhenAll(Services.UrlPipeService.StopServerAsync(),
-            InjectPipe.StopServerAsync(), ShowPipe.StopServerAsync(), Services.McpPipeService.StopServerAsync());
+            InjectPipe.StopServerAsync(), ShowPipe.StopServerAsync(), TerminalPipe.StopServerAsync(),
+            Services.McpPipeService.StopServerAsync());
         Current.Shutdown();
     }
 
@@ -177,6 +178,12 @@ public partial class App : Application
         // et le bandeau se rafraichit comme il doit.
         ShowPipe.StartServer(_ => Dispatcher.BeginInvoke(() => _mainWindow.BringToFront()));
 
+        // Un prédéfini terminal du clic droit, relayé par le processus court : lancé d'ici, déjà chaud.
+        TerminalPipe.StartServer(payload =>
+        {
+            if (Services.TerminalLaunch.Decode(payload) is { } request) Services.TerminalLaunch.Launch(request);
+        });
+
         Services.McpDispatcher.OnMutation = () => Dispatcher.BeginInvoke(() => _mainWindow.RefreshGrid());
         Services.McpPipeService.StartServer(req => Services.McpDispatcher.Handle(req));
 
@@ -202,6 +209,11 @@ public partial class App : Application
     /// consommateurs doit distinguer un cas de plus.
     /// </remarks>
     private static readonly Services.LinePipeService ShowPipe = new(Services.StartupRelay.ShowPipeName);
+
+    /// <summary>
+    /// Tube des prédéfinis terminal du clic droit (<c>--terminal</c>).
+    /// </summary>
+    private static readonly Services.LinePipeService TerminalPipe = new(Services.TerminalLaunch.PipeName);
 
     /// <summary>
     /// Quitte, mais pas avant que le presse-papier ait été rendu à l'utilisateur.

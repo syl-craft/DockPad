@@ -41,6 +41,8 @@ internal static class Program
         if (!lifecycle)
         {
             if (Services.Updates.AppInstallation.DeferDuringUpdate(args)) return 0;
+            // Un prédéfini terminal du clic droit : jamais l'application complète.
+            if (Services.TerminalLaunch.TryHandle(args)) return 0;
             if (StartupRelay.TryRelay(args)) return 0;
         }
         Velopack.VelopackApp.Build().SetAutoApplyOnStartup(false)
