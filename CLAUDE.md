@@ -580,7 +580,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 - **Réseau — Télécharger l'icône du site pour les raccourcis web** : voir *Icône automatique des tuiles web* ci-dessus
-- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (Windows Terminal, puis PowerShell 7, puis Windows PowerShell), ou l'un des trois s'il est installé. Stocké dans `settings.json` (`defaultTerminal` : `wt`, `pwsh`, `powershell` ; `""` = automatique). Voir « Terminal par défaut » ci-dessous
+- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (Windows Terminal, puis PowerShell 7, puis Windows PowerShell), l'un des trois s'il est installé, ou un **chemin personnalisé** (`wt.exe`, `pwsh.exe` ou `powershell.exe` installés ailleurs). La commande réellement lancée par le prédéfini Claude s'affiche sous la liste. Stocké dans `settings.json` (`defaultTerminal` : `wt`, `pwsh`, `powershell`, `custom` ; `""` = automatique ; `customTerminalPath`). Voir « Terminal par défaut » ci-dessous
 - **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
 ### Sélecteur de navigateur
@@ -1623,6 +1623,9 @@ de réécrire leurs fichiers.
 - **`Resolve(réglage, installés)` est pur** : le terminal choisi s'il est installé, sinon le premier
   dans l'ordre de `Detect()` — vide, inconnu (`cmd` d'une version antérieure) ou désinstallé valent
   Automatique. `ResolveDefault()` le compose avec le réglage et la détection
+- **Un chemin personnalisé est reconnu au nom de l'exécutable** (`CustomTerminal`, pur) : seuls
+  `wt.exe`, `pwsh.exe` et `powershell.exe` savent recevoir un dossier et une commande. Introuvable ou
+  non reconnu, il bloque *Sauvegarder* avec un message ; s'il disparaît ensuite, il vaut Automatique
 - **`BuildArgs(terminal, config)` est le seul constructeur d'arguments**, pour les prédéfinis (dossier
   `%V`) comme pour les tuiles. Sous PowerShell, un chemin entre guillemets en tête de commande est
   préfixé de `&` — sinon PowerShell l'affiche au lieu de l'exécuter — et les guillemets sont échappés
@@ -1729,6 +1732,7 @@ emportait pas.
   "triggerSecond": "Shift",
   "claudeArgs": "--enable-auto-mode",
   "defaultTerminal": "",
+  "customTerminalPath": "",
   "autoFavicon": true,
   "bitwardenCliPath": "",
   "clipboardClearSeconds": 90,

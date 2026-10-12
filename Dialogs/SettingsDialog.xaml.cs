@@ -68,6 +68,7 @@ public partial class SettingsDialog : Window
         ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
         ChkAutoFavicon.IsChecked = SettingsService.LoadAutoFavicon();
         TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
+        TxtCustomTerminal.Text = SettingsService.LoadCustomTerminalPath();
         FillTerminals(SettingsService.LoadDefaultTerminal());
 
         TxtBwPath.Text = SettingsService.LoadBitwardenCliPath();
@@ -201,12 +202,48 @@ public partial class SettingsDialog : Window
     {
         var choices = new List<TerminalChoice> { new("", Loc.T("Settings_Terminal_Auto")) };
         choices.AddRange(_terminals.Select(t => new TerminalChoice(t.Id, t.DisplayName)));
+        choices.Add(new TerminalChoice(TerminalDetectionService.CustomId, Loc.T("Settings_Terminal_Custom")));
         if (selected != "" && choices.All(c => c.Tag != selected))
             choices.Add(new TerminalChoice(selected, Loc.F("Settings_Terminal_Missing", selected)));
 
         CmbDefaultTerminal.ItemsSource = choices;
         CmbDefaultTerminal.DisplayMemberPath = nameof(TerminalChoice.Label);
         CmbDefaultTerminal.SelectedItem = choices.Where(c => c.Tag == selected).First();
+    }
+
+    private string SelectedTerminalTag => (CmbDefaultTerminal.SelectedItem as TerminalChoice)?.Tag ?? "";
+
+    private bool CustomTerminalSelected => SelectedTerminalTag == TerminalDetectionService.CustomId;
+
+    private Models.TerminalInfo? TypedCustomTerminal =>
+        TerminalDetectionService.ExistingCustomTerminal(TxtCustomTerminal.Text.Trim().Trim('"'));
+
+    /// <summary>
+    /// Montre le champ du chemin personnalisé, et la commande que le choix lancera vraiment.
+    /// </summary>
+    private void DefaultTerminal_Changed(object sender, EventArgs e)
+    {
+        if (TxtTerminalPreview == null || TxtClaudeArgs == null) return;
+
+        var custom = TypedCustomTerminal;
+        var terminal = TerminalDetectionService.Resolve(SelectedTerminalTag, custom, _terminals);
+
+        PanelCustomTerminal.Visibility = CustomTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
+        TxtTerminalInvalid.Visibility = CustomTerminalSelected && custom == null ? Visibility.Visible : Visibility.Collapsed;
+        TxtTerminalPreview.Text = terminal == null
+            ? Loc.T("Quick_NoTerminal")
+            : PresetService.TerminalCommand(terminal, PresetService.ClaudeRunCommand(TxtClaudeArgs.Text));
+    }
+
+    private void BrowseTerminal_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title  = Loc.T("Settings_Terminal_Custom"),
+            Filter = Loc.T("Settings_Terminal_PickFilter"),
+        };
+        if (dlg.ShowDialog(this) == true)
+            TxtCustomTerminal.Text = dlg.FileName;
     }
 
     private void Theme_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -267,6 +304,12 @@ public partial class SettingsDialog : Window
     {
         if (CmbKey.SelectedIndex < 0) return;
         if (!ValidateTriggers()) return;
+        if (CustomTerminalSelected && TypedCustomTerminal == null)
+        {
+            Tabs.SelectedItem = TabIntegrations;
+            AppDialog.Warning(Loc.T("Settings_Terminal_CustomInvalid"), owner: this);
+            return;
+        }
 
         uint mods = 0;
         if (ChkCtrl.IsChecked  == true) mods |= HotkeyService.MOD_CONTROL;
@@ -285,7 +328,8 @@ public partial class SettingsDialog : Window
         SettingsService.SaveAutoStart(ChkAutoStart.IsChecked == true);
         SettingsService.SaveAutoFavicon(ChkAutoFavicon.IsChecked == true);
         SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
-        SettingsService.SaveDefaultTerminal((CmbDefaultTerminal.SelectedItem as TerminalChoice)?.Tag ?? "");
+        SettingsService.SaveDefaultTerminal(SelectedTerminalTag);
+        SettingsService.SaveCustomTerminalPath(TxtCustomTerminal.Text);
 
         SettingsService.SaveBitwardenCliPath(TxtBwPath.Text);
         SettingsService.SaveGitHubCliPath(TxtGhPath.Text);

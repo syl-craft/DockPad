@@ -24,7 +24,7 @@ public class DefaultTerminalTests
     [Fact]
     public void Automatique_PrendLePremierDansLOrdreDeDetection()
     {
-        var resolved = TerminalDetectionService.Resolve("", [Wt, Pwsh, WindowsPowerShell]);
+        var resolved = TerminalDetectionService.Resolve("", custom: null, [Wt, Pwsh, WindowsPowerShell]);
 
         Assert.Same(Wt, resolved);
     }
@@ -32,7 +32,7 @@ public class DefaultTerminalTests
     [Fact]
     public void Automatique_SansWindowsTerminal_PrendPowerShell7()
     {
-        var resolved = TerminalDetectionService.Resolve("", [Pwsh, WindowsPowerShell]);
+        var resolved = TerminalDetectionService.Resolve("", custom: null, [Pwsh, WindowsPowerShell]);
 
         Assert.Same(Pwsh, resolved);
     }
@@ -40,7 +40,7 @@ public class DefaultTerminalTests
     [Fact]
     public void TerminalChoisi_EstRetenuSIlEstInstalle()
     {
-        var resolved = TerminalDetectionService.Resolve("powershell", [Wt, Pwsh, WindowsPowerShell]);
+        var resolved = TerminalDetectionService.Resolve("powershell", custom: null, [Wt, Pwsh, WindowsPowerShell]);
 
         Assert.Same(WindowsPowerShell, resolved);
     }
@@ -51,7 +51,7 @@ public class DefaultTerminalTests
     [InlineData("inconnu")]   // écrit par une version plus récente
     public void TerminalChoisiAbsent_SeComporteCommeAutomatique(string setting)
     {
-        var resolved = TerminalDetectionService.Resolve(setting, [Wt, WindowsPowerShell]);
+        var resolved = TerminalDetectionService.Resolve(setting, custom: null, [Wt, WindowsPowerShell]);
 
         Assert.Same(Wt, resolved);
     }
@@ -59,7 +59,48 @@ public class DefaultTerminalTests
     [Fact]
     public void AucunTerminalInstalle_NeRendRien()
     {
-        Assert.Null(TerminalDetectionService.Resolve("", []));
+        Assert.Null(TerminalDetectionService.Resolve("", custom: null, []));
+    }
+
+    // -- Chemin personnalisé --------------------------------------------------
+
+    [Theory]
+    [InlineData(@"D:\Outils\Terminal\wt.exe", "wt")]
+    [InlineData(@"C:\Program Files\PowerShell\7-preview\PWSH.EXE", "pwsh")]
+    [InlineData(@"D:\portable\powershell.exe", "powershell")]
+    public void CheminPersonnalise_ReconnuParLeNomDeLExecutable(string path, string expectedId)
+    {
+        var custom = TerminalDetectionService.CustomTerminal(path);
+
+        Assert.Equal(expectedId, custom!.Id);
+        Assert.Equal(path, custom.ExePath);
+    }
+
+    [Theory]
+    [InlineData(@"C:\Program Files\Git\bin\bash.exe")]   // ni dossier ni commande transmissibles
+    [InlineData(@"C:\Windows\System32\cmd.exe")]
+    [InlineData("")]
+    public void CheminPersonnalise_NonReconnu_NeRendRien(string path)
+    {
+        Assert.Null(TerminalDetectionService.CustomTerminal(path));
+    }
+
+    [Fact]
+    public void CheminPersonnalise_EstRetenuQuandIlEstChoisi()
+    {
+        var custom = TerminalDetectionService.CustomTerminal(@"D:\pwsh-preview\pwsh.exe");
+
+        var resolved = TerminalDetectionService.Resolve(TerminalDetectionService.CustomId, custom, [Wt, Pwsh]);
+
+        Assert.Same(custom, resolved);
+    }
+
+    [Fact]
+    public void CheminPersonnaliseInvalide_SeComporteCommeAutomatique()
+    {
+        var resolved = TerminalDetectionService.Resolve(TerminalDetectionService.CustomId, custom: null, [Wt, Pwsh]);
+
+        Assert.Same(Wt, resolved);
     }
 
     // -- Avec quelle commande --------------------------------------------------

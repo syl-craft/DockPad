@@ -114,6 +114,11 @@ public static class SettingsService
     public static void SaveDefaultTerminal(string terminalId) =>
         AppSettingsService.Update(s => s.DefaultTerminal = terminalId);
 
+    public static string LoadCustomTerminalPath() => AppSettingsService.Current.CustomTerminalPath;
+
+    public static void SaveCustomTerminalPath(string path) =>
+        AppSettingsService.Update(s => s.CustomTerminalPath = path.Trim().Trim('"'));
+
     public static string LoadBitwardenCliPath() => AppSettingsService.Current.BitwardenCliPath;
 
     public static void SaveBitwardenCliPath(string path) =>

@@ -14,6 +14,11 @@ public static class TerminalDetectionService
     public const string WindowsPowerShellId = "powershell";
 
     /// <summary>
+    /// Valeur du réglage quand le terminal est désigné par un chemin choisi dans les Options.
+    /// </summary>
+    public const string CustomId = "custom";
+
+    /// <summary>
     /// Terminaux installés, dans l'ordre du mode Automatique.
     /// </summary>
     public static List<TerminalInfo> Detect()
@@ -45,21 +50,48 @@ public static class TerminalDetectionService
     }
 
     /// <summary>
-    /// Le terminal choisi s'il est installé, sinon le premier installé : vide, inconnu ou désinstallé
-    /// valent Automatique.
+    /// Le terminal choisi s'il est disponible, sinon le premier installé : vide, inconnu, désinstallé
+    /// ou chemin personnalisé invalide (<paramref name="custom"/> nul) valent Automatique.
     /// </summary>
-    public static TerminalInfo? Resolve(string setting, IReadOnlyList<TerminalInfo> installed)
+    public static TerminalInfo? Resolve(string setting, TerminalInfo? custom, IReadOnlyList<TerminalInfo> installed)
     {
-        var chosen = installed.Where(t => t.Id == setting).FirstOrDefault();
+        var chosen = setting == CustomId
+            ? custom
+            : installed.Where(t => t.Id == setting).FirstOrDefault();
 
         return chosen ?? installed.FirstOrDefault();
     }
 
     /// <summary>
+    /// Le terminal désigné par un chemin, reconnu au nom de l'exécutable ; <c>null</c> pour tout
+    /// autre programme, auquel on ne saurait passer ni le dossier ni la commande.
+    /// </summary>
+    public static TerminalInfo? CustomTerminal(string path)
+    {
+        string? id = Path.GetFileName(path).ToLowerInvariant() switch
+        {
+            "wt.exe"         => WindowsTerminalId,
+            "pwsh.exe"       => PowerShell7Id,
+            "powershell.exe" => WindowsPowerShellId,
+            _                => null,
+        };
+
+        return id == null ? null : new TerminalInfo { Id = id, DisplayName = path, ExePath = path };
+    }
+
+    /// <summary>
+    /// Le chemin personnalisé s'il existe et désigne un terminal reconnu, sinon <c>null</c>.
+    /// </summary>
+    public static TerminalInfo? ExistingCustomTerminal(string path) =>
+        File.Exists(path) ? CustomTerminal(path) : null;
+
+    /// <summary>
     /// Le terminal à lancer selon les Options, ou <c>null</c> si aucun n'est installé.
     /// </summary>
     public static TerminalInfo? ResolveDefault() =>
-        Resolve(SettingsService.LoadDefaultTerminal(), Detect());
+        Resolve(SettingsService.LoadDefaultTerminal(),
+                ExistingCustomTerminal(SettingsService.LoadCustomTerminalPath()),
+                Detect());
 
     /// <summary>
     /// Arguments qui ouvrent <paramref name="terminal"/> dans le dossier de la config et y lancent sa commande.

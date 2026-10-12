@@ -1694,4 +1694,19 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Settings_Terminal_Hint" xml:space="preserve">
     <value>Ouvert par les tuiles Terminal et par les prédéfinis Claude, Codex et PowerShell. Après un changement, réinstallez ces prédéfinis depuis ☰ → Raccourcis prédéfinis.</value>
   </data>
+  <data name="Settings_Terminal_Custom" xml:space="preserve">
+    <value>Chemin personnalisé…</value>
+  </data>
+  <data name="Settings_Terminal_Browse" xml:space="preserve">
+    <value>Parcourir…</value>
+  </data>
+  <data name="Settings_Terminal_CustomInvalid" xml:space="preserve">
+    <value>Choisissez un wt.exe, pwsh.exe ou powershell.exe existant : DockPad ne sait passer le dossier et la commande qu’à ceux-là.</value>
+  </data>
+  <data name="Settings_Terminal_Preview" xml:space="preserve">
+    <value>Commande lancée (prédéfini Claude) :</value>
+  </data>
+  <data name="Settings_Terminal_PickFilter" xml:space="preserve">
+    <value>Terminaux (wt.exe, pwsh.exe, powershell.exe)|wt.exe;pwsh.exe;powershell.exe</value>
+  </data>
 </root>

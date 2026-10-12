@@ -118,7 +118,31 @@
                     <TextBlock Text="{loc:T Settings_Terminal_Section}" FontWeight="SemiBold"
                                FontSize="13" Margin="0,0,0,10"/>
                     <TextBlock Text="{loc:T Settings_Terminal_Default}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
-                    <ComboBox x:Name="CmbDefaultTerminal" AutomationProperties.Name="{loc:T Settings_Terminal_Default}"/>
+                    <ComboBox x:Name="CmbDefaultTerminal" AutomationProperties.Name="{loc:T Settings_Terminal_Default}"
+                              SelectionChanged="DefaultTerminal_Changed"/>
+                    <Grid x:Name="PanelCustomTerminal" Margin="0,8,0,0" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="TxtCustomTerminal" Grid.Column="0" FontFamily="Consolas" FontSize="12"
+                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                 AutomationProperties.Name="{loc:T Settings_Terminal_Custom}"
+                                 TextChanged="DefaultTerminal_Changed"/>
+                        <Button Grid.Column="1" Content="{loc:T Settings_Terminal_Browse}"
+                                Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                Click="BrowseTerminal_Click"/>
+                    </Grid>
+                    <TextBlock x:Name="TxtTerminalInvalid" Text="{loc:T Settings_Terminal_CustomInvalid}"
+                               Foreground="{DynamicResource Brush.Danger}" FontSize="11" Margin="0,6,0,0"
+                               TextWrapping="Wrap" Visibility="Collapsed"/>
+                    <TextBlock Text="{loc:T Settings_Terminal_Preview}" Foreground="{DynamicResource Brush.TextLabel}"
+                               FontSize="11" Margin="0,8,0,2"/>
+                    <TextBox x:Name="TxtTerminalPreview" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0"
+                             Background="Transparent" FontFamily="Consolas" FontSize="11"
+                             Foreground="{DynamicResource Brush.TextHint}"
+                             AutomationProperties.Name="{loc:T Settings_Terminal_Preview}"/>
                     <TextBlock Text="{loc:T Settings_Terminal_Hint}" Margin="0,8,0,0"
                                Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
@@ -129,7 +153,8 @@
                     <TextBlock Text="{loc:T Settings_Claude_ExtraArgs}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
                     <TextBox x:Name="TxtClaudeArgs" FontFamily="Consolas" FontSize="12"
                              Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                             ToolTip="{loc:T Settings_Claude_ArgsHint}"/>
+                             ToolTip="{loc:T Settings_Claude_ArgsHint}"
+                             TextChanged="DefaultTerminal_Changed"/>
 
                     <Separator Margin="0,12,0,10"/>
 

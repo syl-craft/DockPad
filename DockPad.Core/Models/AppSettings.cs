@@ -35,10 +35,15 @@ public class AppSettings
     public string ClaudeArgs { get; set; } = "";
 
     /// <summary>
-    /// Terminal des prédéfinis et des tuiles Terminal (<c>wt</c>, <c>pwsh</c>, <c>powershell</c>),
-    /// ou vide pour « automatique ».
+    /// Terminal des prédéfinis et des tuiles Terminal (<c>wt</c>, <c>pwsh</c>, <c>powershell</c>,
+    /// <c>custom</c> pour <see cref="CustomTerminalPath"/>), ou vide pour « automatique ».
     /// </summary>
     public string DefaultTerminal { get; set; } = "";
+
+    /// <summary>
+    /// Chemin de <c>wt.exe</c>, <c>pwsh.exe</c> ou <c>powershell.exe</c>, lu quand <see cref="DefaultTerminal"/> vaut <c>custom</c>.
+    /// </summary>
+    public string CustomTerminalPath { get; set; } = "";
 
     /// <summary>
     /// Télécharger l'icône du site pour les tuiles web. Vrai par défaut : un réglage réseau qu'on

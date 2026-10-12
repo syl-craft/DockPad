@@ -1694,4 +1694,19 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Settings_Terminal_Hint" xml:space="preserve">
     <value>0uv3rt p4r l35 tu1l35 T3rm1n4l 3t p4r l35 pr3d3f1n15 Cl4ud3, C0d3x 3t P0w3r5h3ll. 4pr35 un ch4ng3m3nt, r31n5t4ll3z c35 pr3d3f1n15 d3pu15 ☰ → R4cc0urc15 pr3d3f1n15.</value>
   </data>
+  <data name="Settings_Terminal_Custom" xml:space="preserve">
+    <value>Ch3m1n p3r50nn4l153…</value>
+  </data>
+  <data name="Settings_Terminal_Browse" xml:space="preserve">
+    <value>P4rc0ur1r…</value>
+  </data>
+  <data name="Settings_Terminal_CustomInvalid" xml:space="preserve">
+    <value>Ch0151553z un wt.3x3, pw5h.3x3 0u p0w3r5h3ll.3x3 3x15t4nt : D0ckP4d n3 541t p4553r l3 d05513r 3t l4 c0mm4nd3 qu’4 c3ux-l4.</value>
+  </data>
+  <data name="Settings_Terminal_Preview" xml:space="preserve">
+    <value>C0mm4nd3 l4nc33 (pr3d3f1n1 Cl4ud3) :</value>
+  </data>
+  <data name="Settings_Terminal_PickFilter" xml:space="preserve">
+    <value>T3rm1n4ux (wt.3x3, pw5h.3x3, p0w3r5h3ll.3x3)|wt.3x3;pw5h.3x3;p0w3r5h3ll.3x3</value>
+  </data>
 </root>

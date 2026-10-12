@@ -36,10 +36,7 @@ public static class PresetService
 
         string icon = claudeExe ?? "";
 
-        string claudeArgs = SettingsService.LoadClaudeArgs();
-        string claudeCmd  = string.IsNullOrEmpty(claudeArgs) ? "claude" : $"claude {claudeArgs}";
-
-        string command = TerminalCommand(DefaultTerminal(), claudeCmd);
+        string command = TerminalCommand(DefaultTerminal(), ClaudeRunCommand(SettingsService.LoadClaudeArgs()));
 
         return new PresetEntry
         {
@@ -103,6 +100,9 @@ public static class PresetService
     /// une machine où DockPad ne sait pas localiser le binaire.
     /// </para>
     /// </remarks>
+    public static string ClaudeRunCommand(string claudeArgs) =>
+        string.IsNullOrWhiteSpace(claudeArgs) ? "claude" : $"claude {claudeArgs.Trim()}";
+
     public static string CodexRunCommand(string? codexExe) =>
         codexExe == null ? "codex" : $"\"{codexExe}\"";
 

@@ -1694,4 +1694,19 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Settings_Terminal_Hint" xml:space="preserve">
     <value>Opened by Terminal tiles and by the Claude, Codex and PowerShell presets. After a change, reinstall those presets from ☰ → Presets.</value>
   </data>
+  <data name="Settings_Terminal_Custom" xml:space="preserve">
+    <value>Custom path…</value>
+  </data>
+  <data name="Settings_Terminal_Browse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="Settings_Terminal_CustomInvalid" xml:space="preserve">
+    <value>Choose an existing wt.exe, pwsh.exe or powershell.exe: DockPad only knows how to pass them the folder and the command.</value>
+  </data>
+  <data name="Settings_Terminal_Preview" xml:space="preserve">
+    <value>Command launched (Claude preset):</value>
+  </data>
+  <data name="Settings_Terminal_PickFilter" xml:space="preserve">
+    <value>Terminals (wt.exe, pwsh.exe, powershell.exe)|wt.exe;pwsh.exe;powershell.exe</value>
+  </data>
 </root>
