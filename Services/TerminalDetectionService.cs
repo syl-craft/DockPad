@@ -27,6 +27,7 @@ public static class TerminalDetectionService
     public const string PowerShellCommandToken = "{command-ps}";
     public const string NameToken              = "{name}";
     public const string FolderNameToken        = "{folder-name}";
+    public const string ColorToken             = "{color}";
 
     /// <summary>
     /// Terminaux installés, avec les arguments de DockPad, dans l'ordre du mode Automatique.
@@ -80,8 +81,8 @@ public static class TerminalDetectionService
     {
         WindowsTerminalId => new()
         {
-            FolderArgs  = "-w 0 new-tab --startingDirectory \"{folder}\"",
-            CommandArgs = "-w 0 new-tab --startingDirectory \"{folder}\" -- {command}",
+            FolderArgs  = "-w \"{folder-name}\" new-tab --tabColor {color} --startingDirectory \"{folder}\"",
+            CommandArgs = "-w \"{folder-name}\" new-tab --tabColor {color} --startingDirectory \"{folder}\" -- {command}",
         },
         PowerShell7Id or WindowsPowerShellId => new()
         {
@@ -180,8 +181,8 @@ public static class TerminalDetectionService
     }
 
     /// <summary>
-    /// Le modèle avec <c>{folder}</c>, <c>{folder-name}</c>, <c>{name}</c>, <c>{command}</c> et
-    /// <c>{command-ps}</c> remplacés.
+    /// Le modèle avec <c>{folder}</c>, <c>{folder-name}</c>, <c>{name}</c>, <c>{color}</c>,
+    /// <c>{command}</c> et <c>{command-ps}</c> remplacés.
     /// </summary>
     public static string Expand(string template, string folder, string command, string name = "")
     {
@@ -189,10 +190,37 @@ public static class TerminalDetectionService
 
         return template.Replace(FolderNameToken, folderName)
                        .Replace(FolderToken, folder)
+                       .Replace(ColorToken, TabColor(folderName))
                        .Replace(NameToken, string.IsNullOrWhiteSpace(name) ? folderName : name.Trim())
                        .Replace(PowerShellCommandToken, ForPowerShell(command))
                        .Replace(CommandToken, command)
                        .Trim();
+    }
+
+    /// <summary>
+    /// Teintes distinctes, assez soutenues pour se lire sur un onglet clair comme sombre.
+    /// </summary>
+    private static readonly string[] TabColors =
+    [
+        "#1A73E8", "#188038", "#D93025", "#E37400", "#9334E6",
+        "#12B5CB", "#E52592", "#F9AB00", "#00897B", "#7CB342",
+    ];
+
+    /// <summary>
+    /// Couleur d'onglet d'un dossier, toujours la même pour un même nom, d'une session à l'autre.
+    /// </summary>
+    /// <remarks>
+    /// FNV-1a sur le nom en minuscules, et non <c>GetHashCode</c>, qui change à chaque démarrage.
+    /// </remarks>
+    public static string TabColor(string folderName)
+    {
+        uint hash = 2166136261;
+        foreach (char c in folderName.ToLowerInvariant())
+        {
+            hash ^= c;
+            hash *= 16777619;
+        }
+        return TabColors[hash % (uint)TabColors.Length];
     }
 
     /// <summary>

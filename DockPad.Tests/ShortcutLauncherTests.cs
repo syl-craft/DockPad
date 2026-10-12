@@ -72,10 +72,9 @@ public class ShortcutLauncherTests
     }
 
     [Fact]
-    public void Terminal_EnAutomatique_LanceExactementCeQuAvant()
+    public void Terminal_EnAutomatique_OuvreLOngletDansLaFenetreDuDossier()
     {
-        // Les tuiles existantes enregistrent wt.exe : avec Windows Terminal en automatique, rien ne
-        // doit changer, ni le programme ni un seul caractère des arguments.
+        // Les tuiles d'un même dossier se regroupent dans une fenêtre Windows Terminal à son nom.
         var entry = Entry(ShortcutType.OpenTerminal, @"C:\dev\DockPad");
         entry.Terminal = new TerminalConfig
         {
@@ -88,7 +87,7 @@ public class ShortcutLauncherTests
         var plan = ShortcutLauncher.Plan(entry, Wt) ?? throw new InvalidOperationException("aucun plan");
 
         Assert.Equal(@"C:\wt.exe", plan.FileName);
-        Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev\DockPad"" -- claude --resume abc --remote-control ""DockPad""",
+        Assert.Equal($@"-w ""DockPad"" new-tab --tabColor {TerminalDetectionService.TabColor("DockPad")} --startingDirectory ""C:\dev\DockPad"" -- claude --resume abc --remote-control ""DockPad""",
                      plan.Arguments);
     }
 
@@ -100,7 +99,7 @@ public class ShortcutLauncherTests
             ?? throw new InvalidOperationException("aucun plan");
 
         Assert.Equal(@"C:\wt.exe", plan.FileName);
-        Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev""", plan.Arguments);
+        Assert.Equal($@"-w ""dev"" new-tab --tabColor {TerminalDetectionService.TabColor("dev")} --startingDirectory ""C:\dev""", plan.Arguments);
     }
 
     [Fact]
@@ -113,7 +112,8 @@ public class ShortcutLauncherTests
         var plan = ShortcutLauncher.Plan(entry, Wt) ?? throw new InvalidOperationException("aucun plan");
 
         string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        Assert.Equal($@"-w 0 new-tab --startingDirectory ""{home}"" -- claude", plan.Arguments);
+        string user = TerminalDetectionService.FolderName(home);
+        Assert.Equal($@"-w ""{user}"" new-tab --tabColor {TerminalDetectionService.TabColor(user)} --startingDirectory ""{home}"" -- claude", plan.Arguments);
     }
 
     [Fact]

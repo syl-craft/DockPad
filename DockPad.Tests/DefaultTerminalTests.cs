@@ -228,6 +228,21 @@ public class DefaultTerminalTests
         Assert.Equal(@"-w ""DockPad""", args);
     }
 
+    [Fact]
+    public void CouleurDOnglet_StablePourUnMemeDossier_SansEgardALaCasse()
+    {
+        Assert.Equal(TerminalDetectionService.TabColor("DockPad"), TerminalDetectionService.TabColor("dockpad"));
+        Assert.Matches("^#[0-9A-F]{6}$", TerminalDetectionService.TabColor("DockPad"));
+    }
+
+    [Fact]
+    public void CouleurDOnglet_VarieDUnProjetALAutre()
+    {
+        string[] projects = ["DockPad", "Shope-stage", "Tandoor", "AudioBox-Pro", "Backup-All-2", "Qnap"];
+
+        Assert.True(projects.Select(TerminalDetectionService.TabColor).Distinct().Count() > 1);
+    }
+
     // -- Avec quelle commande --------------------------------------------------
 
     [Fact]
@@ -274,6 +289,6 @@ public class DefaultTerminalTests
 
         var args = TerminalDetectionService.BuildArgs(Wt, cfg);
 
-        Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev"" -- claude --remote-control ""Train de Noël""", args);
+        Assert.Equal($@"-w ""dev"" new-tab --tabColor {TerminalDetectionService.TabColor("dev")} --startingDirectory ""C:\dev"" -- claude --remote-control ""Train de Noël""", args);
     }
 }
