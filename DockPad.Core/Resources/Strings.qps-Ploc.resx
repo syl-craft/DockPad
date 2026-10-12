@@ -1748,4 +1748,7 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Shortcut_Err_TabColor" xml:space="preserve">
     <value>C0ul3ur 1nv4l1d3 : ut1l153z #RGB 0u #RRGGBB, 0u l41553z l3 ch4mp v1d3.</value>
   </data>
+  <data name="Settings_Terminal_JsonNote" xml:space="preserve">
+    <value>D3cl4r3 d4n5 l4 53ct10n t3rm1n4l5 d3 53tt1ng5.j50n : m0d1f13z-l3 l4, pu15 r0uvr3z l35 0pt10n5.</value>
+  </data>
 </root>

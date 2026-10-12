@@ -1748,4 +1748,7 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Shortcut_Err_TabColor" xml:space="preserve">
     <value>Invalid colour: use #RGB or #RRGGBB, or leave it empty.</value>
   </data>
+  <data name="Settings_Terminal_JsonNote" xml:space="preserve">
+    <value>Declared in the terminals section of settings.json: edit it there, then reopen the Options.</value>
+  </data>
 </root>

@@ -1629,11 +1629,25 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 | Variable | Remplacée par |
 |---|---|
 | `{folder}` | le dossier (`%V` dans un prédéfini) |
+| `{folder-name}` | son dernier segment ; une racine de lecteur ou `%V` reste entier |
+| `{name}` | le nom de la tuile ; dans un prédéfini, `{folder-name}` |
+| `{color}` | la couleur d'onglet de la tuile, sinon une teinte de la palette tirée du nom du dossier (FNV-1a, stable d'une session à l'autre — pas `GetHashCode`) |
 | `{command}` | la commande à lancer, telle quelle |
 | `{command-ps}` | la même, préparée pour `-Command "…"` de PowerShell : guillemets échappés en `\"`, `&` devant un chemin entre guillemets — sans quoi `--remote-control "…"` et Codex dans `Program Files` cassent |
 
 - **Les modèles de Windows Terminal et de PowerShell sont ceux de DockPad** (`DefaultTemplates`), modifiables
-  dans les Options avec *Rétablir*. Seuls ceux qui diffèrent sont écrits (`terminalTemplates`)
+  dans les Options avec *Rétablir*. Seuls ceux qui diffèrent sont écrits (`terminalTemplates`) ; ceux d'un
+  terminal non détecté ce jour-là sont gardés tels quels
+- **Windows Terminal ouvre une fenêtre par dossier** : `-w "{folder-name}" new-tab --tabColor {color}
+  --startingDirectory "{folder}" -- {command}`. `-w <nom>` vise la fenêtre de ce nom et la crée si elle
+  n'existe pas : les tuiles d'un même projet se regroupent. Dans un prédéfini le dossier n'est connu qu'au
+  clic, la fenêtre porte donc le chemin complet et la couleur est la même pour tous
+- **Couleur choisie par tuile** (`terminal.tabColor`, `#RGB` ou `#RRGGBB`) : champ et palette dans la
+  fenêtre d'une tuile Terminal ; vide ou invalide, la couleur du dossier
+- **Terminaux déclarés dans `settings.json`** (section `terminals`) : chacun a un `id`, un `name`, un
+  `exePath` et ses deux modèles. Ils s'ajoutent à la liste des Options, en lecture seule — on les modifie
+  dans le fichier. Une entrée à l'identifiant réservé (`wt`, `pwsh`, `powershell`, `custom`, vide), en
+  double ou dont le programme manque est écartée sans empêcher les autres (`Declared`, pur)
 - **Un autre programme** prend n'importe quel exécutable ; son chemin accepte `%LocalAppData%` et les
   autres variables d'environnement, gardées telles quelles : le registre les développe, le lanceur des
   tuiles aussi (`ShortcutLauncher.Start`). *Parcourir* préremplit les modèles de DockPad si c'est un
@@ -1646,9 +1660,8 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
   lancé à sa place faisait croire que le réglage marchait
 - **Le `terminal.exePath`, `newTab` et `extraArgs` d'une tuile ne sont plus lus.** Ils restent écrits,
   pour une version antérieure de DockPad. La fenêtre d'une tuile n'a plus que le dossier et la commande
-- **En Automatique avec Windows Terminal, les commandes sont celles d'avant à l'octet près** : un écart
-  ferait afficher « mise à jour disponible » sur des prédéfinis installés qui fonctionnent. Des tests le
-  figent, pour les prédéfinis comme pour les tuiles
+- **Changer les arguments par défaut d'un terminal change les commandes des prédéfinis installés** : ils
+  s'affichent « mise à jour disponible » jusqu'à leur réinstallation. C'est arrivé au passage à `-w "{folder-name}"`
 - **Changer de terminal fait passer les prédéfinis installés à « mise à jour disponible »**, par le
   `CompareStatus` existant
 - Aucun terminal installé → message `Quick_NoTerminal` au lancement d'une tuile ; un prédéfini retombe
@@ -1669,7 +1682,7 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 ```
 
 - `type` optionnel — défaut `RunCommand` (rétrocompatible)
-- `terminal` présent uniquement pour `OpenTerminal` — seuls `startingDirectory` et `runCommand` sont lus : le terminal et ses arguments sont ceux des Options
+- `terminal` présent uniquement pour `OpenTerminal` — seuls `startingDirectory`, `runCommand` et `tabColor` sont lus : le terminal et ses arguments sont ceux des Options
 - `processSwitch` présent uniquement pour `SwitchToProcess`
 - `iconProfilePath` chemin relatif au profil (`%APPDATA%\DockPad\`), prioritaire sur `iconPath`
 - Colonnes : 0–5 | Lignes : 0–3 | `page` commence à 0
@@ -1745,6 +1758,10 @@ emportait pas.
   "defaultTerminal": "custom",
   "terminalTemplates": { "wt": { "folderArgs": "-d \"{folder}\"", "commandArgs": "-d \"{folder}\" -- {command}" } },
   "customTerminal": { "exePath": "%LocalAppData%\\MXterm Pro\\mxterm.exe", "folderArgs": "\"{folder}\"", "commandArgs": "\"{folder}\"" },
+  "terminals": [
+    { "id": "wezterm", "name": "WezTerm", "exePath": "C:\\Program Files\\WezTerm\\wezterm-gui.exe",
+      "folderArgs": "start --new-tab --cwd \"{folder}\"", "commandArgs": "start --new-tab --cwd \"{folder}\" -- {command}" }
+  ],
   "autoFavicon": true,
   "bitwardenCliPath": "",
   "clipboardClearSeconds": 90,

@@ -152,10 +152,45 @@ public static class TerminalDetectionService
     }
 
     /// <summary>
-    /// Terminaux installés, avec les arguments modifiés dans <paramref name="templates"/>.
+    /// Terminaux installés, avec les arguments modifiés dans <paramref name="templates"/>, puis
+    /// ceux déclarés dans <c>settings.json</c>.
     /// </summary>
-    public static List<TerminalInfo> Installed(IReadOnlyDictionary<string, TerminalSettings> templates) =>
-        Detect().Select(t => WithTemplates(t, templates.GetValueOrDefault(t.Id))).ToList();
+    public static List<TerminalInfo> Installed(IReadOnlyDictionary<string, TerminalSettings> templates,
+                                               IReadOnlyList<TerminalDefinition> definitions)
+    {
+        var installed = Detect().Select(t => WithTemplates(t, templates.GetValueOrDefault(t.Id))).ToList();
+        installed.AddRange(Declared(definitions, exists: path => File.Exists(Environment.ExpandEnvironmentVariables(path))));
+        return installed;
+    }
+
+    /// <summary>
+    /// Les terminaux déclarés utilisables : identifiant libre et unique, programme présent. Une
+    /// entrée qui ne l'est pas est écartée, sans empêcher les autres d'être proposées.
+    /// </summary>
+    public static List<TerminalInfo> Declared(IReadOnlyList<TerminalDefinition> definitions, Func<string, bool> exists)
+    {
+        string[] reserved = ["", WindowsTerminalId, PowerShell7Id, WindowsPowerShellId, CustomId];
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var declared = new List<TerminalInfo>();
+
+        foreach (var definition in definitions)
+        {
+            string id = definition.Id.Trim();
+            string exePath = definition.ExePath.Trim().Trim('"');
+            if (reserved.Contains(id, StringComparer.OrdinalIgnoreCase) || !seen.Add(id)) continue;
+            if (exePath == "" || !exists(exePath)) continue;
+
+            declared.Add(new TerminalInfo
+            {
+                Id = id,
+                DisplayName = string.IsNullOrWhiteSpace(definition.Name) ? id : definition.Name.Trim(),
+                ExePath = exePath,
+                FolderArgs = definition.FolderArgs.Trim(),
+                CommandArgs = definition.CommandArgs.Trim(),
+            });
+        }
+        return declared;
+    }
 
     /// <summary>
     /// Le terminal à lancer selon les Options, ou <c>null</c> si aucun n'est installé.
@@ -163,7 +198,7 @@ public static class TerminalDetectionService
     public static TerminalInfo? ResolveDefault() =>
         Resolve(SettingsService.LoadDefaultTerminal(),
                 ExistingCustomTerminal(SettingsService.LoadCustomTerminal()),
-                Installed(SettingsService.LoadTerminalTemplates()));
+                Installed(SettingsService.LoadTerminalTemplates(), SettingsService.LoadTerminalDefinitions()));
 
     /// <summary>
     /// Arguments qui ouvrent <paramref name="terminal"/> dans le dossier de la config et y lancent sa commande.

@@ -1748,4 +1748,7 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Shortcut_Err_TabColor" xml:space="preserve">
     <value>Couleur invalide : utilisez #RGB ou #RRGGBB, ou laissez le champ vide.</value>
   </data>
+  <data name="Settings_Terminal_JsonNote" xml:space="preserve">
+    <value>Déclaré dans la section terminals de settings.json : modifiez-le là, puis rouvrez les Options.</value>
+  </data>
 </root>

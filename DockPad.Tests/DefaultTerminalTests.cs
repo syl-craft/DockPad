@@ -193,6 +193,61 @@ public class DefaultTerminalTests
         Assert.Equal(@"""powershell.exe"" -NoExit -Command ""Set-Location '%V'; claude""", cmd);
     }
 
+    // -- Terminaux déclarés dans settings.json -----------------------------------
+
+    private static TerminalDefinition Definition(string id, string exe, string name = "") =>
+        new() { Id = id, Name = name, ExePath = exe, FolderArgs = @"start --cwd ""{folder}""", CommandArgs = @"start --cwd ""{folder}"" -- {command}" };
+
+    [Fact]
+    public void TerminalDeclare_EstProposeAvecSonNom()
+    {
+        var declared = TerminalDetectionService.Declared([Definition("wezterm", @"C:\WezTerm\wezterm.exe", "WezTerm")], exists: _ => true);
+
+        var wezterm = Assert.Single(declared);
+        Assert.Equal("WezTerm", wezterm.DisplayName);
+        Assert.Equal(@"start --cwd ""C:\dev"" -- claude",
+            TerminalDetectionService.BuildArgs(wezterm, new TerminalConfig { StartingDirectory = @"C:\dev", RunCommand = "claude" }));
+    }
+
+    [Fact]
+    public void TerminalDeclare_SansNom_PrendSonIdentifiant()
+    {
+        var declared = TerminalDetectionService.Declared([Definition("tabby", @"C:\Tabby.exe")], exists: _ => true);
+
+        Assert.Equal("tabby", Assert.Single(declared).DisplayName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("wt")]
+    [InlineData("PWSH")]
+    [InlineData("custom")]
+    public void TerminalDeclare_IdentifiantReserve_EstEcarte(string id)
+    {
+        Assert.Empty(TerminalDetectionService.Declared([Definition(id, @"C:\x.exe")], exists: _ => true));
+    }
+
+    [Fact]
+    public void TerminalDeclare_ProgrammeAbsentOuDoublon_EstEcarteSansBloquerLesAutres()
+    {
+        var declared = TerminalDetectionService.Declared(
+        [
+            Definition("absent", @"C:\nulle-part.exe"),
+            Definition("wezterm", @"C:\wezterm.exe"),
+            Definition("WEZTERM", @"C:\autre.exe"),
+        ], exists: path => path != @"C:\nulle-part.exe");
+
+        Assert.Equal(["wezterm"], declared.Select(t => t.Id));
+    }
+
+    [Fact]
+    public void TerminalDeclare_EstRetenuQuandIlEstChoisi()
+    {
+        var wezterm = Assert.Single(TerminalDetectionService.Declared([Definition("wezterm", @"C:\wezterm.exe")], exists: _ => true));
+
+        Assert.Same(wezterm, TerminalDetectionService.Resolve("wezterm", custom: null, [Wt, wezterm]));
+    }
+
     // -- Nom de fenêtre (wt -w) ------------------------------------------------
 
     [Fact]

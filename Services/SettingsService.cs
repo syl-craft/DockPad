@@ -123,6 +123,8 @@ public static class SettingsService
 
     public static TerminalSettings LoadCustomTerminal() => AppSettingsService.Current.CustomTerminal;
 
+    public static IReadOnlyList<TerminalDefinition> LoadTerminalDefinitions() => AppSettingsService.Current.Terminals;
+
     public static void SaveCustomTerminal(TerminalSettings terminal) =>
         AppSettingsService.Update(s => s.CustomTerminal = new TerminalSettings
         {

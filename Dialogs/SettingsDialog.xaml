@@ -135,7 +135,10 @@
                         <TextBlock Text="{loc:T Settings_Terminal_Default}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
                         <ComboBox x:Name="CmbDefaultTerminal" AutomationProperties.Name="{loc:T Settings_Terminal_Default}"
                                   SelectionChanged="DefaultTerminal_Changed"/>
-                        <TextBlock x:Name="TxtTerminalAutoNote" Text="{loc:T Settings_Terminal_AutoNote}" Margin="0,6,0,0"
+                        <TextBlock x:Name="TxtTerminalJsonNote" Text="{loc:T Settings_Terminal_JsonNote}" Margin="0,6,0,0"
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"
+                               Visibility="Collapsed"/>
+                    <TextBlock x:Name="TxtTerminalAutoNote" Text="{loc:T Settings_Terminal_AutoNote}" Margin="0,6,0,0"
                                    Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
                         <TextBlock Text="{loc:T Settings_Terminal_Program}" Foreground="{DynamicResource Brush.TextLabel}"
