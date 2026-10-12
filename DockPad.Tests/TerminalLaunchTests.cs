@@ -16,15 +16,15 @@ public class TerminalLaunchTests
     [Fact]
     public void Dossier_PerdSonPointFinal()
     {
-        var request = TerminalLaunch.Parse(["--terminal", @"C:\dev\DockPad\.", "--", "claude"]);
+        var request = TerminalRequest.Parse(["--terminal", @"C:\dev\DockPad\.", "--", "claude"]);
 
-        Assert.Equal(new TerminalLaunch.Request(@"C:\dev\DockPad", "claude"), request);
+        Assert.Equal(new TerminalRequest.Request(@"C:\dev\DockPad", "claude"), request);
     }
 
     [Fact]
     public void RacineDeLecteur_GardeSaBarre()
     {
-        var request = TerminalLaunch.Parse(["--terminal", @"D:\.", "--", "claude"]);
+        var request = TerminalRequest.Parse(["--terminal", @"D:\.", "--", "claude"]);
 
         Assert.Equal(@"D:\", request?.Folder);
     }
@@ -34,7 +34,7 @@ public class TerminalLaunchTests
     {
         // Windows a découpé « "C:\Program Files\codex.exe" » et « --remote-control "Train de Noël" » :
         // les recoller sans guillemets couperait le chemin et le titre à l'espace.
-        var request = TerminalLaunch.Parse(
+        var request = TerminalRequest.Parse(
             ["--terminal", @"C:\dev\.", "--", @"C:\Program Files\OpenAI\codex.exe", "--remote-control", "Train de Noël"]);
 
         Assert.Equal(@"""C:\Program Files\OpenAI\codex.exe"" --remote-control ""Train de Noël""", request?.Command);
@@ -43,7 +43,7 @@ public class TerminalLaunchTests
     [Fact]
     public void SansCommande_OuvreSeulementLeDossier()
     {
-        var request = TerminalLaunch.Parse(["--terminal", @"C:\dev\."]);
+        var request = TerminalRequest.Parse(["--terminal", @"C:\dev\."]);
 
         Assert.Equal("", request?.Command);
     }
@@ -51,8 +51,8 @@ public class TerminalLaunchTests
     [Fact]
     public void AutreLancement_NEstPasUneDemandeDeTerminal()
     {
-        Assert.Null(TerminalLaunch.Parse(["--url", "https://claude.ai"]));
-        Assert.Null(TerminalLaunch.Parse(["--terminal"]));
+        Assert.Null(TerminalRequest.Parse(["--url", "https://claude.ai"]));
+        Assert.Null(TerminalRequest.Parse(["--terminal"]));
     }
 
     [Theory]
@@ -64,21 +64,21 @@ public class TerminalLaunchTests
     [InlineData(@"C:\a b\", "\"C:\\a b\\\\\"")]
     public void Argument_GuillemetsSelonLesReglesDeWindows(string arg, string expected)
     {
-        Assert.Equal(expected, TerminalLaunch.JoinArguments([arg]));
+        Assert.Equal(expected, TerminalRequest.JoinArguments([arg]));
     }
 
     [Fact]
     public void Tube_TransporteDossierEtCommande()
     {
-        var request = new TerminalLaunch.Request(@"C:\dev\DockPad", @"claude --remote-control ""x y""");
+        var request = new TerminalRequest.Request(@"C:\dev\DockPad", @"claude --remote-control ""x y""");
 
-        Assert.Equal(request, TerminalLaunch.Decode(TerminalLaunch.Encode(request)));
+        Assert.Equal(request, TerminalRequest.Decode(TerminalRequest.Encode(request)));
     }
 
     [Fact]
     public void Commande_IdentiqueACelleDUneTuileSurLeMemeDossier()
     {
-        var request = new TerminalLaunch.Request(@"C:\dev\DockPad", "claude");
+        var request = new TerminalRequest.Request(@"C:\dev\DockPad", "claude");
         var tile = new ShortcutEntry
         {
             Name = "DockPad", Type = ShortcutType.OpenTerminal, Command = @"C:\dev\DockPad",
@@ -96,7 +96,7 @@ public class TerminalLaunchTests
     [Fact]
     public void SansTerminal_NaPasDePlan()
     {
-        Assert.Null(TerminalLaunch.Plan(null, new TerminalLaunch.Request(@"C:\dev", "")));
+        Assert.Null(TerminalLaunch.Plan(null, new TerminalRequest.Request(@"C:\dev", "")));
     }
 
     [Fact]

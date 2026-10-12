@@ -181,7 +181,7 @@ public partial class App : Application
         // Un prédéfini terminal du clic droit, relayé par le processus court : lancé d'ici, déjà chaud.
         TerminalPipe.StartServer(payload =>
         {
-            if (Services.TerminalLaunch.Decode(payload) is { } request) Services.TerminalLaunch.Launch(request);
+            if (Services.TerminalRequest.Decode(payload) is { } request) Services.TerminalLaunch.Launch(request);
         });
 
         Services.McpDispatcher.OnMutation = () => Dispatcher.BeginInvoke(() => _mainWindow.RefreshGrid());
@@ -213,7 +213,7 @@ public partial class App : Application
     /// <summary>
     /// Tube des prédéfinis terminal du clic droit (<c>--terminal</c>).
     /// </summary>
-    private static readonly Services.LinePipeService TerminalPipe = new(Services.TerminalLaunch.PipeName);
+    private static readonly Services.LinePipeService TerminalPipe = new(Services.TerminalRequest.PipeName);
 
     /// <summary>
     /// Quitte, mais pas avant que le presse-papier ait été rendu à l'utilisateur.

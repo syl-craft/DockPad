@@ -37,7 +37,7 @@ public static class PresetService
 
         string icon = claudeExe ?? "";
 
-        string command = LauncherCommand(DockPadExe, ClaudeRunCommand(SettingsService.LoadClaudeArgs()));
+        string command = LauncherCommand(LauncherExe, ClaudeRunCommand(SettingsService.LoadClaudeArgs()));
 
         return new PresetEntry
         {
@@ -67,7 +67,7 @@ public static class PresetService
     /// </remarks>
     private static PresetEntry BuildCodexTerminal()
     {
-        string command = LauncherCommand(DockPadExe, CodexRunCommand(FindCodexExe()));
+        string command = LauncherCommand(LauncherExe, CodexRunCommand(FindCodexExe()));
 
         return new PresetEntry
         {
@@ -144,7 +144,7 @@ public static class PresetService
         {
             DisplayName = Loc.T("Preset_AntigravityTerminal_Name"),
             RegistryKey = "OpenAntigravityTerminal",
-            Command = LauncherCommand(DockPadExe, $"\"{agyExe}\""),
+            Command = LauncherCommand(LauncherExe, $"\"{agyExe}\""),
             IconPath = AntigravityIconPath() ?? "",
             Target = ContextMenuTarget.FolderBackground,
             Description = Loc.T("Preset_AntigravityTerminal_Desc")
@@ -173,8 +173,8 @@ public static class PresetService
     }
 
     /// <summary>
-    /// Ligne de commande d'un prédéfini terminal : DockPad reçoit le dossier cliqué et la commande, et
-    /// ouvre le terminal par défaut comme pour une tuile (fenêtre et couleur du dossier).
+    /// Ligne de commande d'un prédéfini terminal : le lanceur reçoit le dossier cliqué et la commande, et
+    /// DockPad ouvre le terminal par défaut comme pour une tuile (fenêtre et couleur du dossier).
     /// </summary>
     /// <remarks>
     /// <c>%V\.</c> et non <c>%V</c> : sur une racine de lecteur, <c>"D:\"</c> ferait de <c>\"</c> un
@@ -182,13 +182,17 @@ public static class PresetService
     /// réinstaller les prédéfinis.
     /// </remarks>
     public static string LauncherCommand(string dockPadExe, string runCommand) => runCommand == ""
-        ? $"\"{dockPadExe}\" {TerminalLaunch.Flag} \"%V\\.\""
-        : $"\"{dockPadExe}\" {TerminalLaunch.Flag} \"%V\\.\" -- {runCommand}";
+        ? $"\"{dockPadExe}\" {TerminalRequest.Flag} \"%V\\.\""
+        : $"\"{dockPadExe}\" {TerminalRequest.Flag} \"%V\\.\" -- {runCommand}";
 
     /// <summary>
-    /// Le point d'entrée stable de l'installation, hors du dossier remplacé à chaque mise à jour.
+    /// Le lanceur natif <c>DockPadTerminal.exe</c>, posé à côté de DockPad à la publication ; à
+    /// défaut, DockPad lui-même, qui traite <c>--terminal</c> plus lentement (démarrage de .NET).
     /// </summary>
-    private static string DockPadExe => Updates.AppInstallation.Executable;
+    private static string LauncherExe =>
+        Path.Combine(AppContext.BaseDirectory, "DockPadTerminal.exe") is var launcher && File.Exists(launcher)
+            ? launcher
+            : Updates.AppInstallation.Executable;
 
     /// <summary>
     /// Le logo ChatGPT, extrait <b>une seule fois</b> dans le store d'icônes du profil.
@@ -470,7 +474,7 @@ public static class PresetService
             ?? FindExe("powershell.exe",
                 Path.Combine(system, @"WindowsPowerShell\v1.0\powershell.exe"));
 
-        string command = LauncherCommand(DockPadExe, runCommand: "");
+        string command = LauncherCommand(LauncherExe, runCommand: "");
 
         string icon = psExe ?? "";
 

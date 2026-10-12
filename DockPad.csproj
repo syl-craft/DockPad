@@ -39,9 +39,9 @@
     <!-- DockPad.Tests et tools\McpShot sont des projets frères situés dans des sous-dossiers du
          répertoire de DockPad.csproj : sans ces exclusions, le glob par défaut du SDK (**/*.cs)
          compile aussi leurs sources dans l'app. -->
-    <Compile Remove="DockPad.Tests\**;tools\**;DockPad.Core\**" />
-    <EmbeddedResource Remove="DockPad.Tests\**;tools\**;DockPad.Core\**" />
-    <None Remove="DockPad.Tests\**;DockPad.Core\**" />
+    <Compile Remove="DockPad.Tests\**;tools\**;DockPad.Core\**;DockPadTerminal\**" />
+    <EmbeddedResource Remove="DockPad.Tests\**;tools\**;DockPad.Core\**;DockPadTerminal\**" />
+    <None Remove="DockPad.Tests\**;DockPad.Core\**;DockPadTerminal\**" />
     <!-- Page et Resource aussi : le glob **/*.xaml du SDK WPF compilait les dictionnaires de
          la bibliotheque une SECONDE fois dans l'application (verifie dans obj/). Quatre BAML
          morts embarques, une double compilation de balisage a chaque edition de theme. Et le
@@ -78,6 +78,16 @@
     </ItemGroup>
   </Target>
 
+  <!--
+    Le lanceur natif des prédéfinis terminal du clic droit (NativeAOT) : ~40 ms au lieu de ~150 pour
+    DockPad.exe, qui démarre le runtime .NET. Publié dans le même dossier, avant le zip et pour
+    Velopack (pack.ps1 publie ce projet). L'éditeur de liens NativeAOT trouve MSVC par vswhere, qui
+    n'est pas dans le PATH par défaut.
+  -->
+  <Target Name="PublishTerminalLauncher" AfterTargets="Publish" Condition="'$(SkipTerminalLauncher)' != 'true'">
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)\DockPadTerminal\DockPadTerminal.csproj&quot; -c Release -m:4 -nologo -o &quot;$(PublishDir.TrimEnd('\'))&quot;"
+          EnvironmentVariables="PATH=$([System.Environment]::GetFolderPath(SpecialFolder.ProgramFilesX86))\Microsoft Visual Studio\Installer;$(PATH)" />
+  </Target>
   <Target Name="ZipAfterPublish" AfterTargets="Publish" Condition="'$(SkipLegacyZip)' != 'true'">
     <MakeDir Directories="$(MSBuildProjectDirectory)\release" />
     <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip" Overwrite="true" />

@@ -51,7 +51,7 @@ public static class StartupRelay
     public const string ShowRequest = "show";
 
     /// <summary>Nom du mutex d'instance unique, posé par <c>App</c> et lu ici.</summary>
-    public const string SingleInstanceMutex = "DockPad_SingleInstance";
+    public const string SingleInstanceMutex = TerminalRequest.SingleInstanceMutex;
 
     /// <summary>
     /// Ce que ce lancement demanderait à une instance déjà présente, ou <c>null</c> s'il doit
