@@ -1683,16 +1683,13 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
     <value>T3rm1n4l p4r d3f4ut</value>
   </data>
   <data name="Settings_Terminal_Auto" xml:space="preserve">
-    <value>4ut0m4t1qu3 (W1nd0w5 T3rm1n4l, pu15 P0w3r5h3ll)</value>
+    <value>4ut0m4t1qu3 (pr3m13r t3rm1n4l d3 l4 l15t3)</value>
   </data>
   <data name="Settings_Terminal_Missing" xml:space="preserve">
     <value>{0} (n0n 1n5t4ll3)</value>
   </data>
   <data name="Settings_Terminal_Hint" xml:space="preserve">
     <value>0uv3rt p4r l35 tu1l35 T3rm1n4l 3t p4r l35 pr3d3f1n15 Cl4ud3, C0d3x 3t P0w3r5h3ll. 4pr35 un ch4ng3m3nt, r31n5t4ll3z c35 pr3d3f1n15 d3pu15 ☰ → R4cc0urc15 pr3d3f1n15.</value>
-  </data>
-  <data name="Settings_Terminal_Custom" xml:space="preserve">
-    <value>4utr3 pr0gr4mm3…</value>
   </data>
   <data name="Settings_Terminal_Browse" xml:space="preserve">
     <value>P4rc0ur1r…</value>
@@ -1730,11 +1727,8 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Settings_Terminal_CommandArgs" xml:space="preserve">
     <value>4rgum3nt5 p0ur 0uvr1r un d05513r 3t l4nc3r un3 c0mm4nd3</value>
   </data>
-  <data name="Settings_Terminal_Reset" xml:space="preserve">
-    <value>R3t4bl1r l35 4rgum3nt5 d3 D0ckP4d</value>
-  </data>
   <data name="Settings_Terminal_AutoNote" xml:space="preserve">
-    <value>4ut0m4t1qu3 pr3nd l3 pr3m13r t3rm1n4l 1n5t4ll3, 4v3c l35 4rgum3nt5 r3gl35 p0ur lu1.</value>
+    <value>4ut0m4t1qu3 pr3nd l3 pr3m13r t3rm1n4l d3 l4 l15t3, v151bl3 3t 1n5t4ll3.</value>
   </data>
   <data name="Shortcut_TabColor" xml:space="preserve">
     <value>C0ul3ur d3 l’0ngl3t</value>
@@ -1748,7 +1742,55 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Shortcut_Err_TabColor" xml:space="preserve">
     <value>C0ul3ur 1nv4l1d3 : ut1l153z #RGB 0u #RRGGBB, 0u l41553z l3 ch4mp v1d3.</value>
   </data>
-  <data name="Settings_Terminal_JsonNote" xml:space="preserve">
-    <value>D3cl4r3 d4n5 l4 53ct10n t3rm1n4l5 d3 53tt1ng5.j50n : m0d1f13z-l3 l4, pu15 r0uvr3z l35 0pt10n5.</value>
+  <data name="Quick_Menu_Terminals" xml:space="preserve">
+    <value>T3rm1n4ux</value>
+  </data>
+  <data name="Terminals_Title" xml:space="preserve">
+    <value>T3rm1n4ux</value>
+  </data>
+  <data name="Terminals_List" xml:space="preserve">
+    <value>T3rm1n4ux pr0p0535</value>
+  </data>
+  <data name="Terminals_Redetect" xml:space="preserve">
+    <value>↻ R3d3t3ct3r</value>
+  </data>
+  <data name="Terminals_Redetect_Tip" xml:space="preserve">
+    <value>4j0ut3 l35 t3rm1n4ux 1n5t4ll35 qu3 D0ckP4d c0nn41t (W1nd0w5 T3rm1n4l, P0w3r5h3ll, W3zT3rm) 54n5 t0uch3r 4ux 4utr35</value>
+  </data>
+  <data name="Terminals_Visible_Tip" xml:space="preserve">
+    <value>Pr0p053 d4n5 l35 0pt10n5</value>
+  </data>
+  <data name="Terminals_Add_Tip" xml:space="preserve">
+    <value>4j0ut3r un t3rm1n4l</value>
+  </data>
+  <data name="Terminals_Badge_Default" xml:space="preserve">
+    <value>p4r d3f4ut</value>
+  </data>
+  <data name="Terminals_Badge_Hidden" xml:space="preserve">
+    <value>m45qu3</value>
+  </data>
+  <data name="Terminals_Badge_Missing" xml:space="preserve">
+    <value>1ntr0uv4bl3</value>
+  </data>
+  <data name="Terminals_Name" xml:space="preserve">
+    <value>N0m</value>
+  </data>
+  <data name="Terminals_UseAsDefault" xml:space="preserve">
+    <value>★ Ut1l153r p4r d3f4ut</value>
+  </data>
+  <data name="Terminals_ConfirmDelete" xml:space="preserve">
+    <value>5uppr1m3r l3 t3rm1n4l « {0} » ?</value>
+  </data>
+  <data name="Terminals_NewTerminal" xml:space="preserve">
+    <value>N0uv34u t3rm1n4l</value>
+  </data>
+  <data name="Terminals_DetectedAdded" xml:space="preserve">
+    <value>{0} {0:plural:terminal ajouté|terminaux ajoutés}.</value>
+  </data>
+  <data name="Terminals_DetectedNothing" xml:space="preserve">
+    <value>4ucun n0uv34u t3rm1n4l d3t3ct3.</value>
+  </data>
+  <data name="Settings_Terminal_Manage" xml:space="preserve">
+    <value>G3r3r l35 t3rm1n4ux…</value>
   </data>
 </root>

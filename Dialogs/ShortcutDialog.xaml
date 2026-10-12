@@ -56,7 +56,7 @@
 
                 <!-- Nom -->
                 <Label Content="{loc:T Shortcut_Name}"/>
-                <TextBox x:Name="TxtName" Margin="0,0,0,16"/>
+                <TextBox x:Name="TxtName" Margin="0,0,0,16" TextChanged="TerminalField_Changed"/>
 
                 <!-- Type -->
                 <Label Content="{loc:T Shortcut_Type}"/>

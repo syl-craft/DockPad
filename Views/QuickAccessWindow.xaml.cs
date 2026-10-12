@@ -231,6 +231,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     public void ShowPresets() => new PresetsDialog { Owner = this }.ShowDialog();
 
     public void ShowBrowsers() => new BrowserConfigDialog { Owner = this }.ShowDialog();
+    public void ShowTerminals() => new TerminalConfigDialog { Owner = this }.ShowDialog();
 
     public void ShowMcpConfig() => new McpConfigDialog { Owner = this }.ShowDialog();
 

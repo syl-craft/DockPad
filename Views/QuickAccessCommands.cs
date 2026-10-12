@@ -31,6 +31,7 @@ public sealed class QuickAccessCommands(IQuickAccessView view)
     public ICommand OpenSettings { get; } = new RelayCommand(view.ShowSettings);
     public ICommand OpenUpdates { get; } = new RelayCommand(view.ShowUpdates);
     public ICommand OpenBrowsers { get; } = new RelayCommand(view.ShowBrowsers);
+    public ICommand OpenTerminals { get; } = new RelayCommand(view.ShowTerminals);
     public ICommand OpenMcpConfig { get; } = new RelayCommand(view.ShowMcpConfig);
     public ICommand OpenSecretSettings { get; } = new RelayCommand(view.ShowSecretSettings);
     public ICommand SyncVault { get; } = new RelayCommand(view.SyncVault);
@@ -79,6 +80,7 @@ public interface IQuickAccessView
     void ShowSettings();
     void ShowUpdates();
     void ShowBrowsers();
+    void ShowTerminals();
     void ShowMcpConfig();
     void ShowUsageConfig();
 

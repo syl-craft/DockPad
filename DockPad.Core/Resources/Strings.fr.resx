@@ -1683,16 +1683,13 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>Terminal par défaut</value>
   </data>
   <data name="Settings_Terminal_Auto" xml:space="preserve">
-    <value>Automatique (Windows Terminal, puis PowerShell)</value>
+    <value>Automatique (premier terminal de la liste)</value>
   </data>
   <data name="Settings_Terminal_Missing" xml:space="preserve">
     <value>{0} (non installé)</value>
   </data>
   <data name="Settings_Terminal_Hint" xml:space="preserve">
     <value>Ouvert par les tuiles Terminal et par les prédéfinis Claude, Codex et PowerShell. Après un changement, réinstallez ces prédéfinis depuis ☰ → Raccourcis prédéfinis.</value>
-  </data>
-  <data name="Settings_Terminal_Custom" xml:space="preserve">
-    <value>Autre programme…</value>
   </data>
   <data name="Settings_Terminal_Browse" xml:space="preserve">
     <value>Parcourir…</value>
@@ -1730,11 +1727,8 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Settings_Terminal_CommandArgs" xml:space="preserve">
     <value>Arguments pour ouvrir un dossier et lancer une commande</value>
   </data>
-  <data name="Settings_Terminal_Reset" xml:space="preserve">
-    <value>Rétablir les arguments de DockPad</value>
-  </data>
   <data name="Settings_Terminal_AutoNote" xml:space="preserve">
-    <value>Automatique prend le premier terminal installé, avec les arguments réglés pour lui.</value>
+    <value>Automatique prend le premier terminal de la liste, visible et installé.</value>
   </data>
   <data name="Shortcut_TabColor" xml:space="preserve">
     <value>Couleur de l’onglet</value>
@@ -1748,7 +1742,55 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Shortcut_Err_TabColor" xml:space="preserve">
     <value>Couleur invalide : utilisez #RGB ou #RRGGBB, ou laissez le champ vide.</value>
   </data>
-  <data name="Settings_Terminal_JsonNote" xml:space="preserve">
-    <value>Déclaré dans la section terminals de settings.json : modifiez-le là, puis rouvrez les Options.</value>
+  <data name="Quick_Menu_Terminals" xml:space="preserve">
+    <value>Terminaux</value>
+  </data>
+  <data name="Terminals_Title" xml:space="preserve">
+    <value>Terminaux</value>
+  </data>
+  <data name="Terminals_List" xml:space="preserve">
+    <value>Terminaux proposés</value>
+  </data>
+  <data name="Terminals_Redetect" xml:space="preserve">
+    <value>↻ Redétecter</value>
+  </data>
+  <data name="Terminals_Redetect_Tip" xml:space="preserve">
+    <value>Ajoute les terminaux installés que DockPad connaît (Windows Terminal, PowerShell, WezTerm) sans toucher aux autres</value>
+  </data>
+  <data name="Terminals_Visible_Tip" xml:space="preserve">
+    <value>Proposé dans les Options</value>
+  </data>
+  <data name="Terminals_Add_Tip" xml:space="preserve">
+    <value>Ajouter un terminal</value>
+  </data>
+  <data name="Terminals_Badge_Default" xml:space="preserve">
+    <value>par défaut</value>
+  </data>
+  <data name="Terminals_Badge_Hidden" xml:space="preserve">
+    <value>masqué</value>
+  </data>
+  <data name="Terminals_Badge_Missing" xml:space="preserve">
+    <value>introuvable</value>
+  </data>
+  <data name="Terminals_Name" xml:space="preserve">
+    <value>Nom</value>
+  </data>
+  <data name="Terminals_UseAsDefault" xml:space="preserve">
+    <value>★ Utiliser par défaut</value>
+  </data>
+  <data name="Terminals_ConfirmDelete" xml:space="preserve">
+    <value>Supprimer le terminal « {0} » ?</value>
+  </data>
+  <data name="Terminals_NewTerminal" xml:space="preserve">
+    <value>Nouveau terminal</value>
+  </data>
+  <data name="Terminals_DetectedAdded" xml:space="preserve">
+    <value>{0} {0:plural:terminal ajouté|terminaux ajoutés}.</value>
+  </data>
+  <data name="Terminals_DetectedNothing" xml:space="preserve">
+    <value>Aucun nouveau terminal détecté.</value>
+  </data>
+  <data name="Settings_Terminal_Manage" xml:space="preserve">
+    <value>Gérer les terminaux…</value>
   </data>
 </root>

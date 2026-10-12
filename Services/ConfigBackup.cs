@@ -68,6 +68,7 @@ public static class ConfigBackup
         AppSettingsService.FilePath,
         .. TileStore.AllPaths(),
         BrowserConfigService.FilePath,
+        TerminalConfigService.FilePath,
         McpConfigService.FilePath,
         UsageConfigService.FilePath,
     ];

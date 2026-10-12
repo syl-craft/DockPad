@@ -115,23 +115,6 @@ public static class SettingsService
     public static void SaveDefaultTerminal(string terminalId) =>
         AppSettingsService.Update(s => s.DefaultTerminal = terminalId);
 
-    public static IReadOnlyDictionary<string, TerminalSettings> LoadTerminalTemplates() =>
-        AppSettingsService.Current.TerminalTemplates;
-
-    public static void SaveTerminalTemplates(Dictionary<string, TerminalSettings> templates) =>
-        AppSettingsService.Update(s => s.TerminalTemplates = templates);
-
-    public static TerminalSettings LoadCustomTerminal() => AppSettingsService.Current.CustomTerminal;
-
-    public static IReadOnlyList<TerminalDefinition> LoadTerminalDefinitions() => AppSettingsService.Current.Terminals;
-
-    public static void SaveCustomTerminal(TerminalSettings terminal) =>
-        AppSettingsService.Update(s => s.CustomTerminal = new TerminalSettings
-        {
-            ExePath     = terminal.ExePath.Trim().Trim('"'),
-            FolderArgs  = terminal.FolderArgs.Trim(),
-            CommandArgs = terminal.CommandArgs.Trim(),
-        });
 
     public static string LoadBitwardenCliPath() => AppSettingsService.Current.BitwardenCliPath;
 

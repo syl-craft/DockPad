@@ -76,6 +76,8 @@ Models/
     UsageConfig.cs                        Contenu de usage.json (bandeau + liste des fournisseurs)
     UsageDisplayItems.cs                  Onglet, métrique et jauge du bandeau (modèles d'affichage)
     TerminalConfig.cs                    Config d'un terminal (exePath, startingDirectory, runCommand…)
+    TerminalEntry.cs                      Un terminal de terminals.json (id, nom, programme, deux modèles, masquage, ordre)
+    TerminalsConfig.cs                    Contenu de terminals.json
     TerminalInfo.cs                      Informations d'un terminal détecté
 
 Services/Localization/
@@ -127,7 +129,9 @@ Services/
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save des tuiles d'une grille (shortcuts.json ou favorites.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
-    TerminalDetectionService.cs          Terminal par défaut des Options : détection (wt, pwsh, powershell), résolution, arguments
+    TerminalDetectionService.cs          Détection (wt, pwsh, powershell, WezTerm), résolution, arguments à variables
+    TerminalCatalog.cs                    PUR — liste des terminaux : reprise, fusion de la détection, proposés, ordre, identifiants
+    TerminalConfigService.cs              Load/Save terminals.json (%APPDATA%\DockPad\terminals.json), création à la première lecture
     LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
     UrlPipeService.cs                    Facade sur LinePipeService pour DockPad_UrlPipe
     StartupRelay.cs                      Rendre la main à l'instance résidente AVANT de construire WPF
@@ -198,6 +202,7 @@ Views/
 Dialogs/
     AppDialog.xaml/.cs                   Dialog custom styled (remplace MessageBox) — Confirm/Error/Warning/Info
     BrowserConfigDialog.xaml/.cs         Configuration navigateurs (détection/édition/règles/enregistrement)
+    TerminalConfigDialog.xaml/.cs        Fenêtre Terminaux (détection/ajout/visibilité/ordre/arguments), patron de Navigateurs
     BrowserPickerWindow.xaml/.cs         Popup de choix du navigateur au clic sur une URL
     EntryDialog.xaml/.cs                 Ajout/modification d'une entrée de menu contextuel (registre)
     McpConfigDialog.xaml/.cs               Fenêtre « Serveur MCP » : options (activé/suppression) + journal de session
@@ -348,12 +353,12 @@ résidente stabilisée : **322 → 78 ms** au minimum, **412 → 100 ms** en mé
 - Toolbar : **☰ Menu** (déroulant) | **🔒 / ✓** (verrou du déplacement des tuiles) | **─** (réduire) | **⬇** (masquer dans la barre système)
 - **Menu ☰** organisé en sections :
   - *Menu contextuel* : ☰ Gestion, 📋 Raccourcis prédéfinis
-  - *Paramètres* : ⚙ Options, 🌐 Navigateurs, 🔌 Serveur MCP, 📊 Usage IA
+  - *Paramètres* : ⚙ Options, 🌐 Navigateurs, 💻 Terminaux, 🔌 Serveur MCP, 📊 Usage IA
   - *Secrets* : 🔑 Réglages des secrets (ouvre les Options **sur l'onglet Secrets**), ↻ Synchroniser le coffre
   - *Configuration* : ↺ Actualiser, ✎ Modifier, 💾 Sauvegarder, 📁 Voir le dossier
   - ✕ Quitter l'application
 - **Raccourci clavier actif** affiché en bas à droite (badge `Consolas`, mis à jour après changement dans Options)
-- **Sauvegarder la configuration** : copie `settings.json`, les **quatre** fichiers des deux grilles (`shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`), `browsers.json`, `mcp.json` et `usage.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
+- **Sauvegarder la configuration** : copie `settings.json`, les **quatre** fichiers des deux grilles (`shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`), `browsers.json`, `terminals.json`, `mcp.json` et `usage.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
 - Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
 - Config pages stockée dans `%APPDATA%\DockPad\pages.json`
 - **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | ★ Déplacer vers les favoris (ou ▦ vers les raccourcis) | 🗑 Supprimer
@@ -581,7 +586,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 - **Réseau — Télécharger l'icône du site pour les raccourcis web** : voir *Icône automatique des tuiles web* ci-dessus
-- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (Windows Terminal, puis PowerShell 7, puis Windows PowerShell), l'un des trois s'il est installé, ou **un autre programme**. Pour chacun : le programme, deux modèles d'arguments à variables, la commande finale du prédéfini Claude, et un bouton **Tester** qui la lance dans le dossier utilisateur. Voir « Terminal par défaut » ci-dessous
+- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (premier terminal de la liste, visible et installé) ou un terminal de la fenêtre **💻 Terminaux**, la commande finale du prédéfini Claude, **Tester** et **Gérer les terminaux…**. Stocké dans `settings.json` (`defaultTerminal` = identifiant d'une entrée de `terminals.json`, `""` = automatique). Voir « Terminal par défaut » ci-dessous
 - **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
 ### Sélecteur de navigateur
@@ -1608,10 +1613,10 @@ rédacteur d'`inject-create` est d'ailleurs factice et ne sera jamais appelé.
 
 | Nom | Cible | Commande |
 | ----- | ------- | --------- |
-| Ouvrir un terminal Claude | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- claude` (avec Windows Terminal ; le terminal suit le réglage « Terminal par défaut ») |
-| Ouvrir un terminal Codex | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- "<chemin absolu de codex.exe>"` (nom nu `codex` en repli) (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône : **le logo ChatGPT**, extrait une seule fois en `.ico` dans `%APPDATA%\DockPad\icons\`. Le seul exécutable qui le porte vit sous `WindowsApps\OpenAI.ChatGPT-Desktop_<version>_…`, chemin qui deviendrait faux à la prochaine mise à jour de ChatGPT et laisserait une icône cassée dans le menu de Windows ; la copie du profil, elle, survit aux mises à jour **et** à la désinstallation. `WindowsApps` ne s'énumère pas (ACL), mais Windows publie `PackageRootFolder` sous une clé HKCU lisible sans privilège. **On y cherche le préfixe `OpenAI.` et non `OpenAI.ChatGPT`** : l'application s'est appelée `OpenAI.ChatGPT-Desktop`, puis `OpenAI.Codex` tout en gardant « ChatGPT » pour nom affiché et `ChatGPT.exe` pour binaire — chercher le nom du paquet, c'est suivre une décision de l'éditeur. **Et l'exécutable est exigé par son nom, pas préféré** : le paquet en contient sept, dont `chrome_proxy.exe`, un service d'élévation et un `Codex.exe` qui n'a justement pas d'icône ; un repli « premier venu » poserait l'un d'eux sans qu'on le voie. **Le logo est réextrait à chaque construction et réécrit seulement s'il a changé** : un cache posé une fois pour toutes serait faux le jour où l'éditeur change de logo. À défaut de ChatGPT, on retombe sur `codex.exe` — cherché comme `bw.exe` l'est : `PATH`, puis les racines d'installation en récursif (`%LOCALAPPDATA%\Programs\OpenAI`, `Microsoft\WinGet\Packages`), puis le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`. **Le disque est consulté même quand le `PATH` échoue** : celui d'un processus est figé à son démarrage, donc Codex installé pendant que DockPad tourne n'y apparaît pas — cas vécu. Ni `codex.exe` ni son équivalent npm n'embarquent d'icône, mesuré |
-| Ouvrir un terminal Antigravity | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- "%LocalAppData%\agy\bin\agy.exe"` (avec Windows Terminal ; suit le réglage « Terminal par défaut » ; chemin absolu résolu, décalque de Codex). **Proposé seulement si `agy.exe` existe** : son installateur ne l'ajoute pas au `PATH`, aucun nom nu ne peut servir de repli. **Icône : le logo du bandeau Usage IA**, rendu en `.ico` dans `%APPDATA%\DockPad\icons\antigravity.ico` (`ProviderLogos.RenderPng` puis `BuildIco`) — `agy.exe` n'embarque aucune icône. Le tracé (Lobe Icons, MIT) et le bleu `#1A73E8` vivent **une seule fois** dans `ProviderLogos`, lus par `ProviderIcon.xaml` en `x:Static` : ceux de Claude et Codex restent en ressources XAML, le bandeau étant leur seul usage. Réécrit seulement si le rendu a changé, comme le logo ChatGPT |
-| Ouvrir dans PowerShell | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V"` (avec Windows Terminal ; suit le réglage « Terminal par défaut ») |
+| Ouvrir un terminal Claude | FolderBackground | `wt.exe -w "%V" new-tab --tabColor <couleur> --startingDirectory "%V" -- claude` (avec Windows Terminal ; le terminal et ses arguments suivent la fenêtre 💻 Terminaux et le réglage « Terminal par défaut ») |
+| Ouvrir un terminal Codex | FolderBackground | `wt.exe -w "%V" new-tab --tabColor <couleur> --startingDirectory "%V" -- "<chemin absolu de codex.exe>"` (nom nu `codex` en repli) (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône : **le logo ChatGPT**, extrait une seule fois en `.ico` dans `%APPDATA%\DockPad\icons\`. Le seul exécutable qui le porte vit sous `WindowsApps\OpenAI.ChatGPT-Desktop_<version>_…`, chemin qui deviendrait faux à la prochaine mise à jour de ChatGPT et laisserait une icône cassée dans le menu de Windows ; la copie du profil, elle, survit aux mises à jour **et** à la désinstallation. `WindowsApps` ne s'énumère pas (ACL), mais Windows publie `PackageRootFolder` sous une clé HKCU lisible sans privilège. **On y cherche le préfixe `OpenAI.` et non `OpenAI.ChatGPT`** : l'application s'est appelée `OpenAI.ChatGPT-Desktop`, puis `OpenAI.Codex` tout en gardant « ChatGPT » pour nom affiché et `ChatGPT.exe` pour binaire — chercher le nom du paquet, c'est suivre une décision de l'éditeur. **Et l'exécutable est exigé par son nom, pas préféré** : le paquet en contient sept, dont `chrome_proxy.exe`, un service d'élévation et un `Codex.exe` qui n'a justement pas d'icône ; un repli « premier venu » poserait l'un d'eux sans qu'on le voie. **Le logo est réextrait à chaque construction et réécrit seulement s'il a changé** : un cache posé une fois pour toutes serait faux le jour où l'éditeur change de logo. À défaut de ChatGPT, on retombe sur `codex.exe` — cherché comme `bw.exe` l'est : `PATH`, puis les racines d'installation en récursif (`%LOCALAPPDATA%\Programs\OpenAI`, `Microsoft\WinGet\Packages`), puis le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`. **Le disque est consulté même quand le `PATH` échoue** : celui d'un processus est figé à son démarrage, donc Codex installé pendant que DockPad tourne n'y apparaît pas — cas vécu. Ni `codex.exe` ni son équivalent npm n'embarquent d'icône, mesuré |
+| Ouvrir un terminal Antigravity | FolderBackground | `wt.exe -w "%V" new-tab --tabColor <couleur> --startingDirectory "%V" -- "%LocalAppData%\agy\bin\agy.exe"` (avec Windows Terminal ; suit le réglage « Terminal par défaut » ; chemin absolu résolu, décalque de Codex). **Proposé seulement si `agy.exe` existe** : son installateur ne l'ajoute pas au `PATH`, aucun nom nu ne peut servir de repli. **Icône : le logo du bandeau Usage IA**, rendu en `.ico` dans `%APPDATA%\DockPad\icons\antigravity.ico` (`ProviderLogos.RenderPng` puis `BuildIco`) — `agy.exe` n'embarque aucune icône. Le tracé (Lobe Icons, MIT) et le bleu `#1A73E8` vivent **une seule fois** dans `ProviderLogos`, lus par `ProviderIcon.xaml` en `x:Static` : ceux de Claude et Codex restent en ressources XAML, le bandeau étant leur seul usage. Réécrit seulement si le rendu a changé, comme le logo ChatGPT |
+| Ouvrir dans PowerShell | FolderBackground | `wt.exe -w "%V" new-tab --tabColor <couleur> --startingDirectory "%V"` (avec Windows Terminal ; suit le réglage « Terminal par défaut ») |
 | Ouvrir dans Visual Studio Code | FolderBackground | `code "%V"` |
 | Ouvrir dans SQL Server Management Studio | FolderBackground | `ssms.exe "%V"` |
 | Ouvrir dans GitHub Desktop | FolderBackground | `"%LocalAppData%\GitHubDesktop\GitHubDesktop.exe" --cli-open="%V\."` (flag interne utilisé par le shim `github` — ajoute ET ouvre le dépôt, sans fenêtre console ; écrit en `REG_EXPAND_SZ` car install per-user vs clé HKCR machine-wide ; `\.` neutralise le backslash final des racines de lecteur ; proposé uniquement si GitHub Desktop ≥ 3.4.14 est installé) |
@@ -1635,31 +1640,34 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 | `{command}` | la commande à lancer, telle quelle |
 | `{command-ps}` | la même, préparée pour `-Command "…"` de PowerShell : guillemets échappés en `\"`, `&` devant un chemin entre guillemets — sans quoi `--remote-control "…"` et Codex dans `Program Files` cassent |
 
-- **Les modèles de Windows Terminal et de PowerShell sont ceux de DockPad** (`DefaultTemplates`), modifiables
-  dans les Options avec *Rétablir*. Seuls ceux qui diffèrent sont écrits (`terminalTemplates`) ; ceux d'un
-  terminal non détecté ce jour-là sont gardés tels quels
+- **La fenêtre 💻 Terminaux suit le patron de Navigateurs** : liste à gauche (case de visibilité, icône de
+  l'exe, badges « par défaut » / « masqué » / « introuvable », ↻ Redétecter, ▲ ▼ 🗑 ➕), modification à
+  droite (nom, programme, deux modèles, commande finale, Tester, ★ Utiliser par défaut, Appliquer).
+  Sauvegarde immédiate, comme Navigateurs. Les Options n'en gardent que le choix par défaut
+- **`terminals.json`** porte la liste. Créé à la première lecture (`TerminalConfigService.EnsureInitialized`)
+  à partir de la détection, des `terminalTemplates` et de la section `terminals` de `settings.json`, que la
+  reprise vide ensuite. Une liste vide est redétectée, comme `browsers.json`
+- **Détection** : Windows Terminal, PowerShell 7, Windows PowerShell et **WezTerm** (`wezterm-gui.exe
+  start --new-tab --cwd "{folder}" -- {command}`, vérifié avec Claude, interactif). Écartés après essai :
+  **MobaXterm**, dont le terminal Cygwin n'offre pas de console Windows — Claude y passe en mode `--print`
+  et s'arrête — et **Cmder**, dont la console ConEmu fonctionne mais n'est plus maintenue. On peut toujours
+  les ajouter à la main. Un terminal connu absent n'est pas ajouté
+- **Fusion additive** (`TerminalCatalog.Merge`) : clé = identifiant de détection ; chemin, arguments,
+  masquage et ordre préservés ; le nom suit la détection tant qu'il n'a pas été changé ; un terminal
+  disparu reste, signalé « introuvable ». Un terminal ajouté prend un identifiant tiré de son nom, jamais
+  celui d'un terminal détectable
 - **Windows Terminal ouvre une fenêtre par dossier** : `-w "{folder-name}" new-tab --tabColor {color}
   --startingDirectory "{folder}" -- {command}`. `-w <nom>` vise la fenêtre de ce nom et la crée si elle
   n'existe pas : les tuiles d'un même projet se regroupent. Dans un prédéfini le dossier n'est connu qu'au
   clic, la fenêtre porte donc le chemin complet et la couleur est la même pour tous
 - **Couleur choisie par tuile** (`terminal.tabColor`, `#RGB` ou `#RRGGBB`) : champ et palette dans la
   fenêtre d'une tuile Terminal ; vide ou invalide, la couleur du dossier
-- **Terminaux déclarés dans `settings.json`** (section `terminals`) : chacun a un `id`, un `name`, un
-  `exePath` et ses deux modèles. Ils s'ajoutent à la liste des Options, en lecture seule — on les modifie
-  dans le fichier. Une entrée à l'identifiant réservé (`wt`, `pwsh`, `powershell`, `custom`, vide), en
-  double ou dont le programme manque est écartée sans empêcher les autres (`Declared`, pur)
-- **Un autre programme** prend n'importe quel exécutable ; son chemin accepte `%LocalAppData%` et les
-  autres variables d'environnement, gardées telles quelles : le registre les développe, le lanceur des
-  tuiles aussi (`ShortcutLauncher.Start`). *Parcourir* préremplit les modèles de DockPad si c'est un
-  terminal connu, sinon `"{folder}"` seul
-- **Un modèle sans `{command}` ni `{command-ps}` est accepté, avec un avertissement** : c'est le cas de
-  MXterm Pro, qui n'accepte qu'un dossier — les tuiles Claude l'ouvrent sans lancer leur commande
-- **`Resolve(réglage, programme ajouté, installés)` est pur** : vide, inconnu (`cmd` d'une version
-  antérieure), désinstallé ou programme introuvable valent Automatique. Dans les Options, un programme
-  introuvable n'affiche **aucune** commande de repli et grise *Tester* : montrer le terminal qui serait
-  lancé à sa place faisait croire que le réglage marchait
+- **`Resolve(réglage, proposés)` est pur** : les proposés sont les terminaux visibles dont le programme
+  existe (`TerminalCatalog.Available`). Vide, inconnu, masqué ou introuvable valent Automatique. Dans la
+  fenêtre Terminaux, un programme introuvable n'affiche **aucune** commande et grise *Tester* : montrer le
+  terminal qui serait lancé à sa place faisait croire que le réglage marchait
 - **Le `terminal.exePath`, `newTab` et `extraArgs` d'une tuile ne sont plus lus.** Ils restent écrits,
-  pour une version antérieure de DockPad. La fenêtre d'une tuile n'a plus que le dossier et la commande
+  pour une version antérieure de DockPad. La fenêtre d'une tuile n'a plus que le dossier, la commande et la couleur d'onglet
 - **Changer les arguments par défaut d'un terminal change les commandes des prédéfinis installés** : ils
   s'affichent « mise à jour disponible » jusqu'à leur réinstallation. C'est arrivé au passage à `-w "{folder-name}"`
 - **Changer de terminal fait passer les prédéfinis installés à « mise à jour disponible »**, par le
@@ -1715,6 +1723,28 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 - `hidden` : masqué = absent de la popup mais conservé dans la config
 - Stocké dans `%APPDATA%\DockPad\browsers.json`, inclus dans la sauvegarde de configuration
 
+## Format JSON terminaux
+
+```json
+{
+  "terminals": [
+    { "id": "wt", "name": "Windows Terminal", "detectedName": "Windows Terminal",
+      "exePath": "C:\\Users\\moi\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe",
+      "folderArgs": "-w \"{folder-name}\" new-tab --tabColor {color} --startingDirectory \"{folder}\"",
+      "commandArgs": "-w \"{folder-name}\" new-tab --tabColor {color} --startingDirectory \"{folder}\" -- {command}",
+      "hidden": false, "order": 0 },
+    { "id": "alacritty", "name": "Alacritty", "exePath": "%LocalAppData%\\Alacritty\\alacritty.exe",
+      "folderArgs": "--working-directory \"{folder}\"", "commandArgs": "--working-directory \"{folder}\" -e {command}",
+      "hidden": false, "order": 1 }
+  ]
+}
+```
+
+- `id` : clé de fusion de la détection (`wt`, `pwsh`, `powershell`, `wezterm`), tirée du nom pour un terminal ajouté ; visé par `defaultTerminal`
+- `detectedName` : présent sur un terminal détecté ; tant que `name` lui est égal, le nom suit la détection
+- `hidden` : absent du choix « Terminal par défaut », conservé
+- Stocké dans `%APPDATA%\DockPad\terminals.json`, inclus dans la sauvegarde de configuration
+
 ## Format JSON Usage IA
 
 ```json
@@ -1755,13 +1785,7 @@ emportait pas.
   "triggerFirst": "Ctrl",
   "triggerSecond": "Shift",
   "claudeArgs": "--enable-auto-mode",
-  "defaultTerminal": "custom",
-  "terminalTemplates": { "wt": { "folderArgs": "-d \"{folder}\"", "commandArgs": "-d \"{folder}\" -- {command}" } },
-  "customTerminal": { "exePath": "%LocalAppData%\\MXterm Pro\\mxterm.exe", "folderArgs": "\"{folder}\"", "commandArgs": "\"{folder}\"" },
-  "terminals": [
-    { "id": "wezterm", "name": "WezTerm", "exePath": "C:\\Program Files\\WezTerm\\wezterm-gui.exe",
-      "folderArgs": "start --new-tab --cwd \"{folder}\"", "commandArgs": "start --new-tab --cwd \"{folder}\" -- {command}" }
-  ],
+  "defaultTerminal": "wezterm",
   "autoFavicon": true,
   "bitwardenCliPath": "",
   "clipboardClearSeconds": 90,
