@@ -19,10 +19,25 @@ public static class Program
         if (InstanceIsRunning() && TrySend(TerminalRequest.Encode(request))) return 0;
 
         // Pas d'instance qui réponde : DockPad calcule et lance lui-même, sans démarrer l'application.
-        var start = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "DockPad.exe")) { UseShellExecute = false };
+        var start = new ProcessStartInfo(DockPadExe()) { UseShellExecute = false };
         foreach (var arg in args) start.ArgumentList.Add(arg);
         using var dockPad = Process.Start(start);
         return dockPad == null ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Le lanceur stable de Velopack, au-dessus de <c>current\</c>, qui attend la fin d'une mise à jour ;
+    /// à défaut, le <c>DockPad.exe</c> voisin.
+    /// </summary>
+    private static string DockPadExe()
+    {
+        string here = AppContext.BaseDirectory.TrimEnd('\\');
+        string neighbour = Path.Combine(here, "DockPad.exe");
+        if (!string.Equals(Path.GetFileName(here), "current", StringComparison.OrdinalIgnoreCase)) return neighbour;
+
+        if (Path.GetDirectoryName(here) is not { } root) return neighbour;
+        string stable = Path.Combine(root, "DockPad.exe");
+        return File.Exists(stable) ? stable : neighbour;
     }
 
     /// <summary>

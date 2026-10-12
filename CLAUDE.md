@@ -323,7 +323,21 @@ du même projet.
 - **`"%V\."` et non `"%V"`** : sur une racine de lecteur, `"D:\"` ferait de `\"` un guillemet échappé
   et le reste de la ligne rejoindrait le dossier. `TerminalRequest.NormalizeFolder` retire le `\.`
 - **La commande est recomposée** à partir des arguments que Windows a découpés, guillemets rétablis
-  (`--remote-control "…"`, chemins à espaces) : `TerminalRequest.JoinArguments`, testé
+  (`--remote-control "…"`, chemins à espaces) : `TerminalRequest.JoinArguments`, testé. Tout argument
+  hors lettres, chiffres et `_ - . : \ / =` est remis entre guillemets, pour qu'un `;` ou un `&` ne sépare
+  pas deux commandes dans PowerShell. **Limite connue** : Windows Terminal découpe ses propres
+  sous-commandes sur `;`, même entre guillemets — un `;` dans la commande d'un prédéfini reste à éviter
+- **Jamais depuis un résident élevé** : le tube ferait lancer n'importe quelle commande en
+  administrateur à qui sait y écrire. Une instance élevée n'ouvre pas `DockPad_TerminalPipe` : le
+  lanceur ne trouve personne au bout du tube et traite la demande lui-même, au pire après son délai
+  d'une seconde
+- **Pendant une mise à jour** la demande reçue passe par `PendingRelays`, comme une URL : remise au
+  lanceur stable sous la forme `--terminal-request <ligne du tube>`, qui attend la fin du remplacement de
+  `current\`. Le repli du lanceur natif vise lui aussi le `DockPad.exe` stable, au-dessus de `current\`.
+  **Limite connue** : le registre pointe `current\DockPadTerminal.exe`, absent les quelques secondes
+  du remplacement — un clic à ce moment échoue
+- **L'accusé « ok » part avant le lancement** : le traitement est planifié, une boîte d'erreur ne fait
+  pas attendre le lanceur
 - **`TerminalRequest.cs` est compilé deux fois**, dans DockPad et dans le lanceur : il ne dépend que de la
   bibliothèque de base. Les noms du tube et du mutex y vivent, et `StartupRelay` reprend celui du mutex —
   un nom qui divergerait ferait échouer le relais en silence
@@ -331,7 +345,9 @@ du même projet.
   les prédéfinis à « mise à jour disponible »
 - **Publication** : la cible `PublishTerminalLauncher` de `DockPad.csproj` publie le lanceur dans le même
   dossier, donc dans le zip et dans le paquet Velopack. L'éditeur de liens NativeAOT trouve MSVC par
-  `vswhere`, absent du `PATH` par défaut : la cible l'y ajoute. En dev, le lanceur doit être publié à la
+  `vswhere`, absent du `PATH` par défaut : la cible l'y ajoute par `set "PATH=…;%PATH%" &&` dans la
+  commande — l'attribut `EnvironmentVariables` d'`Exec` coupe aux points-virgules. Le lanceur reçoit la
+  `Version` de DockPad. En dev, le lanceur doit être publié à la
   main à côté de l'exe (`dotnet publish DockPadTerminal -c Release -o bin\Debug\net8.0-windows`), sinon les
   prédéfinis appellent `DockPad.exe` directement
 
@@ -1705,10 +1721,12 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 - **Les prédéfinis ne portent plus la commande du terminal** : ils passent par `DockPadTerminal.exe`
   (voir « Les prédéfinis terminal du clic droit »), donc changer de terminal ou d'arguments ne demande
   plus de les réinstaller
-- **Changer de terminal fait passer les prédéfinis installés à « mise à jour disponible »**, par le
-  `CompareStatus` existant
-- Aucun terminal installé → message `Quick_NoTerminal` au lancement d'une tuile ; un prédéfini retombe
-  sur `powershell.exe` par son nom nu
+- Aucun terminal installé → message `Quick_NoTerminal`, au lancement d'une tuile comme au clic droit
+  (boîte Win32, aucune application WPF n'existant sur ce chemin)
+- **Aperçu de la commande finale** (Options, Terminaux) : ce que DockPad lancerait pour le prédéfini
+  Claude sur un dossier d'exemple, `PresetService.PreviewFolder` — le vrai n'est connu qu'au clic
+- **Une barre finale est doublée** quand une variable se termine par `\` (`D:\` → `"D:\\"`) : posée devant
+  le guillemet fermant d'un modèle, elle l'échapperait. `{folder-name}` d'une racine vaut `D:`
 
 ## Format JSON raccourcis rapides
 

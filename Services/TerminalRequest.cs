@@ -15,6 +15,12 @@ namespace DockPad.Services;
 public static class TerminalRequest
 {
     public const string Flag = "--terminal";
+
+    /// <summary>
+    /// La demande déjà lue, sous sa forme du tube : ce que l'instance résidente transmet au lanceur
+    /// stable quand une mise à jour la remplace.
+    /// </summary>
+    public const string EncodedFlag = "--terminal-request";
     public const string PipeName = "DockPad_TerminalPipe";
 
     /// <summary>
@@ -32,6 +38,9 @@ public static class TerminalRequest
     /// </summary>
     public static Request? Parse(string[] args)
     {
+        int encoded = Array.IndexOf(args, EncodedFlag);
+        if (encoded >= 0) return encoded + 1 < args.Length ? Decode(args[encoded + 1]) : null;
+
         int flag = Array.IndexOf(args, Flag);
         if (flag < 0 || flag + 1 >= args.Length) return null;
 
@@ -59,14 +68,20 @@ public static class TerminalRequest
     }
 
     /// <summary>
-    /// Recompose des arguments en une ligne de commande : ceux qui portent une espace ou un guillemet
-    /// sont remis entre guillemets, comme Windows les a découpés.
+    /// La ligne de commande qui redonne cette demande à <see cref="Parse"/>.
+    /// </summary>
+    public static string[] ToArgs(Request request) => [EncodedFlag, Encode(request)];
+
+    /// <summary>
+    /// Recompose des arguments en une ligne de commande : un argument qui ne tient pas qu'en lettres,
+    /// chiffres et <c>_ - . : \ / =</c> est remis entre guillemets, pour qu'un <c>;</c> ou un
+    /// <c>&amp;</c> reste un caractère et ne sépare pas deux commandes dans le shell qui la reçoit.
     /// </summary>
     public static string JoinArguments(IEnumerable<string> args) => string.Join(" ", args.Select(Quote));
 
     private static string Quote(string arg)
     {
-        if (arg != "" && !arg.Any(c => c is ' ' or '\t' or '"')) return arg;
+        if (arg != "" && arg.All(c => char.IsLetterOrDigit(c) || c is '_' or '-' or '.' or ':' or '\\' or '/' or '=')) return arg;
 
         var quoted = new StringBuilder("\"");
         int backslashes = 0;

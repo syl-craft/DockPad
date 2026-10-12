@@ -166,7 +166,7 @@ public class DefaultTerminalTests
     [Theory]
     [InlineData(@"C:\dev\DockPad", "DockPad")]
     [InlineData(@"C:\dev\DockPad\", "DockPad")]
-    [InlineData(@"D:\", @"D:\")]
+    [InlineData(@"D:\", "D:")]
     [InlineData("%V", "%V")]
     public void NomDuDossier_EstSonDernierSegment(string folder, string expected)
     {

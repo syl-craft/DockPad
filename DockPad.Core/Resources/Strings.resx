@@ -1698,7 +1698,7 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>Program not found.</value>
   </data>
   <data name="Settings_Terminal_Preview" xml:space="preserve">
-    <value>Final command (Claude preset, %V = clicked folder)</value>
+    <value>Final command (Claude preset, on a sample folder)</value>
   </data>
   <data name="Settings_Terminal_PickFilter" xml:space="preserve">
     <value>Programs (*.exe)|*.exe</value>

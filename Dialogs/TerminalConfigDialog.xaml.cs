@@ -110,7 +110,7 @@ public partial class TerminalConfigDialog : Window
         TxtNoCommand.Visibility = Selected != null && !runsCommand ? Visibility.Visible : Visibility.Collapsed;
         BtnTest.IsEnabled = exists;
         TxtPreview.Text = exists
-            ? PresetService.TerminalCommand(terminal, PresetService.ClaudeRunCommand(SettingsService.LoadClaudeArgs()))
+            ? PresetService.PreviewCommand(terminal, PresetService.ClaudeRunCommand(SettingsService.LoadClaudeArgs()))
             : "";
     }
 

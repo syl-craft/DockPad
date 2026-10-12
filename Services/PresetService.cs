@@ -108,14 +108,20 @@ public static class PresetService
         codexExe == null ? "codex" : $"\"{codexExe}\"";
 
     /// <summary>
-    /// Ligne de commande du menu contextuel : <paramref name="terminal"/> ouvert sur le dossier
-    /// cliqué (<c>%V</c>), qui lance <paramref name="runCommand"/> s'il y en a une.
+    /// Dossier d'exemple des aperçus : le vrai dossier n'est connu qu'au clic.
     /// </summary>
-    public static string TerminalCommand(TerminalInfo terminal, string runCommand)
-    {
-        var cfg = new TerminalConfig { StartingDirectory = "%V", RunCommand = runCommand, NewTab = true };
+    public const string PreviewFolder = @"C:\dev\demo";
 
-        return $"\"{terminal.ExePath}\" {TerminalDetectionService.BuildArgs(terminal, cfg)}";
+    /// <summary>
+    /// Ce que DockPad lance quand un prédéfini est cliqué sur <see cref="PreviewFolder"/> avec
+    /// <paramref name="terminal"/> : <paramref name="runCommand"/> s'il y en a une, sinon une console.
+    /// </summary>
+    public static string PreviewCommand(TerminalInfo terminal, string runCommand)
+    {
+        var plan = TerminalLaunch.Plan(terminal, new TerminalRequest.Request(PreviewFolder, runCommand))
+            ?? throw new InvalidOperationException("A terminal always gives a plan");
+
+        return $"\"{plan.FileName}\" {plan.Arguments}";
     }
 
     /// <summary>

@@ -1698,7 +1698,7 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>Programme introuvable.</value>
   </data>
   <data name="Settings_Terminal_Preview" xml:space="preserve">
-    <value>Commande finale (prédéfini Claude, %V = dossier cliqué)</value>
+    <value>Commande finale (prédéfini Claude, sur un dossier d'exemple)</value>
   </data>
   <data name="Settings_Terminal_PickFilter" xml:space="preserve">
     <value>Programmes (*.exe)|*.exe</value>

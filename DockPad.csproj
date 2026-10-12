@@ -85,8 +85,7 @@
     n'est pas dans le PATH par défaut.
   -->
   <Target Name="PublishTerminalLauncher" AfterTargets="Publish" Condition="'$(SkipTerminalLauncher)' != 'true'">
-    <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)\DockPadTerminal\DockPadTerminal.csproj&quot; -c Release -m:4 -nologo -o &quot;$(PublishDir.TrimEnd('\'))&quot;"
-          EnvironmentVariables="PATH=$([System.Environment]::GetFolderPath(SpecialFolder.ProgramFilesX86))\Microsoft Visual Studio\Installer;$(PATH)" />
+    <Exec Command="set &quot;PATH=$([System.Environment]::GetFolderPath(SpecialFolder.ProgramFilesX86))\Microsoft Visual Studio\Installer;%PATH%&quot; &amp;&amp; dotnet publish &quot;$(MSBuildProjectDirectory)\DockPadTerminal\DockPadTerminal.csproj&quot; -c Release -m:4 -nologo -p:Version=$(Version) -o &quot;$(PublishDir.TrimEnd('\'))&quot;" />
   </Target>
   <Target Name="ZipAfterPublish" AfterTargets="Publish" Condition="'$(SkipLegacyZip)' != 'true'">
     <MakeDir Directories="$(MSBuildProjectDirectory)\release" />

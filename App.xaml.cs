@@ -179,10 +179,14 @@ public partial class App : Application
         ShowPipe.StartServer(_ => Dispatcher.BeginInvoke(() => _mainWindow.BringToFront()));
 
         // Un prédéfini terminal du clic droit, relayé par le processus court : lancé d'ici, déjà chaud.
-        TerminalPipe.StartServer(payload =>
-        {
-            if (Services.TerminalRequest.Decode(payload) is { } request) Services.TerminalLaunch.Launch(request);
-        });
+        // Jamais depuis une instance élevée : le tube ferait lancer n'importe quelle commande en admin.
+        if (!Services.TerminalLaunch.IsElevated())
+            TerminalPipe.StartServer(payload =>
+            {
+                if (Services.TerminalRequest.Decode(payload) is not { } request) return;
+                _updateRelays.Accept(Services.TerminalRequest.ToArgs(request),
+                    () => System.Threading.Tasks.Task.Run(() => Services.TerminalLaunch.Launch(request)));
+            });
 
         Services.McpDispatcher.OnMutation = () => Dispatcher.BeginInvoke(() => _mainWindow.RefreshGrid());
         Services.McpPipeService.StartServer(req => Services.McpDispatcher.Handle(req));

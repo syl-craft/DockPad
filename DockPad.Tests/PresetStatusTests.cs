@@ -311,7 +311,7 @@ public class PresetStatusTests
     [Fact]
     public void CodexCommande_UtiliseLeCheminAbsoluQuandOnLeConnait()
     {
-        var cmd = PresetService.TerminalCommand(Wt, PresetService.CodexRunCommand(@"C:\OpenAI\bin\codex.exe"));
+        var cmd = PresetService.PreviewCommand(Wt, PresetService.CodexRunCommand(@"C:\OpenAI\bin\codex.exe"));
 
         Assert.Contains(@"-- ""C:\OpenAI\bin\codex.exe""", cmd);
     }
@@ -321,7 +321,7 @@ public class PresetStatusTests
     {
         // Machine ou DockPad ne sait pas localiser le binaire : on laisse le P@H decider,
         // ce qui est le comportement d'avant et vaut mieux que rien.
-        var cmd = PresetService.TerminalCommand(Wt, PresetService.CodexRunCommand(codexExe: null));
+        var cmd = PresetService.PreviewCommand(Wt, PresetService.CodexRunCommand(codexExe: null));
 
         Assert.EndsWith("-- codex", cmd);
     }
@@ -329,29 +329,26 @@ public class PresetStatusTests
     [Fact]
     public void CodexCommande_SousPowerShell_LanceLeCheminParLOperateurDAppel()
     {
-        var cmd = PresetService.TerminalCommand(WindowsPowerShell, PresetService.CodexRunCommand(@"C:\Program Files\codex.exe"));
+        var cmd = PresetService.PreviewCommand(WindowsPowerShell, PresetService.CodexRunCommand(@"C:\Program Files\codex.exe"));
 
-        Assert.Equal(@"""C:\powershell.exe"" -NoExit -Command ""Set-Location '%V'; & \""C:\Program Files\codex.exe\""""", cmd);
+        Assert.Equal(@"""C:\powershell.exe"" -NoExit -Command ""Set-Location 'C:\dev\demo'; & \""C:\Program Files\codex.exe\""""", cmd);
     }
 
     // -- Windows Terminal : une fenetre par dossier, et sa couleur d'onglet ---------------------
-    //
-    // Dans un predefini le dossier n'est connu qu'au clic (%V) : la fenetre porte son chemin
-    // complet, et la couleur est la meme pour tous.
 
     [Fact]
     public void CommandeClaude_SousWindowsTerminal_OuvreLaFenetreDuDossier()
     {
-        var cmd = PresetService.TerminalCommand(Wt, "claude --enable-auto-mode");
+        var cmd = PresetService.PreviewCommand(Wt, "claude --enable-auto-mode");
 
-        Assert.Equal($@"""C:\wt.exe"" -w ""%V"" new-tab --tabColor {TerminalDetectionService.TabColor("%V")} --startingDirectory ""%V"" -- claude --enable-auto-mode", cmd);
+        Assert.Equal($@"""C:\wt.exe"" -w ""demo"" new-tab --tabColor {TerminalDetectionService.TabColor("demo")} --startingDirectory ""C:\dev\demo"" -- claude --enable-auto-mode", cmd);
     }
 
     [Fact]
     public void CommandePowerShell_SousWindowsTerminal_OuvreLaFenetreDuDossier()
     {
-        var cmd = PresetService.TerminalCommand(Wt, runCommand: "");
+        var cmd = PresetService.PreviewCommand(Wt, runCommand: "");
 
-        Assert.Equal($@"""C:\wt.exe"" -w ""%V"" new-tab --tabColor {TerminalDetectionService.TabColor("%V")} --startingDirectory ""%V""", cmd);
+        Assert.Equal($@"""C:\wt.exe"" -w ""demo"" new-tab --tabColor {TerminalDetectionService.TabColor("demo")} --startingDirectory ""C:\dev\demo""", cmd);
     }
 }

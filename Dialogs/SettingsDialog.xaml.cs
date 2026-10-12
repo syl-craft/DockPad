@@ -237,7 +237,7 @@ public partial class SettingsDialog : Window
         BtnTestTerminal.IsEnabled = terminal != null;
         TxtTerminalPreview.Text = terminal == null
             ? Loc.T("Quick_NoTerminal")
-            : PresetService.TerminalCommand(terminal, PresetService.ClaudeRunCommand(TxtClaudeArgs.Text));
+            : PresetService.PreviewCommand(terminal, PresetService.ClaudeRunCommand(TxtClaudeArgs.Text));
     }
 
     private void ClaudeArgs_Changed(object sender, TextChangedEventArgs e) => RefreshTerminalPreview();

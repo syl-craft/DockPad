@@ -38,16 +38,33 @@ public static class TerminalLaunch
     /// Rien n'est journalisé ici : le journal n'est pas initialisé, et l'initialiser coûterait ce
     /// que ce chemin existe pour éviter. Un échec se voit à l'écran.
     /// </remarks>
-    public static bool TryHandle(string[] args)
+    public static bool TryHandle(string[] args) => TryHandle(args,
+        instanceIsRunning: () => StartupRelay.InstanceIsRunning(TerminalRequest.SingleInstanceMutex),
+        send: line => new LinePipeService(TerminalRequest.PipeName).TrySendSilently(line, timeoutMs: 500),
+        launch: Launch);
+
+    /// <summary>
+    /// Même traitement, avec l'instance, le tube et le lancement fournis par l'appelant.
+    /// </summary>
+    public static bool TryHandle(string[] args, Func<bool> instanceIsRunning, Func<string, bool> send,
+        Action<TerminalRequest.Request> launch)
     {
         if (TerminalRequest.Parse(args) is not { } request) return false;
 
-        if (StartupRelay.InstanceIsRunning(TerminalRequest.SingleInstanceMutex)
-            && new LinePipeService(TerminalRequest.PipeName).TrySendSilently(TerminalRequest.Encode(request), timeoutMs: 500))
-            return true;
+        if (instanceIsRunning() && send(TerminalRequest.Encode(request))) return true;
 
-        Launch(request);
+        launch(request);
         return true;
+    }
+
+    /// <summary>
+    /// Vrai si ce processus tourne en administrateur.
+    /// </summary>
+    public static bool IsElevated()
+    {
+        using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+        return new System.Security.Principal.WindowsPrincipal(identity)
+            .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
     }
 
     /// <summary>

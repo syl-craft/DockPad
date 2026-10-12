@@ -171,10 +171,10 @@ public static class TerminalDetectionService
         string folderName = FolderName(folder);
         string tabColor = IsTabColor(color) ? color.Trim() : TabColor(folderName);
 
-        return template.Replace(FolderNameToken, folderName)
-                       .Replace(FolderToken, folder)
+        return template.Replace(FolderNameToken, BeforeClosingQuote(folderName))
+                       .Replace(FolderToken, BeforeClosingQuote(folder))
                        .Replace(ColorToken, tabColor)
-                       .Replace(NameToken, string.IsNullOrWhiteSpace(name) ? folderName : name.Trim())
+                       .Replace(NameToken, BeforeClosingQuote(string.IsNullOrWhiteSpace(name) ? folderName : name.Trim()))
                        .Replace(PowerShellCommandToken, ForPowerShell(command))
                        .Replace(CommandToken, command)
                        .Trim();
@@ -218,8 +218,19 @@ public static class TerminalDetectionService
     /// </summary>
     public static string FolderName(string folder)
     {
-        string name = Path.GetFileName(folder.TrimEnd('\\', '/'));
-        return name == "" ? folder : name;
+        string trimmed = folder.TrimEnd('\\', '/');
+        string name = Path.GetFileName(trimmed);
+        return name == "" ? trimmed : name;
+    }
+
+    /// <summary>
+    /// La valeur avec ses barres finales doublées : devant le guillemet fermant d'un modèle
+    /// (<c>"{folder}"</c>), le <c>\</c> de <c>D:\</c> échapperait sinon ce guillemet.
+    /// </summary>
+    private static string BeforeClosingQuote(string value)
+    {
+        int trailing = value.Length - value.TrimEnd('\\').Length;
+        return trailing == 0 ? value : value + new string('\\', trailing);
     }
 
     /// <summary>

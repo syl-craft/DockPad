@@ -112,4 +112,81 @@ public class TerminalLaunchTests
     {
         Assert.Equal(@"""C:\DockPad\DockPad.exe"" --terminal ""%V\.""", PresetService.LauncherCommand(@"C:\DockPad\DockPad.exe", ""));
     }
+
+    [Theory]
+    [InlineData("a;b", "\"a;b\"")]
+    [InlineData("a&b", "\"a&b\"")]
+    [InlineData("a|b", "\"a|b\"")]
+    [InlineData("--model=gpt", "--model=gpt")]
+    [InlineData("démo", "démo")]
+    public void Argument_SeparateurDeShell_RestEntreGuillemets(string arg, string expected)
+    {
+        Assert.Equal(expected, TerminalRequest.JoinArguments([arg]));
+    }
+
+    [Fact]
+    public void FormeDuTube_RedonneLaMemeDemande()
+    {
+        var request = new TerminalRequest.Request(@"D:\", @"""C:\Program Files\codex.exe"" --x ""a;b""");
+
+        Assert.Equal(request, TerminalRequest.Parse(TerminalRequest.ToArgs(request)));
+    }
+
+    [Fact]
+    public void RacineDeLecteur_NEchappePasLeGuillemetFermant()
+    {
+        var plan = TerminalLaunch.Plan(Wt, new TerminalRequest.Request(@"D:\", "claude"));
+
+        Assert.Equal($@"-w ""D:"" new-tab --tabColor {TerminalDetectionService.TabColor("D:")} --startingDirectory ""D:\\"" -- claude", plan?.Arguments);
+    }
+
+    [Fact]
+    public void InstanceQuiRepond_RecoitLaDemande_SansLancementLocal()
+    {
+        string? sent = null;
+        bool launched = false;
+
+        bool handled = TerminalLaunch.TryHandle(["--terminal", @"C:\dev\.", "--", "claude"],
+            instanceIsRunning: () => true, send: line => { sent = line; return true; }, launch: _ => launched = true);
+
+        Assert.True(handled);
+        Assert.Equal(TerminalRequest.Encode(new(@"C:\dev", "claude")), sent);
+        Assert.False(launched);
+    }
+
+    [Fact]
+    public void InstanceMuette_LancementLocal()
+    {
+        TerminalRequest.Request? launched = null;
+
+        TerminalLaunch.TryHandle(["--terminal", @"C:\dev\."],
+            instanceIsRunning: () => true, send: _ => false, launch: request => launched = request);
+
+        Assert.Equal(new TerminalRequest.Request(@"C:\dev", ""), launched);
+    }
+
+    [Fact]
+    public void SansInstance_LeTubeNEstPasEssaye()
+    {
+        bool tried = false;
+        bool launched = false;
+
+        TerminalLaunch.TryHandle(["--terminal", @"C:\dev\."],
+            instanceIsRunning: () => false, send: _ => tried = true, launch: _ => launched = true);
+
+        Assert.False(tried);
+        Assert.True(launched);
+    }
+
+    [Fact]
+    public void AutreLancement_NiTubeNiLancement()
+    {
+        bool touched = false;
+
+        bool handled = TerminalLaunch.TryHandle(["--url", "https://claude.ai"],
+            instanceIsRunning: () => touched = true, send: _ => touched = true, launch: _ => touched = true);
+
+        Assert.False(handled);
+        Assert.False(touched);
+    }
 }
