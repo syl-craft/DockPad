@@ -101,4 +101,10 @@ public class ConfigBackupTests : IDisposable
         Assert.Contains("favorites.json", noms);
         Assert.Contains("favorite-pages.json", noms);
     }
+
+    [Fact]
+    public void ProfileFiles_ContientLaListeDesTerminaux()
+    {
+        Assert.Contains("terminals.json", ConfigBackup.ProfileFiles().Select(Path.GetFileName));
+    }
 }

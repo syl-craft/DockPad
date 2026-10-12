@@ -76,6 +76,8 @@ Models/
     UsageConfig.cs                        Contenu de usage.json (bandeau + liste des fournisseurs)
     UsageDisplayItems.cs                  Onglet, métrique et jauge du bandeau (modèles d'affichage)
     TerminalConfig.cs                    Config d'un terminal (exePath, startingDirectory, runCommand…)
+    TerminalEntry.cs                      Un terminal de terminals.json (id, nom, programme, deux modèles, masquage, ordre)
+    TerminalsConfig.cs                    Contenu de terminals.json
     TerminalInfo.cs                      Informations d'un terminal détecté
 
 Services/Localization/
@@ -127,7 +129,9 @@ Services/
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save des tuiles d'une grille (shortcuts.json ou favorites.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
-    TerminalDetectionService.cs          Terminal par défaut des Options : détection (wt, pwsh, powershell), résolution, arguments
+    TerminalDetectionService.cs          Détection (wt, pwsh, powershell, WezTerm, MobaXterm), résolution, arguments à variables
+    TerminalCatalog.cs                    PUR — liste des terminaux : reprise, fusion de la détection, proposés, ordre, identifiants
+    TerminalConfigService.cs              Load/Save terminals.json (%APPDATA%\DockPad\terminals.json), création à la première lecture
     LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
     UrlPipeService.cs                    Facade sur LinePipeService pour DockPad_UrlPipe
     StartupRelay.cs                      Rendre la main à l'instance résidente AVANT de construire WPF
@@ -198,6 +202,7 @@ Views/
 Dialogs/
     AppDialog.xaml/.cs                   Dialog custom styled (remplace MessageBox) — Confirm/Error/Warning/Info
     BrowserConfigDialog.xaml/.cs         Configuration navigateurs (détection/édition/règles/enregistrement)
+    TerminalConfigDialog.xaml/.cs        Fenêtre Terminaux (détection/ajout/visibilité/ordre/arguments), patron de Navigateurs
     BrowserPickerWindow.xaml/.cs         Popup de choix du navigateur au clic sur une URL
     EntryDialog.xaml/.cs                 Ajout/modification d'une entrée de menu contextuel (registre)
     McpConfigDialog.xaml/.cs               Fenêtre « Serveur MCP » : options (activé/suppression) + journal de session
@@ -348,12 +353,12 @@ résidente stabilisée : **322 → 78 ms** au minimum, **412 → 100 ms** en mé
 - Toolbar : **☰ Menu** (déroulant) | **🔒 / ✓** (verrou du déplacement des tuiles) | **─** (réduire) | **⬇** (masquer dans la barre système)
 - **Menu ☰** organisé en sections :
   - *Menu contextuel* : ☰ Gestion, 📋 Raccourcis prédéfinis
-  - *Paramètres* : ⚙ Options, 🌐 Navigateurs, 🔌 Serveur MCP, 📊 Usage IA
+  - *Paramètres* : ⚙ Options, 🌐 Navigateurs, 💻 Terminaux, 🔌 Serveur MCP, 📊 Usage IA
   - *Secrets* : 🔑 Réglages des secrets (ouvre les Options **sur l'onglet Secrets**), ↻ Synchroniser le coffre
   - *Configuration* : ↺ Actualiser, ✎ Modifier, 💾 Sauvegarder, 📁 Voir le dossier
   - ✕ Quitter l'application
 - **Raccourci clavier actif** affiché en bas à droite (badge `Consolas`, mis à jour après changement dans Options)
-- **Sauvegarder la configuration** : copie `settings.json`, les **quatre** fichiers des deux grilles (`shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`), `browsers.json`, `mcp.json` et `usage.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
+- **Sauvegarder la configuration** : copie `settings.json`, les **quatre** fichiers des deux grilles (`shortcuts.json`, `pages.json`, `favorites.json`, `favorite-pages.json`), `browsers.json`, `terminals.json`, `mcp.json` et `usage.json` dans `%APPDATA%\DockPad\.backup\` avec horodatage
 - Config stockée dans `%APPDATA%\DockPad\shortcuts.json`
 - Config pages stockée dans `%APPDATA%\DockPad\pages.json`
 - **Clic droit sur une tuile** : 🖼 Changer l'icône | ✏ Modifier | ⧉ Dupliquer | ↗ Déplacer vers la page | ★ Déplacer vers les favoris (ou ▦ vers les raccourcis) | 🗑 Supprimer
@@ -581,7 +586,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 - **Réseau — Télécharger l'icône du site pour les raccourcis web** : voir *Icône automatique des tuiles web* ci-dessus
-- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (Windows Terminal, puis PowerShell 7, puis Windows PowerShell), l'un des trois s'il est installé, ou **un autre programme**. Pour chacun : le programme, deux modèles d'arguments à variables, la commande finale du prédéfini Claude, et un bouton **Tester** qui la lance dans le dossier utilisateur. Voir « Terminal par défaut » ci-dessous
+- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (premier terminal de la liste, visible et installé) ou un terminal de la fenêtre **💻 Terminaux**, la commande finale du prédéfini Claude, **Tester** et **Gérer les terminaux…**. Stocké dans `settings.json` (`defaultTerminal` = identifiant d'une entrée de `terminals.json`, `""` = automatique). Voir « Terminal par défaut » ci-dessous
 - **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
 ### Sélecteur de navigateur
@@ -1635,29 +1640,31 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 | `{command}` | la commande à lancer, telle quelle |
 | `{command-ps}` | la même, préparée pour `-Command "…"` de PowerShell : guillemets échappés en `\"`, `&` devant un chemin entre guillemets — sans quoi `--remote-control "…"` et Codex dans `Program Files` cassent |
 
-- **Les modèles de Windows Terminal et de PowerShell sont ceux de DockPad** (`DefaultTemplates`), modifiables
-  dans les Options avec *Rétablir*. Seuls ceux qui diffèrent sont écrits (`terminalTemplates`) ; ceux d'un
-  terminal non détecté ce jour-là sont gardés tels quels
+- **La fenêtre 💻 Terminaux suit le patron de Navigateurs** : liste à gauche (case de visibilité, icône de
+  l'exe, badges « par défaut » / « masqué » / « introuvable », ↻ Redétecter, ▲ ▼ 🗑 ➕), modification à
+  droite (nom, programme, deux modèles, commande finale, Tester, ★ Utiliser par défaut, Appliquer).
+  Sauvegarde immédiate, comme Navigateurs. Les Options n'en gardent que le choix par défaut
+- **`terminals.json`** porte la liste. Créé à la première lecture (`TerminalConfigService.EnsureInitialized`)
+  à partir de la détection, des `terminalTemplates` et de la section `terminals` de `settings.json`, que la
+  reprise vide ensuite. Une liste vide est redétectée, comme `browsers.json`
+- **Détection** : Windows Terminal, PowerShell 7, Windows PowerShell, **WezTerm** (`wezterm-gui.exe start
+  --new-tab --cwd "{folder}" -- {command}`, vérifié avec Claude) et **MobaXterm** (`-openfolder "{folder}"`
+  pour les deux modèles : son terminal Cygwin n'offre pas de console Windows, Claude y passe en mode
+  `--print` et s'arrête — essayé). Un terminal connu absent n'est pas ajouté
+- **Fusion additive** (`TerminalCatalog.Merge`) : clé = identifiant de détection ; chemin, arguments,
+  masquage et ordre préservés ; le nom suit la détection tant qu'il n'a pas été changé ; un terminal
+  disparu reste, signalé « introuvable ». Un terminal ajouté prend un identifiant tiré de son nom, jamais
+  celui d'un terminal détectable
 - **Windows Terminal ouvre une fenêtre par dossier** : `-w "{folder-name}" new-tab --tabColor {color}
   --startingDirectory "{folder}" -- {command}`. `-w <nom>` vise la fenêtre de ce nom et la crée si elle
   n'existe pas : les tuiles d'un même projet se regroupent. Dans un prédéfini le dossier n'est connu qu'au
   clic, la fenêtre porte donc le chemin complet et la couleur est la même pour tous
 - **Couleur choisie par tuile** (`terminal.tabColor`, `#RGB` ou `#RRGGBB`) : champ et palette dans la
   fenêtre d'une tuile Terminal ; vide ou invalide, la couleur du dossier
-- **Terminaux déclarés dans `settings.json`** (section `terminals`) : chacun a un `id`, un `name`, un
-  `exePath` et ses deux modèles. Ils s'ajoutent à la liste des Options, en lecture seule — on les modifie
-  dans le fichier. Une entrée à l'identifiant réservé (`wt`, `pwsh`, `powershell`, `custom`, vide), en
-  double ou dont le programme manque est écartée sans empêcher les autres (`Declared`, pur)
-- **Un autre programme** prend n'importe quel exécutable ; son chemin accepte `%LocalAppData%` et les
-  autres variables d'environnement, gardées telles quelles : le registre les développe, le lanceur des
-  tuiles aussi (`ShortcutLauncher.Start`). *Parcourir* préremplit les modèles de DockPad si c'est un
-  terminal connu, sinon `"{folder}"` seul
-- **Un modèle sans `{command}` ni `{command-ps}` est accepté, avec un avertissement** : c'est le cas de
-  MXterm Pro, qui n'accepte qu'un dossier — les tuiles Claude l'ouvrent sans lancer leur commande
-- **`Resolve(réglage, programme ajouté, installés)` est pur** : vide, inconnu (`cmd` d'une version
-  antérieure), désinstallé ou programme introuvable valent Automatique. Dans les Options, un programme
-  introuvable n'affiche **aucune** commande de repli et grise *Tester* : montrer le terminal qui serait
-  lancé à sa place faisait croire que le réglage marchait
+- **`Resolve(réglage, proposés)` est pur** : les proposés sont les terminaux visibles dont le programme
+  existe (`TerminalCatalog.Available`). Vide, inconnu, masqué ou introuvable valent Automatique. Dans la
+  fenêtre Terminaux, un programme introuvable n'affiche **aucune** commande et grise *Tester* : montrer le
+  terminal qui serait lancé à sa place faisait croire que le réglage marchait
 - **Le `terminal.exePath`, `newTab` et `extraArgs` d'une tuile ne sont plus lus.** Ils restent écrits,
   pour une version antérieure de DockPad. La fenêtre d'une tuile n'a plus que le dossier et la commande
 - **Changer les arguments par défaut d'un terminal change les commandes des prédéfinis installés** : ils
@@ -1715,6 +1722,28 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 - `hidden` : masqué = absent de la popup mais conservé dans la config
 - Stocké dans `%APPDATA%\DockPad\browsers.json`, inclus dans la sauvegarde de configuration
 
+## Format JSON terminaux
+
+```json
+{
+  "terminals": [
+    { "id": "wt", "name": "Windows Terminal", "detectedName": "Windows Terminal",
+      "exePath": "C:\\Users\\moi\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe",
+      "folderArgs": "-w \"{folder-name}\" new-tab --tabColor {color} --startingDirectory \"{folder}\"",
+      "commandArgs": "-w \"{folder-name}\" new-tab --tabColor {color} --startingDirectory \"{folder}\" -- {command}",
+      "hidden": false, "order": 0 },
+    { "id": "alacritty", "name": "Alacritty", "exePath": "%LocalAppData%\\Alacritty\\alacritty.exe",
+      "folderArgs": "--working-directory \"{folder}\"", "commandArgs": "--working-directory \"{folder}\" -e {command}",
+      "hidden": false, "order": 1 }
+  ]
+}
+```
+
+- `id` : clé de fusion de la détection (`wt`, `pwsh`, `powershell`, `wezterm`, `mobaxterm`), tirée du nom pour un terminal ajouté ; visé par `defaultTerminal`
+- `detectedName` : présent sur un terminal détecté ; tant que `name` lui est égal, le nom suit la détection
+- `hidden` : absent du choix « Terminal par défaut », conservé
+- Stocké dans `%APPDATA%\DockPad\terminals.json`, inclus dans la sauvegarde de configuration
+
 ## Format JSON Usage IA
 
 ```json
@@ -1755,13 +1784,7 @@ emportait pas.
   "triggerFirst": "Ctrl",
   "triggerSecond": "Shift",
   "claudeArgs": "--enable-auto-mode",
-  "defaultTerminal": "custom",
-  "terminalTemplates": { "wt": { "folderArgs": "-d \"{folder}\"", "commandArgs": "-d \"{folder}\" -- {command}" } },
-  "customTerminal": { "exePath": "%LocalAppData%\\MXterm Pro\\mxterm.exe", "folderArgs": "\"{folder}\"", "commandArgs": "\"{folder}\"" },
-  "terminals": [
-    { "id": "wezterm", "name": "WezTerm", "exePath": "C:\\Program Files\\WezTerm\\wezterm-gui.exe",
-      "folderArgs": "start --new-tab --cwd \"{folder}\"", "commandArgs": "start --new-tab --cwd \"{folder}\" -- {command}" }
-  ],
+  "defaultTerminal": "wezterm",
   "autoFavicon": true,
   "bitwardenCliPath": "",
   "clipboardClearSeconds": 90,

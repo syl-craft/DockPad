@@ -35,23 +35,19 @@ public class AppSettings
     public string ClaudeArgs { get; set; } = "";
 
     /// <summary>
-    /// Terminal des prédéfinis et des tuiles Terminal (<c>wt</c>, <c>pwsh</c>, <c>powershell</c>,
-    /// <c>custom</c> pour <see cref="CustomTerminal"/>), ou vide pour « automatique ».
+    /// Terminal des prédéfinis et des tuiles Terminal : identifiant d'une entrée de
+    /// <c>terminals.json</c>, ou vide pour « automatique ».
     /// </summary>
     public string DefaultTerminal { get; set; } = "";
 
     /// <summary>
-    /// Arguments modifiés des terminaux détectés, par identifiant ; absent = ceux de DockPad.
+    /// Arguments modifiés d'un terminal détecté, par identifiant : lus une fois, à la création de
+    /// <c>terminals.json</c>, puis vidés.
     /// </summary>
     public Dictionary<string, TerminalSettings> TerminalTemplates { get; set; } = new();
 
     /// <summary>
-    /// Programme lancé quand <see cref="DefaultTerminal"/> vaut <c>custom</c>.
-    /// </summary>
-    public TerminalSettings CustomTerminal { get; set; } = new();
-
-    /// <summary>
-    /// Terminaux déclarés à la main dans le fichier, ajoutés à la liste des Options.
+    /// Terminaux déclarés dans ce fichier : lus une fois, à la création de <c>terminals.json</c>, puis vidés.
     /// </summary>
     public List<TerminalDefinition> Terminals { get; set; } = new();
 

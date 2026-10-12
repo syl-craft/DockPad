@@ -127,6 +127,7 @@ internal static class Program
             "ctxmenu" => new ContextMenuManagerWindow(),
             "presets" => new PresetsDialog(),
             "mcp" => new McpConfigDialog(),
+            "terminals" => TerminalsWindow(),
             // Trois fenetres n'avaient aucune couverture de capture : celles d'ajout/modification
             // d'une tuile et d'une entree de registre. Un defaut de couleur y serait passe inapercu.
             "shortcut" => new ShortcutDialog(row: 0, col: 0),
@@ -490,4 +491,14 @@ internal static class Program
     /// <summary>Fond de la fenetre qui porte cet element, ou <c>null</c> s'il n'y en a pas.</summary>
     private static Brush? Backdrop(DependencyObject element) =>
         Window.GetWindow(element)?.Background;
+
+    /// <summary>
+    /// La fenêtre Terminaux, premier terminal sélectionné : sans sélection, la moitié droite est vide.
+    /// </summary>
+    static Window TerminalsWindow()
+    {
+        var window = new TerminalConfigDialog();
+        if (window.FindName("LstTerminals") is System.Windows.Controls.ListBox list) list.SelectedIndex = 0;
+        return window;
+    }
 }

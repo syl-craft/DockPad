@@ -33,25 +33,10 @@ public partial class SettingsDialog : Window
     private sealed record ThemeChoice(string Tag, string Label);
     private sealed record TerminalChoice(string Tag, string Label);
 
-    private readonly List<Models.TerminalInfo> _detected = TerminalDetectionService.Detect();
-
     /// <summary>
-    /// Terminaux déclarés dans la section <c>terminals</c> de <c>settings.json</c> : modifiables là seulement.
+    /// Terminaux proposés : ceux de la fenêtre Terminaux, visibles et présents.
     /// </summary>
-    private readonly List<Models.TerminalInfo> _declared = TerminalDetectionService.Declared(
-        SettingsService.LoadTerminalDefinitions(),
-        exists: path => System.IO.File.Exists(Environment.ExpandEnvironmentVariables(path)));
-
-    /// <summary>
-    /// Copies de travail des arguments, par terminal détecté : écrites seulement à Sauvegarder.
-    /// </summary>
-    private readonly Dictionary<string, Models.TerminalSettings> _terminalTemplates;
-    private readonly Models.TerminalSettings _customTerminal = SettingsService.LoadCustomTerminal().Copy();
-
-    /// <summary>
-    /// Vrai pendant que <see cref="ShowTerminalFields"/> remplit les champs : ce n'est pas une saisie.
-    /// </summary>
-    private bool _showingTerminal;
+    private List<Models.TerminalInfo> _terminals = AvailableTerminals();
 
     /// <summary>
     /// Vrai pendant le remplissage des listes : les <c>SelectionChanged</c> qu'il déclenche ne
@@ -63,11 +48,6 @@ public partial class SettingsDialog : Window
 
     public SettingsDialog(SettingsTab tab)
     {
-        // Avant InitializeComponent : remplir les champs déclenche déjà l'aperçu du terminal.
-        var savedTemplates = SettingsService.LoadTerminalTemplates();
-        _terminalTemplates = _detected.ToDictionary(t => t.Id,
-            t => savedTemplates.GetValueOrDefault(t.Id)?.Copy() ?? TerminalDetectionService.DefaultTemplates(t.Id));
-
         InitializeComponent();
 
         Tabs.SelectedItem = tab switch
@@ -216,16 +196,17 @@ public partial class SettingsDialog : Window
         _filling = false;
     }
 
+    private static List<Models.TerminalInfo> AvailableTerminals() => TerminalCatalog.Available(
+        TerminalConfigService.EnsureInitialized().Terminals, TerminalDetectionService.ProgramExists);
+
     /// <summary>
-    /// Remplit la liste des terminaux : Automatique, les terminaux installés, puis un autre programme.
-    /// Un terminal réglé mais désinstallé reste dans la liste, sans quoi Sauvegarder effacerait le réglage.
+    /// Remplit la liste des terminaux : Automatique, puis ceux de la fenêtre Terminaux. Un terminal
+    /// réglé mais masqué ou absent reste dans la liste, sans quoi Sauvegarder effacerait le réglage.
     /// </summary>
     private void FillTerminals(string selected)
     {
         var choices = new List<TerminalChoice> { new("", Loc.T("Settings_Terminal_Auto")) };
-        choices.AddRange(_detected.Select(t => new TerminalChoice(t.Id, t.DisplayName)));
-        choices.AddRange(_declared.Select(t => new TerminalChoice(t.Id, t.DisplayName)));
-        choices.Add(new TerminalChoice(TerminalDetectionService.CustomId, Loc.T("Settings_Terminal_Custom")));
+        choices.AddRange(_terminals.Select(t => new TerminalChoice(t.Id, t.DisplayName)));
         if (choices.All(c => c.Tag != selected))
             choices.Add(new TerminalChoice(selected, Loc.F("Settings_Terminal_Missing", selected)));
 
@@ -236,73 +217,12 @@ public partial class SettingsDialog : Window
 
     private string SelectedTerminalTag => (CmbDefaultTerminal.SelectedItem as TerminalChoice)?.Tag ?? "";
 
-    private bool CustomTerminalSelected => SelectedTerminalTag == TerminalDetectionService.CustomId;
+    private Models.TerminalInfo? ChosenTerminal() => TerminalDetectionService.Resolve(SelectedTerminalTag, _terminals);
+
+    private void DefaultTerminal_Changed(object sender, SelectionChangedEventArgs e) => RefreshTerminalPreview();
 
     /// <summary>
-    /// Arguments en cours d'édition du terminal affiché : ceux d'un terminal détecté, ceux du
-    /// programme ajouté, ou <c>null</c> en Automatique, qui n'a rien à modifier.
-    /// </summary>
-    private Models.TerminalSettings? EditedTemplates =>
-        CustomTerminalSelected ? _customTerminal : _terminalTemplates.GetValueOrDefault(SelectedTerminalTag);
-
-    private List<Models.TerminalInfo> EditedInstalled() =>
-        _detected.Select(t => TerminalDetectionService.WithTemplates(t, _terminalTemplates[t.Id])).Concat(_declared).ToList();
-
-    private bool DeclaredTerminalSelected => _declared.Any(t => t.Id == SelectedTerminalTag);
-
-    /// <summary>
-    /// Le terminal que lancerait le choix affiché, enregistré ou non ; un programme ajouté
-    /// introuvable ne lance rien, pour que l'aperçu ne montre pas un autre terminal.
-    /// </summary>
-    private Models.TerminalInfo? ChosenTerminal() => CustomTerminalSelected
-        ? TerminalDetectionService.ExistingCustomTerminal(_customTerminal)
-        : TerminalDetectionService.Resolve(SelectedTerminalTag, custom: null, EditedInstalled());
-
-    private void DefaultTerminal_Changed(object sender, SelectionChangedEventArgs e) => ShowTerminalFields();
-
-    /// <summary>
-    /// Affiche le programme et les arguments du terminal choisi, modifiables sauf en Automatique.
-    /// </summary>
-    private void ShowTerminalFields()
-    {
-        if (TxtTerminalPreview == null) return;
-
-        var edited = EditedTemplates;
-        var shown = edited == null ? ChosenTerminal() : null;
-        string exePath = CustomTerminalSelected
-            ? _customTerminal.ExePath
-            : _detected.Concat(_declared).Where(t => t.Id == SelectedTerminalTag).Select(t => t.ExePath).FirstOrDefault()
-              ?? shown?.ExePath ?? "";
-
-        _showingTerminal = true;
-        TxtTerminalExe.Text         = exePath;
-        TxtTerminalFolderArgs.Text  = edited?.FolderArgs ?? shown?.FolderArgs ?? "";
-        TxtTerminalCommandArgs.Text = edited?.CommandArgs ?? shown?.CommandArgs ?? "";
-        _showingTerminal = false;
-
-        TxtTerminalExe.IsReadOnly         = !CustomTerminalSelected;
-        TxtTerminalFolderArgs.IsReadOnly  = edited == null;
-        TxtTerminalCommandArgs.IsReadOnly = edited == null;
-        TxtTerminalAutoNote.Visibility = edited == null && !DeclaredTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
-        TxtTerminalJsonNote.Visibility = DeclaredTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
-        BtnBrowseTerminal.Visibility   = CustomTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
-        BtnResetTerminal.Visibility    = edited != null && !CustomTerminalSelected ? Visibility.Visible : Visibility.Collapsed;
-
-        RefreshTerminalPreview();
-    }
-
-    private void TerminalField_Changed(object sender, TextChangedEventArgs e)
-    {
-        if (_showingTerminal || EditedTemplates is not { } edited) return;
-
-        if (CustomTerminalSelected) edited.ExePath = TxtTerminalExe.Text;
-        edited.FolderArgs  = TxtTerminalFolderArgs.Text;
-        edited.CommandArgs = TxtTerminalCommandArgs.Text;
-        RefreshTerminalPreview();
-    }
-
-    /// <summary>
-    /// La commande finale du prédéfini Claude, variables remplacées, et ce qui empêcherait de la lancer.
+    /// La commande finale du prédéfini Claude, variables remplacées.
     /// </summary>
     private void RefreshTerminalPreview()
     {
@@ -313,77 +233,32 @@ public partial class SettingsDialog : Window
             || terminal.CommandArgs.Contains(TerminalDetectionService.CommandToken)
             || terminal.CommandArgs.Contains(TerminalDetectionService.PowerShellCommandToken);
 
-        TxtTerminalInvalid.Visibility   = CustomTerminalSelected && terminal == null ? Visibility.Visible : Visibility.Collapsed;
         TxtTerminalNoCommand.Visibility = runsCommand ? Visibility.Collapsed : Visibility.Visible;
         BtnTestTerminal.IsEnabled = terminal != null;
         TxtTerminalPreview.Text = terminal == null
-            ? ""
+            ? Loc.T("Quick_NoTerminal")
             : PresetService.TerminalCommand(terminal, PresetService.ClaudeRunCommand(TxtClaudeArgs.Text));
     }
 
     private void ClaudeArgs_Changed(object sender, TextChangedEventArgs e) => RefreshTerminalPreview();
 
-    private void ResetTerminal_Click(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// Ouvre la fenêtre Terminaux, puis relit la liste : son « Utiliser par défaut » a pu changer le choix.
+    /// </summary>
+    private void ManageTerminals_Click(object sender, RoutedEventArgs e)
     {
-        _terminalTemplates[SelectedTerminalTag] = TerminalDetectionService.DefaultTemplates(SelectedTerminalTag);
-        ShowTerminalFields();
+        string before = SettingsService.LoadDefaultTerminal();
+        new TerminalConfigDialog { Owner = this }.ShowDialog();
+
+        string after = SettingsService.LoadDefaultTerminal();
+        _terminals = AvailableTerminals();
+        FillTerminals(after != before ? after : SelectedTerminalTag);
     }
 
     private void TestTerminal_Click(object sender, RoutedEventArgs e)
     {
         if (ChosenTerminal() is not { } terminal) return;
-
-        string folder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        try
-        {
-            ShortcutLauncher.OpenTerminal(terminal, folder, PresetService.ClaudeRunCommand(TxtClaudeArgs.Text));
-        }
-        catch (Exception ex)
-        {
-            LogService.Error(ex, $"Test du terminal par défaut : {terminal.ExePath}");
-            AppDialog.Error(Loc.F("Settings_Terminal_TestFailed", ex.Message), owner: this);
-        }
-    }
-
-    private void BrowseTerminal_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new Microsoft.Win32.OpenFileDialog
-        {
-            Title  = Loc.T("Settings_Terminal_Custom"),
-            Filter = Loc.T("Settings_Terminal_PickFilter"),
-        };
-        if (dlg.ShowDialog(this) != true) return;
-
-        _customTerminal.ExePath = dlg.FileName;
-        // Des arguments vides ne lanceraient rien d'utile : on part de ceux que DockPad connaît pour ce programme.
-        if (_customTerminal.FolderArgs.Trim() == "" && _customTerminal.CommandArgs.Trim() == "")
-        {
-            var defaults = TerminalDetectionService.DefaultTemplates(TerminalDetectionService.KnownIdOf(dlg.FileName));
-            _customTerminal.FolderArgs  = defaults.FolderArgs;
-            _customTerminal.CommandArgs = defaults.CommandArgs;
-        }
-        ShowTerminalFields();
-    }
-
-    /// <summary>
-    /// Arguments des terminaux détectés qui diffèrent de ceux de DockPad : seuls ceux-là sont enregistrés.
-    /// </summary>
-    /// <remarks>
-    /// Ceux d'un terminal non détecté aujourd'hui sont gardés tels quels : il peut revenir.
-    /// </remarks>
-    private Dictionary<string, Models.TerminalSettings> ChangedTemplates()
-    {
-        var changed = SettingsService.LoadTerminalTemplates()
-            .Where(pair => !_terminalTemplates.ContainsKey(pair.Key))
-            .ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
-
-        foreach (var (id, edited) in _terminalTemplates)
-        {
-            var defaults = TerminalDetectionService.DefaultTemplates(id);
-            if (edited.FolderArgs.Trim() != defaults.FolderArgs || edited.CommandArgs.Trim() != defaults.CommandArgs)
-                changed[id] = new Models.TerminalSettings { FolderArgs = edited.FolderArgs.Trim(), CommandArgs = edited.CommandArgs.Trim() };
-        }
-        return changed;
+        TerminalConfigDialog.Test(terminal, PresetService.ClaudeRunCommand(TxtClaudeArgs.Text), owner: this);
     }
 
     private void Theme_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -444,12 +319,6 @@ public partial class SettingsDialog : Window
     {
         if (CmbKey.SelectedIndex < 0) return;
         if (!ValidateTriggers()) return;
-        if (CustomTerminalSelected && TerminalDetectionService.ExistingCustomTerminal(_customTerminal) == null)
-        {
-            Tabs.SelectedItem = TabIntegrations;
-            AppDialog.Warning(Loc.T("Settings_Terminal_CustomInvalid"), owner: this);
-            return;
-        }
 
         uint mods = 0;
         if (ChkCtrl.IsChecked  == true) mods |= HotkeyService.MOD_CONTROL;
@@ -469,8 +338,6 @@ public partial class SettingsDialog : Window
         SettingsService.SaveAutoFavicon(ChkAutoFavicon.IsChecked == true);
         SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
         SettingsService.SaveDefaultTerminal(SelectedTerminalTag);
-        SettingsService.SaveTerminalTemplates(ChangedTemplates());
-        SettingsService.SaveCustomTerminal(_customTerminal);
 
         SettingsService.SaveBitwardenCliPath(TxtBwPath.Text);
         SettingsService.SaveGitHubCliPath(TxtGhPath.Text);

@@ -16,11 +16,14 @@ public static class TerminalDetectionService
     public const string WindowsTerminalId   = "wt";
     public const string PowerShell7Id       = "pwsh";
     public const string WindowsPowerShellId = "powershell";
+    public const string WezTermId           = "wezterm";
+    public const string MobaXtermId         = "mobaxterm";
 
     /// <summary>
-    /// Valeur du réglage quand le terminal est un programme ajouté dans les Options.
+    /// Identifiants des terminaux que DockPad sait détecter : réservés, un terminal ajouté ne les prend pas.
     /// </summary>
-    public const string CustomId = "custom";
+    public static readonly IReadOnlyList<string> KnownIds =
+        [WindowsTerminalId, PowerShell7Id, WindowsPowerShellId, WezTermId, MobaXtermId];
 
     public const string FolderToken            = "{folder}";
     public const string CommandToken           = "{command}";
@@ -58,6 +61,19 @@ public static class TerminalDetectionService
         if (File.Exists(poshPath))
             list.Add(Known(WindowsPowerShellId, "Windows PowerShell", poshPath));
 
+        // WezTerm : wezterm-gui.exe, qui n'ouvre pas de console en plus de sa fenêtre
+        var wezPath = FirstExisting(@"C:\Program Files\WezTerm\wezterm-gui.exe")
+            ?? FindInPath("wezterm-gui.exe", Environment.GetEnvironmentVariable("PATH") ?? "");
+        if (wezPath != null)
+            list.Add(Known(WezTermId, "WezTerm", wezPath));
+
+        // MobaXterm
+        var mobaPath = FirstExisting(
+            @"C:\Program Files (x86)\Mobatek\MobaXterm\MobaXterm.exe",
+            @"C:\Program Files\Mobatek\MobaXterm\MobaXterm.exe");
+        if (mobaPath != null)
+            list.Add(Known(MobaXtermId, "MobaXterm", mobaPath));
+
         return list;
     }
 
@@ -89,6 +105,18 @@ public static class TerminalDetectionService
             FolderArgs  = "-NoExit -Command \"Set-Location '{folder}'\"",
             CommandArgs = "-NoExit -Command \"Set-Location '{folder}'; {command-ps}\"",
         },
+        WezTermId => new()
+        {
+            FolderArgs  = "start --new-tab --cwd \"{folder}\"",
+            CommandArgs = "start --new-tab --cwd \"{folder}\" -- {command}",
+        },
+        // Son terminal Cygwin n'offre pas de console Windows : Claude y passe en mode non
+        // interactif et s'arrête. MobaXterm n'ouvre donc que le dossier.
+        MobaXtermId => new()
+        {
+            FolderArgs  = "-openfolder \"{folder}\"",
+            CommandArgs = "-openfolder \"{folder}\"",
+        },
         _ => new()
         {
             FolderArgs  = "\"{folder}\"",
@@ -97,108 +125,41 @@ public static class TerminalDetectionService
     };
 
     /// <summary>
-    /// Identifiant du terminal connu dont c'est le programme, ou <see cref="CustomId"/>.
+    /// Identifiant du terminal connu dont c'est le programme, ou vide pour un programme inconnu.
     /// </summary>
     public static string KnownIdOf(string exePath) => Path.GetFileName(exePath).ToLowerInvariant() switch
     {
-        "wt.exe"         => WindowsTerminalId,
-        "pwsh.exe"       => PowerShell7Id,
-        "powershell.exe" => WindowsPowerShellId,
-        _                => CustomId,
+        "wt.exe"                         => WindowsTerminalId,
+        "pwsh.exe"                       => PowerShell7Id,
+        "powershell.exe"                 => WindowsPowerShellId,
+        "wezterm-gui.exe" or "wezterm.exe" => WezTermId,
+        "mobaxterm.exe"                  => MobaXtermId,
+        _                                => "",
     };
 
     /// <summary>
-    /// Le terminal avec les arguments modifiés dans les Options, s'il y en a.
+    /// Vrai si le programme existe ; son chemin peut porter des variables d'environnement.
     /// </summary>
-    public static TerminalInfo WithTemplates(TerminalInfo terminal, TerminalSettings? edited) => edited == null
-        ? terminal
-        : new TerminalInfo
-        {
-            Id = terminal.Id, DisplayName = terminal.DisplayName, ExePath = terminal.ExePath,
-            FolderArgs = edited.FolderArgs, CommandArgs = edited.CommandArgs,
-        };
+    public static bool ProgramExists(string exePath) =>
+        exePath.Trim() != "" && File.Exists(Environment.ExpandEnvironmentVariables(exePath.Trim().Trim('"')));
 
     /// <summary>
-    /// Le programme ajouté dans les Options, ou <c>null</c> sans programme.
+    /// Le terminal choisi s'il est proposé, sinon le premier proposé : vide, inconnu, masqué ou
+    /// introuvable valent Automatique.
     /// </summary>
-    public static TerminalInfo? CustomTerminal(TerminalSettings custom) => string.IsNullOrWhiteSpace(custom.ExePath)
-        ? null
-        : new TerminalInfo
-        {
-            Id = CustomId, DisplayName = custom.ExePath, ExePath = custom.ExePath.Trim().Trim('"'),
-            FolderArgs = custom.FolderArgs.Trim(), CommandArgs = custom.CommandArgs.Trim(),
-        };
-
-    /// <summary>
-    /// Le programme ajouté s'il existe sur le disque, sinon <c>null</c>. Son chemin garde ses
-    /// variables d'environnement, que le registre développe lui-même.
-    /// </summary>
-    public static TerminalInfo? ExistingCustomTerminal(TerminalSettings custom) =>
-        CustomTerminal(custom) is { } terminal && File.Exists(Environment.ExpandEnvironmentVariables(terminal.ExePath))
-            ? terminal
-            : null;
-
-    /// <summary>
-    /// Le terminal choisi s'il est disponible, sinon le premier installé : vide, inconnu, désinstallé
-    /// ou programme ajouté introuvable (<paramref name="custom"/> nul) valent Automatique.
-    /// </summary>
-    public static TerminalInfo? Resolve(string setting, TerminalInfo? custom, IReadOnlyList<TerminalInfo> installed)
+    public static TerminalInfo? Resolve(string setting, IReadOnlyList<TerminalInfo> installed)
     {
-        var chosen = setting == CustomId
-            ? custom
-            : installed.Where(t => t.Id == setting).FirstOrDefault();
+        var chosen = installed.Where(t => t.Id == setting).FirstOrDefault();
 
         return chosen ?? installed.FirstOrDefault();
     }
 
     /// <summary>
-    /// Terminaux installés, avec les arguments modifiés dans <paramref name="templates"/>, puis
-    /// ceux déclarés dans <c>settings.json</c>.
-    /// </summary>
-    public static List<TerminalInfo> Installed(IReadOnlyDictionary<string, TerminalSettings> templates,
-                                               IReadOnlyList<TerminalDefinition> definitions)
-    {
-        var installed = Detect().Select(t => WithTemplates(t, templates.GetValueOrDefault(t.Id))).ToList();
-        installed.AddRange(Declared(definitions, exists: path => File.Exists(Environment.ExpandEnvironmentVariables(path))));
-        return installed;
-    }
-
-    /// <summary>
-    /// Les terminaux déclarés utilisables : identifiant libre et unique, programme présent. Une
-    /// entrée qui ne l'est pas est écartée, sans empêcher les autres d'être proposées.
-    /// </summary>
-    public static List<TerminalInfo> Declared(IReadOnlyList<TerminalDefinition> definitions, Func<string, bool> exists)
-    {
-        string[] reserved = ["", WindowsTerminalId, PowerShell7Id, WindowsPowerShellId, CustomId];
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var declared = new List<TerminalInfo>();
-
-        foreach (var definition in definitions)
-        {
-            string id = definition.Id.Trim();
-            string exePath = definition.ExePath.Trim().Trim('"');
-            if (reserved.Contains(id, StringComparer.OrdinalIgnoreCase) || !seen.Add(id)) continue;
-            if (exePath == "" || !exists(exePath)) continue;
-
-            declared.Add(new TerminalInfo
-            {
-                Id = id,
-                DisplayName = string.IsNullOrWhiteSpace(definition.Name) ? id : definition.Name.Trim(),
-                ExePath = exePath,
-                FolderArgs = definition.FolderArgs.Trim(),
-                CommandArgs = definition.CommandArgs.Trim(),
-            });
-        }
-        return declared;
-    }
-
-    /// <summary>
-    /// Le terminal à lancer selon les Options, ou <c>null</c> si aucun n'est installé.
+    /// Le terminal à lancer selon les Options, ou <c>null</c> si aucun n'est proposé.
     /// </summary>
     public static TerminalInfo? ResolveDefault() =>
         Resolve(SettingsService.LoadDefaultTerminal(),
-                ExistingCustomTerminal(SettingsService.LoadCustomTerminal()),
-                Installed(SettingsService.LoadTerminalTemplates(), SettingsService.LoadTerminalDefinitions()));
+                TerminalCatalog.Available(TerminalConfigService.EnsureInitialized().Terminals, ProgramExists));
 
     /// <summary>
     /// Arguments qui ouvrent <paramref name="terminal"/> dans le dossier de la config et y lancent sa commande.

@@ -20,6 +20,4 @@ public class TerminalSettings
     /// Arguments pour ouvrir un dossier et y lancer une commande.
     /// </summary>
     public string CommandArgs { get; set; } = "";
-
-    public TerminalSettings Copy() => new() { ExePath = ExePath, FolderArgs = FolderArgs, CommandArgs = CommandArgs };
 }

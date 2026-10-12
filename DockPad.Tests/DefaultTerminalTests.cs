@@ -25,7 +25,7 @@ public class DefaultTerminalTests
     [Fact]
     public void Automatique_PrendLePremierDansLOrdreDeDetection()
     {
-        var resolved = TerminalDetectionService.Resolve("", custom: null, [Wt, Pwsh, WindowsPowerShell]);
+        var resolved = TerminalDetectionService.Resolve("", [Wt, Pwsh, WindowsPowerShell]);
 
         Assert.Same(Wt, resolved);
     }
@@ -33,7 +33,7 @@ public class DefaultTerminalTests
     [Fact]
     public void Automatique_SansWindowsTerminal_PrendPowerShell7()
     {
-        var resolved = TerminalDetectionService.Resolve("", custom: null, [Pwsh, WindowsPowerShell]);
+        var resolved = TerminalDetectionService.Resolve("", [Pwsh, WindowsPowerShell]);
 
         Assert.Same(Pwsh, resolved);
     }
@@ -41,7 +41,7 @@ public class DefaultTerminalTests
     [Fact]
     public void TerminalChoisi_EstRetenuSIlEstInstalle()
     {
-        var resolved = TerminalDetectionService.Resolve("powershell", custom: null, [Wt, Pwsh, WindowsPowerShell]);
+        var resolved = TerminalDetectionService.Resolve("powershell", [Wt, Pwsh, WindowsPowerShell]);
 
         Assert.Same(WindowsPowerShell, resolved);
     }
@@ -52,7 +52,7 @@ public class DefaultTerminalTests
     [InlineData("inconnu")]   // écrit par une version plus récente
     public void TerminalChoisiAbsent_SeComporteCommeAutomatique(string setting)
     {
-        var resolved = TerminalDetectionService.Resolve(setting, custom: null, [Wt, WindowsPowerShell]);
+        var resolved = TerminalDetectionService.Resolve(setting, [Wt, WindowsPowerShell]);
 
         Assert.Same(Wt, resolved);
     }
@@ -60,108 +60,72 @@ public class DefaultTerminalTests
     [Fact]
     public void AucunTerminalInstalle_NeRendRien()
     {
-        Assert.Null(TerminalDetectionService.Resolve("", custom: null, []));
+        Assert.Null(TerminalDetectionService.Resolve("", []));
     }
 
-    // -- Programme ajouté et modèles d'arguments -------------------------------
+    // -- Modèles d'arguments ----------------------------------------------------
 
-    private static TerminalSettings Custom(string exe, string folderArgs, string commandArgs) =>
-        new() { ExePath = exe, FolderArgs = folderArgs, CommandArgs = commandArgs };
+    private static TerminalInfo Info(string id, string exe, string folderArgs, string commandArgs) =>
+        new() { Id = id, DisplayName = id, ExePath = exe, FolderArgs = folderArgs, CommandArgs = commandArgs };
 
     [Fact]
-    public void ProgrammeAjoute_SansCommande_SuitLeModeleDuDossier()
+    public void ProgrammeQuiNePrendQuUnDossier_IgnoreLaCommande()
     {
-        // MXterm Pro ne prend qu'un dossier.
-        var mxterm = TerminalDetectionService.CustomTerminal(Custom(@"C:\MXterm Pro\mxterm.exe", @"""{folder}""", @"""{folder}"""))
-            ?? throw new InvalidOperationException("programme vide");
+        // MobaXterm et MXterm Pro n'ouvrent qu'un dossier.
+        var moba = Info("mobaxterm", @"C:\MobaXterm.exe", @"-openfolder ""{folder}""", @"-openfolder ""{folder}""");
 
-        var args = TerminalDetectionService.BuildArgs(mxterm, new TerminalConfig { StartingDirectory = @"C:\dev\Demo" });
+        var args = TerminalDetectionService.BuildArgs(moba, new TerminalConfig { StartingDirectory = @"C:\dev\Demo", RunCommand = "claude" });
 
-        Assert.Equal(TerminalDetectionService.CustomId, mxterm.Id);
-        Assert.Equal(@"""C:\dev\Demo""", args);
+        Assert.Equal(@"-openfolder ""C:\dev\Demo""", args);
     }
 
     [Fact]
-    public void ProgrammeAjoute_AvecCommande_SuitLeModeleDeLaCommande()
+    public void ModeleDeLaCommande_RemplaceDossierEtCommande()
     {
-        var alacritty = TerminalDetectionService.CustomTerminal(Custom(@"C:\alacritty.exe",
-            @"--working-directory ""{folder}""", @"--working-directory ""{folder}"" -e {command}"))
-            ?? throw new InvalidOperationException("programme vide");
+        var alacritty = Info("alacritty", @"C:\alacritty.exe",
+            @"--working-directory ""{folder}""", @"--working-directory ""{folder}"" -e {command}");
         var cfg = new TerminalConfig { StartingDirectory = "%V", RunCommand = @"""C:\codex.exe""" };
 
         Assert.Equal(@"--working-directory ""%V"" -e ""C:\codex.exe""", TerminalDetectionService.BuildArgs(alacritty, cfg));
     }
 
     [Fact]
-    public void ModeleModifie_RemplaceCeuxDeDockPad()
+    public void WezTerm_OuvreUnOngletDansLeDossierEtLanceLaCommande()
     {
-        var wt = TerminalDetectionService.WithTemplates(Wt,
-            new TerminalSettings { FolderArgs = @"-d ""{folder}""", CommandArgs = @"-d ""{folder}"" {command}" });
+        var wezterm = TerminalDetectionService.Known(TerminalDetectionService.WezTermId, "WezTerm", @"C:\wezterm-gui.exe");
 
-        var args = TerminalDetectionService.BuildArgs(wt, new TerminalConfig { StartingDirectory = @"C:\dev", RunCommand = "claude" });
+        var args = TerminalDetectionService.BuildArgs(wezterm, new TerminalConfig { StartingDirectory = @"C:\dev", RunCommand = "claude" });
 
-        Assert.Equal(@"-d ""C:\dev"" claude", args);
+        Assert.Equal(@"start --new-tab --cwd ""C:\dev"" -- claude", args);
     }
 
     [Theory]
     [InlineData(@"D:\Outils\wt.exe", "wt")]
     [InlineData(@"C:\Program Files\PowerShell\7-preview\PWSH.EXE", "pwsh")]
     [InlineData(@"D:\portable\powershell.exe", "powershell")]
-    [InlineData(@"C:\MXterm Pro\mxterm.exe", "custom")]
+    [InlineData(@"C:\Program Files\WezTerm\wezterm-gui.exe", "wezterm")]
+    [InlineData(@"C:\Program Files (x86)\Mobatek\MobaXterm\MobaXterm.exe", "mobaxterm")]
+    [InlineData(@"C:\MXterm Pro\mxterm.exe", "")]
     public void ProgrammeConnu_ReconnuParLeNomDeLExecutable(string path, string expectedId)
     {
         Assert.Equal(expectedId, TerminalDetectionService.KnownIdOf(path));
     }
 
     [Fact]
-    public void CheminAvecVariableDEnvironnement_EstTrouveEtGardeTelQuel()
+    public void CheminAvecVariableDEnvironnement_EstTrouve()
     {
-        // Gardée non développée, la variable suit l'utilisateur dans une clé de registre machine.
         string file = Path.Combine(Path.GetTempPath(), $"dockpad-term-{Guid.NewGuid():N}.exe");
         File.WriteAllText(file, "");
         try
         {
-            string withVariable = Path.Combine("%TEMP%", Path.GetFileName(file));
-
-            var custom = TerminalDetectionService.ExistingCustomTerminal(Custom(withVariable, @"""{folder}""", @"""{folder}"""))
-                ?? throw new InvalidOperationException("programme introuvable");
-
-            Assert.Equal(withVariable, custom.ExePath);
+            Assert.True(TerminalDetectionService.ProgramExists(Path.Combine("%TEMP%", Path.GetFileName(file))));
+            Assert.False(TerminalDetectionService.ProgramExists(@"C:\nulle-part\absent.exe"));
+            Assert.False(TerminalDetectionService.ProgramExists(""));
         }
         finally
         {
             File.Delete(file);
         }
-    }
-
-    [Fact]
-    public void ProgrammeIntrouvable_NeRendRien()
-    {
-        Assert.Null(TerminalDetectionService.ExistingCustomTerminal(Custom(@"C:\nulle-part\absent.exe", "", "")));
-    }
-
-    [Fact]
-    public void ProgrammeVide_NeRendRien()
-    {
-        Assert.Null(TerminalDetectionService.CustomTerminal(Custom("", @"""{folder}""", "")));
-    }
-
-    [Fact]
-    public void ProgrammeAjoute_EstRetenuQuandIlEstChoisi()
-    {
-        var custom = TerminalDetectionService.CustomTerminal(Custom(@"D:\pwsh-preview\pwsh.exe", "", ""));
-
-        var resolved = TerminalDetectionService.Resolve(TerminalDetectionService.CustomId, custom, [Wt, Pwsh]);
-
-        Assert.Same(custom, resolved);
-    }
-
-    [Fact]
-    public void ProgrammeAjouteIntrouvable_SeComporteCommeAutomatique()
-    {
-        var resolved = TerminalDetectionService.Resolve(TerminalDetectionService.CustomId, custom: null, [Wt, Pwsh]);
-
-        Assert.Same(Wt, resolved);
     }
 
     [Fact]
@@ -193,71 +157,14 @@ public class DefaultTerminalTests
         Assert.Equal(@"""powershell.exe"" -NoExit -Command ""Set-Location '%V'; claude""", cmd);
     }
 
-    // -- Terminaux déclarés dans settings.json -----------------------------------
-
-    private static TerminalDefinition Definition(string id, string exe, string name = "") =>
-        new() { Id = id, Name = name, ExePath = exe, FolderArgs = @"start --cwd ""{folder}""", CommandArgs = @"start --cwd ""{folder}"" -- {command}" };
-
-    [Fact]
-    public void TerminalDeclare_EstProposeAvecSonNom()
-    {
-        var declared = TerminalDetectionService.Declared([Definition("wezterm", @"C:\WezTerm\wezterm.exe", "WezTerm")], exists: _ => true);
-
-        var wezterm = Assert.Single(declared);
-        Assert.Equal("WezTerm", wezterm.DisplayName);
-        Assert.Equal(@"start --cwd ""C:\dev"" -- claude",
-            TerminalDetectionService.BuildArgs(wezterm, new TerminalConfig { StartingDirectory = @"C:\dev", RunCommand = "claude" }));
-    }
-
-    [Fact]
-    public void TerminalDeclare_SansNom_PrendSonIdentifiant()
-    {
-        var declared = TerminalDetectionService.Declared([Definition("tabby", @"C:\Tabby.exe")], exists: _ => true);
-
-        Assert.Equal("tabby", Assert.Single(declared).DisplayName);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("wt")]
-    [InlineData("PWSH")]
-    [InlineData("custom")]
-    public void TerminalDeclare_IdentifiantReserve_EstEcarte(string id)
-    {
-        Assert.Empty(TerminalDetectionService.Declared([Definition(id, @"C:\x.exe")], exists: _ => true));
-    }
-
-    [Fact]
-    public void TerminalDeclare_ProgrammeAbsentOuDoublon_EstEcarteSansBloquerLesAutres()
-    {
-        var declared = TerminalDetectionService.Declared(
-        [
-            Definition("absent", @"C:\nulle-part.exe"),
-            Definition("wezterm", @"C:\wezterm.exe"),
-            Definition("WEZTERM", @"C:\autre.exe"),
-        ], exists: path => path != @"C:\nulle-part.exe");
-
-        Assert.Equal(["wezterm"], declared.Select(t => t.Id));
-    }
-
-    [Fact]
-    public void TerminalDeclare_EstRetenuQuandIlEstChoisi()
-    {
-        var wezterm = Assert.Single(TerminalDetectionService.Declared([Definition("wezterm", @"C:\wezterm.exe")], exists: _ => true));
-
-        Assert.Same(wezterm, TerminalDetectionService.Resolve("wezterm", custom: null, [Wt, wezterm]));
-    }
-
     // -- Nom de fenêtre (wt -w) ------------------------------------------------
 
     [Fact]
     public void NomDeTuile_RegroupeLesOngletsDansUneFenetreNommee()
     {
-        var wt = TerminalDetectionService.WithTemplates(Wt, new TerminalSettings
-        {
-            FolderArgs  = @"-w ""{name}"" new-tab --startingDirectory ""{folder}""",
-            CommandArgs = @"-w ""{name}"" new-tab --startingDirectory ""{folder}"" -- {command}",
-        });
+        var wt = Info("wt", @"C:\wt.exe",
+            @"-w ""{name}"" new-tab --startingDirectory ""{folder}""",
+            @"-w ""{name}"" new-tab --startingDirectory ""{folder}"" -- {command}");
         var cfg = new TerminalConfig { StartingDirectory = @"C:\dev\Shope", RunCommand = "claude" };
 
         var args = TerminalDetectionService.BuildArgs(wt, cfg, "Shope - specs");

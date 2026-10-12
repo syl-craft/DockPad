@@ -1683,16 +1683,13 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>Default terminal</value>
   </data>
   <data name="Settings_Terminal_Auto" xml:space="preserve">
-    <value>Automatic (Windows Terminal, then PowerShell)</value>
+    <value>Automatic (first terminal of the list)</value>
   </data>
   <data name="Settings_Terminal_Missing" xml:space="preserve">
     <value>{0} (not installed)</value>
   </data>
   <data name="Settings_Terminal_Hint" xml:space="preserve">
     <value>Opened by Terminal tiles and by the Claude, Codex and PowerShell presets. After a change, reinstall those presets from ☰ → Presets.</value>
-  </data>
-  <data name="Settings_Terminal_Custom" xml:space="preserve">
-    <value>Other program…</value>
   </data>
   <data name="Settings_Terminal_Browse" xml:space="preserve">
     <value>Browse…</value>
@@ -1730,11 +1727,8 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Settings_Terminal_CommandArgs" xml:space="preserve">
     <value>Arguments to open a folder and run a command</value>
   </data>
-  <data name="Settings_Terminal_Reset" xml:space="preserve">
-    <value>Restore DockPad arguments</value>
-  </data>
   <data name="Settings_Terminal_AutoNote" xml:space="preserve">
-    <value>Automatic uses the first installed terminal, with the arguments set for it.</value>
+    <value>Automatic uses the first terminal of the list that is visible and installed.</value>
   </data>
   <data name="Shortcut_TabColor" xml:space="preserve">
     <value>Tab colour</value>
@@ -1748,7 +1742,55 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Shortcut_Err_TabColor" xml:space="preserve">
     <value>Invalid colour: use #RGB or #RRGGBB, or leave it empty.</value>
   </data>
-  <data name="Settings_Terminal_JsonNote" xml:space="preserve">
-    <value>Declared in the terminals section of settings.json: edit it there, then reopen the Options.</value>
+  <data name="Quick_Menu_Terminals" xml:space="preserve">
+    <value>Terminals</value>
+  </data>
+  <data name="Terminals_Title" xml:space="preserve">
+    <value>Terminals</value>
+  </data>
+  <data name="Terminals_List" xml:space="preserve">
+    <value>Terminals offered</value>
+  </data>
+  <data name="Terminals_Redetect" xml:space="preserve">
+    <value>↻ Detect again</value>
+  </data>
+  <data name="Terminals_Redetect_Tip" xml:space="preserve">
+    <value>Adds the installed terminals DockPad knows (Windows Terminal, PowerShell, WezTerm, MobaXterm) without changing the others</value>
+  </data>
+  <data name="Terminals_Visible_Tip" xml:space="preserve">
+    <value>Offered in the Options</value>
+  </data>
+  <data name="Terminals_Add_Tip" xml:space="preserve">
+    <value>Add a terminal</value>
+  </data>
+  <data name="Terminals_Badge_Default" xml:space="preserve">
+    <value>default</value>
+  </data>
+  <data name="Terminals_Badge_Hidden" xml:space="preserve">
+    <value>hidden</value>
+  </data>
+  <data name="Terminals_Badge_Missing" xml:space="preserve">
+    <value>not found</value>
+  </data>
+  <data name="Terminals_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Terminals_UseAsDefault" xml:space="preserve">
+    <value>★ Use as default</value>
+  </data>
+  <data name="Terminals_ConfirmDelete" xml:space="preserve">
+    <value>Remove the terminal « {0} »?</value>
+  </data>
+  <data name="Terminals_NewTerminal" xml:space="preserve">
+    <value>New terminal</value>
+  </data>
+  <data name="Terminals_DetectedAdded" xml:space="preserve">
+    <value>{0} {0:plural:terminal added|terminals added}.</value>
+  </data>
+  <data name="Terminals_DetectedNothing" xml:space="preserve">
+    <value>No new terminal detected.</value>
+  </data>
+  <data name="Settings_Terminal_Manage" xml:space="preserve">
+    <value>Manage terminals…</value>
   </data>
 </root>

@@ -133,55 +133,24 @@
                         <TextBlock Text="{loc:T Settings_Terminal_Section}" FontWeight="SemiBold"
                                    FontSize="13" Margin="0,0,0,10"/>
                         <TextBlock Text="{loc:T Settings_Terminal_Default}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
-                        <ComboBox x:Name="CmbDefaultTerminal" AutomationProperties.Name="{loc:T Settings_Terminal_Default}"
-                                  SelectionChanged="DefaultTerminal_Changed"/>
-                        <TextBlock x:Name="TxtTerminalJsonNote" Text="{loc:T Settings_Terminal_JsonNote}" Margin="0,6,0,0"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"
-                               Visibility="Collapsed"/>
-                    <TextBlock x:Name="TxtTerminalAutoNote" Text="{loc:T Settings_Terminal_AutoNote}" Margin="0,6,0,0"
-                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
-
-                        <TextBlock Text="{loc:T Settings_Terminal_Program}" Foreground="{DynamicResource Brush.TextLabel}"
-                                   Margin="0,10,0,4"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="TxtTerminalExe" Grid.Column="0" FontFamily="Consolas" FontSize="12"
-                                     Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                                     AutomationProperties.Name="{loc:T Settings_Terminal_Program}"
-                                     TextChanged="TerminalField_Changed"/>
-                            <Button x:Name="BtnBrowseTerminal" Grid.Column="1" Content="{loc:T Settings_Terminal_Browse}"
+                            <ComboBox x:Name="CmbDefaultTerminal" Grid.Column="0"
+                                      AutomationProperties.Name="{loc:T Settings_Terminal_Default}"
+                                      SelectionChanged="DefaultTerminal_Changed"/>
+                            <Button Grid.Column="1" Content="{loc:T Settings_Terminal_Manage}"
                                     Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
                                     BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                                    Click="BrowseTerminal_Click"/>
+                                    Click="ManageTerminals_Click"/>
                         </Grid>
-                        <TextBlock x:Name="TxtTerminalInvalid" Text="{loc:T Settings_Terminal_CustomInvalid}"
-                                   Foreground="{DynamicResource Brush.Danger}" FontSize="11" Margin="0,4,0,0"
-                                   TextWrapping="Wrap" Visibility="Collapsed"/>
-
-                        <TextBlock Text="{loc:T Settings_Terminal_FolderArgs}" Foreground="{DynamicResource Brush.TextLabel}"
-                                   Margin="0,10,0,4"/>
-                        <TextBox x:Name="TxtTerminalFolderArgs" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"
-                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                                 AutomationProperties.Name="{loc:T Settings_Terminal_FolderArgs}"
-                                 TextChanged="TerminalField_Changed"/>
-                        <TextBlock Text="{loc:T Settings_Terminal_CommandArgs}" Foreground="{DynamicResource Brush.TextLabel}"
-                                   Margin="0,10,0,4"/>
-                        <TextBox x:Name="TxtTerminalCommandArgs" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"
-                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                                 AutomationProperties.Name="{loc:T Settings_Terminal_CommandArgs}"
-                                 TextChanged="TerminalField_Changed"/>
-                        <TextBlock x:Name="TxtTerminalNoCommand" Text="{loc:T Settings_Terminal_NoCommand}"
-                                   Foreground="{DynamicResource Brush.Danger}" FontSize="11" Margin="0,4,0,0"
-                                   TextWrapping="Wrap" Visibility="Collapsed"/>
-                        <TextBlock Text="{loc:T Settings_Terminal_ArgsHint}" Margin="0,4,0,0"
+                        <TextBlock Text="{loc:T Settings_Terminal_AutoNote}" Margin="0,6,0,0"
                                    Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
-                        <Button x:Name="BtnResetTerminal" Content="{loc:T Settings_Terminal_Reset}"
-                                Style="{StaticResource SecondaryButton}" Margin="0,8,0,0" HorizontalAlignment="Left"
-                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                                Click="ResetTerminal_Click"/>
+                        <TextBlock x:Name="TxtTerminalNoCommand" Text="{loc:T Settings_Terminal_NoCommand}"
+                                   Foreground="{DynamicResource Brush.Danger}" FontSize="11" Margin="0,6,0,0"
+                                   TextWrapping="Wrap" Visibility="Collapsed"/>
 
                         <TextBlock Text="{loc:T Settings_Terminal_Preview}" Foreground="{DynamicResource Brush.TextLabel}"
                                    Margin="0,12,0,4"/>

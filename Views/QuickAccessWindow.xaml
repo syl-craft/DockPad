@@ -362,6 +362,9 @@
                             <MenuItem Header="{loc:T Quick_Menu_Browsers}" Command="{Binding Commands.OpenBrowsers}">
                                 <MenuItem.Icon><TextBlock Text="🌐"/></MenuItem.Icon>
                             </MenuItem>
+                            <MenuItem Header="{loc:T Quick_Menu_Terminals}" Command="{Binding Commands.OpenTerminals}">
+                                <MenuItem.Icon><TextBlock Text="💻"/></MenuItem.Icon>
+                            </MenuItem>
                             <MenuItem Header="{loc:T Quick_Menu_Mcp}" Command="{Binding Commands.OpenMcpConfig}">
                                 <MenuItem.Icon><TextBlock Text="🔌"/></MenuItem.Icon>
                             </MenuItem>
