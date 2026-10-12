@@ -13,6 +13,7 @@ public static class PresetService
         [
             BuildClaudeTerminal(),
             BuildCodexTerminal(),
+            BuildAntigravityTerminal(),
             BuildPowerShell(),
             BuildVSCode(),
             BuildSSMS(),
@@ -127,13 +128,77 @@ public static class PresetService
     /// une machine où DockPad ne sait pas localiser le binaire.
     /// </para>
     /// </remarks>
-    public static string CodexCommand(string? wt, string? powershell, string? codexExe)
-    {
-        string codex = codexExe is null ? "codex" : $"\"{codexExe}\"";
+    public static string CodexCommand(string? wt, string? powershell, string? codexExe) =>
+        TerminalCommand(wt, powershell, codexExe is null ? "codex" : $"\"{codexExe}\"");
 
-        return wt != null
-            ? $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- {codex}"
-            : $"\"{powershell ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; & {codex}\"";
+    /// <summary>
+    /// Un onglet Windows Terminal dans le dossier, qui lance <paramref name="program"/> — déjà
+    /// entre guillemets s'il le faut ; sans Windows Terminal, une fenêtre PowerShell.
+    /// </summary>
+    private static string TerminalCommand(string? wt, string? powershell, string program) =>
+        wt != null
+            ? $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- {program}"
+            : $"\"{powershell ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; & {program}\"";
+
+    /// <summary>
+    /// Décalque du prédéfini Codex, pour le CLI d'Antigravity (<c>agy</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Proposé seulement si <c>agy.exe</c> est installé</b>, comme GitHub Desktop et
+    /// contrairement à Codex : son installateur le range sous <c>%LocalAppData%\agy\bin</c> sans
+    /// l'ajouter au <c>PATH</c>, donc aucun nom nu ne pourrait servir de repli.
+    /// </para>
+    /// <para>
+    /// <b>L'icône est le logo du bandeau Usage IA</b>, rendu en <c>.ico</c> dans le profil :
+    /// <c>agy.exe</c> n'en embarque aucune, et l'application de bureau qui en porterait une n'est
+    /// pas ce que lance ce prédéfini.
+    /// </para>
+    /// </remarks>
+    private static PresetEntry? BuildAntigravityTerminal()
+    {
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        string agyExe = Path.Combine(localAppData, @"agy\bin\agy.exe");
+        if (!File.Exists(agyExe)) return null;
+
+        string? wt = FindExe("wt.exe",
+            Path.Combine(localAppData, @"Microsoft\WindowsApps\wt.exe"));
+
+        string? powershell = FindExe("powershell.exe",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),
+                @"WindowsPowerShell\v1.0\powershell.exe"));
+
+        return new PresetEntry
+        {
+            DisplayName = Loc.T("Preset_AntigravityTerminal_Name"),
+            RegistryKey = "OpenAntigravityTerminal",
+            Command = TerminalCommand(wt, powershell, $"\"{agyExe}\""),
+            IconPath = AntigravityIconPath() ?? "",
+            Target = ContextMenuTarget.FolderBackground,
+            Description = Loc.T("Preset_AntigravityTerminal_Desc")
+        };
+    }
+
+    /// <summary>
+    /// Le logo d'Antigravity rendu en <c>.ico</c> dans le store d'icônes du profil, ou
+    /// <c>null</c> si l'écriture échoue.
+    /// </summary>
+    private static string? AntigravityIconPath()
+    {
+        var target = Path.Combine(AppPaths.ProfileRoot, "icons", "antigravity.ico");
+
+        try
+        {
+            var png = ProviderLogos.RenderPng(ProviderLogos.Antigravity, ProviderLogos.AntigravityBrush, IconSize);
+            WriteIconIfChanged(target, BuildIco(png, IconSize));
+            return target;
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Rendu du logo Antigravity");
+            return File.Exists(target) ? target : null;
+        }
     }
 
     /// <summary>
@@ -182,12 +247,7 @@ public static class PresetService
             // une fois pour toutes serait faux le jour où l'application est remplacée : c'est
             // arrivé — l'ancienne « ChatGPT Classic » désinstallée, le nouveau paquet portant un
             // logo différent à 100 % des pixels, et DockPad affichait encore l'ancien.
-            if (!File.Exists(target) || !ico.AsSpan().SequenceEqual(File.ReadAllBytes(target)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                File.WriteAllBytes(target, ico);
-            }
-
+            WriteIconIfChanged(target, ico);
             return target;
         }
         catch (Exception ex)
@@ -198,6 +258,18 @@ public static class PresetService
     }
 
     private const int IconSize = 64;
+
+    /// <summary>
+    /// Écrit l'icône seulement si elle diffère du fichier en place : <c>GetPresets</c> la refait à
+    /// chaque appel, et réécrire un fichier identique n'apporte rien.
+    /// </summary>
+    private static void WriteIconIfChanged(string target, byte[] ico)
+    {
+        if (File.Exists(target) && ico.AsSpan().SequenceEqual(File.ReadAllBytes(target))) return;
+
+        Directory.CreateDirectory(Path.GetDirectoryName(target) ?? AppPaths.ProfileRoot);
+        File.WriteAllBytes(target, ico);
+    }
 
     /// <summary>
     /// Un fichier <c>.ico</c> contenant une seule image, au format PNG.

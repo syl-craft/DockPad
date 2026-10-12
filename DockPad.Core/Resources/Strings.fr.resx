@@ -492,6 +492,12 @@ Cette action est irréversible.</value>
   <data name="Picker_Title" xml:space="preserve">
     <value>Ouvrir avec…</value>
   </data>
+  <data name="Preset_AntigravityTerminal_Desc" xml:space="preserve">
+    <value>Ouvre un terminal dans ce dossier et lance Antigravity</value>
+  </data>
+  <data name="Preset_AntigravityTerminal_Name" xml:space="preserve">
+    <value>Ouvrir un terminal Antigravity</value>
+  </data>
   <data name="Preset_ClaudeTerminal_Desc" xml:space="preserve">
     <value>Ouvre un terminal dans ce dossier et lance Claude Code</value>
   </data>

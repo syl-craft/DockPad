@@ -1,6 +1,7 @@
 <UserControl x:Class="DockPad.Views.ProviderIcon"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:services="clr-namespace:DockPad.Services"
              x:Name="IconRoot" Focusable="False" IsHitTestVisible="False">
     <UserControl.Resources>
         <!-- Tracés Lobe Icons (MIT), sources et licence dans Assets/ProviderLogos.LICENSE.txt. -->
@@ -17,6 +18,9 @@
                                 <Setter Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding ProviderId, ElementName=IconRoot}" Value="codex">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ProviderId, ElementName=IconRoot}" Value="antigravity">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -41,6 +45,12 @@
                             <DataTrigger Binding="{Binding ProviderId, ElementName=IconRoot}" Value="codex">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Setter Property="Data" Value="{StaticResource CodexLogo}"/>
+                            </DataTrigger>
+                            <!-- Tracé et couleur partagés avec l'icône du prédéfini : voir ProviderLogos. -->
+                            <DataTrigger Binding="{Binding ProviderId, ElementName=IconRoot}" Value="antigravity">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Setter Property="Data" Value="{x:Static services:ProviderLogos.Antigravity}"/>
+                                <Setter Property="Fill" Value="{x:Static services:ProviderLogos.AntigravityBrush}"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
