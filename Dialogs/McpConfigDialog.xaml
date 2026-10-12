@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
         Title="{loc:T Mcp_Title}"
-        Width="1000" Height="520"
+        Width="1000" Height="760"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize" MinWidth="820" MinHeight="420"
