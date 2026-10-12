@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.29.0] — 2026-10-12
+
+### Nouveautés
+
+- **Terminal par défaut** : **☰ Menu → Options → Intégrations → Terminal par défaut** choisit le terminal de toutes les tuiles Terminal et des raccourcis prédéfinis Claude, Codex, Antigravity et PowerShell — Automatique, ou un terminal de la nouvelle fenêtre Terminaux. La commande finale s'affiche, et **Tester** la lance.
+- **Fenêtre Terminaux** (**☰ → Paramètres → 💻 Terminaux**), construite comme celle des navigateurs : les terminaux détectés — Windows Terminal, PowerShell 7, Windows PowerShell, WezTerm —, une case pour en masquer un, **↻ Redétecter**, l'ordre, et **➕** pour ajouter n'importe quel autre programme. La liste vit dans `terminals.json`, inclus dans la sauvegarde de configuration.
+  - Chaque terminal est un programme et deux modèles d'arguments — ouvrir un dossier, ou y lancer une commande — avec les variables `{folder}`, `{folder-name}`, `{name}`, `{color}`, `{command}` et `{command-ps}`. Le chemin du programme accepte `%LocalAppData%` et les autres variables d'environnement.
+- **Une fenêtre Windows Terminal par projet** : les onglets d'un même dossier, tuile ou clic droit, s'ouvrent dans la même fenêtre (`-w "{folder-name}"`), avec une couleur d'onglet.
+- **Couleur d'onglet par tuile** : la fenêtre d'une tuile Terminal propose un champ et une palette ; sans choix, une couleur stable tirée du nom du dossier.
+- **Clic droit plus rapide et sans réinstallation** : les raccourcis terminal du clic droit passent par un petit lanceur natif, `DockPadTerminal.exe`, qui transmet le dossier à DockPad en une cinquantaine de millisecondes. Changer de terminal ne demande plus de les réinstaller ; il faut les réinstaller **une fois** depuis **☰ → Raccourcis prédéfinis** après cette mise à jour.
+- **Raccourci prédéfini « Ouvrir un terminal Antigravity »**, et le logo d'Antigravity dans le bandeau Usage IA.
+- **Fenêtres de configuration sur deux colonnes** — Options, Navigateurs, Serveur MCP, Usage IA, Prédéfinis — et plus hautes, pour ne plus défiler.
+
+### Corrections
+
+- Un clic droit à la racine d'un lecteur (`D:\`) ouvre de nouveau le terminal dans ce dossier.
+
+### Documentation
+
+- README, en anglais et en français : section Terminaux, avec sa démonstration animée.
+
 ## [1.28.0] — 2026-10-10
 
 ### Nouveautés
