@@ -25,7 +25,8 @@ A WPF application (.NET 8, x64): a **quick launch bar** for Windows, with a mana
 - **Keyboard overlay** (modifier + 1–9) to launch tiles from the keyboard
 - **Portable icon store** in `%APPDATA%\DockPad\icons\`
 - **Windows context menu manager** (HKCU / HKLM / HKCR)
-- **Predefined shortcuts**: Claude Code, Codex, PowerShell, VS Code, SSMS, GitHub Desktop
+- **Predefined shortcuts**: Claude Code, Codex, Antigravity, PowerShell, VS Code, SSMS, GitHub Desktop
+- **Terminals**: one default terminal for terminal tiles and right-click shortcuts — Windows Terminal, PowerShell, WezTerm or any program — with one Windows Terminal window and one tab colour per project
 - **Browser picker**: choose the browser when clicking a URL + per-domain rules
 - **MCP server**: Claude (Claude Code / Claude Desktop) can manage the grid, the pages and the browsers
 - **AI usage panel**: token consumption of Claude Code, Codex, Gemini and Copilot, under the grid
@@ -353,6 +354,25 @@ button restarts DockPad as administrator when needed.
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/11-context-menu-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/11-context-menu-light.gif" alt="Demo: installing predefined shortcuts, then opening a Claude terminal from a folder right-click" width="960">
 </picture>
+
+## Terminals
+
+Terminal tiles and the terminal right-click shortcuts (Claude, Codex, Antigravity, PowerShell) all open
+the same terminal, chosen in **☰ Menu → Options → Integrations → Default terminal**. **Manage
+terminals…** opens **☰ → Settings → 💻 Terminals**, built like the browser window: the detected
+terminals (Windows Terminal, PowerShell 7, Windows PowerShell, WezTerm), a box to hide one, **↻ Detect
+again**, and **➕** to add any other program.
+
+Each terminal is a program and two argument templates — to open a folder, and to open a folder and run
+a command — with variables: `{folder}`, `{folder-name}`, `{name}` (the tile), `{color}`, `{command}`, and
+`{command-ps}` (the command prepared for PowerShell `-Command`). **Test** runs the final command.
+
+- **One window per project**: Windows Terminal opens `-w "{folder-name}"`, so every tab of a project,
+  tile or right-click, lands in the same window
+- **Tab colour**: chosen per tile (**Tab colour**), otherwise a steady colour derived from the folder name
+- **Fast right-click**: the right-click shortcuts go through a small native launcher,
+  `DockPadTerminal.exe`, which hands the folder to DockPad in about 50 ms. Changing the terminal no
+  longer requires reinstalling them
 
 ## Secret injection from Vaultwarden
 

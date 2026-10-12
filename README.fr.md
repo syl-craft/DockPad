@@ -25,7 +25,8 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Overlay numérique** (Ctrl/Shift + 1–9) pour exécution rapide au clavier
 - **Store d'icônes** portable dans `%APPDATA%\DockPad\icons\`
 - **Gestionnaire de menu contextuel** Windows (HKCU / HKLM / HKCR)
-- **Raccourcis prédéfinis** : Claude Code, Codex, PowerShell, VS Code, SSMS, GitHub Desktop
+- **Raccourcis prédéfinis** : Claude Code, Codex, Antigravity, PowerShell, VS Code, SSMS, GitHub Desktop
+- **Terminaux** : un seul terminal par défaut pour les tuiles Terminal et les raccourcis du clic droit — Windows Terminal, PowerShell, WezTerm ou n'importe quel programme — avec une fenêtre Windows Terminal et une couleur d'onglet par projet
 - **Sélecteur de navigateur** : popup de choix au clic sur une URL + règles par domaine
 - **Serveur MCP** : Claude (Claude Code / Claude Desktop) peut gérer la grille, les pages et les navigateurs
 - **Bandeau Usage IA** : consommation de jetons de Claude Code, Codex, Gemini et Copilot, sous la grille
@@ -322,6 +323,27 @@ administrateur : le bouton **🛡 Élever** relance DockPad en administrateur au
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/11-context-menu-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/11-context-menu-light.gif" alt="Démonstration : installation des raccourcis prédéfinis, puis ouverture d'un terminal Claude depuis le clic droit d'un dossier" width="960">
 </picture>
+
+## Terminaux
+
+Les tuiles Terminal et les raccourcis terminal du clic droit (Claude, Codex, Antigravity, PowerShell)
+ouvrent tous le même terminal, choisi dans **☰ Menu → Options → Intégrations → Terminal par défaut**.
+**Gérer les terminaux…** ouvre **☰ → Paramètres → 💻 Terminaux**, construite comme la fenêtre des
+navigateurs : les terminaux détectés (Windows Terminal, PowerShell 7, Windows PowerShell, WezTerm), une
+case pour en masquer un, **↻ Redétecter**, et **➕** pour ajouter n'importe quel autre programme.
+
+Chaque terminal est un programme et deux modèles d'arguments — pour ouvrir un dossier, et pour ouvrir
+un dossier et y lancer une commande — avec des variables : `{folder}`, `{folder-name}`, `{name}` (la
+tuile), `{color}`, `{command}`, et `{command-ps}` (la commande préparée pour le `-Command` de
+PowerShell). **Tester** lance la commande finale.
+
+- **Une fenêtre par projet** : Windows Terminal ouvre `-w "{folder-name}"`, donc tous les onglets d'un
+  projet, tuile ou clic droit, arrivent dans la même fenêtre
+- **Couleur d'onglet** : choisie par tuile (**Couleur de l'onglet**), sinon une couleur stable tirée du
+  nom du dossier
+- **Clic droit rapide** : les raccourcis du clic droit passent par un petit lanceur natif,
+  `DockPadTerminal.exe`, qui transmet le dossier à DockPad en une cinquantaine de millisecondes.
+  Changer de terminal ne demande plus de les réinstaller
 
 ## Injection de secrets depuis Vaultwarden
 
