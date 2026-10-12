@@ -129,7 +129,7 @@ Services/
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save des tuiles d'une grille (shortcuts.json ou favorites.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
-    TerminalDetectionService.cs          Détection (wt, pwsh, powershell, WezTerm, MobaXterm), résolution, arguments à variables
+    TerminalDetectionService.cs          Détection (wt, pwsh, powershell, WezTerm, Cmder), résolution, arguments à variables
     TerminalCatalog.cs                    PUR — liste des terminaux : reprise, fusion de la détection, proposés, ordre, identifiants
     TerminalConfigService.cs              Load/Save terminals.json (%APPDATA%\DockPad\terminals.json), création à la première lecture
     LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
@@ -1648,9 +1648,12 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
   à partir de la détection, des `terminalTemplates` et de la section `terminals` de `settings.json`, que la
   reprise vide ensuite. Une liste vide est redétectée, comme `browsers.json`
 - **Détection** : Windows Terminal, PowerShell 7, Windows PowerShell, **WezTerm** (`wezterm-gui.exe start
-  --new-tab --cwd "{folder}" -- {command}`, vérifié avec Claude) et **MobaXterm** (`-openfolder "{folder}"`
-  pour les deux modèles : son terminal Cygwin n'offre pas de console Windows, Claude y passe en mode
-  `--print` et s'arrête — essayé). Un terminal connu absent n'est pas ajouté
+  --new-tab --cwd "{folder}" -- {command}`) et **Cmder** (sa console `vendor\conemu-maximus5\ConEmu64.exe`,
+  `-Dir "{folder}" -run {command}` — `-run` en dernier, ConEmu lit la suite comme la commande ; `Cmder.exe`
+  ne sait pas transmettre une commande). Les deux vérifiés avec Claude, interactif. **MobaXterm n'est pas
+  détecté** : son terminal Cygwin n'offre pas de console Windows, Claude y passe en mode `--print` et
+  s'arrête (essayé) ; on peut toujours l'ajouter à la main pour ouvrir un dossier (`-openfolder "{folder}"`).
+  Un terminal connu absent n'est pas ajouté
 - **Fusion additive** (`TerminalCatalog.Merge`) : clé = identifiant de détection ; chemin, arguments,
   masquage et ordre préservés ; le nom suit la détection tant qu'il n'a pas été changé ; un terminal
   disparu reste, signalé « introuvable ». Un terminal ajouté prend un identifiant tiré de son nom, jamais
@@ -1739,7 +1742,7 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 }
 ```
 
-- `id` : clé de fusion de la détection (`wt`, `pwsh`, `powershell`, `wezterm`, `mobaxterm`), tirée du nom pour un terminal ajouté ; visé par `defaultTerminal`
+- `id` : clé de fusion de la détection (`wt`, `pwsh`, `powershell`, `wezterm`, `cmder`), tirée du nom pour un terminal ajouté ; visé par `defaultTerminal`
 - `detectedName` : présent sur un terminal détecté ; tant que `name` lui est égal, le nom suit la détection
 - `hidden` : absent du choix « Terminal par défaut », conservé
 - Stocké dans `%APPDATA%\DockPad\terminals.json`, inclus dans la sauvegarde de configuration

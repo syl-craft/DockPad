@@ -17,13 +17,13 @@ public static class TerminalDetectionService
     public const string PowerShell7Id       = "pwsh";
     public const string WindowsPowerShellId = "powershell";
     public const string WezTermId           = "wezterm";
-    public const string MobaXtermId         = "mobaxterm";
+    public const string CmderId             = "cmder";
 
     /// <summary>
     /// Identifiants des terminaux que DockPad sait détecter : réservés, un terminal ajouté ne les prend pas.
     /// </summary>
     public static readonly IReadOnlyList<string> KnownIds =
-        [WindowsTerminalId, PowerShell7Id, WindowsPowerShellId, WezTermId, MobaXtermId];
+        [WindowsTerminalId, PowerShell7Id, WindowsPowerShellId, WezTermId, CmderId];
 
     public const string FolderToken            = "{folder}";
     public const string CommandToken           = "{command}";
@@ -67,12 +67,14 @@ public static class TerminalDetectionService
         if (wezPath != null)
             list.Add(Known(WezTermId, "WezTerm", wezPath));
 
-        // MobaXterm
-        var mobaPath = FirstExisting(
-            @"C:\Program Files (x86)\Mobatek\MobaXterm\MobaXterm.exe",
-            @"C:\Program Files\Mobatek\MobaXterm\MobaXterm.exe");
-        if (mobaPath != null)
-            list.Add(Known(MobaXtermId, "MobaXterm", mobaPath));
+        // Cmder : sa console ConEmu, lancée directement ; Cmder.exe ne sait pas y transmettre une commande
+        var cmderPath = FirstExisting(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                @"cmder\vendor\conemu-maximus5\ConEmu64.exe"),
+            @"C:\cmder\vendor\conemu-maximus5\ConEmu64.exe",
+            @"C:\tools\cmder\vendor\conemu-maximus5\ConEmu64.exe");
+        if (cmderPath != null)
+            list.Add(Known(CmderId, "Cmder", cmderPath));
 
         return list;
     }
@@ -110,12 +112,11 @@ public static class TerminalDetectionService
             FolderArgs  = "start --new-tab --cwd \"{folder}\"",
             CommandArgs = "start --new-tab --cwd \"{folder}\" -- {command}",
         },
-        // Son terminal Cygwin n'offre pas de console Windows : Claude y passe en mode non
-        // interactif et s'arrête. MobaXterm n'ouvre donc que le dossier.
-        MobaXtermId => new()
+        // -run doit rester le dernier argument : ConEmu lit tout ce qui le suit comme la commande.
+        CmderId => new()
         {
-            FolderArgs  = "-openfolder \"{folder}\"",
-            CommandArgs = "-openfolder \"{folder}\"",
+            FolderArgs  = "-Dir \"{folder}\"",
+            CommandArgs = "-Dir \"{folder}\" -run {command}",
         },
         _ => new()
         {
@@ -133,7 +134,7 @@ public static class TerminalDetectionService
         "pwsh.exe"                       => PowerShell7Id,
         "powershell.exe"                 => WindowsPowerShellId,
         "wezterm-gui.exe" or "wezterm.exe" => WezTermId,
-        "mobaxterm.exe"                  => MobaXtermId,
+        "conemu64.exe" or "conemu.exe"   => CmderId,
         _                                => "",
     };
 

@@ -1755,7 +1755,7 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>↻ Detect again</value>
   </data>
   <data name="Terminals_Redetect_Tip" xml:space="preserve">
-    <value>Adds the installed terminals DockPad knows (Windows Terminal, PowerShell, WezTerm, MobaXterm) without changing the others</value>
+    <value>Adds the installed terminals DockPad knows (Windows Terminal, PowerShell, WezTerm, Cmder) without changing the others</value>
   </data>
   <data name="Terminals_Visible_Tip" xml:space="preserve">
     <value>Offered in the Options</value>

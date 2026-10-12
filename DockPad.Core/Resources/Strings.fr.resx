@@ -1755,7 +1755,7 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>↻ Redétecter</value>
   </data>
   <data name="Terminals_Redetect_Tip" xml:space="preserve">
-    <value>Ajoute les terminaux installés que DockPad connaît (Windows Terminal, PowerShell, WezTerm, MobaXterm) sans toucher aux autres</value>
+    <value>Ajoute les terminaux installés que DockPad connaît (Windows Terminal, PowerShell, WezTerm, Cmder) sans toucher aux autres</value>
   </data>
   <data name="Terminals_Visible_Tip" xml:space="preserve">
     <value>Proposé dans les Options</value>
