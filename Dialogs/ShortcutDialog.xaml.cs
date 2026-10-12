@@ -207,7 +207,7 @@ public partial class ShortcutDialog : Window
         if (TxtCmdPreview == null) return;
         if (_terminal == null) { TxtCmdPreview.Text = ""; return; }
 
-        var args = TerminalDetectionService.BuildArgs(_terminal, BuildTerminalConfig());
+        var args = TerminalDetectionService.BuildArgs(_terminal, BuildTerminalConfig(), TxtName.Text);
         TxtCmdPreview.Text = string.IsNullOrEmpty(args)
             ? $"\"{_terminal.ExePath}\""
             : $"\"{_terminal.ExePath}\" {args}";

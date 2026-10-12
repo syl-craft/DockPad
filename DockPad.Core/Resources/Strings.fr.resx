@@ -1707,7 +1707,7 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
     <value>Programmes (*.exe)|*.exe</value>
   </data>
   <data name="Settings_Terminal_ArgsHint" xml:space="preserve">
-    <value>Variables : {folder} = dossier, {command} = commande à lancer, {command-ps} = la même commande préparée pour le -Command "…" de PowerShell. Le chemin du programme accepte %LocalAppData% et les autres variables d’environnement.</value>
+    <value>Variables : {folder} = dossier, {folder-name} = son dernier segment, {name} = nom de la tuile (le dossier pour un prédéfini), {command} = commande à lancer, {command-ps} = la même commande préparée pour le -Command "…" de PowerShell. Le chemin du programme accepte %LocalAppData% et les autres variables d’environnement.</value>
   </data>
   <data name="Settings_Terminal_NoCommand" xml:space="preserve">
     <value>Sans {command} ni {command-ps}, les tuiles Terminal et les prédéfinis Claude et Codex ouvrent le programme sans lancer leur commande.</value>

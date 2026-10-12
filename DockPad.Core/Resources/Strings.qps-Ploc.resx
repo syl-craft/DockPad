@@ -1707,7 +1707,7 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
     <value>Pr0gr4mm35 (*.3x3)|*.3x3</value>
   </data>
   <data name="Settings_Terminal_ArgsHint" xml:space="preserve">
-    <value>V4r14bl35 : {folder} = d05513r, {command} = c0mm4nd3 4 l4nc3r, {command-ps} = l4 m3m3 c0mm4nd3 pr3p4r33 p0ur l3 -C0mm4nd "…" d3 P0w3r5h3ll. L3 ch3m1n du pr0gr4mm3 4cc3pt3 %L0c4l4ppD4t4% 3t l35 4utr35 v4r14bl35 d’3nv1r0nn3m3nt.</value>
+    <value>V4r14bl35 : {folder} = d05513r, {folder-name} = 50n d3rn13r 53gm3nt, {name} = n0m d3 l4 tu1l3 (l3 d05513r p0ur un pr3d3f1n1), {command} = c0mm4nd3 4 l4nc3r, {command-ps} = l4 m3m3 c0mm4nd3 pr3p4r33 p0ur l3 -C0mm4nd "…" d3 P0w3r5h3ll. L3 ch3m1n du pr0gr4mm3 4cc3pt3 %L0c4l4ppD4t4% 3t l35 4utr35 v4r14bl35 d’3nv1r0nn3m3nt.</value>
   </data>
   <data name="Settings_Terminal_NoCommand" xml:space="preserve">
     <value>54n5 {command} n1 {command-ps}, l35 tu1l35 T3rm1n4l 3t l35 pr3d3f1n15 Cl4ud3 3t C0d3x 0uvr3nt l3 pr0gr4mm3 54n5 l4nc3r l3ur c0mm4nd3.</value>

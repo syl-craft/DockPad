@@ -193,6 +193,41 @@ public class DefaultTerminalTests
         Assert.Equal(@"""powershell.exe"" -NoExit -Command ""Set-Location '%V'; claude""", cmd);
     }
 
+    // -- Nom de fenêtre (wt -w) ------------------------------------------------
+
+    [Fact]
+    public void NomDeTuile_RegroupeLesOngletsDansUneFenetreNommee()
+    {
+        var wt = TerminalDetectionService.WithTemplates(Wt, new TerminalSettings
+        {
+            FolderArgs  = @"-w ""{name}"" new-tab --startingDirectory ""{folder}""",
+            CommandArgs = @"-w ""{name}"" new-tab --startingDirectory ""{folder}"" -- {command}",
+        });
+        var cfg = new TerminalConfig { StartingDirectory = @"C:\dev\Shope", RunCommand = "claude" };
+
+        var args = TerminalDetectionService.BuildArgs(wt, cfg, "Shope - specs");
+
+        Assert.Equal(@"-w ""Shope - specs"" new-tab --startingDirectory ""C:\dev\Shope"" -- claude", args);
+    }
+
+    [Theory]
+    [InlineData(@"C:\dev\DockPad", "DockPad")]
+    [InlineData(@"C:\dev\DockPad\", "DockPad")]
+    [InlineData(@"D:\", @"D:\")]
+    [InlineData("%V", "%V")]
+    public void NomDuDossier_EstSonDernierSegment(string folder, string expected)
+    {
+        Assert.Equal(expected, TerminalDetectionService.FolderName(folder));
+    }
+
+    [Fact]
+    public void SansNomDeTuile_NameVautLeNomDuDossier()
+    {
+        string args = TerminalDetectionService.Expand(@"-w ""{name}""", @"C:\dev\DockPad", command: "");
+
+        Assert.Equal(@"-w ""DockPad""", args);
+    }
+
     // -- Avec quelle commande --------------------------------------------------
 
     [Fact]

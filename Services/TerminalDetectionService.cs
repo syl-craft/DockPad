@@ -25,6 +25,8 @@ public static class TerminalDetectionService
     public const string FolderToken            = "{folder}";
     public const string CommandToken           = "{command}";
     public const string PowerShellCommandToken = "{command-ps}";
+    public const string NameToken              = "{name}";
+    public const string FolderNameToken        = "{folder-name}";
 
     /// <summary>
     /// Terminaux installés, avec les arguments de DockPad, dans l'ordre du mode Automatique.
@@ -167,23 +169,41 @@ public static class TerminalDetectionService
     /// </summary>
     /// <remarks>
     /// L'onglet et les arguments supplémentaires d'une tuile ne sont pas lus : le modèle du terminal décide.
+    /// <paramref name="name"/> est le nom de la tuile ; vide, <c>{name}</c> vaut le nom du dossier.
     /// </remarks>
-    public static string BuildArgs(TerminalInfo terminal, TerminalConfig cfg)
+    public static string BuildArgs(TerminalInfo terminal, TerminalConfig cfg, string name = "")
     {
         string command = cfg.RunCommand.Trim();
         string template = command == "" ? terminal.FolderArgs : terminal.CommandArgs;
 
-        return Expand(template, cfg.StartingDirectory, command);
+        return Expand(template, cfg.StartingDirectory, command, name);
     }
 
     /// <summary>
-    /// Le modèle avec <c>{folder}</c>, <c>{command}</c> et <c>{command-ps}</c> remplacés.
+    /// Le modèle avec <c>{folder}</c>, <c>{folder-name}</c>, <c>{name}</c>, <c>{command}</c> et
+    /// <c>{command-ps}</c> remplacés.
     /// </summary>
-    public static string Expand(string template, string folder, string command) =>
-        template.Replace(FolderToken, folder)
-                .Replace(PowerShellCommandToken, ForPowerShell(command))
-                .Replace(CommandToken, command)
-                .Trim();
+    public static string Expand(string template, string folder, string command, string name = "")
+    {
+        string folderName = FolderName(folder);
+
+        return template.Replace(FolderNameToken, folderName)
+                       .Replace(FolderToken, folder)
+                       .Replace(NameToken, string.IsNullOrWhiteSpace(name) ? folderName : name.Trim())
+                       .Replace(PowerShellCommandToken, ForPowerShell(command))
+                       .Replace(CommandToken, command)
+                       .Trim();
+    }
+
+    /// <summary>
+    /// Le dernier segment du dossier ; une racine de lecteur, ou <c>%V</c> qui n'est connu qu'au clic,
+    /// reste entier.
+    /// </summary>
+    public static string FolderName(string folder)
+    {
+        string name = Path.GetFileName(folder.TrimEnd('\\', '/'));
+        return name == "" ? folder : name;
+    }
 
     /// <summary>
     /// La commande telle qu'elle doit figurer dans un <c>-Command "…"</c> de PowerShell : guillemets

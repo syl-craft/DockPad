@@ -1707,7 +1707,7 @@ Force them to stop? Unsaved work may be lost.</value></data>
     <value>Programs (*.exe)|*.exe</value>
   </data>
   <data name="Settings_Terminal_ArgsHint" xml:space="preserve">
-    <value>Variables: {folder} = folder, {command} = command to run, {command-ps} = the same command prepared for PowerShell -Command "…". The program path accepts %LocalAppData% and other environment variables.</value>
+    <value>Variables: {folder} = folder, {folder-name} = its last segment, {name} = tile name (folder name for a preset), {command} = command to run, {command-ps} = the same command prepared for PowerShell -Command "…". The program path accepts %LocalAppData% and other environment variables.</value>
   </data>
   <data name="Settings_Terminal_NoCommand" xml:space="preserve">
     <value>Without {command} or {command-ps}, Terminal tiles and the Claude and Codex presets open the program without running their command.</value>

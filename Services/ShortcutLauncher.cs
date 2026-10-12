@@ -41,7 +41,7 @@ public static class ShortcutLauncher
         // Le programme enregistré dans la tuile n'est pas lu : toutes suivent le terminal des Options.
         ShortcutType.OpenTerminal => terminal == null
             ? null
-            : new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal, TerminalConfigOf(entry))),
+            : new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal, TerminalConfigOf(entry), entry.Name)),
 
         ShortcutType.SwitchToProcess => null,
 
