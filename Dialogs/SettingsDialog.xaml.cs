@@ -356,16 +356,23 @@ public partial class SettingsDialog : Window
     /// <summary>
     /// Arguments des terminaux détectés qui diffèrent de ceux de DockPad : seuls ceux-là sont enregistrés.
     /// </summary>
-    private Dictionary<string, Models.TerminalSettings> ChangedTemplates() => _terminalTemplates
-        .Where(pair =>
+    /// <remarks>
+    /// Ceux d'un terminal non détecté aujourd'hui sont gardés tels quels : il peut revenir.
+    /// </remarks>
+    private Dictionary<string, Models.TerminalSettings> ChangedTemplates()
+    {
+        var changed = SettingsService.LoadTerminalTemplates()
+            .Where(pair => !_terminalTemplates.ContainsKey(pair.Key))
+            .ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
+
+        foreach (var (id, edited) in _terminalTemplates)
         {
-            var defaults = TerminalDetectionService.DefaultTemplates(pair.Key);
-            return pair.Value.FolderArgs.Trim() != defaults.FolderArgs || pair.Value.CommandArgs.Trim() != defaults.CommandArgs;
-        })
-        .ToDictionary(pair => pair.Key, pair => new Models.TerminalSettings
-        {
-            FolderArgs = pair.Value.FolderArgs.Trim(), CommandArgs = pair.Value.CommandArgs.Trim(),
-        });
+            var defaults = TerminalDetectionService.DefaultTemplates(id);
+            if (edited.FolderArgs.Trim() != defaults.FolderArgs || edited.CommandArgs.Trim() != defaults.CommandArgs)
+                changed[id] = new Models.TerminalSettings { FolderArgs = edited.FolderArgs.Trim(), CommandArgs = edited.CommandArgs.Trim() };
+        }
+        return changed;
+    }
 
     private void Theme_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

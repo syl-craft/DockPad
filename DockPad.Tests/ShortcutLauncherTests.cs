@@ -65,10 +65,10 @@ public class ShortcutLauncherTests
         var entry = Entry(ShortcutType.OpenTerminal, @"C:\dev");
         entry.Terminal = new TerminalConfig { ExePath = @"C:\wt.exe", StartingDirectory = @"C:\dev", RunCommand = "claude" };
 
-        var plan = ShortcutLauncher.Plan(entry, Pwsh);
+        var plan = ShortcutLauncher.Plan(entry, Pwsh) ?? throw new InvalidOperationException("aucun plan");
 
-        Assert.Equal(@"C:\pwsh.exe", plan!.Value.FileName);
-        Assert.Equal(@"-NoExit -Command ""Set-Location 'C:\dev'; claude""", plan.Value.Arguments);
+        Assert.Equal(@"C:\pwsh.exe", plan.FileName);
+        Assert.Equal(@"-NoExit -Command ""Set-Location 'C:\dev'; claude""", plan.Arguments);
     }
 
     [Fact]
@@ -85,21 +85,35 @@ public class ShortcutLauncherTests
             NewTab = true,
         };
 
-        var plan = ShortcutLauncher.Plan(entry, Wt);
+        var plan = ShortcutLauncher.Plan(entry, Wt) ?? throw new InvalidOperationException("aucun plan");
 
-        Assert.Equal(@"C:\wt.exe", plan!.Value.FileName);
+        Assert.Equal(@"C:\wt.exe", plan.FileName);
         Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev\DockPad"" -- claude --resume abc --remote-control ""DockPad""",
-                     plan.Value.Arguments);
+                     plan.Arguments);
     }
 
     [Fact]
     public void Terminal_AncienFormat_OuvreLeDossierDansLeTerminalDesOptions()
     {
         // Ancien format : seul le dossier est connu, porté par la commande de la tuile.
-        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.OpenTerminal, @"C:\dev"), Wt);
+        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.OpenTerminal, @"C:\dev"), Wt)
+            ?? throw new InvalidOperationException("aucun plan");
 
-        Assert.Equal(@"C:\wt.exe", plan!.Value.FileName);
-        Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev""", plan.Value.Arguments);
+        Assert.Equal(@"C:\wt.exe", plan.FileName);
+        Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev""", plan.Arguments);
+    }
+
+    [Fact]
+    public void Terminal_SansDossier_OuvreLeDossierUtilisateur()
+    {
+        // Les modèles attendent un dossier : un --startingDirectory "" ferait échouer Windows Terminal.
+        var entry = Entry(ShortcutType.OpenTerminal, "");
+        entry.Terminal = new TerminalConfig { StartingDirectory = "", RunCommand = "claude" };
+
+        var plan = ShortcutLauncher.Plan(entry, Wt) ?? throw new InvalidOperationException("aucun plan");
+
+        string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        Assert.Equal($@"-w 0 new-tab --startingDirectory ""{home}"" -- claude", plan.Arguments);
     }
 
     [Fact]

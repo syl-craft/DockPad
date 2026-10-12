@@ -72,11 +72,12 @@ public class DefaultTerminalTests
     public void ProgrammeAjoute_SansCommande_SuitLeModeleDuDossier()
     {
         // MXterm Pro ne prend qu'un dossier.
-        var mxterm = TerminalDetectionService.CustomTerminal(Custom(@"C:\MXterm Pro\mxterm.exe", @"""{folder}""", @"""{folder}"""));
+        var mxterm = TerminalDetectionService.CustomTerminal(Custom(@"C:\MXterm Pro\mxterm.exe", @"""{folder}""", @"""{folder}"""))
+            ?? throw new InvalidOperationException("programme vide");
 
-        var args = TerminalDetectionService.BuildArgs(mxterm!, new TerminalConfig { StartingDirectory = @"C:\dev\Demo" });
+        var args = TerminalDetectionService.BuildArgs(mxterm, new TerminalConfig { StartingDirectory = @"C:\dev\Demo" });
 
-        Assert.Equal(TerminalDetectionService.CustomId, mxterm!.Id);
+        Assert.Equal(TerminalDetectionService.CustomId, mxterm.Id);
         Assert.Equal(@"""C:\dev\Demo""", args);
     }
 
@@ -84,10 +85,11 @@ public class DefaultTerminalTests
     public void ProgrammeAjoute_AvecCommande_SuitLeModeleDeLaCommande()
     {
         var alacritty = TerminalDetectionService.CustomTerminal(Custom(@"C:\alacritty.exe",
-            @"--working-directory ""{folder}""", @"--working-directory ""{folder}"" -e {command}"));
+            @"--working-directory ""{folder}""", @"--working-directory ""{folder}"" -e {command}"))
+            ?? throw new InvalidOperationException("programme vide");
         var cfg = new TerminalConfig { StartingDirectory = "%V", RunCommand = @"""C:\codex.exe""" };
 
-        Assert.Equal(@"--working-directory ""%V"" -e ""C:\codex.exe""", TerminalDetectionService.BuildArgs(alacritty!, cfg));
+        Assert.Equal(@"--working-directory ""%V"" -e ""C:\codex.exe""", TerminalDetectionService.BuildArgs(alacritty, cfg));
     }
 
     [Fact]
@@ -121,9 +123,10 @@ public class DefaultTerminalTests
         {
             string withVariable = Path.Combine("%TEMP%", Path.GetFileName(file));
 
-            var custom = TerminalDetectionService.ExistingCustomTerminal(Custom(withVariable, @"""{folder}""", @"""{folder}"""));
+            var custom = TerminalDetectionService.ExistingCustomTerminal(Custom(withVariable, @"""{folder}""", @"""{folder}"""))
+                ?? throw new InvalidOperationException("programme introuvable");
 
-            Assert.Equal(withVariable, custom!.ExePath);
+            Assert.Equal(withVariable, custom.ExePath);
         }
         finally
         {
@@ -159,6 +162,35 @@ public class DefaultTerminalTests
         var resolved = TerminalDetectionService.Resolve(TerminalDetectionService.CustomId, custom: null, [Wt, Pwsh]);
 
         Assert.Same(Wt, resolved);
+    }
+
+    [Fact]
+    public void WindowsTerminalPortable_EstTrouveDansLePath()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dockpad-wt-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            string wt = Path.Combine(dir, "wt.exe");
+            File.WriteAllText(wt, "");
+
+            var found = TerminalDetectionService.FindInPath("wt.exe", $@"C:\nulle-part;{dir}");
+
+            Assert.Equal(wt, found);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void RepliDesPredefinis_OuvreLeDossierEtLanceLaCommande()
+    {
+        // Sans terminal détecté, le prédéfini Claude doit encore ouvrir le dossier et lancer claude.
+        var cmd = PresetService.TerminalCommand(PresetService.FallbackTerminal, "claude");
+
+        Assert.Equal(@"""powershell.exe"" -NoExit -Command ""Set-Location '%V'; claude""", cmd);
     }
 
     // -- Avec quelle commande --------------------------------------------------

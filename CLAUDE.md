@@ -600,7 +600,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
   - Une règle de domaine peut viser un profil (même mécanique, `browserId` = id du profil) ; les ComboBox de l'onglet Règles libellent les profils `Chrome › Boulot`
   - Le chemin de l'exécutable d'un profil n'est pas modifiable : il suit celui de son navigateur
   - Firefox (`-P "nom"` via `profiles.ini`) n'est **pas** géré — seuls les navigateurs Chromium
-- **Configuration (`BrowserConfigDialog`)** : ☰ → Paramètres → 🌐 Navigateurs — fenêtre 680×760 redimensionnable, **2 onglets** (`TabControl` plat, soulignement bleu sur l'onglet actif)
+- **Configuration (`BrowserConfigDialog`)** : ☰ → Paramètres → 🌐 Navigateurs — fenêtre 1100×620 redimensionnable, **2 onglets** (Navigateurs : liste à gauche, interception et édition à droite) (`TabControl` plat, soulignement bleu sur l'onglet actif)
   - **Onglet Navigateurs** : section enregistrement (état + 2 boutons + champ **« Ouverture automatique : N secondes »**, clamp 0-300, sauvegarde immédiate) ; auto-détection (`BrowserDetectionService`, parcours `Software\Clients\StartMenuInternet` HKLM puis HKCU, DockPad exclu, doublons ignorés, **icône lue depuis la valeur `DefaultIcon` avec son index** — ex. Chrome Canary = `chrome.exe,4` pour l'icône jaune) au premier chargement ou si la liste est vide (fichier corrompu) et via **↻ Redétecter** ; **case à cocher de visibilité par ligne** (décochée = absent de la popup, badge « masqué », conservé) ; édition (nom, chemin exe, arguments — ex. `--profile-directory="Profile 1"`, `--incognito`, `-inprivate`), monter/descendre, supprimer, **+ Ajouter**
   - **Onglet Règles de domaine** : recherche live sur le host + filtre par navigateur (combinables), ComboBox par ligne pour réassocier le navigateur (sauvegarde immédiate), suppression par ligne, compteur « N / M règle(s) », état vide explicite ; création uniquement depuis la popup ; supprimer un navigateur supprime ses règles associées
   - Rechargement croisé : si le picker sauvegarde une règle pendant que le dialog est ouvert, `Activated` + comparaison `File.GetLastWriteTimeUtc` rechargent le snapshot
@@ -919,7 +919,7 @@ Fusion additive clé `Id`, **appelée uniquement sur ↻ Redétecter**, jamais e
 - **Pas de « + Ajouter »** : un fournisseur exige une implémentation `IUsageProvider`, un ajout manuel donnerait une ligne vide
 
 #### Fenêtre « Usage IA » (`UsageConfigDialog`)
-☰ → Paramètres → **📊 Usage IA**. 620×660 redimensionnable, `MaxHeight` clampé sur la zone de travail, footer commun, sauvegarde immédiate (bouton **Fermer** seulement).
+☰ → Paramètres → **📊 Usage IA**. 1000×540 redimensionnable, bandeau à gauche et fournisseurs à droite, `MaxHeight` clampé sur la zone de travail, footer commun, sauvegarde immédiate (bouton **Fermer** seulement).
 
 - Section **Bandeau** : afficher le bandeau, seuil d'alerte (`ComboBox` 5→50 % — `SettingsDialog` n'a aucun slider et dix valeurs discrètes se choisissent mieux dans une liste), afficher le coût, **fournisseur affiché** par défaut
 - Section **Fournisseurs** : ↻ Redétecter, case de visibilité par ligne, pastille, chemin détecté, badges « masqué » / « non détecté » / « démo ». **Pas de ↑/↓** dans cette version : réordonner une liste d'une ligne est de l'UI morte — `Order` reste dans le modèle et dans la fusion, les boutons attendent qu'il y ait quelque chose à ordonner
@@ -1775,6 +1775,8 @@ emportait pas.
 ## Fenêtres de config — pattern commun
 
 Toute fenêtre de config (Options, Navigateurs, Serveur MCP, Prédéfinis…) suit le même patron — **jamais de hauteur fixe sans clamp** (une hauteur codée en dur finit clippée quand le contenu grandit, ou déborde d'un écran 768p) :
+
+- **Deux colonnes** séparées d'un filet vertical : un onglet de réglages range ses sections à gauche et à droite plutôt que de les empiler, pour tenir sans défiler sur un écran 1080p. Les onglets qui ne sont qu'une liste (Règles de domaine, Journal MCP) gardent toute la largeur
 
 - **Contenu statique** : `Width` fixe + `SizeToContent="Height"` + `MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"` — la fenêtre a la taille de son contenu, clampée à la zone de travail
 - **Listes / onglets** (Navigateurs, Serveur MCP) : `ResizeMode="CanResize"`, taille initiale + `MinWidth`/`MinHeight`, même clamp `MaxHeight`, et les onglets à contenu statique enveloppés dans un `ScrollViewer`

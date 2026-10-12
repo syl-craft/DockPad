@@ -33,11 +33,12 @@ public static class TerminalDetectionService
     {
         var list = new List<TerminalInfo>();
 
-        // Windows Terminal (AppX package)
-        var wtPath = Path.Combine(
+        // Windows Terminal : paquet AppX, sinon une installation portable dans le PATH
+        var wtPath = FirstExisting(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Microsoft", "WindowsApps", "wt.exe");
-        if (File.Exists(wtPath))
+            "Microsoft", "WindowsApps", "wt.exe"))
+            ?? FindInPath("wt.exe", Environment.GetEnvironmentVariable("PATH") ?? "");
+        if (wtPath != null)
             list.Add(Known(WindowsTerminalId, "Windows Terminal", wtPath));
 
         // PowerShell 7
@@ -192,6 +193,23 @@ public static class TerminalDetectionService
     {
         string call = command.StartsWith('"') ? $"& {command}" : command;
         return call.Replace("\"", "\\\"");
+    }
+
+    /// <summary>
+    /// Premier <paramref name="exeName"/> trouvé dans les dossiers de <paramref name="pathVariable"/>.
+    /// </summary>
+    public static string? FindInPath(string exeName, string pathVariable)
+    {
+        foreach (var dir in pathVariable.Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            try
+            {
+                string full = Path.Combine(dir.Trim().Trim('"'), exeName);
+                if (File.Exists(full)) return full;
+            }
+            catch (Exception ex) { LogService.Warn(ex, $"Entrée de PATH invalide ignorée : {dir}"); }
+        }
+        return null;
     }
 
     private static string? FirstExisting(params string[] paths)

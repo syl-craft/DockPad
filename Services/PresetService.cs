@@ -118,11 +118,12 @@ public static class PresetService
     }
 
     /// <summary>
-    /// Le terminal des Options, ou Windows PowerShell par son nom nu si aucun n'est détecté.
+    /// Windows PowerShell par son nom nu, quand aucun terminal n'est détecté.
     /// </summary>
-    private static TerminalInfo DefaultTerminal() =>
-        TerminalDetectionService.ResolveDefault()
-        ?? new TerminalInfo { Id = TerminalDetectionService.WindowsPowerShellId, ExePath = "powershell.exe" };
+    public static readonly TerminalInfo FallbackTerminal = TerminalDetectionService.Known(
+        TerminalDetectionService.WindowsPowerShellId, "Windows PowerShell", "powershell.exe");
+
+    private static TerminalInfo DefaultTerminal() => TerminalDetectionService.ResolveDefault() ?? FallbackTerminal;
 
     /// <summary>
     /// Le logo ChatGPT, extrait <b>une seule fois</b> dans le store d'icônes du profil.

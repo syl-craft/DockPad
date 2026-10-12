@@ -39,16 +39,28 @@ public static class ShortcutLauncher
         ShortcutType.OpenUrl => new LaunchPlan(entry.Command, ""),
 
         // Le programme enregistré dans la tuile n'est pas lu : toutes suivent le terminal des Options.
-        // Une tuile à l'ancien format n'a que son dossier, porté par la commande.
         ShortcutType.OpenTerminal => terminal == null
             ? null
-            : new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal,
-                entry.Terminal ?? new TerminalConfig { StartingDirectory = entry.Command })),
+            : new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal, TerminalConfigOf(entry))),
 
         ShortcutType.SwitchToProcess => null,
 
         _ => SplitCommand(entry.Command),
     };
+
+    /// <summary>
+    /// Dossier et commande d'une tuile Terminal ; sans dossier, le dossier utilisateur, que les
+    /// modèles de terminal attendent toujours. Une tuile à l'ancien format n'a que son dossier.
+    /// </summary>
+    private static TerminalConfig TerminalConfigOf(ShortcutEntry entry)
+    {
+        var cfg = entry.Terminal ?? new TerminalConfig { StartingDirectory = entry.Command };
+        string folder = string.IsNullOrWhiteSpace(cfg.StartingDirectory)
+            ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+            : cfg.StartingDirectory;
+
+        return new TerminalConfig { StartingDirectory = folder, RunCommand = cfg.RunCommand };
+    }
 
     /// <summary>
     /// Lance l'entrée. Laisse remonter toute exception : l'affichage de l'erreur appartient à la vue.

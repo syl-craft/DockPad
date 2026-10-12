@@ -114,81 +114,84 @@
                     </Grid>
                     <Border Grid.Column="1" Width="1" HorizontalAlignment="Center"
                             Background="{DynamicResource Brush.Border}"/>
-                    <StackPanel Grid.Column="2">
-                        <!-- Section enregistrement -->
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
-                            <TextBlock Text="{loc:T Browsers_UrlInterception}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
-                            <TextBlock x:Name="TxtRegStatus" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
-                                       TextWrapping="Wrap" Margin="0,0,0,10"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <Button x:Name="BtnRegister" Content="{loc:T Browsers_Register}"
-                                        Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
-                                        Click="Register_Click"/>
-                                <Button Content="{loc:T Browsers_WindowsSettings}" Style="{StaticResource SecondaryButton}"
-                                        Click="OpenSettings_Click"
-                                        ToolTip="{loc:T Browsers_WindowsSettings_Tip}"/>
-                            </StackPanel>
+                            <!-- Section enregistrement -->
+                            <StackPanel>
+                                <TextBlock Text="{loc:T Browsers_UrlInterception}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                                <TextBlock x:Name="TxtRegStatus" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
+                                           TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Button x:Name="BtnRegister" Content="{loc:T Browsers_Register}"
+                                            Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                                            Click="Register_Click"/>
+                                    <Button Content="{loc:T Browsers_WindowsSettings}" Style="{StaticResource SecondaryButton}"
+                                            Click="OpenSettings_Click"
+                                            ToolTip="{loc:T Browsers_WindowsSettings_Tip}"/>
+                                </StackPanel>
 
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <TextBlock Text="{loc:T Browsers_AutoOpen}" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
-                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox x:Name="TxtAutoOpen" Width="50" Padding="6,4" FontSize="12"
-                                         HorizontalContentAlignment="Center"
-                                         TextChanged="AutoOpen_TextChanged"/>
-                                <TextBlock Text="{loc:T Browsers_AutoOpen_Hint}"
-                                           Foreground="{DynamicResource Brush.TextHint}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <TextBlock Text="{loc:T Browsers_AutoOpen}" Foreground="{DynamicResource Brush.TextLabel}" FontSize="12"
+                                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBox x:Name="TxtAutoOpen" Width="50" Padding="6,4" FontSize="12"
+                                             HorizontalContentAlignment="Center"
+                                             TextChanged="AutoOpen_TextChanged"/>
+                                    <TextBlock Text="{loc:T Browsers_AutoOpen_Hint}"
+                                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                </StackPanel>
                             </StackPanel>
+                            <Separator Margin="0,16,0,14"/>
+                            <!-- Édition de l'entrée sélectionnée (désactivé sans sélection) -->
+                            <Border x:Name="PnlEdit" IsEnabled="False"
+                                    Background="{DynamicResource Brush.SurfaceCard}" CornerRadius="6" Padding="12"
+                                    BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                                    SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Browsers_Name}" Foreground="{DynamicResource Brush.TextLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,10,8"/>
+                                    <TextBox  x:Name="TxtName" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                                              Padding="6,4" Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Browsers_Exe}" Foreground="{DynamicResource Brush.TextLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,10,8"/>
+                                    <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
+                                              Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
+                                    <Button   x:Name="BtnBrowseExe" Grid.Row="1" Grid.Column="2" Content="…" Width="30"
+                                      AutomationProperties.Name="{loc:T Browsers_Exe}"
+                                              Padding="0" Margin="0,0,0,8"
+                                              Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:T Browsers_Args}" Foreground="{DynamicResource Brush.TextLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,10,8"/>
+                                    <TextBox  x:Name="TxtArgs" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                              Padding="6,4" Margin="0,0,0,8" FontFamily="Consolas" FontSize="11"
+                                              ToolTip="{loc:T Browsers_Args_Tip}"/>
+
+                                    <TextBlock x:Name="TxtProfileInfo" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                               Visibility="Collapsed" Foreground="{DynamicResource Brush.TextHint}" FontSize="11"
+                                               TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                                    <Button   x:Name="BtnApply" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                                              Content="{loc:T Common_Apply}" HorizontalAlignment="Right"
+                                              Style="{StaticResource PrimaryButton}" Click="Apply_Click"/>
+                                </Grid>
+                            </Border>
                         </StackPanel>
-                        <Separator Margin="0,16,0,14"/>
-                        <!-- Édition de l'entrée sélectionnée (désactivé sans sélection) -->
-                        <Border x:Name="PnlEdit" IsEnabled="False"
-                                Background="{DynamicResource Brush.SurfaceCard}" CornerRadius="6" Padding="12"
-                                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
-                                SnapsToDevicePixels="True" UseLayoutRounding="True">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Browsers_Name}" Foreground="{DynamicResource Brush.TextLabel}"
-                                           VerticalAlignment="Center" Margin="0,0,10,8"/>
-                                <TextBox  x:Name="TxtName" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
-                                          Padding="6,4" Margin="0,0,0,8"/>
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Browsers_Exe}" Foreground="{DynamicResource Brush.TextLabel}"
-                                           VerticalAlignment="Center" Margin="0,0,10,8"/>
-                                <TextBox  x:Name="TxtExe" Grid.Row="1" Grid.Column="1" Padding="6,4"
-                                          Margin="0,0,8,8" FontFamily="Consolas" FontSize="11"/>
-                                <Button   x:Name="BtnBrowseExe" Grid.Row="1" Grid.Column="2" Content="…" Width="30"
-                                  AutomationProperties.Name="{loc:T Browsers_Exe}"
-                                          Padding="0" Margin="0,0,0,8"
-                                          Style="{StaticResource SecondaryButton}" Click="BrowseExe_Click"/>
-
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:T Browsers_Args}" Foreground="{DynamicResource Brush.TextLabel}"
-                                           VerticalAlignment="Center" Margin="0,0,10,8"/>
-                                <TextBox  x:Name="TxtArgs" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                                          Padding="6,4" Margin="0,0,0,8" FontFamily="Consolas" FontSize="11"
-                                          ToolTip="{loc:T Browsers_Args_Tip}"/>
-
-                                <TextBlock x:Name="TxtProfileInfo" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
-                                           Visibility="Collapsed" Foreground="{DynamicResource Brush.TextHint}" FontSize="11"
-                                           TextWrapping="Wrap" Margin="0,0,0,8"/>
-
-                                <Button   x:Name="BtnApply" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
-                                          Content="{loc:T Common_Apply}" HorizontalAlignment="Right"
-                                          Style="{StaticResource PrimaryButton}" Click="Apply_Click"/>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </TabItem>
 
