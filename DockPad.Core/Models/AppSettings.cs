@@ -52,6 +52,12 @@ public class AppSettings
     public List<TerminalDefinition> Terminals { get; set; } = new();
 
     /// <summary>
+    /// Ancien programme unique, choisi par <c>defaultTerminal = "custom"</c> : lu une fois, à la
+    /// création de <c>terminals.json</c>, puis vidé.
+    /// </summary>
+    public TerminalSettings CustomTerminal { get; set; } = new();
+
+    /// <summary>
     /// Télécharger l'icône du site pour les tuiles web. Vrai par défaut : un réglage réseau qu'on
     /// n'a jamais vu ne peut pas avoir été refusé.
     /// </summary>

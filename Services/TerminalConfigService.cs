@@ -26,19 +26,42 @@ public static class TerminalConfigService
 
     /// <summary>
     /// La liste, créée à partir de la détection et des réglages de <c>settings.json</c> si elle est
-    /// vide et le fichier lisible ; la reprise faite, ces réglages sont vidés.
+    /// vide et le fichier lisible. La reprise faite, ces réglages sont vidés, sauf les arguments d'un
+    /// terminal absent ce jour-là, que la prochaine redétection reprendra.
     /// </summary>
     public static TerminalsConfig EnsureInitialized()
     {
         var config = Load();
         if (config.Terminals.Count > 0 || JsonConfigFile.IsReadOnly(FilePath)) return config;
 
-        var settings = AppSettingsService.Current;
-        config.Terminals = TerminalCatalog.Initial(TerminalDetectionService.Detect(), settings.TerminalTemplates, settings.Terminals);
+        var migration = TerminalCatalog.Migrate(TerminalDetectionService.Detect(), AppSettingsService.Current);
+        config.Terminals = migration.Terminals;
         Save(config);
 
-        if (settings.TerminalTemplates.Count > 0 || settings.Terminals.Count > 0)
-            AppSettingsService.Update(s => { s.TerminalTemplates = new(); s.Terminals = new(); });
+        AppSettingsService.Update(s =>
+        {
+            s.DefaultTerminal   = migration.DefaultTerminal;
+            s.TerminalTemplates = migration.PendingTemplates;
+            s.Terminals         = new();
+            s.CustomTerminal    = new();
+        });
         return config;
+    }
+
+    /// <summary>
+    /// Ajoute à la liste les terminaux détectés qui n'y sont pas, et rend leur nombre ; un terminal
+    /// qui revient reprend les arguments que <c>settings.json</c> gardait pour lui.
+    /// </summary>
+    public static int MergeDetected(TerminalsConfig config)
+    {
+        var pending = new Dictionary<string, TerminalSettings>(AppSettingsService.Current.TerminalTemplates);
+        int pendingBefore = pending.Count;
+
+        int added = TerminalCatalog.Merge(config.Terminals, TerminalDetectionService.Detect(), pending);
+        Save(config);
+
+        if (pending.Count != pendingBefore)
+            AppSettingsService.Update(s => s.TerminalTemplates = pending);
+        return added;
     }
 }

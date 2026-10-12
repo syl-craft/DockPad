@@ -175,8 +175,7 @@ public partial class TerminalConfigDialog : Window
 
     private void Redetect_Click(object sender, RoutedEventArgs e)
     {
-        int added = TerminalCatalog.Merge(_config.Terminals, TerminalDetectionService.Detect());
-        Save();
+        int added = TerminalConfigService.MergeDetected(_config);
         RefreshList(selectId: Selected?.Id);
 
         AppDialog.Info(added > 0 ? Loc.F("Terminals_DetectedAdded", added) : Loc.T("Terminals_DetectedNothing"), owner: this);

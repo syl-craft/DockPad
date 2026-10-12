@@ -9,48 +9,87 @@ namespace DockPad.Services;
 public static class TerminalCatalog
 {
     /// <summary>
-    /// Première liste : la détection, avec les arguments modifiés dans <c>settings.json</c>, puis
-    /// les terminaux qui y étaient déclarés, sauf ceux dont la détection a déjà le programme.
+    /// Ce que la reprise de <c>settings.json</c> produit : la liste, le terminal par défaut (son
+    /// identifiant a pu changer) et les arguments d'un terminal absent, gardés pour son retour.
     /// </summary>
-    public static List<TerminalEntry> Initial(IReadOnlyList<TerminalInfo> detected,
-                                              IReadOnlyDictionary<string, TerminalSettings> legacyTemplates,
-                                              IReadOnlyList<TerminalDefinition> legacyDefinitions)
-    {
-        var entries = new List<TerminalEntry>();
-        Merge(entries, detected);
+    public sealed record Migration(List<TerminalEntry> Terminals, string DefaultTerminal,
+                                   Dictionary<string, TerminalSettings> PendingTemplates);
 
-        foreach (var entry in entries)
+    /// <summary>
+    /// Première liste : la détection, avec les arguments modifiés dans <c>settings.json</c>, puis les
+    /// terminaux qui y étaient déclarés et l'ancien programme unique (<c>customTerminal</c>).
+    /// </summary>
+    /// <remarks>
+    /// Une déclaration au programme d'un terminal détecté lui donne son nom et ses arguments au lieu
+    /// de le doubler. Un identifiant est gardé tant qu'il est libre ; s'il change, le terminal par
+    /// défaut qui le visait le suit.
+    /// </remarks>
+    public static Migration Migrate(IReadOnlyList<TerminalInfo> detected, AppSettings legacy)
+    {
+        var pending = new Dictionary<string, TerminalSettings>(legacy.TerminalTemplates);
+        var entries = new List<TerminalEntry>();
+        Merge(entries, detected, pending);
+
+        var definitions = legacy.Terminals.ToList();
+        if (legacy.CustomTerminal.ExePath.Trim() != "")
         {
-            if (legacyTemplates.GetValueOrDefault(entry.Id) is not { } edited) continue;
-            entry.FolderArgs  = edited.FolderArgs;
-            entry.CommandArgs = edited.CommandArgs;
+            definitions.Add(new TerminalDefinition
+            {
+                Id          = "custom",
+                Name        = System.IO.Path.GetFileNameWithoutExtension(legacy.CustomTerminal.ExePath.Trim().Trim('"')),
+                ExePath     = legacy.CustomTerminal.ExePath,
+                FolderArgs  = legacy.CustomTerminal.FolderArgs,
+                CommandArgs = legacy.CustomTerminal.CommandArgs,
+            });
         }
 
-        foreach (var definition in legacyDefinitions)
+        string defaultTerminal = legacy.DefaultTerminal;
+        foreach (var definition in definitions)
         {
             string exePath = definition.ExePath.Trim().Trim('"');
-            if (exePath == "" || entries.Any(e => SamePath(e.ExePath, exePath))) continue;
+            if (exePath == "") continue;
 
-            string name = definition.Name.Trim() == "" ? definition.Id.Trim() : definition.Name.Trim();
+            string declaredId = definition.Id.Trim();
+            string name = definition.Name.Trim() == "" ? declaredId : definition.Name.Trim();
+
+            var samePath = entries.Where(e => SamePath(e.ExePath, exePath)).FirstOrDefault();
+            if (samePath != null)
+            {
+                if (name != "") samePath.Name = name;
+                if (definition.FolderArgs.Trim() != "") samePath.FolderArgs = definition.FolderArgs.Trim();
+                if (definition.CommandArgs.Trim() != "") samePath.CommandArgs = definition.CommandArgs.Trim();
+                if (defaultTerminal == declaredId) defaultTerminal = samePath.Id;
+                continue;
+            }
+
+            var taken = entries.Select(e => e.Id).ToList();
+            bool idIsFree = declaredId != ""
+                && !taken.Where(id => id.Equals(declaredId, StringComparison.OrdinalIgnoreCase)).Any()
+                && !TerminalDetectionService.KnownIds.Where(id => id.Equals(declaredId, StringComparison.OrdinalIgnoreCase)).Any();
+            string newId = idIsFree ? declaredId : NewId(name == "" ? "terminal" : name, taken);
+
             entries.Add(new TerminalEntry
             {
-                Id          = NewId(name, entries.Select(e => e.Id)),
-                Name        = name,
+                Id          = newId,
+                Name        = name == "" ? newId : name,
                 ExePath     = exePath,
                 FolderArgs  = definition.FolderArgs.Trim(),
                 CommandArgs = definition.CommandArgs.Trim(),
                 Order       = NextOrder(entries),
             });
+            if (defaultTerminal == declaredId) defaultTerminal = newId;
         }
-        return entries;
+        return new Migration(entries, defaultTerminal, pending);
     }
 
     /// <summary>
     /// Ajoute les terminaux détectés absents de la liste, et rend leur nombre. Un terminal déjà
     /// présent garde ses arguments, son chemin, son masquage et son ordre ; son nom suit la
-    /// détection tant qu'il n'a pas été changé. Un terminal disparu reste dans la liste.
+    /// détection tant qu'il n'a pas été changé. Un terminal disparu reste dans la liste. Un terminal
+    /// ajouté reprend les arguments que <paramref name="pendingTemplates"/> gardait pour lui, et les en retire.
     /// </summary>
-    public static int Merge(List<TerminalEntry> entries, IReadOnlyList<TerminalInfo> detected)
+    public static int Merge(List<TerminalEntry> entries, IReadOnlyList<TerminalInfo> detected,
+                            Dictionary<string, TerminalSettings> pendingTemplates)
     {
         int added = 0;
         foreach (var found in detected)
@@ -63,14 +102,16 @@ public static class TerminalCatalog
                 continue;
             }
 
+            var edited = pendingTemplates.GetValueOrDefault(found.Id);
+            pendingTemplates.Remove(found.Id);
             entries.Add(new TerminalEntry
             {
                 Id           = found.Id,
                 Name         = found.DisplayName,
                 DetectedName = found.DisplayName,
                 ExePath      = found.ExePath,
-                FolderArgs   = found.FolderArgs,
-                CommandArgs  = found.CommandArgs,
+                FolderArgs   = edited?.FolderArgs ?? found.FolderArgs,
+                CommandArgs  = edited?.CommandArgs ?? found.CommandArgs,
                 Order        = NextOrder(entries),
             });
             added++;

@@ -17,34 +17,94 @@ public class TerminalCatalogTests
 
     // -- Reprise de settings.json ----------------------------------------------
 
+    private static AppSettings Legacy(string defaultTerminal = "",
+        Dictionary<string, TerminalSettings>? templates = null, List<TerminalDefinition>? definitions = null,
+        TerminalSettings? custom = null) => new()
+    {
+        DefaultTerminal   = defaultTerminal,
+        TerminalTemplates = templates ?? new(),
+        Terminals         = definitions ?? new(),
+        CustomTerminal    = custom ?? new(),
+    };
+
     [Fact]
     public void Reprise_PrendLaDetectionAvecLesArgumentsModifies()
     {
-        var entries = TerminalCatalog.Initial(
+        var migration = TerminalCatalog.Migrate(
             [Detected("wt", "Windows Terminal", @"C:\wt.exe"), Detected("pwsh", "PowerShell 7", @"C:\pwsh.exe")],
-            legacyTemplates: new Dictionary<string, TerminalSettings> { ["wt"] = new() { FolderArgs = "-d x", CommandArgs = "-d x -- y" } },
-            legacyDefinitions: []);
+            Legacy(templates: new() { ["wt"] = new() { FolderArgs = "-d x", CommandArgs = "-d x -- y" } }));
 
-        Assert.Equal(["wt", "pwsh"], entries.Select(e => e.Id));
-        Assert.Equal("-d x -- y", entries[0].CommandArgs);
-        Assert.Equal([0, 1], entries.Select(e => e.Order));
+        Assert.Equal(["wt", "pwsh"], migration.Terminals.Select(e => e.Id));
+        Assert.Equal("-d x -- y", migration.Terminals[0].CommandArgs);
+        Assert.Equal([0, 1], migration.Terminals.Select(e => e.Order));
+        Assert.Empty(migration.PendingTemplates);
     }
 
     [Fact]
-    public void Reprise_AjouteLesTerminauxDeclaresSansDoublerUnDetecte()
+    public void Reprise_GardeLesArgumentsDUnTerminalAbsent_EtLaRedetectionLesReprend()
     {
-        var entries = TerminalCatalog.Initial(
-            [Detected("wezterm", "WezTerm", @"C:\Program Files\WezTerm\wezterm-gui.exe")],
-            legacyTemplates: new Dictionary<string, TerminalSettings>(),
-            legacyDefinitions:
-            [
-                new() { Id = "wezterm", Name = "WezTerm", ExePath = @"C:\Program Files\WezTerm\wezterm-gui.exe" },
-                new() { Id = "alacritty", Name = "Alacritty", ExePath = @"C:\alacritty.exe", FolderArgs = "a", CommandArgs = "b" },
-                new() { Id = "vide", Name = "Sans programme", ExePath = "" },
-            ]);
+        var migration = TerminalCatalog.Migrate([Detected("wt", "Windows Terminal", @"C:\wt.exe")],
+            Legacy(templates: new() { ["pwsh"] = new() { FolderArgs = "-p", CommandArgs = "-p -c" } }));
 
-        Assert.Equal(["wezterm", "alacritty"], entries.Select(e => e.Id));
-        Assert.Equal("Alacritty", entries[1].Name);
+        Assert.True(migration.PendingTemplates.ContainsKey("pwsh"));
+
+        TerminalCatalog.Merge(migration.Terminals, [Detected("pwsh", "PowerShell 7", @"C:\pwsh.exe")], migration.PendingTemplates);
+
+        Assert.Equal("-p -c", migration.Terminals.Where(e => e.Id == "pwsh").Single().CommandArgs);
+        Assert.Empty(migration.PendingTemplates);
+    }
+
+    [Fact]
+    public void Reprise_UneDeclarationAuProgrammeDUnDetecte_LuiDonneSonNomEtSesArguments()
+    {
+        var migration = TerminalCatalog.Migrate(
+            [Detected("wezterm", "WezTerm", @"C:\Program Files\WezTerm\wezterm-gui.exe")],
+            Legacy(defaultTerminal: "wez", definitions:
+            [
+                new() { Id = "wez", Name = "Mon WezTerm", ExePath = @"C:\Program Files\WezTerm\wezterm-gui.exe",
+                        FolderArgs = "start --cwd \"{folder}\"", CommandArgs = "start --cwd \"{folder}\" -- {command}" },
+            ]));
+
+        var wezterm = Assert.Single(migration.Terminals);
+        Assert.Equal(("wezterm", "Mon WezTerm", "start --cwd \"{folder}\" -- {command}"), (wezterm.Id, wezterm.Name, wezterm.CommandArgs));
+        Assert.Equal("wezterm", migration.DefaultTerminal);
+    }
+
+    [Fact]
+    public void Reprise_GardeLIdentifiantDUneDeclaration_EtLeTerminalParDefautQuiLaVise()
+    {
+        var migration = TerminalCatalog.Migrate([],
+            Legacy(defaultTerminal: "mxterm", definitions:
+            [
+                new() { Id = "mxterm", Name = "MXterm Pro", ExePath = @"C:\MXterm\mxterm.exe", FolderArgs = "\"{folder}\"" },
+                new() { Id = "", Name = "Sans programme", ExePath = "" },
+            ]));
+
+        var mxterm = Assert.Single(migration.Terminals);
+        Assert.Equal(("mxterm", "MXterm Pro"), (mxterm.Id, mxterm.Name));
+        Assert.Equal("mxterm", migration.DefaultTerminal);
+    }
+
+    [Fact]
+    public void Reprise_IdentifiantPris_EnChoisitUnAutreEtLeTerminalParDefautSuit()
+    {
+        var migration = TerminalCatalog.Migrate([Detected("wt", "Windows Terminal", @"C:\wt.exe")],
+            Legacy(defaultTerminal: "wt", definitions: [new() { Id = "wt", Name = "Mon wt", ExePath = @"D:\portable\wt.exe" }]));
+
+        Assert.Equal(["wt", "mon-wt"], migration.Terminals.Select(e => e.Id));
+        Assert.Equal("mon-wt", migration.DefaultTerminal);
+    }
+
+    [Fact]
+    public void Reprise_LAncienProgrammeUniqueDevientUnTerminalDeLaListe()
+    {
+        var migration = TerminalCatalog.Migrate([],
+            Legacy(defaultTerminal: "custom",
+                   custom: new() { ExePath = @"C:\Tools\alacritty.exe", FolderArgs = "a", CommandArgs = "b" }));
+
+        var custom = Assert.Single(migration.Terminals);
+        Assert.Equal(("custom", "alacritty", "b"), (custom.Id, custom.Name, custom.CommandArgs));
+        Assert.Equal("custom", migration.DefaultTerminal);
     }
 
     // -- Fusion de la détection ------------------------------------------------
@@ -54,7 +114,7 @@ public class TerminalCatalogTests
     {
         var entries = new List<TerminalEntry> { Entry("wt", @"C:\wt.exe", 0) };
 
-        int added = TerminalCatalog.Merge(entries, [Detected("wt", "Windows Terminal", @"C:\wt.exe"), Detected("wezterm", "WezTerm", @"C:\wez.exe")]);
+        int added = TerminalCatalog.Merge(entries, [Detected("wt", "Windows Terminal", @"C:\wt.exe"), Detected("wezterm", "WezTerm", @"C:\wez.exe")], new());
 
         Assert.Equal(1, added);
         Assert.Equal(["wt", "wezterm"], entries.Select(e => e.Id));
@@ -68,7 +128,7 @@ public class TerminalCatalogTests
         var wt = Entry("wt", @"D:\portable\wt.exe", order: 3, hidden: true);
         var entries = new List<TerminalEntry> { wt };
 
-        TerminalCatalog.Merge(entries, [Detected("wt", "Windows Terminal", @"C:\wt.exe")]);
+        TerminalCatalog.Merge(entries, [Detected("wt", "Windows Terminal", @"C:\wt.exe")], new());
 
         Assert.Equal(("f", "c", true, 3, @"D:\portable\wt.exe"), (wt.FolderArgs, wt.CommandArgs, wt.Hidden, wt.Order, wt.ExePath));
     }
@@ -80,7 +140,7 @@ public class TerminalCatalogTests
         var renamed = new TerminalEntry { Id = "pwsh", Name = "Mon pwsh", DetectedName = "PowerShell", ExePath = @"C:\pwsh.exe", Order = 1 };
         var entries = new List<TerminalEntry> { auto, renamed };
 
-        TerminalCatalog.Merge(entries, [Detected("wt", "Windows Terminal", @"C:\wt.exe"), Detected("pwsh", "PowerShell 7", @"C:\pwsh.exe")]);
+        TerminalCatalog.Merge(entries, [Detected("wt", "Windows Terminal", @"C:\wt.exe"), Detected("pwsh", "PowerShell 7", @"C:\pwsh.exe")], new());
 
         Assert.Equal("Windows Terminal", auto.Name);
         Assert.Equal("Mon pwsh", renamed.Name);
@@ -91,7 +151,7 @@ public class TerminalCatalogTests
     {
         var entries = new List<TerminalEntry> { Entry("wezterm", @"C:\wez.exe", 0) };
 
-        TerminalCatalog.Merge(entries, []);
+        TerminalCatalog.Merge(entries, [], new());
 
         Assert.Single(entries);
     }
