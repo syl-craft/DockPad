@@ -36,25 +36,7 @@ public static class PresetService
 
         string icon = claudeExe ?? "";
 
-        // Prefer Windows Terminal with -w 0 to reuse existing window
-        string? wt = FindExe("wt.exe",
-            Path.Combine(localAppData, @"Microsoft\WindowsApps\wt.exe"));
-
-        string claudeArgs = SettingsService.LoadClaudeArgs();
-        string claudeCmd  = string.IsNullOrEmpty(claudeArgs) ? "claude" : $"claude {claudeArgs}";
-
-        string command;
-        if (wt != null)
-        {
-            command = $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- {claudeCmd}";
-        }
-        else
-        {
-            string? ps = FindExe("powershell.exe",
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),
-                    @"WindowsPowerShell\v1.0\powershell.exe"));
-            command = $"\"{ps ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; {claudeCmd}\"";
-        }
+        string command = TerminalCommand(DefaultTerminal(), ClaudeRunCommand(SettingsService.LoadClaudeArgs()));
 
         return new PresetEntry
         {
@@ -84,16 +66,7 @@ public static class PresetService
     /// </remarks>
     private static PresetEntry BuildCodexTerminal()
     {
-        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-        string? wt = FindExe("wt.exe",
-            Path.Combine(localAppData, @"Microsoft\WindowsApps\wt.exe"));
-
-        string? powershell = FindExe("powershell.exe",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),
-                @"WindowsPowerShell\v1.0\powershell.exe"));
-
-        string command = CodexCommand(wt, powershell, FindCodexExe());
+        string command = TerminalCommand(DefaultTerminal(), CodexRunCommand(FindCodexExe()));
 
         return new PresetEntry
         {
@@ -110,7 +83,7 @@ public static class PresetService
     }
 
     /// <summary>
-    /// La commande du prédéfini Codex : Windows Terminal si possible, sinon PowerShell.
+    /// La commande qui lance Codex, par son chemin absolu quand on le connaît.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -127,14 +100,30 @@ public static class PresetService
     /// une machine où DockPad ne sait pas localiser le binaire.
     /// </para>
     /// </remarks>
-    public static string CodexCommand(string? wt, string? powershell, string? codexExe)
-    {
-        string codex = codexExe is null ? "codex" : $"\"{codexExe}\"";
+    public static string ClaudeRunCommand(string claudeArgs) =>
+        string.IsNullOrWhiteSpace(claudeArgs) ? "claude" : $"claude {claudeArgs.Trim()}";
 
-        return wt != null
-            ? $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\" -- {codex}"
-            : $"\"{powershell ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V'; & {codex}\"";
+    public static string CodexRunCommand(string? codexExe) =>
+        codexExe == null ? "codex" : $"\"{codexExe}\"";
+
+    /// <summary>
+    /// Ligne de commande du menu contextuel : <paramref name="terminal"/> ouvert sur le dossier
+    /// cliqué (<c>%V</c>), qui lance <paramref name="runCommand"/> s'il y en a une.
+    /// </summary>
+    public static string TerminalCommand(TerminalInfo terminal, string runCommand)
+    {
+        var cfg = new TerminalConfig { StartingDirectory = "%V", RunCommand = runCommand, NewTab = true };
+
+        return $"\"{terminal.ExePath}\" {TerminalDetectionService.BuildArgs(terminal, cfg)}";
     }
+
+    /// <summary>
+    /// Windows PowerShell par son nom nu, quand aucun terminal n'est détecté.
+    /// </summary>
+    public static readonly TerminalInfo FallbackTerminal = TerminalDetectionService.Known(
+        TerminalDetectionService.WindowsPowerShellId, "Windows PowerShell", "powershell.exe");
+
+    private static TerminalInfo DefaultTerminal() => TerminalDetectionService.ResolveDefault() ?? FallbackTerminal;
 
     /// <summary>
     /// Le logo ChatGPT, extrait <b>une seule fois</b> dans le store d'icônes du profil.
@@ -401,11 +390,7 @@ public static class PresetService
 
     private static PresetEntry BuildPowerShell()
     {
-        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string system = Environment.GetFolderPath(Environment.SpecialFolder.System);
-
-        // Prefer Windows Terminal with -w 0 to reuse existing window
-        string? wt = FindExe("wt.exe", Path.Combine(localAppData, @"Microsoft\WindowsApps\wt.exe"));
 
         string? psExe = FindExe("pwsh.exe",
             @"C:\Program Files\PowerShell\7\pwsh.exe",
@@ -413,15 +398,7 @@ public static class PresetService
             ?? FindExe("powershell.exe",
                 Path.Combine(system, @"WindowsPowerShell\v1.0\powershell.exe"));
 
-        string command;
-        if (wt != null)
-        {
-            command = $"\"{wt}\" -w 0 new-tab --startingDirectory \"%V\"";
-        }
-        else
-        {
-            command = $"\"{psExe ?? "powershell.exe"}\" -NoExit -Command \"Set-Location '%V';\"";
-        }
+        string command = TerminalCommand(DefaultTerminal(), runCommand: "");
 
         string icon = psExe ?? "";
 

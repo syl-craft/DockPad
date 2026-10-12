@@ -49,7 +49,8 @@ public static class DockPadTools
         [Description("Tuiles à créer. Champs par item : name (requis), command (requis), type " +
                      "(RunCommand|OpenFolder|OpenUrl|OpenTerminal|SwitchToProcess, défaut RunCommand), " +
                      "page/row/col (optionnels), iconPath (optionnel — sinon icône de l'exe), " +
-                     "terminal (pour OpenTerminal), processSwitch (pour SwitchToProcess), slot (pour poser " +
+                     "terminal (pour OpenTerminal : startingDirectory, runCommand, newTab, extraArgs ; " +
+                     "le terminal lancé est celui des Options de DockPad, exePath est ignoré), processSwitch (pour SwitchToProcess), slot (pour poser " +
                      "la tuile dans une sous-case libre du groupe situé en page/row/col, qui deviennent " +
                      "alors requis — " + SlotDoc + ")")]
         List<ShortcutAddItem> items,

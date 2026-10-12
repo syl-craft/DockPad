@@ -24,15 +24,12 @@ public static class ShortcutLauncher
     /// <summary>Un programme et ses arguments, prêts pour <c>Process.Start</c>.</summary>
     public readonly record struct LaunchPlan(string FileName, string Arguments);
 
-    /// <summary>Terminaux essayés dans l'ordre quand l'entrée ne dit pas lequel utiliser.</summary>
-    private static readonly string[] TerminalCandidates = ["wt.exe", "pwsh.exe", "powershell.exe", "cmd.exe"];
-
     /// <summary>
     /// Plan de lancement d'une entrée, ou <c>null</c> quand il n'y en a pas un seul : une bascule
-    /// vers un processus cherche d'abord une fenêtre existante, et un terminal sans configuration
-    /// se choisit par essais successifs (<see cref="TerminalFallbacks"/>).
+    /// vers un processus cherche d'abord une fenêtre existante, et une tuile Terminal n'a rien à
+    /// lancer sans <paramref name="terminal"/>, celui des Options.
     /// </summary>
-    public static LaunchPlan? Plan(ShortcutEntry entry) => entry.Type switch
+    public static LaunchPlan? Plan(ShortcutEntry entry, TerminalInfo? terminal) => entry.Type switch
     {
         // Les guillemets ne sont pas décoratifs : sans eux « C:\Mes documents » se coupe à l'espace
         // et l'Explorateur ouvre « C:\Mes ».
@@ -41,9 +38,10 @@ public static class ShortcutLauncher
         // L'URL est le programme : c'est le shell qui choisit le navigateur.
         ShortcutType.OpenUrl => new LaunchPlan(entry.Command, ""),
 
-        ShortcutType.OpenTerminal => entry.Terminal is { ExePath.Length: > 0 } cfg
-            ? new LaunchPlan(cfg.ExePath, TerminalDetectionService.BuildArgs(cfg))
-            : null,
+        // Le programme enregistré dans la tuile n'est pas lu : toutes suivent le terminal des Options.
+        ShortcutType.OpenTerminal => terminal == null
+            ? null
+            : new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal, TerminalConfigOf(entry))),
 
         ShortcutType.SwitchToProcess => null,
 
@@ -51,20 +49,17 @@ public static class ShortcutLauncher
     };
 
     /// <summary>
-    /// Terminaux à essayer, dans l'ordre, pour une entrée à l'ancien format — celles où seul le
-    /// dossier est connu. Le premier qui démarre gagne.
+    /// Dossier et commande d'une tuile Terminal ; sans dossier, le dossier utilisateur, que les
+    /// modèles de terminal attendent toujours. Une tuile à l'ancien format n'a que son dossier.
     /// </summary>
-    public static IEnumerable<LaunchPlan> TerminalFallbacks(string folder)
+    private static TerminalConfig TerminalConfigOf(ShortcutEntry entry)
     {
-        foreach (var term in TerminalCandidates)
-        {
-            yield return new LaunchPlan(term, term switch
-            {
-                "wt.exe" => $"-w 0 new-tab --startingDirectory \"{folder}\"",
-                "pwsh.exe" or "powershell.exe" => $"-NoExit -Command Set-Location \"{folder}\"",
-                _ => $"/k cd /d \"{folder}\"",
-            });
-        }
+        var cfg = entry.Terminal ?? new TerminalConfig { StartingDirectory = entry.Command };
+        string folder = string.IsNullOrWhiteSpace(cfg.StartingDirectory)
+            ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+            : cfg.StartingDirectory;
+
+        return new TerminalConfig { StartingDirectory = folder, RunCommand = cfg.RunCommand };
     }
 
     /// <summary>
@@ -79,27 +74,12 @@ public static class ShortcutLauncher
             return;
         }
 
-        if (Plan(entry) is { } plan)
-        {
-            Start(plan);
-            return;
-        }
+        var terminal = entry.Type == ShortcutType.OpenTerminal ? TerminalDetectionService.ResolveDefault() : null;
 
-        // Terminal à l'ancien format : le premier candidat qui démarre gagne.
-        foreach (var candidate in TerminalFallbacks(entry.Command))
-        {
-            try
-            {
-                Start(candidate);
-                return;
-            }
-            catch (Exception ex)
-            {
-                LogService.Warn(ex, $"Terminal candidat indisponible : {candidate.FileName}");
-            }
-        }
+        if (Plan(entry, terminal) is not { } plan)
+            throw new InvalidOperationException(Localization.Loc.T("Quick_NoTerminal"));
 
-        throw new InvalidOperationException(Localization.Loc.T("Quick_NoTerminal"));
+        Start(plan);
     }
 
     /// <summary>
@@ -108,8 +88,19 @@ public static class ShortcutLauncher
     /// </summary>
     public static void RunCommandLine(string command) => Start(SplitCommand(command));
 
+    /// <summary>
+    /// Ouvre <paramref name="terminal"/> sur un dossier et y lance une commande : le bouton Tester des Options.
+    /// </summary>
+    public static void OpenTerminal(TerminalInfo terminal, string folder, string command) =>
+        Start(new LaunchPlan(terminal.ExePath, TerminalDetectionService.BuildArgs(terminal,
+            new TerminalConfig { StartingDirectory = folder, RunCommand = command })));
+
+    // Le programme d'un terminal personnalisé peut porter %LocalAppData%, que Process.Start ne développe pas.
     private static void Start(LaunchPlan plan) =>
-        Process.Start(new ProcessStartInfo(plan.FileName, plan.Arguments) { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo(Environment.ExpandEnvironmentVariables(plan.FileName), plan.Arguments)
+        {
+            UseShellExecute = true,
+        });
 
     /// <summary>
     /// Sépare l'exécutable de ses arguments. Un chemin entre guillemets peut contenir des espaces :

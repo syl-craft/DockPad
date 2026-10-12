@@ -4,10 +4,10 @@
              xmlns:views="clr-namespace:DockPad.Views"
         xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
         Title="{loc:T UsageCfg_Title}"
-        Width="620" Height="660"
+        Width="1000" Height="540"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize" MinWidth="560" MinHeight="440"
+        ResizeMode="CanResize" MinWidth="820" MinHeight="420"
         Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
     <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
@@ -17,14 +17,19 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{DynamicResource Brush.Accent}" Padding="20,14">
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="{DynamicResource Brush.Accent}" Padding="20,14">
             <TextBlock Text="{loc:T UsageCfg_Title}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
         </Border>
 
         <!-- Réglages du bandeau. Sauvegarde immédiate à chaque changement. -->
-        <Border Grid.Row="1" Background="{DynamicResource Brush.SurfaceCard}" Margin="16,12,16,0" Padding="16,12"
+        <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="0" VerticalAlignment="Top"
+                Background="{DynamicResource Brush.SurfaceCard}" Margin="16,12,6,12" Padding="16,12"
                 BorderBrush="{DynamicResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="8"
                 SnapsToDevicePixels="True" UseLayoutRounding="True">
             <StackPanel>
@@ -68,7 +73,8 @@
         </Border>
 
         <!-- Fournisseurs détectés -->
-        <Border Grid.Row="2" Background="{DynamicResource Brush.SurfaceCard}" Margin="16,12,16,12" Padding="16,12"
+        <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="1"
+                Background="{DynamicResource Brush.SurfaceCard}" Margin="6,12,16,12" Padding="16,12"
                 BorderBrush="{DynamicResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="8"
                 SnapsToDevicePixels="True" UseLayoutRounding="True">
             <Grid>
@@ -177,7 +183,7 @@
         </Border>
 
         <!-- Footer -->
-        <Border Grid.Row="3" Style="{StaticResource DialogFooter}">
+        <Border Grid.Row="3" Grid.ColumnSpan="2" Style="{StaticResource DialogFooter}">
             <Grid>
                 <TextBlock x:Name="TxtVersion" Style="{StaticResource FooterVersion}"/>
                 <Button Content="{loc:T Common_Close}" Style="{StaticResource SecondaryButton}"

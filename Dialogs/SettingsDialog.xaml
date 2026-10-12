@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
         Title="{loc:T Settings_Title}"
-        Width="520" Height="640" MinWidth="460" MinHeight="420"
+        Width="1000" Height="660" MinWidth="820" MinHeight="480"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
@@ -11,7 +11,8 @@
         FontFamily="Segoe UI">
     <!--
         Fenetre a onglets, donc redimensionnable et de hauteur fixe au demarrage : le patron du
-        depot pour ce cas. Le SizeToContent d'avant donnait 1218 px une fois la section d'injection
+        depot pour ce cas. Chaque onglet range ses sections sur deux colonnes, pour tenir sans
+        defiler sur un ecran 1080p. Le SizeToContent d'avant donnait 1218 px une fois la section d'injection
         de secrets ajoutee — plus haut que la zone de travail d'un ecran 1080p.
     -->
     <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
@@ -35,78 +36,86 @@
             <TabItem x:Name="TabGeneral" Header="{loc:T Settings_Tab_General}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="8,14,8,12">
-                    <TextBlock Text="{loc:T Settings_Language_Section}" FontWeight="SemiBold"
-                               FontSize="13" Margin="0,0,0,10"/>
-                    <!-- Application immediate : la fenetre se retraduit sous les yeux, ce qui est la
-                         demonstration la plus directe que la bascule fonctionne. Les noms de langue ne sont
-                         pas traduits — une langue s'ecrit dans sa propre langue. -->
-                    <ComboBox x:Name="CmbLanguage" Width="240" HorizontalAlignment="Left"
-                              SelectionChanged="Language_SelectionChanged"/>
+                <Grid Margin="8,14,8,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{loc:T Settings_Language_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,10"/>
+                        <!-- Application immediate : la fenetre se retraduit sous les yeux, ce qui est la
+                             demonstration la plus directe que la bascule fonctionne. Les noms de langue ne sont
+                             pas traduits — une langue s'ecrit dans sa propre langue. -->
+                        <ComboBox x:Name="CmbLanguage" Width="240" HorizontalAlignment="Left"
+                                  SelectionChanged="Language_SelectionChanged"/>
 
-                    <Separator Margin="0,12,0,10"/>
+                        <Separator Margin="0,12,0,10"/>
 
-                    <TextBlock Text="{loc:T Settings_Theme_Section}" FontWeight="SemiBold"
-                               FontSize="13" Margin="0,0,0,10"/>
-                    <ComboBox x:Name="CmbTheme" Width="240" HorizontalAlignment="Left"
-                              SelectionChanged="Theme_SelectionChanged"/>
+                        <TextBlock Text="{loc:T Settings_Theme_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,10"/>
+                        <ComboBox x:Name="CmbTheme" Width="240" HorizontalAlignment="Left"
+                                  SelectionChanged="Theme_SelectionChanged"/>
 
-                    <Separator Margin="0,12,0,10"/>
+                        <Separator Margin="0,12,0,10"/>
 
-                    <TextBlock Text="{loc:T Settings_Hotkey_Section}" FontWeight="SemiBold"
-                               FontSize="13" Margin="0,0,0,10"/>
+                        <TextBlock Text="{loc:T Settings_Hotkey_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,10"/>
 
-                    <TextBlock Text="{loc:T Settings_Hotkey_Modifiers}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                        <CheckBox x:Name="ChkCtrl"  Content="Ctrl"  Margin="0,0,16,0" VerticalContentAlignment="Center"/>
-                        <CheckBox x:Name="ChkAlt"   Content="Alt"   Margin="0,0,16,0" VerticalContentAlignment="Center"/>
-                        <CheckBox x:Name="ChkShift" Content="Shift" Margin="0,0,16,0" VerticalContentAlignment="Center"/>
-                        <CheckBox x:Name="ChkWin"   Content="Win"   VerticalContentAlignment="Center"/>
+                        <TextBlock Text="{loc:T Settings_Hotkey_Modifiers}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <CheckBox x:Name="ChkCtrl"  Content="Ctrl"  Margin="0,0,16,0" VerticalContentAlignment="Center"/>
+                            <CheckBox x:Name="ChkAlt"   Content="Alt"   Margin="0,0,16,0" VerticalContentAlignment="Center"/>
+                            <CheckBox x:Name="ChkShift" Content="Shift" Margin="0,0,16,0" VerticalContentAlignment="Center"/>
+                            <CheckBox x:Name="ChkWin"   Content="Win"   VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <TextBlock Text="{loc:T Settings_Hotkey_Key}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,0"/>
+                            <ComboBox x:Name="CmbKey" Width="120"/>
+                        </StackPanel>
+
+                        <TextBlock x:Name="TxtPreview" Foreground="{DynamicResource Brush.Accent}" FontSize="12"/>
                     </StackPanel>
+                    <Border Grid.Column="1" Width="1" HorizontalAlignment="Center"
+                            Background="{DynamicResource Brush.Border}"/>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{loc:T Settings_Tiles_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,6"/>
+                        <TextBlock Text="{loc:T Settings_Tiles_Help}"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Settings_Tiles_LeftHalf}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,8"/>
+                            <ComboBox  Grid.Row="0" Grid.Column="1" x:Name="CmbTriggerFirst"  Width="200" Margin="0,0,0,8"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Settings_Tiles_RightHalf}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,0"/>
+                            <ComboBox  Grid.Row="1" Grid.Column="1" x:Name="CmbTriggerSecond" Width="200"/>
+                        </Grid>
+                        <TextBlock x:Name="TxtTriggerWarn" Foreground="{DynamicResource Brush.Danger}" FontSize="11"
+                                   TextWrapping="Wrap" Visibility="Collapsed"/>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                        <TextBlock Text="{loc:T Settings_Hotkey_Key}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,0"/>
-                        <ComboBox x:Name="CmbKey" Width="120"/>
+                        <Separator Margin="0,12,0,10"/>
+
+                        <TextBlock Text="{loc:T Settings_Startup_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,10"/>
+                        <CheckBox x:Name="ChkAutoStart" Content="{loc:T Settings_Startup_WithWindows}"
+                                  VerticalContentAlignment="Center"/>
+                        <TextBlock x:Name="TxtAutoStartPath" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"
+                                   FontFamily="Consolas"/>
                     </StackPanel>
-
-                    <TextBlock x:Name="TxtPreview" Foreground="{DynamicResource Brush.Accent}" FontSize="12"/>
-
-                    <Separator Margin="0,12,0,10"/>
-
-                    <TextBlock Text="{loc:T Settings_Tiles_Section}" FontWeight="SemiBold"
-                               FontSize="13" Margin="0,0,0,6"/>
-                    <TextBlock Text="{loc:T Settings_Tiles_Help}"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"/>
-                    <Grid Margin="0,0,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T Settings_Tiles_LeftHalf}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,8"/>
-                        <ComboBox  Grid.Row="0" Grid.Column="1" x:Name="CmbTriggerFirst"  Width="200" Margin="0,0,0,8"/>
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:T Settings_Tiles_RightHalf}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,12,0"/>
-                        <ComboBox  Grid.Row="1" Grid.Column="1" x:Name="CmbTriggerSecond" Width="200"/>
-                    </Grid>
-                    <TextBlock x:Name="TxtTriggerWarn" Foreground="{DynamicResource Brush.Danger}" FontSize="11"
-                               TextWrapping="Wrap" Visibility="Collapsed"/>
-
-                    <Separator Margin="0,12,0,10"/>
-
-                    <TextBlock Text="{loc:T Settings_Startup_Section}" FontWeight="SemiBold"
-                               FontSize="13" Margin="0,0,0,10"/>
-                    <CheckBox x:Name="ChkAutoStart" Content="{loc:T Settings_Startup_WithWindows}"
-                              VerticalContentAlignment="Center"/>
-                    <TextBlock x:Name="TxtAutoStartPath" Margin="0,8,0,0"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"
-                               FontFamily="Consolas"/>
-                </StackPanel>
+                </Grid>
                 </ScrollViewer>
             </TabItem>
 
@@ -114,23 +123,105 @@
             <TabItem x:Name="TabIntegrations" Header="{loc:T Settings_Tab_Integrations}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="8,14,8,12">
-                    <TextBlock Text="{loc:T Settings_Claude_Section}" FontWeight="SemiBold"
-                               FontSize="13" Margin="0,0,0,10"/>
-                    <TextBlock Text="{loc:T Settings_Claude_ExtraArgs}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
-                    <TextBox x:Name="TxtClaudeArgs" FontFamily="Consolas" FontSize="12"
-                             Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                             ToolTip="{loc:T Settings_Claude_ArgsHint}"/>
+                <Grid Margin="8,14,8,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{loc:T Settings_Terminal_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,10"/>
+                        <TextBlock Text="{loc:T Settings_Terminal_Default}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                        <ComboBox x:Name="CmbDefaultTerminal" AutomationProperties.Name="{loc:T Settings_Terminal_Default}"
+                                  SelectionChanged="DefaultTerminal_Changed"/>
+                        <TextBlock x:Name="TxtTerminalAutoNote" Text="{loc:T Settings_Terminal_AutoNote}" Margin="0,6,0,0"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
-                    <Separator Margin="0,12,0,10"/>
+                        <TextBlock Text="{loc:T Settings_Terminal_Program}" Foreground="{DynamicResource Brush.TextLabel}"
+                                   Margin="0,10,0,4"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtTerminalExe" Grid.Column="0" FontFamily="Consolas" FontSize="12"
+                                     Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                     AutomationProperties.Name="{loc:T Settings_Terminal_Program}"
+                                     TextChanged="TerminalField_Changed"/>
+                            <Button x:Name="BtnBrowseTerminal" Grid.Column="1" Content="{loc:T Settings_Terminal_Browse}"
+                                    Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="BrowseTerminal_Click"/>
+                        </Grid>
+                        <TextBlock x:Name="TxtTerminalInvalid" Text="{loc:T Settings_Terminal_CustomInvalid}"
+                                   Foreground="{DynamicResource Brush.Danger}" FontSize="11" Margin="0,4,0,0"
+                                   TextWrapping="Wrap" Visibility="Collapsed"/>
 
-                    <TextBlock Text="{loc:T Settings_Network_Section}" FontWeight="SemiBold"
-                               FontSize="13" Margin="0,0,0,10"/>
-                    <CheckBox x:Name="ChkAutoFavicon" Content="{loc:T Settings_Network_AutoFavicon}"
-                              VerticalContentAlignment="Center"/>
-                    <TextBlock Text="{loc:T Settings_Network_AutoFaviconHint}" Margin="0,8,0,0"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
-                </StackPanel>
+                        <TextBlock Text="{loc:T Settings_Terminal_FolderArgs}" Foreground="{DynamicResource Brush.TextLabel}"
+                                   Margin="0,10,0,4"/>
+                        <TextBox x:Name="TxtTerminalFolderArgs" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"
+                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                 AutomationProperties.Name="{loc:T Settings_Terminal_FolderArgs}"
+                                 TextChanged="TerminalField_Changed"/>
+                        <TextBlock Text="{loc:T Settings_Terminal_CommandArgs}" Foreground="{DynamicResource Brush.TextLabel}"
+                                   Margin="0,10,0,4"/>
+                        <TextBox x:Name="TxtTerminalCommandArgs" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"
+                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                 AutomationProperties.Name="{loc:T Settings_Terminal_CommandArgs}"
+                                 TextChanged="TerminalField_Changed"/>
+                        <TextBlock x:Name="TxtTerminalNoCommand" Text="{loc:T Settings_Terminal_NoCommand}"
+                                   Foreground="{DynamicResource Brush.Danger}" FontSize="11" Margin="0,4,0,0"
+                                   TextWrapping="Wrap" Visibility="Collapsed"/>
+                        <TextBlock Text="{loc:T Settings_Terminal_ArgsHint}" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                        <Button x:Name="BtnResetTerminal" Content="{loc:T Settings_Terminal_Reset}"
+                                Style="{StaticResource SecondaryButton}" Margin="0,8,0,0" HorizontalAlignment="Left"
+                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                Click="ResetTerminal_Click"/>
+
+                        <TextBlock Text="{loc:T Settings_Terminal_Preview}" Foreground="{DynamicResource Brush.TextLabel}"
+                                   Margin="0,12,0,4"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtTerminalPreview" Grid.Column="0" IsReadOnly="True" TextWrapping="Wrap"
+                                     FontFamily="Consolas" FontSize="12" Padding="6,5"
+                                     Background="{DynamicResource Brush.SurfaceHover}"
+                                     BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                     AutomationProperties.Name="{loc:T Settings_Terminal_Preview}"/>
+                            <Button x:Name="BtnTestTerminal" Grid.Column="1" Content="{loc:T Settings_Terminal_Test}"
+                                    Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" VerticalAlignment="Top"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    ToolTip="{loc:T Settings_Terminal_TestTip}"
+                                    Click="TestTerminal_Click"/>
+                        </Grid>
+                        <TextBlock Text="{loc:T Settings_Terminal_Hint}" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Border Grid.Column="1" Width="1" HorizontalAlignment="Center"
+                            Background="{DynamicResource Brush.Border}"/>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{loc:T Settings_Claude_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,10"/>
+                        <TextBlock Text="{loc:T Settings_Claude_ExtraArgs}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                        <TextBox x:Name="TxtClaudeArgs" FontFamily="Consolas" FontSize="12"
+                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                 ToolTip="{loc:T Settings_Claude_ArgsHint}"
+                                 TextChanged="ClaudeArgs_Changed"/>
+
+                        <Separator Margin="0,12,0,10"/>
+
+                        <TextBlock Text="{loc:T Settings_Network_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,10"/>
+                        <CheckBox x:Name="ChkAutoFavicon" Content="{loc:T Settings_Network_AutoFavicon}"
+                                  VerticalContentAlignment="Center"/>
+                        <TextBlock Text="{loc:T Settings_Network_AutoFaviconHint}" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
                 </ScrollViewer>
             </TabItem>
 
@@ -141,83 +232,93 @@
             <TabItem x:Name="TabSecrets" Header="{loc:T Settings_Tab_Secrets}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="8,14,8,12">
-                    <TextBlock Text="{loc:T Settings_Inject_CliPath}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
-                    <Grid Margin="0,0,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="TxtBwPath" Grid.Column="0" FontFamily="Consolas" FontSize="12"
-                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
-                        <Button x:Name="BtnDetectBw" Grid.Column="1" Content="{loc:T Settings_Inject_Detect}"
-                                Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
-                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                                Click="DetectBw_Click"/>
-                    </Grid>
-                    <TextBlock Text="{loc:T Settings_Inject_CliHint}" Margin="0,0,0,14"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                <Grid Margin="8,14,8,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{loc:T Settings_Inject_CliPath}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtBwPath" Grid.Column="0" FontFamily="Consolas" FontSize="12"
+                                     Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
+                            <Button x:Name="BtnDetectBw" Grid.Column="1" Content="{loc:T Settings_Inject_Detect}"
+                                    Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="DetectBw_Click"/>
+                        </Grid>
+                        <TextBlock Text="{loc:T Settings_Inject_CliHint}" Margin="0,0,0,14"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
-                    <!-- La CLI GitHub sert aux inventaires .vault : meme patron que celle de
-                         Bitwarden, vide = detection, chemin disparu = detection. -->
-                    <TextBlock Text="{loc:T Settings_Inject_GhPath}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
-                    <Grid Margin="0,0,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="TxtGhPath" Grid.Column="0" FontFamily="Consolas" FontSize="12"
-                                 Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
-                        <Button x:Name="BtnDetectGh" Grid.Column="1" Content="{loc:T Settings_Inject_Detect}"
-                                Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
-                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                                Click="DetectGh_Click"/>
-                    </Grid>
-                    <TextBlock Text="{loc:T Settings_Inject_GhHint}" Margin="0,0,0,14"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                        <!-- La CLI GitHub sert aux inventaires .vault : meme patron que celle de
+                             Bitwarden, vide = detection, chemin disparu = detection. -->
+                        <TextBlock Text="{loc:T Settings_Inject_GhPath}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtGhPath" Grid.Column="0" FontFamily="Consolas" FontSize="12"
+                                     Padding="6,5" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
+                            <Button x:Name="BtnDetectGh" Grid.Column="1" Content="{loc:T Settings_Inject_Detect}"
+                                    Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="DetectGh_Click"/>
+                        </Grid>
+                        <TextBlock Text="{loc:T Settings_Inject_GhHint}" Margin="0,0,0,14"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
-                    <TextBlock Text="{loc:T Settings_Inject_Org}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
-                    <TextBox x:Name="TxtVaultOrg" Padding="6,5" FontSize="12"
-                             BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
-                    <TextBlock Text="{loc:T Settings_Inject_OrgHint}" Margin="0,6,0,14"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
-
-                    <TextBlock Text="{loc:T Settings_Inject_Collection}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
-                    <TextBox x:Name="TxtVaultCollection" Padding="6,5" FontSize="12"
-                             BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
-                    <TextBlock Text="{loc:T Settings_Inject_CollectionHint}" Margin="0,6,0,14"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                        <TextBlock Text="{loc:T Settings_Inject_ClearAfter}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,10,0"/>
-                        <TextBox x:Name="TxtClearSeconds" Width="56" Padding="6,5" FontSize="12"
-                                 TextAlignment="Right"
+                        <TextBlock Text="{loc:T Settings_Inject_Org}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                        <TextBox x:Name="TxtVaultOrg" Padding="6,5" FontSize="12"
                                  BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
-                        <TextBlock Text="{loc:T Settings_Inject_Seconds}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="10,0,0,0"/>
-                    </StackPanel>
+                        <TextBlock Text="{loc:T Settings_Inject_OrgHint}" Margin="0,6,0,14"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
 
-                    <!-- Synchronisation : la CLI travaille sur un cache local, et un item ajoute au
-                         coffre n'existe pas pour DockPad tant qu'elle n'a pas rattrape. Le mot de
-                         passe maitre est demande par la fenetre du dossier Secrets/, jamais ici. -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                        <Button x:Name="BtnSyncVault" Content="{loc:T Settings_Inject_Sync}"
-                                Style="{StaticResource SecondaryButton}"
-                                BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
-                                Click="SyncVault_Click"/>
-                        <TextBlock x:Name="TxtLastSync" VerticalAlignment="Center" Margin="12,0,0,0"
-                                   FontSize="11" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource Brush.TextMuted}"/>
+                        <TextBlock Text="{loc:T Settings_Inject_Collection}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                        <TextBox x:Name="TxtVaultCollection" Padding="6,5" FontSize="12"
+                                 BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
+                        <TextBlock Text="{loc:T Settings_Inject_CollectionHint}" Margin="0,6,0,14"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <TextBlock Text="{loc:T Settings_Inject_SyncHint}" Margin="0,0,0,16"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                    <Border Grid.Column="1" Width="1" HorizontalAlignment="Center"
+                            Background="{DynamicResource Brush.Border}"/>
+                    <StackPanel Grid.Column="2">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <TextBlock Text="{loc:T Settings_Inject_ClearAfter}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,10,0"/>
+                            <TextBox x:Name="TxtClearSeconds" Width="56" Padding="6,5" FontSize="12"
+                                     TextAlignment="Right"
+                                     BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
+                            <TextBlock Text="{loc:T Settings_Inject_Seconds}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Brush.TextHint}" FontSize="11" Margin="10,0,0,0"/>
+                        </StackPanel>
 
-                    <CheckBox x:Name="ChkInjectMenu" Content="{loc:T Settings_Inject_MenuEntry}"
-                              VerticalContentAlignment="Center"/>
-                    <TextBlock Text="{loc:T Settings_Inject_MenuHint}" Margin="0,8,0,0"
-                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
-                </StackPanel>
+                        <!-- Synchronisation : la CLI travaille sur un cache local, et un item ajoute au
+                             coffre n'existe pas pour DockPad tant qu'elle n'a pas rattrape. Le mot de
+                             passe maitre est demande par la fenetre du dossier Secrets/, jamais ici. -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <Button x:Name="BtnSyncVault" Content="{loc:T Settings_Inject_Sync}"
+                                    Style="{StaticResource SecondaryButton}"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="SyncVault_Click"/>
+                            <TextBlock x:Name="TxtLastSync" VerticalAlignment="Center" Margin="12,0,0,0"
+                                       FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource Brush.TextMuted}"/>
+                        </StackPanel>
+                        <TextBlock Text="{loc:T Settings_Inject_SyncHint}" Margin="0,0,0,16"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+
+                        <CheckBox x:Name="ChkInjectMenu" Content="{loc:T Settings_Inject_MenuEntry}"
+                                  VerticalContentAlignment="Center"/>
+                        <TextBlock Text="{loc:T Settings_Inject_MenuHint}" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
                 </ScrollViewer>
             </TabItem>
         </TabControl>
