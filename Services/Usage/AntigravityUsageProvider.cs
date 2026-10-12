@@ -57,7 +57,7 @@ public sealed class AntigravityUsageProvider : IUsageProvider
     /// Identité visuelle, déclarée une seule fois : la sonde et l'instantané la lisent ici.
     /// </summary>
     private const string PastilleGlyph = "A";
-    private const string PastilleAccent = "#1A73E8";
+    private const string PastilleAccent = ProviderLogos.AntigravityAccent;
 
     public AntigravityUsageProvider(Func<string?>? readCredential = null, string? home = null, string? storePath = null,
                                     HttpClient? http = null, Func<DateTimeOffset>? clock = null)

@@ -492,6 +492,12 @@ This cannot be undone.</value>
   <data name="Picker_Title" xml:space="preserve">
     <value>Open with…</value>
   </data>
+  <data name="Preset_AntigravityTerminal_Desc" xml:space="preserve">
+    <value>Opens a terminal in this folder and starts Antigravity</value>
+  </data>
+  <data name="Preset_AntigravityTerminal_Name" xml:space="preserve">
+    <value>Open an Antigravity terminal</value>
+  </data>
   <data name="Preset_ClaudeTerminal_Desc" xml:space="preserve">
     <value>Opens a terminal in this folder and starts Claude Code</value>
   </data>

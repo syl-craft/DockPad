@@ -492,6 +492,12 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Picker_Title" xml:space="preserve">
     <value>0uvr1r 4v3c…</value>
   </data>
+  <data name="Preset_AntigravityTerminal_Desc" xml:space="preserve">
+    <value>0uvr3 un t3rm1n4l d4n5 c3 d05513r 3t l4nc3 4nt1gr4v1ty</value>
+  </data>
+  <data name="Preset_AntigravityTerminal_Name" xml:space="preserve">
+    <value>0uvr1r un t3rm1n4l 4nt1gr4v1ty</value>
+  </data>
   <data name="Preset_ClaudeTerminal_Desc" xml:space="preserve">
     <value>0uvr3 un t3rm1n4l d4n5 c3 d05513r 3t l4nc3 Cl4ud3 C0d3</value>
   </data>
