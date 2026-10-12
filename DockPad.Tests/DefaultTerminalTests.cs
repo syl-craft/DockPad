@@ -156,11 +156,11 @@ public class DefaultTerminalTests
         var wt = Info("wt", @"C:\wt.exe",
             @"-w ""{name}"" new-tab --startingDirectory ""{folder}""",
             @"-w ""{name}"" new-tab --startingDirectory ""{folder}"" -- {command}");
-        var cfg = new TerminalConfig { StartingDirectory = @"C:\dev\Shope", RunCommand = "claude" };
+        var cfg = new TerminalConfig { StartingDirectory = @"C:\dev\Boutique", RunCommand = "claude" };
 
-        var args = TerminalDetectionService.BuildArgs(wt, cfg, "Shope - specs");
+        var args = TerminalDetectionService.BuildArgs(wt, cfg, "Boutique - specs");
 
-        Assert.Equal(@"-w ""Shope - specs"" new-tab --startingDirectory ""C:\dev\Shope"" -- claude", args);
+        Assert.Equal(@"-w ""Boutique - specs"" new-tab --startingDirectory ""C:\dev\Boutique"" -- claude", args);
     }
 
     [Theory]
@@ -222,7 +222,7 @@ public class DefaultTerminalTests
     [Fact]
     public void CouleurDOnglet_VarieDUnProjetALAutre()
     {
-        string[] projects = ["DockPad", "Shope-stage", "Tandoor", "AudioBox-Pro", "Backup-All-2", "Qnap"];
+        string[] projects = ["DockPad", "Boutique", "Recettes", "Atelier", "Sauvegardes", "Maison"];
 
         Assert.True(projects.Select(TerminalDetectionService.TabColor).Distinct().Count() > 1);
     }
@@ -249,16 +249,16 @@ public class DefaultTerminalTests
     [Fact]
     public void PowerShell_EchappeLesGuillemetsDesArguments()
     {
-        // Le cas des tuiles qui reprennent une session : --remote-control "Train de Noël".
+        // Le cas des tuiles qui reprennent une session : --remote-control "Projet de démo".
         var cfg = new TerminalConfig
         {
             StartingDirectory = @"C:\dev",
-            RunCommand = @"claude --remote-control ""Train de Noël""",
+            RunCommand = @"claude --remote-control ""Projet de démo""",
         };
 
         var args = TerminalDetectionService.BuildArgs(WindowsPowerShell, cfg);
 
-        Assert.Equal(@"-NoExit -Command ""Set-Location 'C:\dev'; claude --remote-control \""Train de Noël\""""", args);
+        Assert.Equal(@"-NoExit -Command ""Set-Location 'C:\dev'; claude --remote-control \""Projet de démo\""""", args);
     }
 
     [Fact]
@@ -267,12 +267,12 @@ public class DefaultTerminalTests
         var cfg = new TerminalConfig
         {
             StartingDirectory = @"C:\dev",
-            RunCommand = @"claude --remote-control ""Train de Noël""",
+            RunCommand = @"claude --remote-control ""Projet de démo""",
             NewTab = true,
         };
 
         var args = TerminalDetectionService.BuildArgs(Wt, cfg);
 
-        Assert.Equal($@"-w ""dev"" new-tab --tabColor {TerminalDetectionService.TabColor("dev")} --startingDirectory ""C:\dev"" -- claude --remote-control ""Train de Noël""", args);
+        Assert.Equal($@"-w ""dev"" new-tab --tabColor {TerminalDetectionService.TabColor("dev")} --startingDirectory ""C:\dev"" -- claude --remote-control ""Projet de démo""", args);
     }
 }

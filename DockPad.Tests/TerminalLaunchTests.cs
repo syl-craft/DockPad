@@ -32,12 +32,12 @@ public class TerminalLaunchTests
     [Fact]
     public void Commande_RetrouveSesGuillemets()
     {
-        // Windows a découpé « "C:\Program Files\codex.exe" » et « --remote-control "Train de Noël" » :
+        // Windows a découpé « "C:\Program Files\codex.exe" » et « --remote-control "Projet de démo" » :
         // les recoller sans guillemets couperait le chemin et le titre à l'espace.
         var request = TerminalRequest.Parse(
-            ["--terminal", @"C:\dev\.", "--", @"C:\Program Files\OpenAI\codex.exe", "--remote-control", "Train de Noël"]);
+            ["--terminal", @"C:\dev\.", "--", @"C:\Program Files\OpenAI\codex.exe", "--remote-control", "Projet de démo"]);
 
-        Assert.Equal(@"""C:\Program Files\OpenAI\codex.exe"" --remote-control ""Train de Noël""", request?.Command);
+        Assert.Equal(@"""C:\Program Files\OpenAI\codex.exe"" --remote-control ""Projet de démo""", request?.Command);
     }
 
     [Fact]
