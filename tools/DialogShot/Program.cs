@@ -130,6 +130,12 @@ internal static class Program
             // Trois fenetres n'avaient aucune couverture de capture : celles d'ajout/modification
             // d'une tuile et d'une entree de registre. Un defaut de couleur y serait passe inapercu.
             "shortcut" => new ShortcutDialog(row: 0, col: 0),
+            // Tuile Terminal : le terminal n'est plus choisi ici, il vient des Options.
+            "shortcut-terminal" => new ShortcutDialog(new DockPad.Models.ShortcutEntry
+            {
+                Name = "Demo", Type = DockPad.Models.ShortcutType.OpenTerminal, Command = @"C:\dev\Demo",
+                Terminal = new DockPad.Models.TerminalConfig { StartingDirectory = @"C:\dev\Demo", RunCommand = "claude" },
+            }),
             "entry" => new EntryDialog(),
             // La fenetre d'injection traverse quatre etats, dont deux valent une relecture : la
             // saisie du mot de passe et le compte-rendu d'echec. On les pose par reflexion, comme

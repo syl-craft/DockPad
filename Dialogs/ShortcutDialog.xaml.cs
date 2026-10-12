@@ -12,7 +12,10 @@ public partial class ShortcutDialog : Window
 {
     public ShortcutEntry Entry { get; private set; }
 
-    private readonly List<TerminalInfo> _terminals;
+    /// <summary>
+    /// Terminal des Options, lancé par toutes les tuiles Terminal ; <c>null</c> si aucun n'est installé.
+    /// </summary>
+    private readonly TerminalInfo? _terminal = TerminalDetectionService.ResolveDefault();
 
     public ShortcutDialog(ShortcutEntry? existing = null, int row = 0, int col = 0)
     {
@@ -54,8 +57,10 @@ public partial class ShortcutDialog : Window
             ? Entry.IconPath
             : IconStoreService.ResolveProfilePath(Entry.IconProfilePath) ?? "";
 
-        _terminals = TerminalDetectionService.Detect();
-        CmbTerminal.ItemsSource = _terminals;
+        TxtTerminalName.Text = _terminal?.DisplayName ?? Loc.T("Shortcut_Terminal_None");
+        ChkNewTab.Visibility = _terminal?.SupportsNewTab == true ? Visibility.Visible : Visibility.Collapsed;
+        if (Entry.Type == ShortcutType.OpenTerminal)
+            RestoreTerminalFields(Entry.Terminal ?? new TerminalConfig { StartingDirectory = Entry.Command });
 
         SetTypeCombo(Entry.Type);
         TxtIconPath.TextChanged += (_, _) => RefreshIconPreview();
@@ -102,11 +107,7 @@ public partial class ShortcutDialog : Window
         }
         else if (isTerminal)
         {
-            // Pré-remplir depuis Entry.Terminal si disponible
-            if (Entry.Terminal != null && CmbTerminal.SelectedItem == null)
-                RestoreTerminalFields(Entry.Terminal);
-            else if (CmbTerminal.SelectedItem == null && _terminals.Count > 0)
-                CmbTerminal.SelectedIndex = 0;
+            UpdatePreview();
         }
         else if (isProcessSwitch)
         {
@@ -126,71 +127,13 @@ public partial class ShortcutDialog : Window
 
     private void RestoreTerminalFields(TerminalConfig cfg)
     {
-        // Chercher le terminal dans la liste
-        var match = _terminals.FirstOrDefault(t =>
-            string.Equals(t.ExePath, cfg.ExePath, StringComparison.OrdinalIgnoreCase));
-
-        if (match == null && !string.IsNullOrEmpty(cfg.ExePath))
-        {
-            // Terminal custom non détecté — l'ajouter
-            match = new TerminalInfo
-            {
-                DisplayName    = Path.GetFileNameWithoutExtension(cfg.ExePath),
-                ExePath        = cfg.ExePath,
-                SupportsNewTab = Path.GetFileNameWithoutExtension(cfg.ExePath)
-                                     .Equals("wt", StringComparison.OrdinalIgnoreCase),
-            };
-            _terminals.Add(match);
-            CmbTerminal.ItemsSource = null;
-            CmbTerminal.ItemsSource = _terminals;
-        }
-
-        CmbTerminal.SelectedItem = match;
-        TxtTerminalDir.Text         = cfg.StartingDirectory;
-        TxtTerminalCommand.Text     = cfg.RunCommand;
-        ChkNewTab.IsChecked         = cfg.NewTab;
-        TxtTerminalExtraArgs.Text   = cfg.ExtraArgs;
+        TxtTerminalDir.Text       = cfg.StartingDirectory;
+        TxtTerminalCommand.Text   = cfg.RunCommand;
+        ChkNewTab.IsChecked       = cfg.NewTab;
+        TxtTerminalExtraArgs.Text = cfg.ExtraArgs;
     }
 
     // ── Terminal ──────────────────────────────────────────────────────────────
-
-    private void CmbTerminal_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ChkNewTab == null) return;
-        var supportsTab = (CmbTerminal.SelectedItem as TerminalInfo)?.SupportsNewTab ?? false;
-        ChkNewTab.Visibility = supportsTab ? Visibility.Visible : Visibility.Collapsed;
-        UpdatePreview();
-    }
-
-    private void BrowseTerminal_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new OpenFileDialog
-        {
-            Title  = Loc.T("Shortcut_PickTerminal"),
-            Filter = Loc.T("Shortcut_PickExe_Filter")
-        };
-        if (dlg.ShowDialog() != true) return;
-
-        // Vérifier si déjà dans la liste
-        var existing = _terminals.FirstOrDefault(t =>
-            string.Equals(t.ExePath, dlg.FileName, StringComparison.OrdinalIgnoreCase));
-
-        if (existing == null)
-        {
-            existing = new TerminalInfo
-            {
-                DisplayName    = Path.GetFileNameWithoutExtension(dlg.FileName),
-                ExePath        = dlg.FileName,
-                SupportsNewTab = Path.GetFileNameWithoutExtension(dlg.FileName)
-                                     .Equals("wt", StringComparison.OrdinalIgnoreCase),
-            };
-            _terminals.Add(existing);
-            CmbTerminal.ItemsSource = null;
-            CmbTerminal.ItemsSource = _terminals;
-        }
-
-        CmbTerminal.SelectedItem = existing;
-    }
 
     private void BrowseTerminalDir_Click(object sender, RoutedEventArgs e)
     {
@@ -265,21 +208,23 @@ public partial class ShortcutDialog : Window
     private void UpdatePreview()
     {
         if (TxtCmdPreview == null) return;
-        var cfg = BuildTerminalConfig();
-        if (cfg == null) { TxtCmdPreview.Text = ""; return; }
+        if (_terminal == null) { TxtCmdPreview.Text = ""; return; }
 
-        var args = TerminalDetectionService.BuildArgs(cfg);
+        var args = TerminalDetectionService.BuildArgs(_terminal, BuildTerminalConfig());
         TxtCmdPreview.Text = string.IsNullOrEmpty(args)
-            ? $"\"{cfg.ExePath}\""
-            : $"\"{cfg.ExePath}\" {args}";
+            ? $"\"{_terminal.ExePath}\""
+            : $"\"{_terminal.ExePath}\" {args}";
     }
 
-    private TerminalConfig? BuildTerminalConfig()
+    /// <remarks>
+    /// <c>ExePath</c> n'est pas lu au lancement : il garde le terminal du moment, pour l'icône de
+    /// la tuile et pour une version antérieure de DockPad.
+    /// </remarks>
+    private TerminalConfig BuildTerminalConfig()
     {
-        if (CmbTerminal.SelectedItem is not TerminalInfo terminal) return null;
         return new TerminalConfig
         {
-            ExePath           = terminal.ExePath,
+            ExePath           = _terminal?.ExePath ?? "",
             StartingDirectory = TxtTerminalDir.Text.Trim(),
             RunCommand        = TxtTerminalCommand.Text.Trim(),
             NewTab            = ChkNewTab.IsChecked == true,
@@ -372,13 +317,12 @@ public partial class ShortcutDialog : Window
 
         if (type == ShortcutType.OpenTerminal)
         {
-            var cfg = BuildTerminalConfig();
-            if (cfg == null)
+            if (_terminal == null)
             {
-                AppDialog.Warning(Loc.T("Shortcut_Err_NoTerminal"), owner: this);
-                CmbTerminal.Focus();
+                AppDialog.Warning(Loc.T("Quick_NoTerminal"), owner: this);
                 return;
             }
+            var cfg = BuildTerminalConfig();
             Entry.Name            = name;
             Entry.Type            = type;
             Entry.Terminal        = cfg;

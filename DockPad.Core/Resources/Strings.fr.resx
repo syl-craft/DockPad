@@ -630,7 +630,7 @@ Cette action est irréversible.</value>
     <value>Réduire</value>
   </data>
   <data name="Quick_NoTerminal" xml:space="preserve">
-    <value>Aucun terminal trouvé (wt, pwsh, powershell, cmd).</value>
+    <value>Aucun terminal trouvé (Windows Terminal, PowerShell 7, Windows PowerShell).</value>
   </data>
   <data name="Quick_Page" xml:space="preserve">
     <value>Page {0}</value>
@@ -777,9 +777,6 @@ Cette action est irréversible.</value>
   <data name="Shortcut_Err_NameRequired" xml:space="preserve">
     <value>Le nom est obligatoire.</value>
   </data>
-  <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
-    <value>Veuillez sélectionner un terminal.</value>
-  </data>
   <data name="Shortcut_Exe" xml:space="preserve">
     <value>Exécutable *</value>
   </data>
@@ -837,9 +834,6 @@ Cette action est irréversible.</value>
   <data name="Shortcut_PickStartFolder" xml:space="preserve">
     <value>Choisir le dossier de départ</value>
   </data>
-  <data name="Shortcut_PickTerminal" xml:space="preserve">
-    <value>Choisir un terminal</value>
-  </data>
   <data name="Shortcut_Preview" xml:space="preserve">
     <value>Aperçu :</value>
   </data>
@@ -871,10 +865,7 @@ Cette action est irréversible.</value>
     <value>Chemin du dossier à ouvrir. Laissez vide pour le répertoire par défaut.</value>
   </data>
   <data name="Shortcut_Terminal" xml:space="preserve">
-    <value>Terminal *</value>
-  </data>
-  <data name="Shortcut_Terminal_Tip" xml:space="preserve">
-    <value>Choisir un exécutable de terminal</value>
+    <value>Terminal</value>
   </data>
   <data name="Shortcut_Title" xml:space="preserve">
     <value>Raccourci rapide</value>
@@ -905,9 +896,6 @@ Cette action est irréversible.</value>
   </data>
   <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
     <value>Texte recherché dans le titre des fenêtres ouvertes (ex: Calculatrice)</value>
-  </data>
-  <data name="Terminal_Cmd" xml:space="preserve">
-    <value>Invite de commandes (cmd)</value>
   </data>
   <data name="Type_Browser" xml:space="preserve">
     <value>Navigateur</value>
@@ -1684,5 +1672,26 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   </data>
   <data name="GitHub_Failed_Title" xml:space="preserve">
     <value>Rien n'a été envoyé à GitHub</value>
+  </data>
+  <data name="Shortcut_Terminal_None" xml:space="preserve">
+    <value>Aucun terminal installé</value>
+  </data>
+  <data name="Shortcut_Terminal_FromOptions" xml:space="preserve">
+    <value>Toutes les tuiles Terminal ouvrent le terminal par défaut, réglé dans Options → Intégrations.</value>
+  </data>
+  <data name="Settings_Terminal_Section" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="Settings_Terminal_Default" xml:space="preserve">
+    <value>Terminal par défaut</value>
+  </data>
+  <data name="Settings_Terminal_Auto" xml:space="preserve">
+    <value>Automatique (Windows Terminal, puis PowerShell)</value>
+  </data>
+  <data name="Settings_Terminal_Missing" xml:space="preserve">
+    <value>{0} (non installé)</value>
+  </data>
+  <data name="Settings_Terminal_Hint" xml:space="preserve">
+    <value>Ouvert par les tuiles Terminal et par les prédéfinis Claude, Codex et PowerShell. Après un changement, réinstallez ces prédéfinis depuis ☰ → Raccourcis prédéfinis.</value>
   </data>
 </root>

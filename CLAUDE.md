@@ -126,7 +126,7 @@ Services/
     ShortcutSearch.cs                     Filtre les raccourcis par nom pour la barre de recherche
     ShortcutService.cs                   Load/Save des tuiles d'une grille (shortcuts.json ou favorites.json)
     TileHintMap.cs                        Correspondance touche ↔ case de l'overlay + choix des modificateurs
-    TerminalDetectionService.cs          Détection des terminaux installés + construction des arguments
+    TerminalDetectionService.cs          Terminal par défaut des Options : détection (wt, pwsh, powershell), résolution, arguments
     LinePipeService.cs                   Relais d'une ligne entre instances (URL, fichier a injecter) — la mecanique des deux pipes
     UrlPipeService.cs                    Facade sur LinePipeService pour DockPad_UrlPipe
     StartupRelay.cs                      Rendre la main à l'instance résidente AVANT de construire WPF
@@ -530,7 +530,7 @@ favori sans jamais ouvrir le lien.
 | `RunCommand` | Lance un exécutable ou une commande shell | ex: `notepad.exe`, `"C:\app.exe" arg` | bleu |
 | `OpenFolder` | Ouvre un dossier dans l'Explorateur | chemin du dossier | ambre |
 | `OpenUrl` | Ouvre une URL dans le navigateur par défaut | URL complète | vert |
-| `OpenTerminal` | Ouvre un terminal dans un dossier (wt → pwsh → powershell → cmd) | chemin du dossier | violet |
+| `OpenTerminal` | Ouvre le **terminal par défaut des Options** dans un dossier, et y lance une commande | chemin du dossier | violet |
 | `SwitchToProcess` | Bascule vers un processus existant (même cmdline) ou le lance | `processName args` (tooltip) | rouge |
 
 ### SwitchToProcess
@@ -580,6 +580,7 @@ Rétrocompatible JSON : `SearchMode` absent → `ByProcessName` par défaut
 - Affiche le chemin de l'exécutable utilisé pour la clé de démarrage automatique
 - Affiche la version de l'application (ex: `v1.5.1`) en bas à gauche du footer, lue depuis `Assembly.GetExecutingAssembly()`
 - **Réseau — Télécharger l'icône du site pour les raccourcis web** : voir *Icône automatique des tuiles web* ci-dessus
+- **Terminal par défaut** (onglet *Intégrations*) : `Automatique` (Windows Terminal, puis PowerShell 7, puis Windows PowerShell), ou l'un des trois s'il est installé. Stocké dans `settings.json` (`defaultTerminal` : `wt`, `pwsh`, `powershell` ; `""` = automatique). Voir « Terminal par défaut » ci-dessous
 - **Claude Code — Arguments supplémentaires** : champ texte libre pour passer des options à `claude` (ex: `--enable-auto-mode`), stocké dans `HKCU\Software\DockPad\Settings\ClaudeArgs`, appliqué au prédéfini "Ouvrir un terminal Claude"
 
 ### Sélecteur de navigateur
@@ -1606,12 +1607,38 @@ rédacteur d'`inject-create` est d'ailleurs factice et ne sera jamais appelé.
 
 | Nom | Cible | Commande |
 | ----- | ------- | --------- |
-| Ouvrir un terminal Claude | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- claude` |
+| Ouvrir un terminal Claude | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- claude` (avec Windows Terminal ; le terminal suit le réglage « Terminal par défaut ») |
 | Ouvrir un terminal Codex | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V" -- "<chemin absolu de codex.exe>"` (nom nu `codex` en repli) (décalque du précédent, **sans réglage d'arguments** : celui de Claude existe parce qu'un besoin réel l'a demandé. Icône : **le logo ChatGPT**, extrait une seule fois en `.ico` dans `%APPDATA%\DockPad\icons\`. Le seul exécutable qui le porte vit sous `WindowsApps\OpenAI.ChatGPT-Desktop_<version>_…`, chemin qui deviendrait faux à la prochaine mise à jour de ChatGPT et laisserait une icône cassée dans le menu de Windows ; la copie du profil, elle, survit aux mises à jour **et** à la désinstallation. `WindowsApps` ne s'énumère pas (ACL), mais Windows publie `PackageRootFolder` sous une clé HKCU lisible sans privilège. **On y cherche le préfixe `OpenAI.` et non `OpenAI.ChatGPT`** : l'application s'est appelée `OpenAI.ChatGPT-Desktop`, puis `OpenAI.Codex` tout en gardant « ChatGPT » pour nom affiché et `ChatGPT.exe` pour binaire — chercher le nom du paquet, c'est suivre une décision de l'éditeur. **Et l'exécutable est exigé par son nom, pas préféré** : le paquet en contient sept, dont `chrome_proxy.exe`, un service d'élévation et un `Codex.exe` qui n'a justement pas d'icône ; un repli « premier venu » poserait l'un d'eux sans qu'on le voie. **Le logo est réextrait à chaque construction et réécrit seulement s'il a changé** : un cache posé une fois pour toutes serait faux le jour où l'éditeur change de logo. À défaut de ChatGPT, on retombe sur `codex.exe` — cherché comme `bw.exe` l'est : `PATH`, puis les racines d'installation en récursif (`%LOCALAPPDATA%\Programs\OpenAI`, `Microsoft\WinGet\Packages`), puis le `vendor` du paquet **npm**, seul cas où le `PATH` ne suffit pas car il n'y met que `codex.cmd`. **Le disque est consulté même quand le `PATH` échoue** : celui d'un processus est figé à son démarrage, donc Codex installé pendant que DockPad tourne n'y apparaît pas — cas vécu. Ni `codex.exe` ni son équivalent npm n'embarquent d'icône, mesuré |
-| Ouvrir dans PowerShell | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V"` (pwsh/powershell fallback) |
+| Ouvrir dans PowerShell | FolderBackground | `wt.exe -w 0 new-tab --startingDirectory "%V"` (avec Windows Terminal ; suit le réglage « Terminal par défaut ») |
 | Ouvrir dans Visual Studio Code | FolderBackground | `code "%V"` |
 | Ouvrir dans SQL Server Management Studio | FolderBackground | `ssms.exe "%V"` |
 | Ouvrir dans GitHub Desktop | FolderBackground | `"%LocalAppData%\GitHubDesktop\GitHubDesktop.exe" --cli-open="%V\."` (flag interne utilisé par le shim `github` — ajoute ET ouvre le dépôt, sans fenêtre console ; écrit en `REG_EXPAND_SZ` car install per-user vs clé HKCR machine-wide ; `\.` neutralise le backslash final des racines de lecteur ; proposé uniquement si GitHub Desktop ≥ 3.4.14 est installé) |
+
+### Terminal par défaut (`TerminalDetectionService`)
+
+Un seul réglage décide du terminal des prédéfinis Claude, Codex et PowerShell **et** de toutes les
+tuiles `OpenTerminal`. Changer de terminal ne demande donc ni de modifier les tuiles une par une, ni
+de réécrire leurs fichiers.
+
+- **`Resolve(réglage, installés)` est pur** : le terminal choisi s'il est installé, sinon le premier
+  dans l'ordre de `Detect()` — vide, inconnu (`cmd` d'une version antérieure) ou désinstallé valent
+  Automatique. `ResolveDefault()` le compose avec le réglage et la détection
+- **`BuildArgs(terminal, config)` est le seul constructeur d'arguments**, pour les prédéfinis (dossier
+  `%V`) comme pour les tuiles. Sous PowerShell, un chemin entre guillemets en tête de commande est
+  préfixé de `&` — sinon PowerShell l'affiche au lieu de l'exécuter — et les guillemets sont échappés
+  en `\"`, sans quoi ils fermeraient ceux de `-Command`
+- **Le `terminal.exePath` d'une tuile n'est plus lu au lancement.** Il reste écrit (le terminal du
+  moment, pour l'icône) et dans les fichiers existants : un retour arrière de version retrouve ses
+  tuiles. La fenêtre d'une tuile n'a plus de choix de terminal, seulement le nom de celui des Options
+- **En Automatique avec Windows Terminal, les commandes sont celles d'avant à l'octet près** : un
+  écart ferait afficher « mise à jour disponible » sur des prédéfinis installés qui fonctionnent. Des
+  tests le figent, pour les prédéfinis comme pour les tuiles
+- **Changer de terminal fait passer les prédéfinis installés à « mise à jour disponible »**, par le
+  `CompareStatus` existant : réinstaller depuis la fenêtre des prédéfinis écrit la nouvelle commande
+- **Ni Invite de commandes, ni Git Bash, ni MXterm Pro** : on ne sait pas y passer à la fois un
+  dossier et une commande. MXterm Pro n'accepte qu'un dossier, sans commande documentée
+- Aucun terminal installé → message `Quick_NoTerminal` au lancement d'une tuile ; un prédéfini
+  retombe sur `powershell.exe` par son nom nu
 
 ## Format JSON raccourcis rapides
 
@@ -1628,7 +1655,7 @@ rédacteur d'`inject-create` est d'ailleurs factice et ne sera jamais appelé.
 ```
 
 - `type` optionnel — défaut `RunCommand` (rétrocompatible)
-- `terminal` présent uniquement pour `OpenTerminal`
+- `terminal` présent uniquement pour `OpenTerminal` — son `exePath` n'est pas lu au lancement : le terminal est celui des Options
 - `processSwitch` présent uniquement pour `SwitchToProcess`
 - `iconProfilePath` chemin relatif au profil (`%APPDATA%\DockPad\`), prioritaire sur `iconPath`
 - Colonnes : 0–5 | Lignes : 0–3 | `page` commence à 0
@@ -1701,6 +1728,7 @@ emportait pas.
   "triggerFirst": "Ctrl",
   "triggerSecond": "Shift",
   "claudeArgs": "--enable-auto-mode",
+  "defaultTerminal": "",
   "autoFavicon": true,
   "bitwardenCliPath": "",
   "clipboardClearSeconds": 90,

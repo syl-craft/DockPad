@@ -31,6 +31,9 @@ public partial class SettingsDialog : Window
     /// <summary>Une entrée de la liste des langues : ce qu'on stocke, et ce qu'on affiche.</summary>
     private sealed record LanguageChoice(string Tag, string Label);
     private sealed record ThemeChoice(string Tag, string Label);
+    private sealed record TerminalChoice(string Tag, string Label);
+
+    private readonly List<Models.TerminalInfo> _terminals = TerminalDetectionService.Detect();
 
     /// <summary>
     /// Vrai pendant le remplissage des listes : les <c>SelectionChanged</c> qu'il déclenche ne
@@ -65,6 +68,7 @@ public partial class SettingsDialog : Window
         ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
         ChkAutoFavicon.IsChecked = SettingsService.LoadAutoFavicon();
         TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
+        FillTerminals(SettingsService.LoadDefaultTerminal());
 
         TxtBwPath.Text = SettingsService.LoadBitwardenCliPath();
         TxtGhPath.Text = SettingsService.LoadGitHubCliPath();
@@ -114,6 +118,7 @@ public partial class SettingsDialog : Window
     {
         FillLanguages();
         FillThemes();
+        FillTerminals((CmbDefaultTerminal.SelectedItem as TerminalChoice)?.Tag ?? "");
 
         // Les noms de touches nommées sont traduits (« Espace » / « Space ») : la liste doit être
         // refaite, la sélection conservée.
@@ -186,6 +191,22 @@ public partial class SettingsDialog : Window
         CmbTheme.DisplayMemberPath = nameof(ThemeChoice.Label);
         CmbTheme.SelectedIndex = selected switch { "Light" => 1, "Dark" => 2, _ => 0 };
         _filling = false;
+    }
+
+    /// <summary>
+    /// Remplit la liste des terminaux : Automatique, puis les terminaux installés. Un terminal réglé
+    /// mais désinstallé reste dans la liste, sans quoi Sauvegarder effacerait le réglage.
+    /// </summary>
+    private void FillTerminals(string selected)
+    {
+        var choices = new List<TerminalChoice> { new("", Loc.T("Settings_Terminal_Auto")) };
+        choices.AddRange(_terminals.Select(t => new TerminalChoice(t.Id, t.DisplayName)));
+        if (selected != "" && choices.All(c => c.Tag != selected))
+            choices.Add(new TerminalChoice(selected, Loc.F("Settings_Terminal_Missing", selected)));
+
+        CmbDefaultTerminal.ItemsSource = choices;
+        CmbDefaultTerminal.DisplayMemberPath = nameof(TerminalChoice.Label);
+        CmbDefaultTerminal.SelectedItem = choices.Where(c => c.Tag == selected).First();
     }
 
     private void Theme_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -264,6 +285,7 @@ public partial class SettingsDialog : Window
         SettingsService.SaveAutoStart(ChkAutoStart.IsChecked == true);
         SettingsService.SaveAutoFavicon(ChkAutoFavicon.IsChecked == true);
         SettingsService.SaveClaudeArgs(TxtClaudeArgs.Text);
+        SettingsService.SaveDefaultTerminal((CmbDefaultTerminal.SelectedItem as TerminalChoice)?.Tag ?? "");
 
         SettingsService.SaveBitwardenCliPath(TxtBwPath.Text);
         SettingsService.SaveGitHubCliPath(TxtGhPath.Text);

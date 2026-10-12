@@ -87,20 +87,11 @@
                 <!-- Panel terminal (OpenTerminal uniquement) -->
                 <StackPanel x:Name="PanelTerminal" Visibility="Collapsed" Margin="0,0,0,16">
 
-                    <!-- Sélection du terminal -->
+                    <!-- Terminal : celui des Options, commun à toutes les tuiles Terminal -->
                     <Label Content="{loc:T Shortcut_Terminal}"/>
-                    <Grid Margin="0,0,0,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <ComboBox x:Name="CmbTerminal" Grid.Column="0" DisplayMemberPath="DisplayName"
-                                  SelectionChanged="CmbTerminal_SelectionChanged"/>
-                        <Button Grid.Column="1" Content="..." Width="36" Margin="6,0,0,0"
-                                Style="{StaticResource SecondaryButton}"
-                                Click="BrowseTerminal_Click"
-                                ToolTip="{loc:T Shortcut_Terminal_Tip}"/>
-                    </Grid>
+                    <TextBlock x:Name="TxtTerminalName" FontWeight="SemiBold" Margin="5,0,0,4"/>
+                    <TextBlock Text="{loc:T Shortcut_Terminal_FromOptions}" Margin="5,0,0,16" TextWrapping="Wrap"
+                               Foreground="{DynamicResource Brush.TextHint}" FontSize="11"/>
 
                     <!-- Dossier de départ -->
                     <Label Content="{loc:T Shortcut_StartFolder}"/>

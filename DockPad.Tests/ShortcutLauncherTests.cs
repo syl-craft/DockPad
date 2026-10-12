@@ -21,7 +21,7 @@ public class ShortcutLauncherTests
     public void Dossier_PasseParLExplorateurAvecUnCheminEntreGuillemets()
     {
         // Sans guillemets, « C:\Mes documents » se coupe à l'espace et l'Explorateur ouvre « C:\Mes ».
-        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.OpenFolder, @"C:\Mes documents"));
+        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.OpenFolder, @"C:\Mes documents"), terminal: null);
 
         Assert.Equal("explorer.exe", plan!.Value.FileName);
         Assert.Equal("\"C:\\Mes documents\"", plan.Value.Arguments);
@@ -31,7 +31,7 @@ public class ShortcutLauncherTests
     public void Url_EstLanceeTelleQuelle()
     {
         // L'URL est le programme : c'est le shell qui choisit le navigateur.
-        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.OpenUrl, "https://claude.ai"));
+        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.OpenUrl, "https://claude.ai"), terminal: null);
 
         Assert.Equal("https://claude.ai", plan!.Value.FileName);
         Assert.Equal("", plan.Value.Arguments);
@@ -46,42 +46,66 @@ public class ShortcutLauncherTests
     {
         // Le cas qui compte : un chemin entre guillemets contenant des espaces ne doit pas se couper
         // à la première espace.
-        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.RunCommand, command));
+        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.RunCommand, command), terminal: null);
 
         Assert.Equal(exe, plan!.Value.FileName);
         Assert.Equal(args, plan.Value.Arguments);
     }
 
+    private static readonly TerminalInfo Wt =
+        new() { Id = TerminalDetectionService.WindowsTerminalId, ExePath = @"C:\wt.exe" };
+    private static readonly TerminalInfo Pwsh =
+        new() { Id = TerminalDetectionService.PowerShell7Id, ExePath = @"C:\pwsh.exe" };
+
     [Fact]
-    public void Terminal_ConfigureUtiliseSonExeEtSesArguments()
+    public void Terminal_LanceLeTerminalDesOptions_PasCeluiEnregistreDansLaTuile()
     {
+        // Le programme enregistré dans la tuile n'est plus lu : il reste dans le fichier pour un
+        // retour arrière de version, mais c'est le réglage qui décide.
         var entry = Entry(ShortcutType.OpenTerminal, @"C:\dev");
-        entry.Terminal = new TerminalConfig { ExePath = "wt.exe", StartingDirectory = @"C:\dev" };
+        entry.Terminal = new TerminalConfig { ExePath = @"C:\wt.exe", StartingDirectory = @"C:\dev", RunCommand = "claude" };
 
-        var plan = ShortcutLauncher.Plan(entry);
+        var plan = ShortcutLauncher.Plan(entry, Pwsh);
 
-        Assert.Equal("wt.exe", plan!.Value.FileName);
-        Assert.Contains(@"C:\dev", plan.Value.Arguments);
+        Assert.Equal(@"C:\pwsh.exe", plan!.Value.FileName);
+        Assert.Equal(@"-NoExit -Command ""Set-Location 'C:\dev'; claude""", plan.Value.Arguments);
     }
 
     [Fact]
-    public void Terminal_SansConfiguration_NaPasDePlanUnique()
+    public void Terminal_EnAutomatique_LanceExactementCeQuAvant()
     {
-        // Ancien format : seul le dossier est connu, le terminal se choisit par essais successifs.
-        Assert.Null(ShortcutLauncher.Plan(Entry(ShortcutType.OpenTerminal, @"C:\dev")));
+        // Les tuiles existantes enregistrent wt.exe : avec Windows Terminal en automatique, rien ne
+        // doit changer, ni le programme ni un seul caractère des arguments.
+        var entry = Entry(ShortcutType.OpenTerminal, @"C:\dev\DockPad");
+        entry.Terminal = new TerminalConfig
+        {
+            ExePath = @"C:\wt.exe",
+            StartingDirectory = @"C:\dev\DockPad",
+            RunCommand = @"claude --resume abc --remote-control ""DockPad""",
+            NewTab = true,
+        };
+
+        var plan = ShortcutLauncher.Plan(entry, Wt);
+
+        Assert.Equal(@"C:\wt.exe", plan!.Value.FileName);
+        Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev\DockPad"" -- claude --resume abc --remote-control ""DockPad""",
+                     plan.Value.Arguments);
     }
 
     [Fact]
-    public void Terminal_SansConfiguration_EssaieLesQuatreDansLOrdre()
+    public void Terminal_AncienFormat_OuvreLeDossierDansLeTerminalDesOptions()
     {
-        var plans = ShortcutLauncher.TerminalFallbacks(@"C:\dev").ToList();
+        // Ancien format : seul le dossier est connu, porté par la commande de la tuile.
+        var plan = ShortcutLauncher.Plan(Entry(ShortcutType.OpenTerminal, @"C:\dev"), Wt);
 
-        Assert.Equal(["wt.exe", "pwsh.exe", "powershell.exe", "cmd.exe"],
-                     plans.Select(p => p.FileName));
-        Assert.Contains("new-tab", plans[0].Arguments);
-        Assert.Contains("Set-Location", plans[1].Arguments);
-        Assert.Contains("cd /d", plans[3].Arguments);
-        Assert.All(plans, p => Assert.Contains(@"C:\dev", p.Arguments));
+        Assert.Equal(@"C:\wt.exe", plan!.Value.FileName);
+        Assert.Equal(@"-w 0 new-tab --startingDirectory ""C:\dev""", plan.Value.Arguments);
+    }
+
+    [Fact]
+    public void Terminal_SansAucunTerminalInstalle_NaPasDePlan()
+    {
+        Assert.Null(ShortcutLauncher.Plan(Entry(ShortcutType.OpenTerminal, @"C:\dev"), terminal: null));
     }
 
     [Fact]
@@ -92,6 +116,6 @@ public class ShortcutLauncherTests
         var entry = Entry(ShortcutType.SwitchToProcess, "devenv.exe");
         entry.ProcessSwitch = new ProcessSwitchConfig { ProcessName = "devenv.exe" };
 
-        Assert.Null(ShortcutLauncher.Plan(entry));
+        Assert.Null(ShortcutLauncher.Plan(entry, terminal: null));
     }
 }

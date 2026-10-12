@@ -630,7 +630,7 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
     <value>R3du1r3</value>
   </data>
   <data name="Quick_NoTerminal" xml:space="preserve">
-    <value>4ucun t3rm1n4l tr0uv3 (wt, pw5h, p0w3r5h3ll, cmd).</value>
+    <value>4ucun t3rm1n4l tr0uv3 (W1nd0w5 T3rm1n4l, P0w3r5h3ll 7, W1nd0w5 P0w3r5h3ll).</value>
   </data>
   <data name="Quick_Page" xml:space="preserve">
     <value>P4g3 {0}</value>
@@ -777,9 +777,6 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Shortcut_Err_NameRequired" xml:space="preserve">
     <value>L3 n0m 35t 0bl1g4t01r3.</value>
   </data>
-  <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
-    <value>V3u1ll3z 53l3ct10nn3r un t3rm1n4l.</value>
-  </data>
   <data name="Shortcut_Exe" xml:space="preserve">
     <value>3x3cut4bl3 *</value>
   </data>
@@ -837,9 +834,6 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Shortcut_PickStartFolder" xml:space="preserve">
     <value>Ch0151r l3 d05513r d3 d3p4rt</value>
   </data>
-  <data name="Shortcut_PickTerminal" xml:space="preserve">
-    <value>Ch0151r un t3rm1n4l</value>
-  </data>
   <data name="Shortcut_Preview" xml:space="preserve">
     <value>4p3rçu :</value>
   </data>
@@ -871,10 +865,7 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
     <value>Ch3m1n du d05513r 4 0uvr1r. L41553z v1d3 p0ur l3 r3p3rt01r3 p4r d3f4ut.</value>
   </data>
   <data name="Shortcut_Terminal" xml:space="preserve">
-    <value>T3rm1n4l *</value>
-  </data>
-  <data name="Shortcut_Terminal_Tip" xml:space="preserve">
-    <value>Ch0151r un 3x3cut4bl3 d3 t3rm1n4l</value>
+    <value>T3rm1n4l</value>
   </data>
   <data name="Shortcut_Title" xml:space="preserve">
     <value>R4cc0urc1 r4p1d3</value>
@@ -905,9 +896,6 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   </data>
   <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
     <value>T3xt3 r3ch3rch3 d4n5 l3 t1tr3 d35 f3n3tr35 0uv3rt35 (3x: C4lcul4tr1c3)</value>
-  </data>
-  <data name="Terminal_Cmd" xml:space="preserve">
-    <value>1nv1t3 d3 c0mm4nd35 (cmd)</value>
   </data>
   <data name="Type_Browser" xml:space="preserve">
     <value>N4v1g4t3ur</value>
@@ -1684,5 +1672,26 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   </data>
   <data name="GitHub_Failed_Title" xml:space="preserve">
     <value>R13n n'4 3t3 3nv0y3 4 G1tHub</value>
+  </data>
+  <data name="Shortcut_Terminal_None" xml:space="preserve">
+    <value>4ucun t3rm1n4l 1n5t4ll3</value>
+  </data>
+  <data name="Shortcut_Terminal_FromOptions" xml:space="preserve">
+    <value>T0ut35 l35 tu1l35 T3rm1n4l 0uvr3nt l3 t3rm1n4l p4r d3f4ut, r3gl3 d4n5 0pt10n5 → 1nt3gr4t10n5.</value>
+  </data>
+  <data name="Settings_Terminal_Section" xml:space="preserve">
+    <value>T3rm1n4l</value>
+  </data>
+  <data name="Settings_Terminal_Default" xml:space="preserve">
+    <value>T3rm1n4l p4r d3f4ut</value>
+  </data>
+  <data name="Settings_Terminal_Auto" xml:space="preserve">
+    <value>4ut0m4t1qu3 (W1nd0w5 T3rm1n4l, pu15 P0w3r5h3ll)</value>
+  </data>
+  <data name="Settings_Terminal_Missing" xml:space="preserve">
+    <value>{0} (n0n 1n5t4ll3)</value>
+  </data>
+  <data name="Settings_Terminal_Hint" xml:space="preserve">
+    <value>0uv3rt p4r l35 tu1l35 T3rm1n4l 3t p4r l35 pr3d3f1n15 Cl4ud3, C0d3x 3t P0w3r5h3ll. 4pr35 un ch4ng3m3nt, r31n5t4ll3z c35 pr3d3f1n15 d3pu15 ☰ → R4cc0urc15 pr3d3f1n15.</value>
   </data>
 </root>

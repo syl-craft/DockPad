@@ -630,7 +630,7 @@ This cannot be undone.</value>
     <value>Minimize</value>
   </data>
   <data name="Quick_NoTerminal" xml:space="preserve">
-    <value>No terminal found (wt, pwsh, powershell, cmd).</value>
+    <value>No terminal found (Windows Terminal, PowerShell 7, Windows PowerShell).</value>
   </data>
   <data name="Quick_Page" xml:space="preserve">
     <value>Page {0}</value>
@@ -777,9 +777,6 @@ This cannot be undone.</value>
   <data name="Shortcut_Err_NameRequired" xml:space="preserve">
     <value>The name is required.</value>
   </data>
-  <data name="Shortcut_Err_NoTerminal" xml:space="preserve">
-    <value>Please select a terminal.</value>
-  </data>
   <data name="Shortcut_Exe" xml:space="preserve">
     <value>Executable *</value>
   </data>
@@ -837,9 +834,6 @@ This cannot be undone.</value>
   <data name="Shortcut_PickStartFolder" xml:space="preserve">
     <value>Choose the starting folder</value>
   </data>
-  <data name="Shortcut_PickTerminal" xml:space="preserve">
-    <value>Choose a terminal</value>
-  </data>
   <data name="Shortcut_Preview" xml:space="preserve">
     <value>Preview:</value>
   </data>
@@ -871,10 +865,7 @@ This cannot be undone.</value>
     <value>Path of the folder to open. Leave empty for the default directory.</value>
   </data>
   <data name="Shortcut_Terminal" xml:space="preserve">
-    <value>Terminal *</value>
-  </data>
-  <data name="Shortcut_Terminal_Tip" xml:space="preserve">
-    <value>Choose a terminal executable</value>
+    <value>Terminal</value>
   </data>
   <data name="Shortcut_Title" xml:space="preserve">
     <value>Quick shortcut</value>
@@ -905,9 +896,6 @@ This cannot be undone.</value>
   </data>
   <data name="Shortcut_WindowTitle_Tip" xml:space="preserve">
     <value>Text searched in the titles of open windows (e.g. Calculator)</value>
-  </data>
-  <data name="Terminal_Cmd" xml:space="preserve">
-    <value>Command Prompt (cmd)</value>
   </data>
   <data name="Type_Browser" xml:space="preserve">
     <value>Browser</value>
@@ -1684,5 +1672,26 @@ Force them to stop? Unsaved work may be lost.</value></data>
   </data>
   <data name="GitHub_Failed_Title" xml:space="preserve">
     <value>Nothing was sent to GitHub</value>
+  </data>
+  <data name="Shortcut_Terminal_None" xml:space="preserve">
+    <value>No terminal installed</value>
+  </data>
+  <data name="Shortcut_Terminal_FromOptions" xml:space="preserve">
+    <value>Every Terminal tile opens the default terminal, set in Options → Integrations.</value>
+  </data>
+  <data name="Settings_Terminal_Section" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="Settings_Terminal_Default" xml:space="preserve">
+    <value>Default terminal</value>
+  </data>
+  <data name="Settings_Terminal_Auto" xml:space="preserve">
+    <value>Automatic (Windows Terminal, then PowerShell)</value>
+  </data>
+  <data name="Settings_Terminal_Missing" xml:space="preserve">
+    <value>{0} (not installed)</value>
+  </data>
+  <data name="Settings_Terminal_Hint" xml:space="preserve">
+    <value>Opened by Terminal tiles and by the Claude, Codex and PowerShell presets. After a change, reinstall those presets from ☰ → Presets.</value>
   </data>
 </root>

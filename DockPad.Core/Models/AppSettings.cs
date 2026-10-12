@@ -35,6 +35,12 @@ public class AppSettings
     public string ClaudeArgs { get; set; } = "";
 
     /// <summary>
+    /// Terminal des prédéfinis et des tuiles Terminal (<c>wt</c>, <c>pwsh</c>, <c>powershell</c>),
+    /// ou vide pour « automatique ».
+    /// </summary>
+    public string DefaultTerminal { get; set; } = "";
+
+    /// <summary>
     /// Télécharger l'icône du site pour les tuiles web. Vrai par défaut : un réglage réseau qu'on
     /// n'a jamais vu ne peut pas avoir été refusé.
     /// </summary>

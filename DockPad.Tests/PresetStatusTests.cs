@@ -303,11 +303,15 @@ public class PresetStatusTests
     // depuis des semaines et transmettait a wt.exe un P@H anterieur a l'installation de Codex.
     // Le nom nu ne se resout que si le P@H du LANCEUR est a jour — ce qu'on ne controle pas.
 
+    private static readonly TerminalInfo Wt =
+        new() { Id = TerminalDetectionService.WindowsTerminalId, ExePath = @"C:\wt.exe" };
+    private static readonly TerminalInfo WindowsPowerShell =
+        new() { Id = TerminalDetectionService.WindowsPowerShellId, ExePath = @"C:\powershell.exe" };
+
     [Fact]
     public void CodexCommande_UtiliseLeCheminAbsoluQuandOnLeConnait()
     {
-        var cmd = PresetService.CodexCommand(wt: @"C:\wt.exe", powershell: null,
-                                             codexExe: @"C:\OpenAI\bin\codex.exe");
+        var cmd = PresetService.TerminalCommand(Wt, PresetService.CodexRunCommand(@"C:\OpenAI\bin\codex.exe"));
 
         Assert.Contains(@"-- ""C:\OpenAI\bin\codex.exe""", cmd);
     }
@@ -317,19 +321,37 @@ public class PresetStatusTests
     {
         // Machine ou DockPad ne sait pas localiser le binaire : on laisse le P@H decider,
         // ce qui est le comportement d'avant et vaut mieux que rien.
-        var cmd = PresetService.CodexCommand(wt: @"C:\wt.exe", powershell: null, codexExe: null);
+        var cmd = PresetService.TerminalCommand(Wt, PresetService.CodexRunCommand(codexExe: null));
 
         Assert.EndsWith("-- codex", cmd);
     }
 
     [Fact]
-    public void CodexCommande_SansWindowsTerminal_RepliPowerShell()
+    public void CodexCommande_SousPowerShell_LanceLeCheminParLOperateurDAppel()
     {
-        var cmd = PresetService.CodexCommand(wt: null, powershell: @"C:\powershell.exe",
-                                             codexExe: @"C:\codex.exe");
+        var cmd = PresetService.TerminalCommand(WindowsPowerShell, PresetService.CodexRunCommand(@"C:\Program Files\codex.exe"));
 
-        Assert.StartsWith(@"""C:\powershell.exe""", cmd);
-        Assert.Contains("Set-Location '%V'", cmd);
-        Assert.Contains(@"C:\codex.exe", cmd);
+        Assert.Equal(@"""C:\powershell.exe"" -NoExit -Command ""Set-Location '%V'; & \""C:\Program Files\codex.exe\""""", cmd);
+    }
+
+    // -- Windows Terminal en automatique : les commandes d'avant, a l'octet pres ---------------
+    //
+    // Un ecart d'un seul caractere ferait afficher « mise a jour disponible » sur des entrees
+    // installees qui fonctionnent, a la premiere ouverture apres la mise a jour de DockPad.
+
+    [Fact]
+    public void CommandeClaude_SousWindowsTerminal_InchangeeDepuisLaVersionPrecedente()
+    {
+        var cmd = PresetService.TerminalCommand(Wt, "claude --enable-auto-mode");
+
+        Assert.Equal(@"""C:\wt.exe"" -w 0 new-tab --startingDirectory ""%V"" -- claude --enable-auto-mode", cmd);
+    }
+
+    [Fact]
+    public void CommandePowerShell_SousWindowsTerminal_InchangeeDepuisLaVersionPrecedente()
+    {
+        var cmd = PresetService.TerminalCommand(Wt, runCommand: "");
+
+        Assert.Equal(@"""C:\wt.exe"" -w 0 new-tab --startingDirectory ""%V""", cmd);
     }
 }
