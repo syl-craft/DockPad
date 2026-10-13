@@ -181,7 +181,13 @@ public static class TerminalDetectionService
     /// La règle d'échappement du programme, d'après le nom de son exécutable : un terminal ajouté
     /// à la main qui lance <c>pwsh.exe</c> est protégé comme celui que DockPad a détecté.
     /// </summary>
-    public static ValueQuoting QuotingFor(string exePath) => Path.GetFileName(exePath).ToLowerInvariant() switch
+    /// <remarks>
+    /// Le chemin est lu <b>développé</b>, comme <see cref="ShortcutLauncher.Start"/> le lance : un
+    /// programme réglé à <c>%MON_TERMINAL%</c> qui désigne <c>pwsh.exe</c> serait sinon lancé sans
+    /// échappement.
+    /// </remarks>
+    public static ValueQuoting QuotingFor(string exePath) =>
+        Path.GetFileName(Environment.ExpandEnvironmentVariables(exePath)).ToLowerInvariant() switch
     {
         "wt.exe" or "windowsterminal.exe" => ValueQuoting.WindowsTerminal,
         "pwsh.exe" or "powershell.exe"    => ValueQuoting.PowerShell,

@@ -123,6 +123,48 @@ public class TerminalFolderInjectionTests
         Assert.Equal(@"start --new-tab --cwd ""C:\dl\{command}"" -- claude", args);
     }
 
+    /// <summary>
+    /// La règle se lit sur le chemin développé, celui que <c>ShortcutLauncher.Start</c> lance.
+    /// </summary>
+    [Fact]
+    public void ProgrammeDonneParUneVariable_EstProtegeSelonLeProgrammeReel()
+    {
+        Environment.SetEnvironmentVariable("DOCKPAD_TEST_NIN152_TERM", @"C:\Program Files\PowerShell\7\pwsh.exe");
+        try
+        {
+            Assert.Equal(TerminalDetectionService.ValueQuoting.PowerShell,
+                TerminalDetectionService.QuotingFor("%DOCKPAD_TEST_NIN152_TERM%"));
+        }
+        finally { Environment.SetEnvironmentVariable("DOCKPAD_TEST_NIN152_TERM", null); }
+    }
+
+    /// <summary>
+    /// Le parcours du clic droit, de bout en bout : la ligne que Windows passe au lanceur
+    /// (<c>--terminal "%V\." -- commande</c>) jusqu'aux arguments du terminal.
+    /// </summary>
+    [Fact]
+    public void ClicDroit_DossierPiege_ArriveEchappeAuTerminal()
+    {
+        var request = TerminalRequest.Parse(["--terminal", @"C:\dl\p'; calc; #\.", "--", "claude"])
+            ?? throw new InvalidOperationException("Request expected");
+
+        var plan = TerminalLaunch.Plan(Pwsh, request) ?? throw new InvalidOperationException("Plan expected");
+
+        Assert.Equal(@"-NoExit -Command ""Set-Location 'C:\dl\p''; calc; #'; claude""", plan.Arguments);
+    }
+
+    [Fact]
+    public void ClicDroit_DossierPiege_ArriveEchappeAWindowsTerminal()
+    {
+        var request = TerminalRequest.Parse(["--terminal", @"C:\dl\x;new-tab calc.exe\.", "--", "claude"])
+            ?? throw new InvalidOperationException("Request expected");
+
+        var plan = TerminalLaunch.Plan(Wt, request) ?? throw new InvalidOperationException("Plan expected");
+
+        Assert.Contains(@"--startingDirectory ""C:\dl\x\;new-tab calc.exe"" -- claude", plan.Arguments);
+        Assert.DoesNotMatch(@"(?<!\\);", plan.Arguments);
+    }
+
     // -- Les autres programmes ne changent pas ----------------------------------
 
     [Fact]
