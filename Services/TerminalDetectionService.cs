@@ -159,25 +159,98 @@ public static class TerminalDetectionService
         string command = cfg.RunCommand.Trim();
         string template = command == "" ? terminal.FolderArgs : terminal.CommandArgs;
 
-        return Expand(template, cfg.StartingDirectory, command, name, cfg.TabColor);
+        return Expand(template, cfg.StartingDirectory, command, name, cfg.TabColor, QuotingFor(terminal.ExePath));
     }
+
+    /// <summary>
+    /// Comment le programme lancé relit une valeur insérée dans sa ligne de commande.
+    /// </summary>
+    public enum ValueQuoting
+    {
+        /// <summary>Arguments directs : un nom de dossier ne peut pas contenir de <c>"</c>, rien à faire.</summary>
+        None,
+
+        /// <summary>Windows Terminal coupe ses sous-commandes sur <c>;</c>, même entre guillemets.</summary>
+        WindowsTerminal,
+
+        /// <summary>PowerShell : la valeur vit entre guillemets simples dans un <c>-Command</c>.</summary>
+        PowerShell,
+    }
+
+    /// <summary>
+    /// La règle d'échappement du programme, d'après le nom de son exécutable : un terminal ajouté
+    /// à la main qui lance <c>pwsh.exe</c> est protégé comme celui que DockPad a détecté.
+    /// </summary>
+    public static ValueQuoting QuotingFor(string exePath) => Path.GetFileName(exePath).ToLowerInvariant() switch
+    {
+        "wt.exe" or "windowsterminal.exe" => ValueQuoting.WindowsTerminal,
+        "pwsh.exe" or "powershell.exe"    => ValueQuoting.PowerShell,
+        _                                 => ValueQuoting.None,
+    };
+
+    private static readonly System.Text.RegularExpressions.Regex TokenPattern =
+        new(@"\{(folder-name|folder|name|color|command-ps|command)\}");
 
     /// <summary>
     /// Le modèle avec <c>{folder}</c>, <c>{folder-name}</c>, <c>{name}</c>, <c>{color}</c>,
     /// <c>{command}</c> et <c>{command-ps}</c> remplacés.
     /// </summary>
-    public static string Expand(string template, string folder, string command, string name = "", string color = "")
+    /// <remarks>
+    /// <para>
+    /// <b>Le dossier vient du clic droit, donc d'un nom que n'importe quelle archive peut choisir.</b>
+    /// Les valeurs — dossier, nom du dossier, nom de la tuile — sont échappées selon
+    /// <paramref name="quoting"/>, le programme qui relira la ligne ; le modèle, lui, n'est jamais
+    /// touché. La commande ne l'est pas non plus : elle vient de la configuration de l'utilisateur, et
+    /// un <c>;</c> y garde son sens de séparateur pour Windows Terminal.
+    /// </para>
+    /// <para>
+    /// <b>Une seule passe</b> : remplacer jeton après jeton relisait les valeurs déjà insérées, et un
+    /// dossier nommé <c>{command}</c> recevait la commande.
+    /// </para>
+    /// </remarks>
+    public static string Expand(string template, string folder, string command, string name = "", string color = "",
+        ValueQuoting quoting = ValueQuoting.None)
     {
         string folderName = FolderName(folder);
         string tabColor = IsTabColor(color) ? color.Trim() : TabColor(folderName);
+        string tileName = string.IsNullOrWhiteSpace(name) ? folderName : name.Trim();
 
-        return template.Replace(FolderNameToken, BeforeClosingQuote(folderName))
-                       .Replace(FolderToken, BeforeClosingQuote(folder))
-                       .Replace(ColorToken, tabColor)
-                       .Replace(NameToken, BeforeClosingQuote(string.IsNullOrWhiteSpace(name) ? folderName : name.Trim()))
-                       .Replace(PowerShellCommandToken, ForPowerShell(command))
-                       .Replace(CommandToken, command)
-                       .Trim();
+        string expanded = TokenPattern.Replace(template, token => token.Value switch
+        {
+            FolderNameToken        => BeforeClosingQuote(Escape(folderName, quoting)),
+            FolderToken            => BeforeClosingQuote(Escape(folder, quoting)),
+            NameToken              => BeforeClosingQuote(Escape(tileName, quoting)),
+            ColorToken             => tabColor,
+            PowerShellCommandToken => ForPowerShell(command),
+            _                      => command,
+        });
+
+        return expanded.Trim();
+    }
+
+    /// <summary>
+    /// La valeur telle que <paramref name="quoting"/> la relira littéralement.
+    /// </summary>
+    /// <remarks>
+    /// Pour PowerShell, les guillemets simples typographiques sont doublés eux aussi : PowerShell
+    /// les lit comme des <c>'</c>, et un dossier nommé <c>p’; calc; #</c> sortirait sinon de la chaîne.
+    /// </remarks>
+    private static string Escape(string value, ValueQuoting quoting) => quoting switch
+    {
+        ValueQuoting.WindowsTerminal => value.Replace(";", "\\;"),
+        ValueQuoting.PowerShell      => PowerShellSingleQuoted(value),
+        _                            => value,
+    };
+
+    private static string PowerShellSingleQuoted(string value)
+    {
+        var escaped = new System.Text.StringBuilder(value.Length);
+        foreach (char c in value)
+        {
+            escaped.Append(c);
+            if (c is '\'' or '‘' or '’' or '‚' or '‛') escaped.Append(c);
+        }
+        return escaped.ToString();
     }
 
     /// <summary>
@@ -234,13 +307,23 @@ public static class TerminalDetectionService
     }
 
     /// <summary>
-    /// La commande telle qu'elle doit figurer dans un <c>-Command "…"</c> de PowerShell : guillemets
-    /// échappés, et <c>&amp;</c> devant un chemin entre guillemets, qu'il afficherait sinon sans l'exécuter.
+    /// La commande telle qu'elle doit figurer dans un <c>-Command "…"</c> de PowerShell : un
+    /// exécutable entre guillemets est appelé par <c>&amp;</c>, qu'il afficherait sinon sans
+    /// l'exécuter, et les autres guillemets sont échappés.
     /// </summary>
+    /// <remarks>
+    /// L'exécutable passe en guillemets <b>simples</b> : entre guillemets doubles, PowerShell
+    /// développerait un <c>$(…)</c> de son chemin. Les arguments qui suivent gardent leurs guillemets
+    /// doubles — ils viennent de la configuration de l'utilisateur, qui peut y vouloir une variable.
+    /// </remarks>
     private static string ForPowerShell(string command)
     {
-        string call = command.StartsWith('"') ? $"& {command}" : command;
-        return call.Replace("\"", "\\\"");
+        int closing = command.StartsWith('"') ? command.IndexOf('"', 1) : -1;
+        if (closing < 0) return command.Replace("\"", "\\\"");
+
+        string exe = command[1..closing];
+        string arguments = command[(closing + 1)..];
+        return $"& '{PowerShellSingleQuoted(exe)}'{arguments.Replace("\"", "\\\"")}";
     }
 
     /// <summary>
