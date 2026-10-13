@@ -586,6 +586,9 @@ internal static class Program
         ShowCost = true,
         // « panel-idle » sélectionne le fournisseur inactif : c'est lui qu'il faut voir.
         DefaultProviderId = idle ? "codex" : "claude",
+        // Section « Agent local (Ollama) » remplie : une capture aux champs vides ne la montrerait pas.
+        OllamaHarness = "claude",
+        OllamaModel = "ministral-3:3b",
         Providers =
         {
             new AiProviderEntry { Id = "claude",  Name = "Claude",  DetectedName = "Claude",
