@@ -195,10 +195,18 @@ public static class PresetService
     /// <summary>
     /// <c>ollama.exe</c> à l'emplacement de son installateur (per-user), sinon dans le <c>PATH</c>.
     /// </summary>
-    public static string? FindOllamaExe() =>
-        FindExe("ollama.exe",
+    /// <remarks>
+    /// Rendu absolu : une entrée relative du <c>PATH</c> (<c>tools</c>) donnerait
+    /// <c>tools\ollama.exe</c>, résolu au clic depuis le dossier du terminal, où il n'est pas.
+    /// </remarks>
+    public static string? FindOllamaExe()
+    {
+        string? ollamaExe = FindExe("ollama.exe",
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 @"Programs\Ollama\ollama.exe"));
+
+        return ollamaExe == null ? null : Path.GetFullPath(ollamaExe);
+    }
 
     /// <summary>
     /// Le logo d'Antigravity rendu en <c>.ico</c> dans le store d'icônes du profil, ou

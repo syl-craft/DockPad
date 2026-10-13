@@ -268,8 +268,10 @@ public partial class UsageConfigDialog : Window
     {
         if (_loading) return;
 
-        var harness = TxtOllamaHarness.Text.Trim();
-        var model = TxtOllamaModel.Text.Trim();
+        // Le texte brut, jamais rogné : un espace refusé à la lecture du fichier doit l'être aussi
+        // à la saisie, sinon les deux portes d'entrée n'appliquent pas la même règle.
+        var harness = TxtOllamaHarness.Text;
+        var model = TxtOllamaModel.Text;
         var harnessAccepted = harness == "" || OllamaAgent.IsValidHarness(harness);
         var modelAccepted = model == "" || OllamaAgent.IsValidModel(model);
 

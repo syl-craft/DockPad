@@ -94,6 +94,26 @@ public class OllamaAgentTests : IDisposable
         Assert.Equal($"\"{OllamaExe}\" launch claude --model ministral-3:3b", command);
     }
 
+    /// <summary>
+    /// Le lanceur recompose les arguments découpés par Windows : un harness et un modèle valides
+    /// doivent en ressortir tels quels, sans guillemets que le terminal relirait autrement.
+    /// </summary>
+    [Fact]
+    public void Commande_TraverseLeLanceurSansEtreModifiee()
+    {
+        var command = TerminalRequest.JoinArguments(["launch", "claude", "--model", "hf.co/org/model:Q4_K_M"]);
+
+        Assert.Equal("launch claude --model hf.co/org/model:Q4_K_M", command);
+    }
+
+    [Theory]
+    [InlineData(" claude")]
+    [InlineData("claude ")]
+    public void Harness_AvecEspacePeripherique_EstRefuse(string harness)
+    {
+        Assert.False(OllamaAgent.IsValidHarness(harness));
+    }
+
     [Fact]
     public void Commande_ReglageInvalide_EstAbsente()
     {
