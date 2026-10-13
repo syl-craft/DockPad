@@ -243,7 +243,7 @@ public class DefaultTerminalTests
 
         var args = TerminalDetectionService.BuildArgs(Pwsh, cfg);
 
-        Assert.Equal(@"-NoExit -Command ""Set-Location '%V'; & \""C:\Program Files\OpenAI\codex.exe\""""", args);
+        Assert.Equal(@"-NoExit -Command ""Set-Location '%V'; & 'C:\Program Files\OpenAI\codex.exe'""", args);
     }
 
     [Fact]

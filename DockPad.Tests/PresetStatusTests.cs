@@ -331,7 +331,7 @@ public class PresetStatusTests
     {
         var cmd = PresetService.PreviewCommand(WindowsPowerShell, PresetService.CodexRunCommand(@"C:\Program Files\codex.exe"));
 
-        Assert.Equal(@"""C:\powershell.exe"" -NoExit -Command ""Set-Location 'C:\dev\demo'; & \""C:\Program Files\codex.exe\""""", cmd);
+        Assert.Equal(@"""C:\powershell.exe"" -NoExit -Command ""Set-Location 'C:\dev\demo'; & 'C:\Program Files\codex.exe'""", cmd);
     }
 
     // -- Windows Terminal : une fenetre par dossier, et sa couleur d'onglet ---------------------

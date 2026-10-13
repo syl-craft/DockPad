@@ -327,7 +327,8 @@ du même projet.
   (`--remote-control "…"`, chemins à espaces) : `TerminalRequest.JoinArguments`, testé. Tout argument
   hors lettres, chiffres et `_ - . : \ / =` est remis entre guillemets, pour qu'un `;` ou un `&` ne sépare
   pas deux commandes dans PowerShell. **Limite connue** : Windows Terminal découpe ses propres
-  sous-commandes sur `;`, même entre guillemets — un `;` dans la commande d'un prédéfini reste à éviter
+  sous-commandes sur `;`, même entre guillemets — un `;` dans la commande d'un prédéfini reste à éviter.
+  Le **dossier**, lui, est échappé (`\;`) : voir « Un nom de dossier n'ajoute jamais de commande »
 - **Jamais depuis un résident élevé** : le tube ferait lancer n'importe quelle commande en
   administrateur à qui sait y écrire. Une instance élevée n'ouvre pas `DockPad_TerminalPipe` : le
   lanceur ne trouve personne au bout du tube et traite la demande lui-même, au pire après son délai
@@ -1693,7 +1694,7 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
 | `{name}` | le nom de la tuile ; dans un prédéfini, `{folder-name}` |
 | `{color}` | la couleur d'onglet de la tuile, sinon une teinte de la palette tirée du nom du dossier (FNV-1a, stable d'une session à l'autre — pas `GetHashCode`) |
 | `{command}` | la commande à lancer, telle quelle |
-| `{command-ps}` | la même, préparée pour `-Command "…"` de PowerShell : guillemets échappés en `\"`, `&` devant un chemin entre guillemets — sans quoi `--remote-control "…"` et Codex dans `Program Files` cassent |
+| `{command-ps}` | la même, préparée pour `-Command "…"` de PowerShell : guillemets échappés en `\"`, `& '…'` devant un chemin entre guillemets (guillemets simples : un `$(…)` du chemin n'est pas évalué) — sans quoi `--remote-control "…"` et Codex dans `Program Files` cassent |
 
 - **La fenêtre 💻 Terminaux suit le patron de Navigateurs** : liste à gauche (case de visibilité, icône de
   l'exe, badges « par défaut » / « masqué » / « introuvable », ↻ Redétecter, ▲ ▼ 🗑 ➕), modification à
@@ -1732,6 +1733,25 @@ syntaxe conditionnelle : sans commande, Windows Terminal recevrait un `--` vide.
   Claude sur un dossier d'exemple, `PresetService.PreviewFolder` — le vrai n'est connu qu'au clic
 - **Une barre finale est doublée** quand une variable se termine par `\` (`D:\` → `"D:\\"`) : posée devant
   le guillemet fermant d'un modèle, elle l'échapperait. `{folder-name}` d'une racine vaut `D:`
+- **Un nom de dossier n'ajoute jamais de commande** (NIN-152). Le dossier vient du clic droit, donc
+  d'un nom que n'importe quelle archive peut choisir. `Expand` échappe les **valeurs** — `{folder}`,
+  `{folder-name}`, `{name}` — selon le programme qui relira la ligne (`QuotingFor`, d'après le nom de
+  l'exécutable, donc aussi pour un terminal ajouté à la main), jamais le modèle :
+  - **`wt.exe` / `WindowsTerminal.exe`** : `;` → `\;`. Vérifié sur Windows Terminal 1.24 : un `;` brut
+    coupe la commande, `\;` entre guillemets rend bien le dossier `a;b` ;
+  - **`pwsh.exe` / `powershell.exe`** : `'` doublé, et les guillemets simples typographiques
+    `‘ ’ ‚ ‛` aussi — PowerShell les lit comme des `'`. Les modèles placent la valeur entre guillemets
+    simples, seul contexte de `-Command` où rien ne se développe. Un modèle personnalisé qui la met
+    ailleurs (guillemets doubles dans `-Command`) n'est **pas** protégé ;
+  - **les autres** : rien à faire, ce sont des arguments directs et un nom de dossier ne peut pas
+    contenir de `"`.
+
+  `{command}` n'est pas échappée : elle vient de la configuration de l'utilisateur. `{command-ps}` met
+  l'exécutable en guillemets **simples** (`& 'C:\…\x.exe'`), pour qu'un `$(…)` de son chemin ne soit
+  pas évalué. **Substitution en une passe** : remplacer jeton après jeton relisait les valeurs déjà
+  insérées, et un dossier nommé `{command}` recevait la commande. Essai réel avec des dossiers piégés
+  et un témoin : sur l'ancienne version PowerShell exécutait le témoin, sur la nouvelle les deux
+  terminaux s'ouvrent dans le dossier et le témoin n'existe pas
 
 ## Format JSON raccourcis rapides
 
