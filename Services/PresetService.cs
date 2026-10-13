@@ -161,7 +161,10 @@ public static class PresetService
     private static PresetEntry? BuildOllamaAgent()
     {
         var config = UsageConfigService.Load();
-        return BuildOllamaAgent(FindOllamaExe(), config.OllamaHarness, config.OllamaModel);
+        string? ollamaExe = FindOllamaExe();
+        if (ollamaExe == null) return null;
+
+        return BuildOllamaAgent(ollamaExe, config.OllamaHarness, config.OllamaModel, OllamaIconPath(ollamaExe));
     }
 
     /// <summary>
@@ -174,7 +177,7 @@ public static class PresetService
     /// à faire dans la liste. Ollama est lancé par son chemin absolu, pour la raison déjà payée par
     /// Codex : le <c>PATH</c> de l'Explorateur date de son propre démarrage.
     /// </remarks>
-    public static PresetEntry? BuildOllamaAgent(string? ollamaExe, string harness, string model)
+    public static PresetEntry? BuildOllamaAgent(string? ollamaExe, string harness, string model, string? iconPath = null)
     {
         if (ollamaExe == null) return null;
 
@@ -186,10 +189,56 @@ public static class PresetService
             DisplayName = Loc.T("Preset_OllamaAgent_Name"),
             RegistryKey = "OpenOllamaAgent",
             Command = LauncherCommand(LauncherExe, runCommand),
-            IconPath = ollamaExe,
+            IconPath = iconPath ?? ollamaExe,
             Target = ContextMenuTarget.FolderBackground,
             Description = Loc.F("Preset_OllamaAgent_Desc", harness, model)
         };
+    }
+
+    /// <summary>Dossier où l'installateur d'Ollama le range, par utilisateur.</summary>
+    private static string OllamaInstallDir =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Programs\Ollama");
+
+    private static string OllamaIconPath(string ollamaExe) =>
+        OllamaIconPath(ollamaExe, OllamaInstallDir, Path.Combine(AppPaths.ProfileRoot, "icons"));
+
+    /// <summary>
+    /// Le logo d'Ollama recopié dans le store d'icônes du profil, sinon l'exécutable.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Ni <c>ollama.exe</c> ni <c>ollama app.exe</c> n'embarquent d'icône</b>, mesuré : l'entrée
+    /// du menu s'affichait sans logo. Le seul visuel est le <c>app.ico</c> que l'installateur pose
+    /// à côté — cherché près de l'exécutable trouvé, puis dans le dossier d'installation, pour un
+    /// Ollama trouvé par le <c>PATH</c> ailleurs.
+    /// </para>
+    /// <para>
+    /// <b>Recopié dans le profil</b>, comme le logo ChatGPT de Codex : l'entrée du registre survit à
+    /// la désinstallation d'Ollama, et garderait sinon un chemin d'icône mort. Réécrit seulement
+    /// s'il a changé.
+    /// </para>
+    /// </remarks>
+    public static string OllamaIconPath(string ollamaExe, string defaultInstallDir, string iconsDir)
+    {
+        string? source = new[]
+            {
+                Path.Combine(Path.GetDirectoryName(ollamaExe) ?? "", "app.ico"),
+                Path.Combine(defaultInstallDir, "app.ico"),
+            }
+            .FirstOrDefault(File.Exists);
+        if (source == null) return ollamaExe;
+
+        var target = Path.Combine(iconsDir, "ollama.ico");
+        try
+        {
+            WriteIconIfChanged(target, File.ReadAllBytes(source));
+            return target;
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Copie du logo Ollama");
+            return File.Exists(target) ? target : source;
+        }
     }
 
     /// <summary>
@@ -201,9 +250,7 @@ public static class PresetService
     /// </remarks>
     public static string? FindOllamaExe()
     {
-        string? ollamaExe = FindExe("ollama.exe",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                @"Programs\Ollama\ollama.exe"));
+        string? ollamaExe = FindExe("ollama.exe", Path.Combine(OllamaInstallDir, "ollama.exe"));
 
         return ollamaExe == null ? null : Path.GetFullPath(ollamaExe);
     }

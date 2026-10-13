@@ -136,6 +136,76 @@ public class OllamaAgentTests : IDisposable
     }
 
     [Fact]
+    public void Predefini_PorteLIconeFournie()
+    {
+        var preset = PresetService.BuildOllamaAgent(OllamaExe, "claude", "ministral-3:3b", iconPath: @"C:\profil\icons\ollama.ico");
+
+        Assert.NotNull(preset);
+        Assert.Equal(@"C:\profil\icons\ollama.ico", preset.IconPath);
+    }
+
+    /// <summary>
+    /// Ni <c>ollama.exe</c> ni <c>ollama app.exe</c> n'embarquent d'icône : le logo est le
+    /// <c>app.ico</c> posé à côté par l'installateur, recopié dans le profil.
+    /// </summary>
+    [Fact]
+    public void Icone_AppIcoDuDossierDOllama_EstCopieeDansLeProfil()
+    {
+        var root = Directory.CreateTempSubdirectory("ollama-icon").FullName;
+        try
+        {
+            var install = Directory.CreateDirectory(Path.Combine(root, "Ollama")).FullName;
+            var exe = Path.Combine(install, "ollama.exe");
+            File.WriteAllBytes(exe, [0]);
+            File.WriteAllBytes(Path.Combine(install, "app.ico"), [1, 2, 3]);
+            var icons = Path.Combine(root, "icons");
+
+            var icon = PresetService.OllamaIconPath(exe, defaultInstallDir: Path.Combine(root, "absent"), iconsDir: icons);
+
+            Assert.Equal(Path.Combine(icons, "ollama.ico"), icon);
+            Assert.Equal([1, 2, 3], File.ReadAllBytes(icon));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    /// <summary>Ollama trouvé par le PATH ailleurs que dans son dossier d'installation.</summary>
+    [Fact]
+    public void Icone_AbsenteACoteDeLExecutable_EstPriseDansLeDossierDInstallation()
+    {
+        var root = Directory.CreateTempSubdirectory("ollama-icon").FullName;
+        try
+        {
+            var shim = Directory.CreateDirectory(Path.Combine(root, "shims")).FullName;
+            var exe = Path.Combine(shim, "ollama.exe");
+            File.WriteAllBytes(exe, [0]);
+            var install = Directory.CreateDirectory(Path.Combine(root, "Ollama")).FullName;
+            File.WriteAllBytes(Path.Combine(install, "app.ico"), [4, 5]);
+
+            var icon = PresetService.OllamaIconPath(exe, defaultInstallDir: install, iconsDir: Path.Combine(root, "icons"));
+
+            Assert.Equal([4, 5], File.ReadAllBytes(icon));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public void Icone_SansAppIco_RetombeSurLExecutable()
+    {
+        var root = Directory.CreateTempSubdirectory("ollama-icon").FullName;
+        try
+        {
+            var exe = Path.Combine(root, "ollama.exe");
+            File.WriteAllBytes(exe, [0]);
+
+            var icon = PresetService.OllamaIconPath(exe, defaultInstallDir: Path.Combine(root, "absent"), iconsDir: Path.Combine(root, "icons"));
+
+            Assert.Equal(exe, icon);
+            Assert.False(Directory.Exists(Path.Combine(root, "icons")));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
     public void Predefini_OllamaIntrouvable_EstAbsent()
     {
         Assert.Null(PresetService.BuildOllamaAgent(ollamaExe: null, harness: "claude", model: "ministral-3:3b"));
