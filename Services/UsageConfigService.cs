@@ -43,6 +43,13 @@ public static class UsageConfigService
                     provider.Name = "Claude";
                 provider.DetectedName = "Claude";
             }
+
+            // Le fichier se modifie à la main : une valeur écrite hors de la fenêtre ne doit pas
+            // contourner la liste blanche de la saisie, puisqu'elle finit dans une commande.
+            if (!OllamaAgent.IsValidHarness(config.OllamaHarness ?? ""))
+                config.OllamaHarness = "";
+            if (!OllamaAgent.IsValidModel(config.OllamaModel ?? ""))
+                config.OllamaModel = "";
         });
     }
 

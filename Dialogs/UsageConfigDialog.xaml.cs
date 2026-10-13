@@ -69,6 +69,10 @@ public partial class UsageConfigDialog : Window
 
             BuildProviderRows(selectId);
             BuildDefaultChoices();
+
+            TxtOllamaHarness.Text = _config.OllamaHarness;
+            TxtOllamaModel.Text = _config.OllamaModel;
+            ShowOllamaStatus();
         }
         finally
         {
@@ -246,6 +250,50 @@ public partial class UsageConfigDialog : Window
             UsageConfigService.Save(config);
             _config = config;
         }
+    }
+
+    /// <summary>
+    /// Dit si le prédéfini sera proposé : sans Ollama, le régler ne mène à rien, et l'utilisateur
+    /// chercherait l'entrée dans les prédéfinis sans comprendre son absence. Le chemin va dans
+    /// l'infobulle : il porte le nom du compte Windows, qui n'a rien à faire dans une capture.
+    /// </summary>
+    private void ShowOllamaStatus()
+    {
+        var ollamaExe = PresetService.FindOllamaExe();
+        TxtOllamaStatus.Text = Loc.T(ollamaExe == null ? "UsageCfg_OllamaMissing" : "UsageCfg_OllamaFound");
+        TxtOllamaStatus.ToolTip = ollamaExe;
+    }
+
+    private void Ollama_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        if (_loading) return;
+
+        // Le texte brut, jamais rogné : un espace refusé à la lecture du fichier doit l'être aussi
+        // à la saisie, sinon les deux portes d'entrée n'appliquent pas la même règle.
+        var harness = TxtOllamaHarness.Text;
+        var model = TxtOllamaModel.Text;
+        var harnessAccepted = harness == "" || OllamaAgent.IsValidHarness(harness);
+        var modelAccepted = model == "" || OllamaAgent.IsValidModel(model);
+
+        ShowOllamaError(TxtOllamaHarnessError, harnessAccepted, OllamaAgent.HarnessAllowed);
+        ShowOllamaError(TxtOllamaModelError, modelAccepted, OllamaAgent.ModelAllowed);
+
+        // Une valeur refusée n'est pas écrite : le fichier garde la dernière valeur acceptée, et
+        // le prédéfini ne peut jamais porter ce qui a été refusé ici.
+        lock (ConfigLock.Gate)
+        {
+            var config = UsageConfigService.Load();
+            if (harnessAccepted) config.OllamaHarness = harness;
+            if (modelAccepted) config.OllamaModel = model;
+            UsageConfigService.Save(config);
+            _config = config;
+        }
+    }
+
+    private static void ShowOllamaError(System.Windows.Controls.TextBlock error, bool accepted, string allowed)
+    {
+        error.Text = accepted ? "" : Loc.F("UsageCfg_OllamaInvalid", allowed);
+        error.Visibility = accepted ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

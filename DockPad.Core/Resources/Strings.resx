@@ -1793,4 +1793,37 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Settings_Terminal_Manage" xml:space="preserve">
     <value>Manage terminals…</value>
   </data>
+  <data name="Preset_OllamaAgent_Name" xml:space="preserve">
+    <value>Open a local agent (Ollama)</value>
+  </data>
+  <data name="Preset_OllamaAgent_Desc" xml:space="preserve">
+    <value>Opens a terminal in this folder and runs « ollama launch {0} --model {1} »</value>
+  </data>
+  <data name="UsageCfg_Ollama" xml:space="preserve">
+    <value>Local agent (Ollama)</value>
+  </data>
+  <data name="UsageCfg_OllamaHarness" xml:space="preserve">
+    <value>Harness</value>
+  </data>
+  <data name="UsageCfg_OllamaHarness_Tip" xml:space="preserve">
+    <value>Ollama integration to launch, e.g. claude, codex, opencode</value>
+  </data>
+  <data name="UsageCfg_OllamaModel" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="UsageCfg_OllamaModel_Tip" xml:space="preserve">
+    <value>Local model passed with --model, e.g. ministral-3:3b</value>
+  </data>
+  <data name="UsageCfg_OllamaHelp" xml:space="preserve">
+    <value>Once both fields are filled in, « Open a local agent (Ollama) » appears in the preset shortcuts: right-click a folder to start the agent there.</value>
+  </data>
+  <data name="UsageCfg_OllamaFound" xml:space="preserve">
+    <value>Ollama detected</value>
+  </data>
+  <data name="UsageCfg_OllamaMissing" xml:space="preserve">
+    <value>Ollama not found: the preset will not be offered.</value>
+  </data>
+  <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
+    <value>Not saved — allowed characters: {0}, not starting with a dash.</value>
+  </data>
 </root>

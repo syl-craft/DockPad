@@ -1793,4 +1793,37 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Settings_Terminal_Manage" xml:space="preserve">
     <value>G3r3r l35 t3rm1n4ux…</value>
   </data>
+  <data name="Preset_OllamaAgent_Name" xml:space="preserve">
+    <value>0uvr1r un 4g3nt l0c4l (0ll4m4)</value>
+  </data>
+  <data name="Preset_OllamaAgent_Desc" xml:space="preserve">
+    <value>0uvr3 un t3rm1n4l d4n5 c3 d05513r 3t l4nc3 « 0ll4m4 l4unch {0} --m0d3l {1} »</value>
+  </data>
+  <data name="UsageCfg_Ollama" xml:space="preserve">
+    <value>4g3nt l0c4l (0ll4m4)</value>
+  </data>
+  <data name="UsageCfg_OllamaHarness" xml:space="preserve">
+    <value>H4rn355</value>
+  </data>
+  <data name="UsageCfg_OllamaHarness_Tip" xml:space="preserve">
+    <value>1nt3gr4t10n 0ll4m4 4 l4nc3r, p4r 3x3mpl3 cl4ud3, c0d3x, 0p3nc0d3</value>
+  </data>
+  <data name="UsageCfg_OllamaModel" xml:space="preserve">
+    <value>M0d3l3</value>
+  </data>
+  <data name="UsageCfg_OllamaModel_Tip" xml:space="preserve">
+    <value>M0d3l3 l0c4l p4553 p4r --m0d3l, p4r 3x3mpl3 m1n15tr4l-3:3b</value>
+  </data>
+  <data name="UsageCfg_OllamaHelp" xml:space="preserve">
+    <value>Un3 f015 l35 d3ux ch4mp5 r3mpl15, « 0uvr1r un 4g3nt l0c4l (0ll4m4) » 4pp4r41t d4n5 l35 r4cc0urc15 pr3d3f1n15 : un cl1c dr01t 5ur un d05513r y l4nc3 l'4g3nt.</value>
+  </data>
+  <data name="UsageCfg_OllamaFound" xml:space="preserve">
+    <value>0ll4m4 d3t3ct3</value>
+  </data>
+  <data name="UsageCfg_OllamaMissing" xml:space="preserve">
+    <value>0ll4m4 1ntr0uv4bl3 : l3 pr3d3f1n1 n3 53r4 p45 pr0p053.</value>
+  </data>
+  <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
+    <value>N0n 3nr3g15tr3 — c4r4ct3r35 4ut0r1535 : {0}, 54n5 t1r3t 4u d3but.</value>
+  </data>
 </root>

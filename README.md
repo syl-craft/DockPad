@@ -25,7 +25,7 @@ A WPF application (.NET 8, x64): a **quick launch bar** for Windows, with a mana
 - **Keyboard overlay** (modifier + 1–9) to launch tiles from the keyboard
 - **Portable icon store** in `%APPDATA%\DockPad\icons\`
 - **Windows context menu manager** (HKCU / HKLM / HKCR)
-- **Predefined shortcuts**: Claude Code, Codex, Antigravity, PowerShell, VS Code, SSMS, GitHub Desktop
+- **Predefined shortcuts**: Claude Code, Codex, Antigravity, a local agent through Ollama, PowerShell, VS Code, SSMS, GitHub Desktop
 - **Terminals**: one default terminal for terminal tiles and right-click shortcuts — Windows Terminal, PowerShell, WezTerm or any program — with one Windows Terminal window and one tab colour per project
 - **Browser picker**: choose the browser when clicking a URL + per-domain rules
 - **MCP server**: Claude (Claude Code / Claude Desktop) can manage the grid, the pages and the browsers

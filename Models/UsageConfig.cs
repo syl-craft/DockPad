@@ -19,5 +19,14 @@ public class UsageConfig
     /// </summary>
     public string DefaultProviderId { get; set; } = "";
 
+    /// <summary>
+    /// Intégration lancée par <c>ollama launch</c> (ex. <c>claude</c>). Vide = pas de prédéfini
+    /// « agent local » : il n'apparaît qu'une fois le harness et le modèle réglés.
+    /// </summary>
+    public string OllamaHarness { get; set; } = "";
+
+    /// <summary>Modèle Ollama passé par <c>--model</c> (ex. <c>ministral-3:3b</c>).</summary>
+    public string OllamaModel { get; set; } = "";
+
     public List<AiProviderEntry> Providers { get; set; } = new();
 }
