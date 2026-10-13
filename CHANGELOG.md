@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.30.0] — 2026-10-13
+
+### Nouveautés
+
+- **Agent IA local avec Ollama** : la fenêtre **☰ → Paramètres → 📊 Usage IA** gagne une section **Agent local (Ollama)**, avec deux champs, **Harness** (`claude`, `codex`, `opencode`…) et **Modèle** (`ministral-3:3b`…). Une fois les deux remplis, et si Ollama est installé, le raccourci prédéfini **« Ouvrir un agent local (Ollama) »** apparaît dans **☰ → Raccourcis prédéfinis** : un clic droit sur un dossier y lance `ollama launch <harness> --model <modèle>`, dans le terminal par défaut.
+  - Les deux champs n'acceptent que lettres, chiffres et `. _ : / -` : rien de ce qui pourrait glisser une autre commande dans la ligne lancée n'est enregistré.
+  - Changer de modèle fait passer le raccourci installé à « mise à jour disponible ».
+
+### Documentation
+
+- README, en anglais et en français : l'agent local dans la liste des raccourcis prédéfinis.
+
 ## [1.29.0] — 2026-10-12
 
 ### Nouveautés
