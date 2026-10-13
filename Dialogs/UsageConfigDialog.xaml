@@ -32,7 +32,7 @@
                 Background="{DynamicResource Brush.SurfaceCard}" Margin="16,12,6,12" Padding="16,12"
                 BorderBrush="{DynamicResource Brush.BorderSoft}" BorderThickness="1" CornerRadius="8"
                 SnapsToDevicePixels="True" UseLayoutRounding="True">
-            <StackPanel>
+            <StackPanel Grid.IsSharedSizeScope="True">
                 <TextBlock Text="{loc:T UsageCfg_Banner}" FontWeight="SemiBold" Margin="0,0,0,10"/>
 
                 <CheckBox x:Name="ChkEnabled" Content="{loc:T UsageCfg_ShowBanner}"
@@ -69,6 +69,57 @@
                               SelectionChanged="Setting_Changed"
                               ToolTip="{loc:T UsageCfg_DefaultProvider_Tip}"/>
                 </Grid>
+
+                <!-- Agent local (Ollama) : alimente le prédéfini « Ouvrir un agent local ».
+                     Sauvegarde immédiate, mais seulement d'une valeur qui passe la liste blanche. -->
+                <Border Height="1" Background="{DynamicResource Brush.BorderSoft}" Margin="0,16,0,12"/>
+
+                <TextBlock Text="{loc:T UsageCfg_Ollama}" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="OllamaLabel"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T UsageCfg_OllamaHarness}" Foreground="{DynamicResource Brush.TextLabel}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtOllamaHarness" Width="200" HorizontalAlignment="Left"
+                             MaxLength="40" TextChanged="Ollama_TextChanged"
+                             AutomationProperties.Name="{loc:T UsageCfg_OllamaHarness}"
+                             ToolTip="{loc:T UsageCfg_OllamaHarness_Tip}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtOllamaHarnessError" TextWrapping="Wrap"
+                               Foreground="{DynamicResource Brush.Danger}" FontSize="11" Margin="0,3,0,0"
+                               Visibility="Collapsed"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="OllamaLabel"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:T UsageCfg_OllamaModel}" Foreground="{DynamicResource Brush.TextLabel}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtOllamaModel" Width="200" HorizontalAlignment="Left"
+                             MaxLength="100" TextChanged="Ollama_TextChanged"
+                             AutomationProperties.Name="{loc:T UsageCfg_OllamaModel}"
+                             ToolTip="{loc:T UsageCfg_OllamaModel_Tip}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtOllamaModelError" TextWrapping="Wrap"
+                               Foreground="{DynamicResource Brush.Danger}" FontSize="11" Margin="0,3,0,0"
+                               Visibility="Collapsed"/>
+                </Grid>
+
+                <TextBlock Text="{loc:T UsageCfg_OllamaHelp}" TextWrapping="Wrap" FontSize="11"
+                           Foreground="{DynamicResource Brush.TextMuted}" Margin="0,2,0,6"/>
+                <TextBlock x:Name="TxtOllamaStatus" TextWrapping="Wrap" FontSize="11"
+                           Foreground="{DynamicResource Brush.TextMuted}"/>
             </StackPanel>
         </Border>
 

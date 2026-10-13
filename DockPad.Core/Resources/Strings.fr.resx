@@ -1793,4 +1793,37 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Settings_Terminal_Manage" xml:space="preserve">
     <value>Gérer les terminaux…</value>
   </data>
+  <data name="Preset_OllamaAgent_Name" xml:space="preserve">
+    <value>Ouvrir un agent local (Ollama)</value>
+  </data>
+  <data name="Preset_OllamaAgent_Desc" xml:space="preserve">
+    <value>Ouvre un terminal dans ce dossier et lance « ollama launch {0} --model {1} »</value>
+  </data>
+  <data name="UsageCfg_Ollama" xml:space="preserve">
+    <value>Agent local (Ollama)</value>
+  </data>
+  <data name="UsageCfg_OllamaHarness" xml:space="preserve">
+    <value>Harness</value>
+  </data>
+  <data name="UsageCfg_OllamaHarness_Tip" xml:space="preserve">
+    <value>Intégration Ollama à lancer, par exemple claude, codex, opencode</value>
+  </data>
+  <data name="UsageCfg_OllamaModel" xml:space="preserve">
+    <value>Modèle</value>
+  </data>
+  <data name="UsageCfg_OllamaModel_Tip" xml:space="preserve">
+    <value>Modèle local passé par --model, par exemple ministral-3:3b</value>
+  </data>
+  <data name="UsageCfg_OllamaHelp" xml:space="preserve">
+    <value>Une fois les deux champs remplis, « Ouvrir un agent local (Ollama) » apparaît dans les raccourcis prédéfinis : un clic droit sur un dossier y lance l'agent.</value>
+  </data>
+  <data name="UsageCfg_OllamaFound" xml:space="preserve">
+    <value>Ollama détecté</value>
+  </data>
+  <data name="UsageCfg_OllamaMissing" xml:space="preserve">
+    <value>Ollama introuvable : le prédéfini ne sera pas proposé.</value>
+  </data>
+  <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
+    <value>Non enregistré — caractères autorisés : {0}, sans tiret au début.</value>
+  </data>
 </root>

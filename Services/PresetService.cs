@@ -14,6 +14,7 @@ public static class PresetService
             BuildClaudeTerminal(),
             BuildCodexTerminal(),
             BuildAntigravityTerminal(),
+            BuildOllamaAgent(),
             BuildPowerShell(),
             BuildVSCode(),
             BuildSSMS(),
@@ -156,6 +157,48 @@ public static class PresetService
             Description = Loc.T("Preset_AntigravityTerminal_Desc")
         };
     }
+
+    private static PresetEntry? BuildOllamaAgent()
+    {
+        var config = UsageConfigService.Load();
+        return BuildOllamaAgent(FindOllamaExe(), config.OllamaHarness, config.OllamaModel);
+    }
+
+    /// <summary>
+    /// Agent IA local : <c>ollama launch &lt;harness&gt; --model &lt;modèle&gt;</c> dans le dossier du
+    /// clic droit, ouvert par le terminal par défaut comme les prédéfinis Claude et Codex.
+    /// </summary>
+    /// <remarks>
+    /// <b>Proposé seulement si Ollama est trouvé et le réglage complet</b> (fenêtre Usage IA) : les
+    /// champs sont vides par défaut, et un prédéfini dont la commande ne peut que manquer n'a rien
+    /// à faire dans la liste. Ollama est lancé par son chemin absolu, pour la raison déjà payée par
+    /// Codex : le <c>PATH</c> de l'Explorateur date de son propre démarrage.
+    /// </remarks>
+    public static PresetEntry? BuildOllamaAgent(string? ollamaExe, string harness, string model)
+    {
+        if (ollamaExe == null) return null;
+
+        string? runCommand = OllamaAgent.RunCommand(ollamaExe, harness, model);
+        if (runCommand == null) return null;
+
+        return new PresetEntry
+        {
+            DisplayName = Loc.T("Preset_OllamaAgent_Name"),
+            RegistryKey = "OpenOllamaAgent",
+            Command = LauncherCommand(LauncherExe, runCommand),
+            IconPath = ollamaExe,
+            Target = ContextMenuTarget.FolderBackground,
+            Description = Loc.F("Preset_OllamaAgent_Desc", harness, model)
+        };
+    }
+
+    /// <summary>
+    /// <c>ollama.exe</c> à l'emplacement de son installateur (per-user), sinon dans le <c>PATH</c>.
+    /// </summary>
+    public static string? FindOllamaExe() =>
+        FindExe("ollama.exe",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                @"Programs\Ollama\ollama.exe"));
 
     /// <summary>
     /// Le logo d'Antigravity rendu en <c>.ico</c> dans le store d'icônes du profil, ou
