@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.1] — 2026-10-13
+
+### Corrections
+
+- **Sécurité : un nom de dossier ne peut plus ajouter de commande au lancement d'un terminal.** Un dossier au nom piégé — `p'; commande; #`, ou un `;` pour Windows Terminal — pouvait faire exécuter une commande au clic droit « Ouvrir un terminal… » ou par une tuile Terminal. Le dossier est désormais échappé selon le programme lancé : Windows Terminal, PowerShell 7 et Windows PowerShell. Les raccourcis prédéfinis installés **avant la 1.29** inscrivent encore l'ancienne commande : les réinstaller depuis **☰ → Raccourcis prédéfinis**.
+- **Le raccourci « Ouvrir un agent local (Ollama) » porte le logo d'Ollama** : l'exécutable n'embarque aucune icône, le logo de l'installateur est recopié dans le profil. Réappliquer le raccourci depuis **☰ → Raccourcis prédéfinis** pour mettre à jour l'icône.
+
 ## [1.30.0] — 2026-10-13
 
 ### Nouveautés
