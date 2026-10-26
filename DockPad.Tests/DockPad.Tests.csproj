@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DockPad.csproj" />
+    <ProjectReference Include="..\DockPad.StreamDock\DockPad.StreamDock.csproj" />
   </ItemGroup>
 
 </Project>
