@@ -1832,4 +1832,13 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="StreamDock_Week" xml:space="preserve">
     <value>Semaine</value>
   </data>
+  <data name="StreamDock_Home" xml:space="preserve">
+    <value>Accueil</value>
+  </data>
+  <data name="StreamDock_Back" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="StreamDock_Next" xml:space="preserve">
+    <value>Suite</value>
+  </data>
 </root>

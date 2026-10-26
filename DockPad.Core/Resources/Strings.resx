@@ -1832,4 +1832,13 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="StreamDock_Week" xml:space="preserve">
     <value>Week</value>
   </data>
+  <data name="StreamDock_Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="StreamDock_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="StreamDock_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
 </root>

@@ -56,6 +56,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="DockPad.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="DockPad.Core\DockPad.Core.csproj" />
     <ProjectReference Include="DockPad.Surfaces\DockPad.Surfaces.csproj" />
   </ItemGroup>
