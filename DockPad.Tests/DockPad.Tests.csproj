@@ -23,6 +23,14 @@
   <ItemGroup>
     <ProjectReference Include="..\DockPad.csproj" />
     <ProjectReference Include="..\DockPad.StreamDock\DockPad.StreamDock.csproj" />
+    <ProjectReference Include="..\DockPad.Tests.FakeDriver\DockPad.Tests.FakeDriver.csproj"
+                      ReferenceOutputAssembly="false" OutputItemType="FakeDriverAssembly" />
   </ItemGroup>
+
+  <Target Name="CopyTestPlugins" AfterTargets="Build">
+    <Copy SourceFiles="@(FakeDriverAssembly)" DestinationFolder="$(OutDir)TestPlugins\FakeDriver\" />
+    <Copy SourceFiles="@(FakeDriverAssembly)" DestinationFolder="$(OutDir)TestPluginsConcurrent\FakeDriver\" />
+    <Copy SourceFiles="$(TargetDir)DockPad.Surfaces.dll" DestinationFiles="$(OutDir)TestPlugins\Empty\DockPad.Empty.dll" />
+  </Target>
 
 </Project>

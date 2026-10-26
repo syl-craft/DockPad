@@ -39,9 +39,9 @@
     <!-- DockPad.Tests et tools\McpShot sont des projets frères situés dans des sous-dossiers du
          répertoire de DockPad.csproj : sans ces exclusions, le glob par défaut du SDK (**/*.cs)
          compile aussi leurs sources dans l'app. -->
-    <Compile Remove="DockPad.Tests\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
-    <EmbeddedResource Remove="DockPad.Tests\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
-    <None Remove="DockPad.Tests\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
+    <Compile Remove="DockPad.Tests\**;DockPad.Tests.FakeDriver\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
+    <EmbeddedResource Remove="DockPad.Tests\**;DockPad.Tests.FakeDriver\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
+    <None Remove="DockPad.Tests\**;DockPad.Tests.FakeDriver\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
     <!-- Page et Resource aussi : le glob **/*.xaml du SDK WPF compilait les dictionnaires de
          la bibliotheque une SECONDE fois dans l'application (verifie dans obj/). Quatre BAML
          morts embarques, une double compilation de balisage a chaque edition de theme. Et le
@@ -88,7 +88,12 @@
   <Target Name="PublishTerminalLauncher" AfterTargets="Publish" Condition="'$(SkipTerminalLauncher)' != 'true'">
     <Exec Command="set &quot;PATH=$([System.Environment]::GetFolderPath(SpecialFolder.ProgramFilesX86))\Microsoft Visual Studio\Installer;%PATH%&quot; &amp;&amp; dotnet publish &quot;$(MSBuildProjectDirectory)\DockPadTerminal\DockPadTerminal.csproj&quot; -c Release -m:4 -nologo -p:Version=$(Version) -o &quot;$(PublishDir.TrimEnd('\'))&quot;" />
   </Target>
-  <Target Name="ZipAfterPublish" AfterTargets="Publish" Condition="'$(SkipLegacyZip)' != 'true'">
+  <!-- Le pilote doit être livré avant le zip, qui supprime le dossier de publication. -->
+  <Target Name="PublishStreamDockDriver" AfterTargets="Publish" BeforeTargets="ZipAfterPublish" DependsOnTargets="PublishTerminalLauncher" Condition="'$(SkipStreamDockDriver)' != 'true'">
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)\DockPad.StreamDock\DockPad.StreamDock.csproj&quot; -c $(Configuration) -m:4 -nologo -p:Version=$(Version) -p:IncludeSourceRevisionInInformationalVersion=$(IncludeSourceRevisionInInformationalVersion) -o &quot;$(PublishDir)plugins\StreamDock&quot;" />
+    <Delete Files="$(PublishDir)plugins\StreamDock\DockPad.Surfaces.dll" />
+  </Target>
+  <Target Name="ZipAfterPublish" AfterTargets="Publish" DependsOnTargets="PublishTerminalLauncher;PublishStreamDockDriver" Condition="'$(SkipLegacyZip)' != 'true'">
     <MakeDir Directories="$(MSBuildProjectDirectory)\release" />
     <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(MSBuildProjectDirectory)\release\DockPad-$(Version).zip" Overwrite="true" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)\CHANGELOG.md" DestinationFiles="$(MSBuildProjectDirectory)\release\DockPad-$(Version)-Changelog.md" OverwriteReadOnlyFiles="true" />

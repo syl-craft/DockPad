@@ -5,6 +5,11 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $files = @('DockPad.exe', 'DockPad.dll', 'DockPad.Core.dll', 'fr/DockPad.Core.resources.dll', 'qps-Ploc/DockPad.Core.resources.dll')
+$plugins = Join-Path $Directory 'plugins'
+if (Test-Path -LiteralPath $plugins -PathType Container) {
+    $files += Get-ChildItem -LiteralPath $plugins -Recurse -File -Filter '*.dll' |
+        ForEach-Object { [IO.Path]::GetRelativePath([IO.Path]::GetFullPath($Directory), $_.FullName) }
+}
 foreach ($relative in $files) {
     $path = Join-Path $Directory $relative
     if (!(Test-Path -LiteralPath $path -PathType Leaf)) { throw "Signed application file missing: $relative" }
@@ -15,4 +20,4 @@ foreach ($relative in $files) {
     $metadata = [Diagnostics.FileVersionInfo]::GetVersionInfo([IO.Path]::GetFullPath($path))
     if ($metadata.ProductName -ne 'DockPad' -or $metadata.ProductVersion -ne $Version) { throw "Unexpected signed metadata: $relative" }
 }
-Write-Host "PASS: five DockPad binaries, publisher certificate, timestamps and version $Version."
+Write-Host "PASS: $($files.Count) DockPad binaries, publisher certificate, timestamps and version $Version."

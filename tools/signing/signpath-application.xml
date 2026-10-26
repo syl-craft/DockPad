@@ -11,6 +11,7 @@
       <include path="DockPad.Core.dll" />
       <include path="fr/DockPad.Core.resources.dll" />
       <include path="qps-Ploc/DockPad.Core.resources.dll" />
+      <include path="plugins/**/*.dll" />
       <for-each>
         <authenticode-sign hash-algorithm="sha256" description="DockPad" description-url="https://github.com/syl-craft/DockPad" />
       </for-each>
