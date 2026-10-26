@@ -56,7 +56,7 @@ public static class McpDispatcher
         }
     }
 
-    internal static void RaiseMutated()
+    public static void RaiseMutated()
     {
         var subscribers = Mutated;
         if (subscribers == null) return;

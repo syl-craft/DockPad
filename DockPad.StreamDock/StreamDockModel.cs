@@ -10,6 +10,11 @@ internal static class StreamDockModel
     public const ushort UsagePage = 0xFFA0, Usage = 1;
     public const int OutputReportLength = 1025, InputReportLength = 513, ChunkLength = 1024;
 
+    /// <summary>
+    /// Limite constatée sur le dock vers 10 Ko ; marge conservée pour l'envoi des JPEG.
+    /// </summary>
+    public const int MaxJpegLength = 8 * 1024;
+
     public const int KeyRows = 3, KeyColumns = 5, DisplayCount = 3;
 
     /// <summary>

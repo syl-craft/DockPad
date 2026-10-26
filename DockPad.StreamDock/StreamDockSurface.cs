@@ -187,7 +187,8 @@ internal sealed class StreamDockSurface : IControlSurface
         }
     }
 
-    private Task SendCommandAsync(byte[] report, CancellationToken ct)
+    // Les commandes brutes du probe suivent le même fil d’écriture que les images.
+    internal Task SendCommandAsync(byte[] report, CancellationToken ct)
     {
         if (ct.IsCancellationRequested)
             return Task.FromCanceled(ct);

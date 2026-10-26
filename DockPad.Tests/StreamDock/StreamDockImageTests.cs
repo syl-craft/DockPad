@@ -7,9 +7,8 @@ using DockPad.Surfaces;
 namespace DockPad.Tests;
 
 /// <summary>
-/// Encodage des images du 293S V3 : un coin rouge en haut à gauche se retrouve en bas à gauche après la
-/// rotation d'un quart de tour antihoraire, et une image plus grande que la touche est ramenée à sa taille.
-/// Les tests tournent sur un thread STA dédié, comme l'appel depuis le fil du pilote.
+/// Encodage du 293S V3 sur un thread STA : rotation antihoraire sans miroir et réduction à la taille demandée.
+/// Le bruit tient sous la limite JPEG ; une image simple garde la qualité maximale.
 /// </summary>
 public class StreamDockImageTests
 {
@@ -44,6 +43,38 @@ public class StreamDockImageTests
         Assert.Equal(80, decoded.PixelWidth);
         Assert.Equal(80, decoded.PixelHeight);
         Assert.True(IsRed(PixelAt(decoded, x: 5, y: 75)), "Le coin rouge doit finir en bas à gauche.");
+    }
+
+    [Fact]
+    public async Task Jpeg_BruitTropLourd_ReduitSousLaLimite()
+    {
+        const int size = 96;
+        var pixels = new byte[size * size * 4];
+        new Random(293).NextBytes(pixels);
+        for (var offset = 3; offset < pixels.Length; offset += 4)
+        {
+            pixels[offset] = 255;
+        }
+        var image = new SurfaceImage(size, size, pixels);
+        var maximal = await OnStaThread(() => StreamDockImage.ToJpeg(image, size, maxLength: int.MaxValue));
+
+        var jpeg = await OnStaThread(() => StreamDockImage.ToJpeg(image, size));
+
+        Assert.True(maximal.Length > StreamDockModel.MaxJpegLength);
+        Assert.InRange(jpeg.Length, 1, StreamDockModel.MaxJpegLength);
+    }
+
+    [Fact]
+    public async Task Jpeg_ImageSimple_GardeLaQualiteMaximale()
+    {
+        const int size = 96;
+        var image = new SurfaceImage(size, size, Enumerable.Repeat((byte)255, size * size * 4).ToArray());
+        var maximal = await OnStaThread(() => StreamDockImage.ToJpeg(image, size, maxLength: int.MaxValue));
+
+        var jpeg = await OnStaThread(() => StreamDockImage.ToJpeg(image, size));
+
+        Assert.InRange(maximal.Length, 1, StreamDockModel.MaxJpegLength);
+        Assert.Equal(maximal, jpeg);
     }
 
     /// <summary>

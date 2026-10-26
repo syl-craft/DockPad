@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>StreamDockProbe</AssemblyName>
+    <RootNamespace>StreamDockProbe</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DockPad.StreamDock\DockPad.StreamDock.csproj" />
+    <ProjectReference Include="..\..\DockPad.Surfaces\DockPad.Surfaces.csproj" />
+  </ItemGroup>
+
+</Project>
