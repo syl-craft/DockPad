@@ -1826,4 +1826,10 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
     <value>N0n 3nr3g15tr3 — c4r4ct3r35 4ut0r1535 : {0}, 54n5 t1r3t 4u d3but.</value>
   </data>
+  <data name="StreamDock_Session" xml:space="preserve">
+    <value>5 h</value>
+  </data>
+  <data name="StreamDock_Week" xml:space="preserve">
+    <value>53m41n3</value>
+  </data>
 </root>

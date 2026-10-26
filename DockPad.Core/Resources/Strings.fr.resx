@@ -1826,4 +1826,10 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
     <value>Non enregistré — caractères autorisés : {0}, sans tiret au début.</value>
   </data>
+  <data name="StreamDock_Session" xml:space="preserve">
+    <value>5 h</value>
+  </data>
+  <data name="StreamDock_Week" xml:space="preserve">
+    <value>Semaine</value>
+  </data>
 </root>

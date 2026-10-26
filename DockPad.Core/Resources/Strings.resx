@@ -1826,4 +1826,10 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
     <value>Not saved — allowed characters: {0}, not starting with a dash.</value>
   </data>
+  <data name="StreamDock_Session" xml:space="preserve">
+    <value>5 h</value>
+  </data>
+  <data name="StreamDock_Week" xml:space="preserve">
+    <value>Week</value>
+  </data>
 </root>
