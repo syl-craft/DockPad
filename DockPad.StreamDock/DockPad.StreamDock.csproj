@@ -4,6 +4,8 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <!-- WPF pour JpegBitmapEncoder : aucune dépendance NuGet dans le pilote. -->
     <UseWPF>true</UseWPF>
+    <!-- LibraryImport engendre du code unsafe, et le rappel de CM_Register_Notification est un pointeur de fonction. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <Platforms>x64</Platforms>
     <Product>DockPad</Product>
