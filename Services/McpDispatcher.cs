@@ -9,8 +9,10 @@ namespace DockPad.Services;
 /// </summary>
 public static class McpDispatcher
 {
-    /// <summary>Branché par App sur le rafraîchissement de la grille (Dispatcher).</summary>
-    public static Action? OnMutation { get; set; }
+    /// <summary>
+    /// Mutation enregistrée ; chaque abonné reste isolé des erreurs des autres.
+    /// </summary>
+    public static event Action? Mutated;
 
     private static readonly HashSet<string> DeleteTools =
         ["dockpad_shortcut_delete", "dockpad_page_delete", "dockpad_rule_delete"];
@@ -43,7 +45,7 @@ public static class McpDispatcher
             var result = Execute(tool, args);
             McpLogService.Add(tool, summary,
                 result.Ok ? McpLogStatus.Success : McpLogStatus.Error, result.Error);
-            if (result.Ok && !ReadTools.Contains(tool)) OnMutation?.Invoke();
+            if (result.Ok && !ReadTools.Contains(tool)) RaiseMutated();
             return Serialize(result);
         }
         catch (Exception ex)
@@ -51,6 +53,17 @@ public static class McpDispatcher
             LogService.Warn(ex, $"Requête MCP invalide ({tool})");
             McpLogService.Add(tool, summary, McpLogStatus.Error, ex.Message);
             return Serialize(ActionResult.Fail($"Requête invalide : {ex.Message}"));
+        }
+    }
+
+    internal static void RaiseMutated()
+    {
+        var subscribers = Mutated;
+        if (subscribers == null) return;
+        foreach (Action subscriber in subscribers.GetInvocationList())
+        {
+            try { subscriber(); }
+            catch (Exception ex) { LogService.Warn(ex, "Échec d’un abonné à une mutation MCP."); }
         }
     }
 

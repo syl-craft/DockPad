@@ -188,7 +188,7 @@ public partial class App : Application
                     () => System.Threading.Tasks.Task.Run(() => Services.TerminalLaunch.Launch(request)));
             });
 
-        Services.McpDispatcher.OnMutation = () => Dispatcher.BeginInvoke(() => _mainWindow.RefreshGrid());
+        Services.McpDispatcher.Mutated += () => Dispatcher.BeginInvoke(() => _mainWindow.RefreshGrid());
         Services.McpPipeService.StartServer(req => Services.McpDispatcher.Handle(req));
 
         if (url is not null)

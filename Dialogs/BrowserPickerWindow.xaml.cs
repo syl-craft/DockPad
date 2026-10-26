@@ -254,7 +254,7 @@ public partial class BrowserPickerWindow : Window
             bool actual = await FavoriteToggle.SetAsync(_url, wanted);
             BtnFavorite.IsChecked = actual;
             UpdateFavoriteHints();
-            McpDispatcher.OnMutation?.Invoke();
+            McpDispatcher.RaiseMutated();
         }
         catch (Exception ex)
         {

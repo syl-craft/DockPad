@@ -36,22 +36,35 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private TileFiles Files => TileStore.FilesFor(_mode.Target);
 
     /// <summary>
-    /// Un index de page <b>par mode</b>, et non un seul partagé.
+    /// Page Raccourcis ; le dock passe par ShowShortcutPageFromDock, jamais par Set directement.
     /// </summary>
-    /// <remarks>
-    /// Aller voir les favoris et revenir ne doit pas faire perdre la page où l'on était ; et
-    /// arriver sur les favoris doit commencer à leur page 0, pas à la page 3 des raccourcis, qui
-    /// n'existe peut-être pas chez eux.
-    /// </remarks>
-    private int _pageShortcuts = 0;
+    public ShortcutPageState ShortcutPage { get; }
     private int _pageFavorites = 0;
 
-    /// <summary>La page affichée dans le mode courant.</summary>
+    /// <summary>
+    /// La page affichée dans le mode courant ; les favoris gardent leur propre numéro.
+    /// </summary>
     private int CurrentPage
     {
-        get => _mode.IsFavorites ? _pageFavorites : _pageShortcuts;
-        set { if (_mode.IsFavorites) _pageFavorites = value; else _pageShortcuts = value; }
+        get => _mode.IsFavorites ? _pageFavorites : ShortcutPage.Page;
+        set
+        {
+            if (_mode.IsFavorites) _pageFavorites = value;
+            else ShortcutPage.Set(value, PageChangeOrigin.DockPad);
+        }
     }
+
+    /// <summary>
+    /// Relit le fichier des raccourcis depuis n’importe quel thread, sans toucher à l’état de la fenêtre.
+    /// </summary>
+    public IReadOnlyList<ShortcutEntry> ShortcutEntries() =>
+        ShortcutService.Load(TileStore.FilesFor(TileTarget.Shortcuts).EntriesPath);
+
+    /// <summary>
+    /// Relit le fichier des pages depuis n’importe quel thread, sans toucher à l’état de la fenêtre.
+    /// </summary>
+    public IReadOnlyList<PageConfig> ShortcutPages() =>
+        PageConfigService.Load(TileStore.FilesFor(TileTarget.Shortcuts).PagesPath);
 
     private IntPtr _hwnd;
     private Point _dragStartPoint;
@@ -71,6 +84,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     public QuickAccessWindow()
     {
+        ShortcutPage = new ShortcutPageState(Dispatcher);
         InitializeComponent();
         _hintOverlay = new TileHintOverlay(HintOverlay);
 
@@ -97,6 +111,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // après avoir changé la langue laissait la grille dans l'ancienne indéfiniment, puisque le
         // chemin d'annulation ne rafraîchit rien.
         Loc.LanguageChanged += OnLanguageChanged;
+        ShortcutPage.Changed += OnShortcutPageChanged;
 
         // Les gestionnaires de survol et de dépôt posent la couleur d'une tuile en VALEUR LOCALE
         // (btn.Background = …), et une valeur locale bat définitivement le style et son
@@ -108,6 +123,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         Closed += (_, _) =>
         {
             Loc.LanguageChanged -= OnLanguageChanged;
+            ShortcutPage.Changed -= OnShortcutPageChanged;
             ThemeService.ThemeChanged -= OnThemeChanged;
         };
 
@@ -199,12 +215,32 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// </summary>
     private void OnThemeChanged() => PopulateGrid();
 
+    /// <summary>
+    /// Change la page Raccourcis sur le thread UI, sans afficher la fenêtre ni quitter les favoris.
+    /// </summary>
+    public void ShowShortcutPageFromDock(int page)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => ShowShortcutPageFromDock(page));
+            return;
+        }
+        ShortcutPage.Set(page, PageChangeOrigin.StreamDock);
+    }
+
+    private void OnShortcutPageChanged(int page, PageChangeOrigin origin)
+    {
+        if (origin != PageChangeOrigin.StreamDock) return;
+        if (!_mode.IsFavorites) PopulateGrid();
+    }
+
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         UpdateHotkeyDisplay();
         ApplyTileLock();
         ApplyTileMode();
         PopulateGrid();   // infobulles de tuiles et libellés de type
+        TileEvents.RaiseGridChanged();
     }
 
     /// <summary>Reporte l'état du verrou sur le bouton de la toolbar.</summary>
@@ -742,6 +778,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         var r = PageActionService.Update(pageIndex, iconProvided: true, dlg.FileName, null, Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private void ClearPageIcon(int pageIndex)
@@ -749,6 +786,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         var r = PageActionService.Update(pageIndex, iconProvided: true, null, null, Files);
         if (!r.Ok) return;
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private void MovePage(int fromIndex, int toIndex)
@@ -760,6 +798,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         else if (CurrentPage == toIndex)   CurrentPage = fromIndex;
 
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private void DeletePage(int pageIndex)
@@ -781,6 +820,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         CurrentPage = Math.Min(CurrentPage > pageIndex ? CurrentPage - 1 : CurrentPage, newMax);
 
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     /// <summary>
@@ -871,6 +911,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             : await ShortcutActionService.AddAsync([item], Files);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private async Task EditTile(ShortcutEntry entry)
@@ -885,6 +926,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         }, Files, entry.Slot);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private void DuplicateTile(ShortcutEntry entry)
@@ -892,6 +934,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         var r = ShortcutActionService.Duplicate(entry.Page, entry.Row, entry.Col, Files, entry.Slot);
         if (!r.Ok) { AppDialog.Info(r.Error!, "Dupliquer", this); return; }
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private MenuItem BuildMoveToPageMenu(ShortcutEntry entry)
@@ -977,6 +1020,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // retour d'information. Basculer de mode déplacerait l'utilisateur sans qu'il l'ait
         // demandé, et lui ferait perdre la page où il était.
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private void MoveTileToPage(ShortcutEntry entry, int targetPage)
@@ -984,6 +1028,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         var r = ShortcutActionService.Move(entry.Page, entry.Row, entry.Col, targetPage, files: Files, slot: entry.Slot);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private void BuildFolderContextMenuSection(ContextMenu menu, string folderPath)
@@ -1026,8 +1071,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     {
         if (!AppDialog.Confirm(Loc.F("Quick_Tile_ConfirmDelete", entry.Name), owner: this)) return;
 
-        ShortcutActionService.Delete(entry.Page, entry.Row, entry.Col, Files, entry.Slot);
+        var result = ShortcutActionService.Delete(entry.Page, entry.Row, entry.Col, Files, entry.Slot);
         PopulateGrid();
+        if (result.Ok) TileEvents.RaiseGridChanged();
     }
 
     private void Tile_Click(object sender, RoutedEventArgs e)
@@ -1043,6 +1089,26 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private void ExecuteEntry(ShortcutEntry entry)
     {
         if (entry.IsGroup) { OpenGroupLauncher(entry); return; }
+        LaunchEntry(entry, owner: this);
+    }
+
+    public void RunFromDock(ShortcutEntry entry)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => RunFromDock(entry));
+            return;
+        }
+        if (entry.IsGroup)
+        {
+            LogService.Info("Groupe ignoré lors du lancement depuis le Stream Dock.");
+            return;
+        }
+        LaunchEntry(entry, owner: IsVisible && WindowState != WindowState.Minimized ? this : null);
+    }
+
+    private static void LaunchEntry(ShortcutEntry entry, Window? owner)
+    {
         try
         {
             ShortcutLauncher.Launch(entry);
@@ -1050,7 +1116,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         catch (Exception ex)
         {
             LogService.Error(ex, $"Exécution du raccourci « {entry.Name} » ({entry.Type})");
-            AppDialog.Error(Loc.F("Quick_RunError", ex.Message), owner: this);
+            AppDialog.Error(Loc.F("Quick_RunError", ex.Message), owner: owner);
         }
     }
 
@@ -1156,6 +1222,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // Le contenu du bouton est engendre par le gabarit : on ne va plus y chercher l'Image a
         // la main. Repeupler la grille republie la cellule, donc l'icone.
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     private void TileDrag_MouseDown(object sender, MouseButtonEventArgs e)
@@ -1244,6 +1311,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             all => TileGroupService.MoveCore(all, TileAddress.Of(_dragSource), _dragSource.IsGroup ? cell.Address.Root : cell.Address));
         if (!result.Ok) AppDialog.Info(result.Error!, owner: this);
         PopulateGrid();
+        if (result.Ok) TileEvents.RaiseGridChanged();
     }
 
     /// <summary>Le presse-papiers de glissement porte-t-il un dépôt dont on sait faire une tuile ?</summary>
@@ -1309,6 +1377,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         });
         if (!result.Ok) AppDialog.Error(result.Error!, owner: this);
         PopulateGrid();
+        if (result.Ok) TileEvents.RaiseGridChanged();
     }
 
     private static string? EnsureDefaultBrowserIcon()
@@ -1348,6 +1417,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             ResyncIcons(TileStore.FilesFor(target));
 
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
     }
 
     /// <summary>Remet le store d'icônes d'accord avec une grille, tuiles et pages.</summary>

@@ -73,6 +73,7 @@ public partial class QuickAccessWindow
         if (!result.Ok) { AppDialog.Info(result.Error!, owner: this); return true; }
         CancelMove();
         PopulateGrid();
+        TileEvents.RaiseGridChanged();
         return true;
     }
 
@@ -146,6 +147,7 @@ public partial class QuickAccessWindow
                 if (!result.Ok) AppDialog.Info(result.Error!, owner: this);
                 CancelMove();
                 PopulateGrid();
+                if (result.Ok) TileEvents.RaiseGridChanged();
             };
             layoutMenu.Items.Add(option);
         }
@@ -172,6 +174,7 @@ public partial class QuickAccessWindow
             var result = TileGroupService.Mutate(Files, all => TileGroupService.UpdateCore(all, rootAddress, dialog.GroupName, dialog.GroupColor));
             if (!result.Ok) AppDialog.Error(result.Error!, owner: this);
             PopulateGrid();
+            if (result.Ok) TileEvents.RaiseGridChanged();
         };
         groupMenu.Items.Add(rename);
         var moveGroup = new MenuItem { Header = Loc.T("Group_MoveWhole") };
@@ -191,6 +194,7 @@ public partial class QuickAccessWindow
             var result = ShortcutActionService.Delete(root.Page, root.Row, root.Col, Files);
             if (!result.Ok) AppDialog.Error(result.Error!, owner: this);
             PopulateGrid();
+            if (result.Ok) TileEvents.RaiseGridChanged();
         };
         groupMenu.Items.Add(delete);
         menu.Items.Add(groupMenu);
