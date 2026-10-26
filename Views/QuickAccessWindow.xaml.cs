@@ -700,21 +700,10 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     private Button BuildPageButton(int page, PageConfig? config, bool active, int lastShown)
     {
-        object content;
-        if (config != null && (!string.IsNullOrEmpty(config.IconPath) || !string.IsNullOrEmpty(config.IconProfilePath)))
-        {
-            string iconDisp = !string.IsNullOrEmpty(config.IconPath) && File.Exists(config.IconPath)
-                ? config.IconPath
-                : IconStoreService.ResolveProfilePath(config.IconProfilePath) ?? "";
-            var src = IconStoreService.LoadImage(iconDisp);
-            content = src != null
-                ? (object)new Image { Source = src, Width = 18, Height = 18, Stretch = Stretch.Uniform }
-                : (page + 1).ToString();
-        }
-        else
-        {
-            content = (page + 1).ToString();
-        }
+        var src = IconStoreService.LoadImage(IconStoreService.ResolvePageIconPath(config));
+        object content = src != null
+            ? (object)new Image { Source = src, Width = 18, Height = 18, Stretch = Stretch.Uniform }
+            : (page + 1).ToString();
 
         var btn = new Button
         {
