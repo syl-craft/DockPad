@@ -39,9 +39,9 @@
     <!-- DockPad.Tests et tools\McpShot sont des projets frères situés dans des sous-dossiers du
          répertoire de DockPad.csproj : sans ces exclusions, le glob par défaut du SDK (**/*.cs)
          compile aussi leurs sources dans l'app. -->
-    <Compile Remove="DockPad.Tests\**;tools\**;DockPad.Core\**;DockPadTerminal\**" />
-    <EmbeddedResource Remove="DockPad.Tests\**;tools\**;DockPad.Core\**;DockPadTerminal\**" />
-    <None Remove="DockPad.Tests\**;DockPad.Core\**;DockPadTerminal\**" />
+    <Compile Remove="DockPad.Tests\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPadTerminal\**" />
+    <EmbeddedResource Remove="DockPad.Tests\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPadTerminal\**" />
+    <None Remove="DockPad.Tests\**;DockPad.Core\**;DockPad.Surfaces\**;DockPadTerminal\**" />
     <!-- Page et Resource aussi : le glob **/*.xaml du SDK WPF compilait les dictionnaires de
          la bibliotheque une SECONDE fois dans l'application (verifie dans obj/). Quatre BAML
          morts embarques, une double compilation de balisage a chaque edition de theme. Et le
@@ -57,6 +57,7 @@
 
   <ItemGroup>
     <ProjectReference Include="DockPad.Core\DockPad.Core.csproj" />
+    <ProjectReference Include="DockPad.Surfaces\DockPad.Surfaces.csproj" />
   </ItemGroup>
 
   <!-- Microsoft.Data.Sqlite embarque les binaires natifs de toutes les plateformes : mesure faite,
