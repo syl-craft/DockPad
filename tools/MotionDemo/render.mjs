@@ -99,15 +99,12 @@ async function renderClip(browser, base, clip, theme, lang, stills) {
   await page.close();
 
   const mb = f => (fs.statSync(f).size / 1048576).toFixed(2);
-  // Au-dela de 10 s, le GIF depasserait le poids qu'affiche GitHub : le clip reste en MP4 seul.
-  if (duration > 10) {
-    console.log(`  ${name} : ${frames} images en ${((Date.now() - t0) / 1000).toFixed(0)} s — mp4 ${mb(mp4)} Mo`);
-    return;
-  }
 
-  // GIF pour le README : 960 x 540, 20 i/s, palette calculee sur le clip lui-meme.
+  // GIF pour le README, palette calculee sur le clip lui-meme : 960 x 540 a 20 i/s ; au-dela de 10 s,
+  // 720 x 405 a 10 i/s, pour rester vers 5 Mo comme les autres clips.
+  const long = duration > 10;
   const g = ffmpeg(['-i', mp4, '-filter_complex',
-    'fps=20,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
+    `fps=${long ? 10 : 20},scale=${long ? 720 : 960}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=${long ? 128 : 192}:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle`,
     '-loop', '0', gif]);
   g.stdin.end();
   await g.done;
