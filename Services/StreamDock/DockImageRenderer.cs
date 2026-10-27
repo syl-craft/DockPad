@@ -51,7 +51,7 @@ public static class DockImageRenderer
                     DrawNavigation(context, Right, Loc.T("StreamDock_Next"), iconBounds);
                     break;
                 case DockKey.OpenPage page:
-                    DrawPage(context, page, pressed, iconBounds);
+                    DrawPage(context, page, pressed);
                     break;
                 case DockKey.RunTile tile:
                     DrawTile(context, tile.Entry, iconBounds);
@@ -89,18 +89,21 @@ public static class DockImageRenderer
         DrawKeyLabel(context, label);
     }
 
-    private static void DrawPage(DrawingContext context, DockKey.OpenPage page, bool pressed, Rect bounds)
+    /// <summary>
+    /// Icône de la page sur toute la touche, sans libellé ; le numéro seulement faute d'icône.
+    /// </summary>
+    private static void DrawPage(DrawingContext context, DockKey.OpenPage page, bool pressed)
     {
-        string number = ((long)page.PageIndex + 1).ToString(Loc.Formatting);
+        var bounds = pressed ? new Rect(17.4, 17.4, 61.2, 61.2) : new Rect(12, 12, 72, 72);
         var icon = LoadIcon(page.IconRef);
         if (icon == null)
         {
-            DrawText(context, number, bounds, fontSize: pressed ? 36 * 0.85 : 36);
+            string number = ((long)page.PageIndex + 1).ToString(Loc.Formatting);
+            DrawText(context, number, bounds, fontSize: pressed ? 44 * 0.85 : 44);
             return;
         }
 
         DrawImage(context, icon, bounds);
-        DrawKeyLabel(context, number);
     }
 
     private static void DrawTile(DrawingContext context, ShortcutEntry entry, Rect bounds)

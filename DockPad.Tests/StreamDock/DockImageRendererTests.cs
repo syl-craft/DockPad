@@ -225,6 +225,29 @@ public class DockImageRendererTests : IDisposable
         });
     }
 
+    /// <summary>
+    /// Une page avec icône occupe toute la touche : aucun numéro ni libellé dessous.
+    /// </summary>
+    [Fact]
+    public async Task PageAvecIcone_IconeSurTouteLaToucheSansNumero()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "DockPadRenderer-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            string icon = Path.Combine(folder, "page.png");
+            var page = await OnStaThread(() =>
+            {
+                WritePng(icon, SolidImage(blue: 0, green: 0, red: 255, alpha: 255));
+                return DockImageRenderer.RenderKey(new DockKey.OpenPage(7, icon), pressed: false, size: 96);
+            });
+            Assert.Equal(((byte)0, (byte)0, (byte)255), PixelAt(page, x: 80, y: 48));
+            Assert.Equal(((byte)0, (byte)0, (byte)255), PixelAt(page, x: 16, y: 48));
+            Assert.Equal(0, WhitePixels(page, top: 0, bottom: 96));
+        }
+        finally { Directory.Delete(folder, recursive: true); }
+    }
+
     [Fact]
     public async Task PageSansIcone_NumeroDockPadEtRepliSiIllisible()
     {
