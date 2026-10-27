@@ -5,7 +5,7 @@ using DockPad.Models;
 namespace DockPad.Services;
 
 /// <summary>
-/// Un style de touches inconnu revient à Halo sans empêcher la lecture des autres réglages.
+/// Un style de touches inconnu revient à Néon sans empêcher la lecture des autres réglages.
 /// </summary>
 public sealed class DockKeyStyleJsonConverter : JsonConverter<DockKeyStyle>
 {
@@ -21,9 +21,9 @@ public sealed class DockKeyStyleJsonConverter : JsonConverter<DockKeyStyle>
             return style;
 
         reader.Skip();
-        return DockKeyStyle.Halo;
+        return DockKeyStyle.Neon;
     }
 
     public override void Write(Utf8JsonWriter writer, DockKeyStyle value, JsonSerializerOptions options) =>
-        writer.WriteNumberValue((int)(Enum.IsDefined(value) ? value : DockKeyStyle.Halo));
+        writer.WriteNumberValue((int)(Enum.IsDefined(value) ? value : DockKeyStyle.Neon));
 }

@@ -360,29 +360,129 @@ public class DockImageRendererTests : IDisposable
     private static SideStripContent Column() => new([], 23, 61);
 
     [Theory]
-    [InlineData(255, 0, 0)]
-    [InlineData(0, 0, 255)]
-    public async Task Halo_TuileTeinteeParLaCouleurDeLIcone(byte red, byte green, byte blue)
+    [InlineData(DockKeyStyle.Neon, 255, 0, 0)]
+    [InlineData(DockKeyStyle.Neon, 0, 0, 255)]
+    [InlineData(DockKeyStyle.Flat, 255, 0, 0)]
+    [InlineData(DockKeyStyle.Flat, 0, 0, 255)]
+    public async Task Styles_CouleurDeLIcone_TraitEnNeonFondEnAplat(DockKeyStyle style, byte red, byte green, byte blue)
     {
         string folder = Path.Combine(Path.GetTempPath(), "DockPadRenderer-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         try
         {
-            var tile = await OnStaThread(() =>
+            var image = await OnStaThread(() =>
             {
                 string icon = Path.Combine(folder, "icon.png");
                 WritePng(icon, SolidImage(blue, green, red, alpha: 255));
-                return DockImageRenderer.RenderKey(new DockKey.RunTile(Tile(icon)), DockKeyStyle.Halo, pressed: false, size: 96);
+                return DockImageRenderer.RenderKey(new DockKey.RunTile(Tile(icon)), style, pressed: false, size: 96);
             });
 
-            // Bord gauche de la tuile, hors de l'icône et du nom : la teinte domine sans saturer.
-            var side = PixelAt(tile, x: 10, y: 50);
-            if (red > blue)
-                Assert.True(side.Red > side.Blue + 20 && side.Red > side.Green + 20, $"{side}");
+            // Néon : fond noir et trait coloré en bas. Aplat : la couleur, assombrie, jusque dans les coins.
+            var probe = style == DockKeyStyle.Neon ? PixelAt(image, x: 48, y: 87) : PixelAt(image, x: 5, y: 5);
+            bool reddish = probe.Red > probe.Blue + 60 && probe.Red > probe.Green + 60;
+            bool bluish = probe.Blue > probe.Red + 60 && probe.Blue > probe.Green + 60;
+            Assert.True(red > blue ? reddish : bluish, $"{probe}");
+            if (style == DockKeyStyle.Neon)
+                Assert.Equal(((byte)0, (byte)0, (byte)0), PixelAt(image, x: 5, y: 50));
             else
-                Assert.True(side.Blue > side.Red + 20 && side.Blue > side.Green + 20, $"{side}");
-            Assert.True(Math.Max(side.Red, side.Blue) < 200, $"{side}");
-            Assert.Equal(((byte)0, (byte)0, (byte)0), PixelAt(tile, x: 1, y: 1));
+                Assert.InRange(Math.Max(probe.Red, probe.Blue), (byte)90, (byte)130);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData(DockKeyStyle.Neon)]
+    [InlineData(DockKeyStyle.Flat)]
+    public async Task Styles_NomBlancSousLIcone(DockKeyStyle style)
+    {
+        var (named, unnamed) = await OnStaThread(() => (
+            DockImageRenderer.RenderKey(new DockKey.RunTile(Tile()), style, pressed: false, size: 96),
+            DockImageRenderer.RenderKey(new DockKey.RunTile(new ShortcutEntry { Name = "A" }), style, pressed: false, size: 96)));
+
+        Assert.True(WhitePixels(named, top: 66, bottom: 84) > WhitePixels(unnamed, top: 66, bottom: 84) + 15);
+        Assert.True(WhitePixels(named, top: 8, bottom: 62) > 20);
+    }
+
+    [Fact]
+    public async Task Neon_Appuyee_FondGrisEtContenuReduit()
+    {
+        var (normal, pressed) = await OnStaThread(() => (
+            DockImageRenderer.RenderKey(new DockKey.RunTile(Tile()), DockKeyStyle.Neon, pressed: false, size: 96),
+            DockImageRenderer.RenderKey(new DockKey.RunTile(Tile()), DockKeyStyle.Neon, pressed: true, size: 96)));
+
+        Assert.Equal(((byte)0, (byte)0, (byte)0), PixelAt(normal, x: 5, y: 50));
+        Assert.Equal(((byte)40, (byte)40, (byte)40), PixelAt(pressed, x: 5, y: 50));
+        Assert.Equal(((byte)40, (byte)40, (byte)40), PixelAt(pressed, x: 16, y: 87));
+        Assert.NotEqual(((byte)0, (byte)0, (byte)0), PixelAt(normal, x: 16, y: 87));
+    }
+
+    [Fact]
+    public async Task Aplat_Appuyee_PlusSombre()
+    {
+        var (normal, pressed) = await OnStaThread(() => (
+            DockImageRenderer.RenderKey(new DockKey.GoHome(), DockKeyStyle.Flat, pressed: false, size: 96),
+            DockImageRenderer.RenderKey(new DockKey.GoHome(), DockKeyStyle.Flat, pressed: true, size: 96)));
+
+        Assert.Equal(((byte)52, (byte)54, (byte)60), PixelAt(normal, x: 5, y: 5));
+        Assert.True(PixelAt(pressed, x: 5, y: 5).Red < 52);
+    }
+
+    [Fact]
+    public async Task Styles_NavigationEtGroupe_Neutres()
+    {
+        var group = new ShortcutEntry { Name = "Outils", Layout = TileLayout.Quad, Children = [] };
+        DockKey[] keys = [new DockKey.GoHome(), new DockKey.Next(), new DockKey.OpenGroup(group)];
+        var (neon, flat) = await OnStaThread(() => (
+            keys.Select(key => DockImageRenderer.RenderKey(key, DockKeyStyle.Neon, pressed: false, size: 96)).ToArray(),
+            keys.Select(key => DockImageRenderer.RenderKey(key, DockKeyStyle.Flat, pressed: false, size: 96)).ToArray()));
+
+        foreach (var image in neon)
+        {
+            Assert.Equal(((byte)0, (byte)0, (byte)0), PixelAt(image, x: 48, y: 87));
+            Assert.True(WhitePixels(image, top: 66, bottom: 84) > 15);
+        }
+        foreach (var image in flat)
+            Assert.Equal(((byte)52, (byte)54, (byte)60), PixelAt(image, x: 5, y: 5));
+    }
+
+    [Theory]
+    [InlineData(DockKeyStyle.Neon)]
+    [InlineData(DockKeyStyle.Flat)]
+    public async Task Styles_ToucheVideNoireEtPageSansIconeNumerotee(DockKeyStyle style)
+    {
+        var (empty, page) = await OnStaThread(() => (
+            DockImageRenderer.RenderKey(new DockKey.Empty(), style, pressed: false, size: 96),
+            DockImageRenderer.RenderKey(new DockKey.OpenPage(6, null), style, pressed: false, size: 96)));
+
+        Assert.All(Enumerable.Range(0, empty.Width * empty.Height),
+            index => Assert.Equal(((byte)0, (byte)0, (byte)0), PixelAt(empty, index % empty.Width, index / empty.Width)));
+        Assert.True(WhitePixels(page, top: 12, bottom: 80) > 40);
+    }
+
+    [Fact]
+    public async Task Couleur_IconeRemplaceeAuMemeChemin_Recalculee()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "DockPadRenderer-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            string icon = Path.Combine(folder, "page.png");
+            var (before, after) = await OnStaThread(() =>
+            {
+                WritePng(icon, SolidImage(blue: 0, green: 0, red: 255, alpha: 255));
+                File.SetLastWriteTimeUtc(icon, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+                var red = DockImageRenderer.RenderKey(new DockKey.OpenPage(0, icon), DockKeyStyle.Neon, pressed: false, size: 96);
+                WritePng(icon, SolidImage(blue: 255, green: 0, red: 0, alpha: 255));
+                File.SetLastWriteTimeUtc(icon, new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc));
+                var blue = DockImageRenderer.RenderKey(new DockKey.OpenPage(0, icon), DockKeyStyle.Neon, pressed: false, size: 96);
+                return (red, blue);
+            });
+
+            Assert.True(PixelAt(before, x: 48, y: 87).Red > 200);
+            Assert.True(PixelAt(after, x: 48, y: 87).Blue > 200);
         }
         finally
         {
@@ -391,87 +491,35 @@ public class DockImageRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task Halo_NomEcritEnBasDansLaTuile()
-    {
-        var (named, unnamed) = await OnStaThread(() => (
-            DockImageRenderer.RenderKey(new DockKey.RunTile(Tile()), DockKeyStyle.Halo, pressed: false, size: 96),
-            DockImageRenderer.RenderKey(new DockKey.RunTile(new ShortcutEntry { Name = "A" }), DockKeyStyle.Halo, pressed: false, size: 96)));
-
-        Assert.True(WhitePixels(named, top: 72, bottom: 88) > WhitePixels(unnamed, top: 72, bottom: 88) + 15);
-        Assert.Equal(0, WhitePixels(named, top: 89, bottom: 96));
-    }
-
-    [Fact]
-    public async Task Halo_SansIcone_InitialeSurLaTeinteDuNom()
-    {
-        var image = await OnStaThread(() =>
-            DockImageRenderer.RenderKey(new DockKey.RunTile(Tile()), DockKeyStyle.Halo, pressed: false, size: 96));
-
-        Assert.True(WhitePixels(image, top: 15, bottom: 61) > 20);
-        Assert.NotEqual(((byte)0, (byte)0, (byte)0), PixelAt(image, x: 10, y: 50));
-    }
-
-    [Fact]
-    public async Task Halo_Appuyee_TuileReduiteEtAssombrie()
-    {
-        var (normal, pressed) = await OnStaThread(() => (
-            DockImageRenderer.RenderKey(new DockKey.GoHome(), DockKeyStyle.Halo, pressed: false, size: 96),
-            DockImageRenderer.RenderKey(new DockKey.GoHome(), DockKeyStyle.Halo, pressed: true, size: 96)));
-
-        Assert.NotEqual(((byte)0, (byte)0, (byte)0), PixelAt(normal, x: 6, y: 48));
-        Assert.Equal(((byte)0, (byte)0, (byte)0), PixelAt(pressed, x: 6, y: 48));
-        Assert.True(PixelAt(pressed, x: 20, y: 70).Red < PixelAt(normal, x: 20, y: 70).Red);
-    }
-
-    [Fact]
-    public async Task Halo_NavigationEtGroupe_VerreNeutre()
-    {
-        var group = new ShortcutEntry { Name = "Outils", Layout = TileLayout.Quad, Children = [] };
-        var images = await OnStaThread(() => new[]
-        {
-            DockImageRenderer.RenderKey(new DockKey.GoHome(), DockKeyStyle.Halo, pressed: false, size: 96),
-            DockImageRenderer.RenderKey(new DockKey.Next(), DockKeyStyle.Halo, pressed: false, size: 96),
-            DockImageRenderer.RenderKey(new DockKey.OpenGroup(group), DockKeyStyle.Halo, pressed: false, size: 96),
-        });
-
-        foreach (var image in images)
-        {
-            var side = PixelAt(image, x: 10, y: 50);
-            Assert.InRange(side.Red, (byte)20, (byte)90);
-            Assert.InRange(Math.Abs(side.Red - side.Blue), 0, 6);
-            Assert.InRange(Math.Abs(side.Red - side.Green), 0, 6);
-            Assert.True(WhitePixels(image, top: 72, bottom: 88) > 15);
-        }
-    }
-
-    [Fact]
-    public async Task Halo_ToucheVide_Noire()
-    {
-        var image = await OnStaThread(() =>
-            DockImageRenderer.RenderKey(new DockKey.Empty(), DockKeyStyle.Halo, pressed: false, size: 96));
-
-        Assert.All(Enumerable.Range(0, image.Width * image.Height),
-            index => Assert.Equal(((byte)0, (byte)0, (byte)0), PixelAt(image, index % image.Width, index / image.Width)));
-    }
-
-    [Fact]
     public async Task CouleurDominante_IgnoreLesPixelsTransparents()
     {
-        var color = await OnStaThread(() =>
-        {
-            var pixels = new byte[8 * 8 * 4];
-            for (int index = 0; index < 64; index++)
-            {
-                bool opaque = index % 8 < 2;
-                pixels[index * 4] = (byte)(opaque ? 0 : 255);
-                pixels[index * 4 + 2] = (byte)(opaque ? 255 : 0);
-                pixels[index * 4 + 3] = (byte)(opaque ? 255 : 0);
-            }
-            var bitmap = BitmapSource.Create(8, 8, 96, 96, PixelFormats.Bgra32, null, pixels, 8 * 4);
-            return DockImageRenderer.DominantColor(bitmap);
-        });
+        var color = await OnStaThread(() => DockImageRenderer.DominantColor(Bitmap(index => index % 8 < 2
+            ? (255, 0, 0, 255) : (0, 0, 255, 0))));
 
         Assert.True(color.R > 200 && color.B < 60, color.ToString());
+    }
+
+    [Fact]
+    public async Task CouleurDominante_IconeMulticolore_CouleurMajoritaireSansMelange()
+    {
+        var color = await OnStaThread(() => DockImageRenderer.DominantColor(Bitmap(index => index < 40
+            ? (230, 40, 40, 255) : (40, 40, 230, 255))));
+
+        Assert.True(color.R > 200 && color.B < 60, color.ToString());
+    }
+
+    private static BitmapSource Bitmap(Func<int, (int Red, int Green, int Blue, int Alpha)> pixel)
+    {
+        var pixels = new byte[8 * 8 * 4];
+        for (int index = 0; index < 64; index++)
+        {
+            var (red, green, blue, alpha) = pixel(index);
+            pixels[index * 4] = (byte)blue;
+            pixels[index * 4 + 1] = (byte)green;
+            pixels[index * 4 + 2] = (byte)red;
+            pixels[index * 4 + 3] = (byte)alpha;
+        }
+        return BitmapSource.Create(8, 8, 96, 96, PixelFormats.Bgra32, null, pixels, 8 * 4);
     }
 
     private static ShortcutEntry Tile(string iconPath = "") => new() { Name = "Atlas", IconPath = iconPath };

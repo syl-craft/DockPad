@@ -43,8 +43,8 @@ Close the manufacturer's **StreamDock.exe**, then enable **Control the Stream Do
 **Options → Stream Dock** tab and save. Both switches are off by default; **Sync pages with the Stream Dock**
 keeps shortcut pages aligned in both directions without opening the DockPad window or leaving favourites mode.
 The continuous side column shows quotas from visible providers in the AI usage panel, plus CPU and memory load.
-Under **Key style**, **Halo** (default) draws each key as a rounded tile tinted by its icon, with the name inside;
-**Classic** keeps the grey keys. Under **Side display**, four thumbnails select **Columns** (default), **Hero stack**, **Rings** or **Reservoir**.
+Under **Key style**, **Neon** (default) shows a large icon on black with a line in the icon's colour, **Flat** fills
+the whole key with that colour, and **Classic** keeps the grey keys. Under **Side display**, four thumbnails select **Columns** (default), **Hero stack**, **Rings** or **Reservoir**.
 The AI selected in the usage panel tabs leads the column. Clicking a thumbnail shows it on the dock; saving keeps it, cancelling restores the previous one. With the AI usage panel
 disabled, the column still shows CPU and memory load. The dock works while DockPad is hidden and reconnects after
 Windows resumes from sleep.

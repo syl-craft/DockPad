@@ -127,7 +127,7 @@ public static class SettingsService
     public static DockKeyStyle LoadStreamDockKeyStyle()
     {
         var style = AppSettingsService.Current.StreamDockKeyStyle;
-        return Enum.IsDefined(style) ? style : DockKeyStyle.Halo;
+        return Enum.IsDefined(style) ? style : DockKeyStyle.Neon;
     }
 
     public static void SaveStreamDockKeyStyle(DockKeyStyle style) =>

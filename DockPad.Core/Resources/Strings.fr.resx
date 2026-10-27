@@ -1877,8 +1877,11 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Settings_StreamDock_KeyStyle" xml:space="preserve">
     <value>Style des touches</value>
   </data>
-  <data name="Settings_StreamDock_KeyStyle_Halo" xml:space="preserve">
-    <value>Halo</value>
+  <data name="Settings_StreamDock_KeyStyle_Neon" xml:space="preserve">
+    <value>Néon</value>
+  </data>
+  <data name="Settings_StreamDock_KeyStyle_Flat" xml:space="preserve">
+    <value>Aplat</value>
   </data>
   <data name="Settings_StreamDock_KeyStyle_Classic" xml:space="preserve">
     <value>Classique</value>

@@ -117,7 +117,7 @@ public sealed class StreamDockService : IAsyncDisposable
         {
             lock (_gate)
             {
-                var style = Enum.IsDefined(value) ? value : DockKeyStyle.Halo;
+                var style = Enum.IsDefined(value) ? value : DockKeyStyle.Neon;
                 if (_keyStyle == style) return;
                 _keyStyle = style;
                 if (_started && _stopped == false) Enqueue(RedrawAsync);

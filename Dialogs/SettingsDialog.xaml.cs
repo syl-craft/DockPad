@@ -179,19 +179,11 @@ public partial class SettingsDialog : Window
     }
 
     /// <summary>
-    /// Vignettes des deux styles : Accueil et les premières tuiles de la grille, par le vrai rendu des touches.
+    /// Vignettes des styles : Accueil et les premières tuiles de la grille, par le vrai rendu des touches.
     /// </summary>
     private void FillKeyStylePreviews()
     {
-        var keys = PreviewKeys();
-        (DockKeyStyle Style, Image Preview)[] previews =
-        [
-            (DockKeyStyle.Halo, ImgKeyStyleHalo),
-            (DockKeyStyle.Classic, ImgKeyStyleClassic),
-        ];
-        foreach (var (style, preview) in previews)
-            preview.Source = KeyRow(keys, style);
-
+        DrawKeyStylePreviews();
         var saved = SettingsService.LoadStreamDockKeyStyle();
         LstStreamDockKeyStyle.SelectedItem = LstStreamDockKeyStyle.Items.Cast<ListBoxItem>()
             .Where(item => item.Tag is DockKeyStyle style && style == saved)
@@ -205,6 +197,22 @@ public partial class SettingsDialog : Window
             if (DialogResult != true)
                 (Application.Current as App)?.PreviewStreamDockKeyStyle(saved);
         };
+    }
+
+    /// <summary>
+    /// Redessinées aussi au changement de langue : « Accueil » est écrit dans l'image.
+    /// </summary>
+    private void DrawKeyStylePreviews()
+    {
+        var keys = PreviewKeys();
+        (DockKeyStyle Style, Image Preview)[] previews =
+        [
+            (DockKeyStyle.Neon, ImgKeyStyleNeon),
+            (DockKeyStyle.Flat, ImgKeyStyleFlat),
+            (DockKeyStyle.Classic, ImgKeyStyleClassic),
+        ];
+        foreach (var (style, preview) in previews)
+            preview.Source = KeyRow(keys, style);
     }
 
     /// <summary>
@@ -241,7 +249,7 @@ public partial class SettingsDialog : Window
 
     private DockKeyStyle SelectedKeyStyle =>
         LstStreamDockKeyStyle.SelectedItem is ListBoxItem { Tag: DockKeyStyle style }
-            ? style : DockKeyStyle.Halo;
+            ? style : DockKeyStyle.Neon;
 
     private SideStripStyle SelectedSideStripStyle =>
         LstStreamDockSideStrip.SelectedItem is ListBoxItem { Tag: SideStripStyle style }
@@ -249,6 +257,7 @@ public partial class SettingsDialog : Window
 
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
+        DrawKeyStylePreviews();
         FillLanguages();
         FillThemes();
         FillTerminals((CmbDefaultTerminal.SelectedItem as TerminalChoice)?.Tag ?? "");

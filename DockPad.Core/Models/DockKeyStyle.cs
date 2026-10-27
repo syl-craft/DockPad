@@ -1,17 +1,22 @@
 namespace DockPad.Models;
 
 /// <summary>
-/// Dessin des touches du Stream Dock ; Halo, la valeur 0, est le défaut.
+/// Dessin des touches du Stream Dock ; Neon, la valeur 0, est le défaut.
 /// </summary>
 public enum DockKeyStyle
 {
     /// <summary>
-    /// Tuile arrondie teintée par l'icône, halo et reflet, nom en bas dans la tuile.
+    /// Fond noir, icône en grand, nom blanc, trait de la couleur de l'icône en bas.
     /// </summary>
-    Halo,
+    Neon,
 
     /// <summary>
     /// Fond gris, icône en haut, nom en dessous.
     /// </summary>
     Classic,
+
+    /// <summary>
+    /// Couleur unie tirée de l'icône sur toute la touche.
+    /// </summary>
+    Flat,
 }

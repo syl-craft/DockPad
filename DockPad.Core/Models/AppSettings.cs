@@ -83,10 +83,10 @@ public class AppSettings
     public SideStripStyle StreamDockSideStrip { get; set; } = SideStripStyle.Columns;
 
     /// <summary>
-    /// Dessin des touches du Stream Dock, Halo par défaut.
+    /// Dessin des touches du Stream Dock, Néon par défaut.
     /// </summary>
     [JsonConverter(typeof(DockKeyStyleJsonConverter))]
-    public DockKeyStyle StreamDockKeyStyle { get; set; } = DockKeyStyle.Halo;
+    public DockKeyStyle StreamDockKeyStyle { get; set; } = DockKeyStyle.Neon;
 
     /// <summary>
     /// Chemin de <c>bw.exe</c>, ou vide pour laisser DockPad le chercher.

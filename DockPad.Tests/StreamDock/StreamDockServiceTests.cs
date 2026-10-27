@@ -23,21 +23,24 @@ public class StreamDockServiceTests
     }
 
     [Fact]
-    public async Task StyleDesTouches_HaloParDefautPuisRedessineSansChangerDEcran()
+    public async Task StyleDesTouches_NeonParDefautPuisToutesLesTouchesRedessineesSurLaPageOuverte()
     {
         await using var dock = new TestDock();
-        await dock.Start();
-        Assert.All(dock.Renderer.KeyStyles, style => Assert.Equal(DockKeyStyle.Halo, style));
+        await dock.OpenPage();
+        Assert.All(dock.Renderer.KeyStyles, style => Assert.Equal(DockKeyStyle.Neon, style));
+        var screen = dock.Service.Screen;
+        int renders = dock.Renderer.Keys.Count;
         int images = dock.Surface.Images.Count;
 
-        dock.Service.KeyStyle = DockKeyStyle.Classic;
+        dock.Service.KeyStyle = DockKeyStyle.Flat;
         await dock.Idle();
-        Assert.Equal(DockKeyStyle.Classic, dock.Renderer.KeyStyles.Last());
-        Assert.Equal(new DockScreen.Home(0), dock.Service.Screen);
-        Assert.True(dock.Surface.Images.Count > images);
+        Assert.Equal(screen, dock.Service.Screen);
+        Assert.Equal(30, dock.Renderer.Keys.Count - renders);
+        Assert.All(dock.Renderer.KeyStyles.Skip(renders), style => Assert.Equal(DockKeyStyle.Flat, style));
+        Assert.Equal(images + 15, dock.Surface.Images.Count);
 
-        int renders = dock.Renderer.Keys.Count;
-        dock.Service.KeyStyle = DockKeyStyle.Classic;
+        renders = dock.Renderer.Keys.Count;
+        dock.Service.KeyStyle = DockKeyStyle.Flat;
         await dock.Idle();
         Assert.Equal(renders, dock.Renderer.Keys.Count);
     }

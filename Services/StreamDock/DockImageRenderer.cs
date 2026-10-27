@@ -24,8 +24,8 @@ public static partial class DockImageRenderer
     public static SurfaceImage RenderKey(DockKey key, DockKeyStyle style, bool pressed, int size)
     {
         ArgumentNullException.ThrowIfNull(key);
-        if (style == DockKeyStyle.Halo)
-            return RenderHaloKey(key, pressed, size);
+        if (style != DockKeyStyle.Classic)
+            return RenderStyledKey(key, style, pressed, size);
 
         return Render(size, designSize: 96, key is DockKey.Empty ? Brushes.Black
             : pressed ? PressedBackground : KeyBackground, context =>

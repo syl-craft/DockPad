@@ -244,8 +244,8 @@
                             </ListBox.ItemsPanel>
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                                    <Setter Property="Width" Value="150"/>
-                                    <Setter Property="Padding" Value="6,8"/>
+                                    <Setter Property="Width" Value="112"/>
+                                    <Setter Property="Padding" Value="5,8"/>
                                     <Setter Property="Margin" Value="0,0,8,0"/>
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                                     <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
@@ -274,19 +274,28 @@
                                     </Style.Triggers>
                                 </Style>
                             </ListBox.ItemContainerStyle>
-                            <ListBoxItem Tag="{x:Static models:DockKeyStyle.Halo}"
-                                         AutomationProperties.Name="{loc:T Settings_StreamDock_KeyStyle_Halo}">
+                            <ListBoxItem Tag="{x:Static models:DockKeyStyle.Neon}"
+                                         AutomationProperties.Name="{loc:T Settings_StreamDock_KeyStyle_Neon}">
                                 <StackPanel>
-                                    <Image x:Name="ImgKeyStyleHalo" Height="42" HorizontalAlignment="Center"
+                                    <Image x:Name="ImgKeyStyleNeon" Height="32" HorizontalAlignment="Center"
                                            RenderOptions.BitmapScalingMode="HighQuality"/>
-                                    <TextBlock Text="{loc:T Settings_StreamDock_KeyStyle_Halo}" Margin="0,8,0,0"
+                                    <TextBlock Text="{loc:T Settings_StreamDock_KeyStyle_Neon}" Margin="0,8,0,0"
+                                               TextAlignment="Center" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </ListBoxItem>
+                            <ListBoxItem Tag="{x:Static models:DockKeyStyle.Flat}"
+                                         AutomationProperties.Name="{loc:T Settings_StreamDock_KeyStyle_Flat}">
+                                <StackPanel>
+                                    <Image x:Name="ImgKeyStyleFlat" Height="32" HorizontalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <TextBlock Text="{loc:T Settings_StreamDock_KeyStyle_Flat}" Margin="0,8,0,0"
                                                TextAlignment="Center" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </ListBoxItem>
                             <ListBoxItem Tag="{x:Static models:DockKeyStyle.Classic}"
                                          AutomationProperties.Name="{loc:T Settings_StreamDock_KeyStyle_Classic}">
                                 <StackPanel>
-                                    <Image x:Name="ImgKeyStyleClassic" Height="42" HorizontalAlignment="Center"
+                                    <Image x:Name="ImgKeyStyleClassic" Height="32" HorizontalAlignment="Center"
                                            RenderOptions.BitmapScalingMode="HighQuality"/>
                                     <TextBlock Text="{loc:T Settings_StreamDock_KeyStyle_Classic}" Margin="0,8,0,0"
                                                TextAlignment="Center" TextWrapping="Wrap"/>
