@@ -9,6 +9,8 @@ internal sealed class FakeDockRenderer : IDockRenderer
 {
     private readonly Dictionary<string, byte> _colors = [];
     public int Version { get; set; }
+    public int DisplayVersion { get; set; }
+    public ConcurrentQueue<UsageDisplay?> Displays { get; } = new();
     public ConcurrentQueue<(DockKey Key, bool Pressed)> Keys { get; } = new();
     public TaskCompletionSource? Gate { get; set; }
     public TaskCompletionSource Started { get; set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -22,8 +24,16 @@ internal sealed class FakeDockRenderer : IDockRenderer
         return Image(content, size);
     }
 
-    public Task<SurfaceImage> RenderDisplayAsync(UsageDisplay? display, int size) =>
-        Task.FromResult(Image(JsonSerializer.Serialize(display), size));
+    public Task<SurfaceImage> RenderDisplayAsync(UsageDisplay? display, int size)
+    {
+        Displays.Enqueue(display);
+        if (display != null)
+            return Task.FromResult(Image(JsonSerializer.Serialize(display, display.GetType()) + DisplayVersion, size));
+
+        var pixels = new byte[size * size * 4];
+        for (int index = 3; index < pixels.Length; index += 4) pixels[index] = 255;
+        return Task.FromResult(new SurfaceImage(size, size, pixels));
+    }
 
     private SurfaceImage Image(string content, int size)
     {

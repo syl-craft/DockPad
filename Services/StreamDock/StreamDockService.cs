@@ -13,6 +13,7 @@ namespace DockPad.Services.StreamDock;
 /// </summary>
 public sealed class StreamDockService : IAsyncDisposable
 {
+    private static readonly TimeSpan UsageInterval = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan RetryInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RedrawInterval = TimeSpan.FromMilliseconds(30);
     private static readonly TimeSpan MaximumRedrawInterval = TimeSpan.FromMilliseconds(200);
@@ -33,7 +34,12 @@ public sealed class StreamDockService : IAsyncDisposable
     private Session? _session;
     private DisplayedView? _displayed;
     private DockScreen _wantedScreen = new DockScreen.Home(0);
-    private UsageDisplay?[] _displays = [];
+    private SurfaceImage[]? _displayImages;
+    private bool _displaysBlack;
+    private ITimer? _usageTimer;
+    private Task _readingUsages = Task.CompletedTask;
+    private Type? _usageFailure;
+    private bool _syncPages;
     private ITimer? _retry;
     private ITimer? _redraw;
     private Task _worker = Task.CompletedTask;
@@ -45,6 +51,7 @@ public sealed class StreamDockService : IAsyncDisposable
     private long _redrawRevision;
     private long _gridRevision;
     private long _viewNumber;
+    private int _queuedWork;
     private string? _connectionState;
 
     public StreamDockService(IControlSurfaceDriver driver, IDockSources sources, IDockRenderer renderer, TimeProvider time,
@@ -57,6 +64,21 @@ public sealed class StreamDockService : IAsyncDisposable
         _log = log ?? WriteLog;
         _stopToken = _stopping.Token;
         _shutdown = new Lazy<Task>(StopAsync);
+    }
+
+    public bool SyncPages
+    {
+        get => Volatile.Read(ref _syncPages);
+        set
+        {
+            lock (_gate)
+            {
+                if (_syncPages == value) return;
+                Volatile.Write(ref _syncPages, value);
+                if (value && _started && _stopped == false)
+                    Enqueue(AlignShortcutPageAsync);
+            }
+        }
     }
 
     public DockScreen Screen
@@ -83,6 +105,48 @@ public sealed class StreamDockService : IAsyncDisposable
             }
             catch (Exception ex) { ReportFailure(ex, "Stream Dock : surveillance indisponible."); }
         }
+    }
+
+    /// <summary>
+    /// Deux changements croisés pendant le passage sur le thread UI peuvent laisser les pages désalignées.
+    /// </summary>
+    public void OnShortcutPageChanged(int page, PageChangeOrigin origin)
+    {
+        lock (_gate)
+        {
+            if (_started == false || _stopped || SyncPages == false || origin != PageChangeOrigin.DockPad) return;
+            Enqueue(() => ShowShortcutPageAsync(page));
+        }
+    }
+
+    private Task AlignShortcutPageAsync()
+    {
+        if (_session == null || SyncPages == false) return Task.CompletedTask;
+        try { return ShowShortcutPageAsync(_sources.CurrentShortcutPage()); }
+        catch (Exception ex)
+        {
+            ReportFailure(ex, "Stream Dock : source Raccourcis illisible.");
+            return Task.CompletedTask;
+        }
+    }
+
+    private Task ShowShortcutPageAsync(int page)
+    {
+        var session = _session;
+        if (session == null || SyncPages == false) return Task.CompletedTask;
+        try
+        {
+            if (DockLayout.PagesWithTiles(_sources.Entries()).Contains(page) == false) return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            ReportFailure(ex, "Stream Dock : source Raccourcis illisible.");
+            return Task.CompletedTask;
+        }
+        var target = new DockScreen.Page(page, 0);
+        if (_wantedScreen == target) return Task.CompletedTask;
+        _wantedScreen = target;
+        return ShowScreenAsync(session, NextRevision());
     }
 
     public void OnGridChanged()
@@ -118,7 +182,7 @@ public sealed class StreamDockService : IAsyncDisposable
     public ValueTask DisposeAsync() => new(_shutdown.Value);
 
     // Barrière de synchronisation des tests : ne fait pas avancer les minuteurs.
-    internal Task WhenIdleAsync()
+    internal Task WhenIdleAsync(bool includeUsages = true)
     {
         var idle = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         lock (_gate)
@@ -126,16 +190,16 @@ public sealed class StreamDockService : IAsyncDisposable
             if (_started == false || _stopped) return Task.CompletedTask;
             Enqueue(() =>
             {
-                _ = CompleteWhenIdleAsync(_rendering, idle);
+                _ = CompleteWhenIdleAsync(_rendering, includeUsages ? _readingUsages : Task.CompletedTask, includeUsages, idle);
                 return Task.CompletedTask;
             });
         }
         return idle.Task;
     }
 
-    private async Task CompleteWhenIdleAsync(Task rendering, TaskCompletionSource idle)
+    private async Task CompleteWhenIdleAsync(Task rendering, Task readingUsages, bool includeUsages, TaskCompletionSource idle)
     {
-        await Task.WhenAny(rendering, _stopSignal.Task).ConfigureAwait(false);
+        await Task.WhenAny(Task.WhenAll(rendering, readingUsages), _stopSignal.Task).ConfigureAwait(false);
         lock (_gate)
         {
             if (_stopped)
@@ -145,8 +209,10 @@ public sealed class StreamDockService : IAsyncDisposable
             }
             Enqueue(() =>
             {
-                if (rendering == _rendering) idle.TrySetResult();
-                else _ = CompleteWhenIdleAsync(_rendering, idle);
+                var currentUsages = includeUsages ? _readingUsages : Task.CompletedTask;
+                // Une lecture terminée de façon synchrone renvoie la même tâche partagée : seule la file vide prouve que sa publication est passée.
+                if (rendering == _rendering && readingUsages == currentUsages && Volatile.Read(ref _queuedWork) == 0) idle.TrySetResult();
+                else _ = CompleteWhenIdleAsync(_rendering, currentUsages, includeUsages, idle);
                 return Task.CompletedTask;
             });
         }
@@ -154,7 +220,11 @@ public sealed class StreamDockService : IAsyncDisposable
 
     private void OnSurfacesChanged() => Enqueue(ConnectAsync);
 
-    private void Enqueue(Func<Task> work) => _work.Writer.TryWrite(work);
+    private void Enqueue(Func<Task> work)
+    {
+        Interlocked.Increment(ref _queuedWork);
+        if (_work.Writer.TryWrite(work) == false) Interlocked.Decrement(ref _queuedWork);
+    }
 
     private async Task WorkAsync()
     {
@@ -162,6 +232,7 @@ public sealed class StreamDockService : IAsyncDisposable
         {
             await foreach (var work in _work.Reader.ReadAllAsync(_stopToken))
             {
+                Interlocked.Decrement(ref _queuedWork);
                 if (_stopSignal.Task.IsCompleted) return;
                 try { await work().ConfigureAwait(false); }
                 catch (OperationCanceledException) when (_stopSignal.Task.IsCompleted) { return; }
@@ -205,8 +276,25 @@ public sealed class StreamDockService : IAsyncDisposable
             if (session == null) return;
             _presses.Clear();
             _wantedScreen = new DockScreen.Home(0);
-            _displays = new UsageDisplay?[session.Surface.Description.DisplayCount];
+            _displayImages = null;
+            _displaysBlack = false;
+            if (SyncPages)
+            {
+                try
+                {
+                    int page = _sources.CurrentShortcutPage();
+                    if (DockLayout.PagesWithTiles(_sources.Entries()).Contains(page))
+                        _wantedScreen = new DockScreen.Page(page, 0);
+                }
+                catch (Exception ex) { ReportFailure(ex, "Stream Dock : source Raccourcis illisible."); }
+            }
             await ShowScreenAsync(session, CurrentRevision()).ConfigureAwait(false);
+            lock (_gate)
+            {
+                if (_stopped || _session != session || session.Interrupted.Task.IsCompleted) return;
+                _usageTimer = _time.CreateTimer(_ => QueueUsageRefresh(session), null, UsageInterval, UsageInterval);
+                QueueUsageRefresh(session);
+            }
         }
         catch (SurfaceBusyException) { ReportState("occupé"); }
     }
@@ -315,7 +403,8 @@ public sealed class StreamDockService : IAsyncDisposable
         if (target != null)
         {
             _wantedScreen = target;
-            await ShowScreenAsync(session, NextRevision()).ConfigureAwait(false);
+            int? shortcutPage = content is DockKey.OpenPage page ? page.PageIndex : null;
+            await ShowScreenAsync(session, NextRevision(), shortcutPage: shortcutPage).ConfigureAwait(false);
         }
         else if (content is DockKey.RunTile tile)
         {
@@ -351,7 +440,7 @@ public sealed class StreamDockService : IAsyncDisposable
         lock (_gate) return ++_redrawRevision;
     }
 
-    private Task ShowScreenAsync(Session session, long revision, bool keepScreen = false)
+    private Task ShowScreenAsync(Session session, long revision, bool keepScreen = false, int? shortcutPage = null)
     {
         ThrowIfInterrupted(session);
         var description = session.Surface.Description;
@@ -368,18 +457,18 @@ public sealed class StreamDockService : IAsyncDisposable
             ReportFailure(ex, "Stream Dock : sources illisibles.");
             return Task.CompletedTask;
         }
-        _rendering = RenderAndQueueAsync(session, revision, view, _displays.ToArray());
+        _rendering = RenderAndQueueAsync(session, revision, view, initializeDisplays: _displayImages == null, shortcutPage: shortcutPage);
         return Task.CompletedTask;
     }
 
-    private async Task RenderAndQueueAsync(Session session, long revision, DockView view, UsageDisplay?[] displays)
+    private async Task RenderAndQueueAsync(Session session, long revision, DockView view, bool initializeDisplays, int? shortcutPage)
     {
         try
         {
             var description = session.Surface.Description;
             var normal = new SurfaceImage[view.Keys.Count];
             var pressed = new SurfaceImage[view.Keys.Count];
-            var displayImages = new SurfaceImage[displays.Length];
+            SurfaceImage[]? initialDisplays = null;
             for (int index = 0; index < view.Keys.Count; index++)
             {
                 normal[index] = await InSessionAsync(session, _renderer.RenderKeyAsync(
@@ -388,10 +477,14 @@ public sealed class StreamDockService : IAsyncDisposable
                     view.Keys[index], pressed: true, description.KeyImageSize)).ConfigureAwait(false);
                 if (revision != CurrentRevision()) return;
             }
-            for (int index = 0; index < displays.Length; index++)
-                displayImages[index] = await InSessionAsync(session,
-                    _renderer.RenderDisplayAsync(displays[index], description.DisplayImageSize)).ConfigureAwait(false);
-            Enqueue(() => PublishViewAsync(session, revision, view, normal, pressed, displays, displayImages));
+            if (initializeDisplays)
+            {
+                initialDisplays = new SurfaceImage[description.DisplayCount];
+                for (int index = 0; index < initialDisplays.Length; index++)
+                    initialDisplays[index] = await InSessionAsync(session,
+                        _renderer.RenderDisplayAsync(null, description.DisplayImageSize)).ConfigureAwait(false);
+            }
+            Enqueue(() => PublishViewAsync(session, revision, view, normal, pressed, initialDisplays, shortcutPage));
         }
         catch (Exception ex)
         {
@@ -401,7 +494,7 @@ public sealed class StreamDockService : IAsyncDisposable
     }
 
     private async Task PublishViewAsync(Session session, long revision, DockView view,
-        SurfaceImage[] normal, SurfaceImage[] pressed, UsageDisplay?[] displays, SurfaceImage[] displayImages)
+        SurfaceImage[] normal, SurfaceImage[] pressed, SurfaceImage[]? initialDisplays, int? shortcutPage)
     {
         if (_session != session || revision != CurrentRevision()) return;
         ThrowIfInterrupted(session);
@@ -413,19 +506,160 @@ public sealed class StreamDockService : IAsyncDisposable
             var key = new SurfaceKey(index / description.KeyColumns, index % description.KeyColumns);
             await InSessionAsync(session, session.Surface.SetKeyImageAsync(key, normal[index], session.Token)).ConfigureAwait(false);
         }
-        for (int index = 0; index < displays.Length; index++)
-        {
-            if (previous != null && previous.Displays[index] == displays[index]) continue;
-            await InSessionAsync(session, session.Surface.SetDisplayImageAsync(index, displayImages[index], session.Token)).ConfigureAwait(false);
-        }
+        // Un rendu de touches tardif ne doit pas écraser des quotas déjà publiés.
+        if (_displayImages == null && initialDisplays != null)
+            await WriteDisplaysAsync(session, initialDisplays).ConfigureAwait(false);
         await InSessionAsync(session, session.Surface.CommitAsync(session.Token)).ConfigureAwait(false);
+        if (_displayImages == null && initialDisplays != null)
+        {
+            _displayImages = initialDisplays;
+            _displaysBlack = true;
+        }
         lock (_gate)
         {
             ThrowIfInterrupted(session);
-            _displayed = new DisplayedView(++_viewNumber, view, normal, pressed, displays);
+            _displayed = new DisplayedView(++_viewNumber, view, normal, pressed);
             _wantedScreen = view.Screen;
         }
         ReportState("connecté");
+        if (SyncPages && shortcutPage != null && view.Screen is DockScreen.Page page && page.PageIndex == shortcutPage.Value)
+        {
+            try { _sources.ShowShortcutPage(page.PageIndex); }
+            catch (Exception ex) { ReportFailure(ex, "Stream Dock : synchronisation échouée."); }
+        }
+    }
+
+    public void OnUsageConfigChanged()
+    {
+        lock (_gate)
+        {
+            if (_started == false || _stopped) return;
+            Enqueue(() =>
+            {
+                var session = _session;
+                if (session == null || session.Interrupted.Task.IsCompleted) return Task.CompletedTask;
+                lock (_gate)
+                {
+                    var refresh = session.UsageRefresh;
+                    session.UsageRefresh = null;
+                    if (refresh != null) _ = refresh.Cancel.Value;
+                    QueueUsageRefresh(session);
+                }
+                return Task.CompletedTask;
+            });
+        }
+    }
+
+    private void QueueUsageRefresh(Session session)
+    {
+        lock (_gate)
+        {
+            if (_stopped || _session != session || session.Interrupted.Task.IsCompleted || session.UsageRefresh != null) return;
+            var refresh = new UsageRefresh(session.Token, CancelAndDisposeAsync);
+            session.UsageRefresh = refresh;
+            Enqueue(() =>
+            {
+                if (session.UsageRefresh == refresh)
+                    _readingUsages = ReadAndRenderUsagesAsync(session, refresh);
+                return Task.CompletedTask;
+            });
+        }
+    }
+
+    private async Task ReadAndRenderUsagesAsync(Session session, UsageRefresh refresh)
+    {
+        try
+        {
+            ThrowIfInterrupted(session);
+            refresh.Token.ThrowIfCancellationRequested();
+            var config = _sources.UsageConfig();
+            if (config.Enabled == false && _displaysBlack)
+            {
+                _usageFailure = null;
+                FinishUsageRefresh(session, refresh);
+                return;
+            }
+            IReadOnlyList<AiUsage> usages = [];
+            if (config.Enabled)
+            {
+                usages = await InUsageRefreshAsync(session, refresh, _sources.ReadUsagesAsync(refresh.Token)).ConfigureAwait(false);
+                config = _sources.UsageConfig();
+            }
+            var description = session.Surface.Description;
+            var displays = UsageDisplayPlanner.Plan(usages, config, description.DisplayCount);
+            var images = new SurfaceImage[displays.Count];
+            for (int index = 0; index < displays.Count; index++)
+                images[index] = await InUsageRefreshAsync(session, refresh,
+                    _renderer.RenderDisplayAsync(displays[index], description.DisplayImageSize)).ConfigureAwait(false);
+            bool displaysBlack = displays.All(display => display == null);
+            Enqueue(() => CompleteUsageRefreshAsync(session, refresh, images, displaysBlack));
+        }
+        catch (Exception ex)
+        {
+            Enqueue(() =>
+            {
+                try
+                {
+                    if (IsCurrentUsageRefresh(session, refresh) == false) return Task.CompletedTask;
+                    var state = ex.GetType();
+                    if (_usageFailure == state) return Task.CompletedTask;
+                    _usageFailure = state;
+                    _log("Stream Dock : quotas indisponibles, écrans conservés.", ex);
+                    return Task.CompletedTask;
+                }
+                finally { FinishUsageRefresh(session, refresh); }
+            });
+        }
+    }
+
+    private async Task<T> InUsageRefreshAsync<T>(Session session, UsageRefresh refresh, Task<T> operation)
+    {
+        try { return await InSessionAsync(session, operation.WaitAsync(refresh.Token)).ConfigureAwait(false); }
+        catch
+        {
+            if (operation.IsCompleted == false) _ = ObserveAsync(operation);
+            throw;
+        }
+    }
+
+    private bool IsCurrentUsageRefresh(Session session, UsageRefresh refresh) =>
+        _session == session && session.UsageRefresh == refresh && session.Interrupted.Task.IsCompleted == false
+        && _stopSignal.Task.IsCompleted == false && refresh.Token.IsCancellationRequested == false;
+
+    private async Task CompleteUsageRefreshAsync(Session session, UsageRefresh refresh, SurfaceImage[] images, bool displaysBlack)
+    {
+        try
+        {
+            if (IsCurrentUsageRefresh(session, refresh) == false) return;
+            if (await WriteDisplaysAsync(session, images).ConfigureAwait(false))
+                await InSessionAsync(session, session.Surface.CommitAsync(session.Token)).ConfigureAwait(false);
+            _displayImages = images;
+            _displaysBlack = displaysBlack;
+            _usageFailure = null;
+        }
+        finally { FinishUsageRefresh(session, refresh); }
+    }
+
+    private void FinishUsageRefresh(Session session, UsageRefresh refresh)
+    {
+        lock (_gate)
+        {
+            if (session.UsageRefresh == refresh) session.UsageRefresh = null;
+        }
+        _ = refresh.Cancel.Value;
+    }
+
+    private async Task<bool> WriteDisplaysAsync(Session session, SurfaceImage[] images)
+    {
+        bool changed = false;
+        for (int index = 0; index < images.Length; index++)
+        {
+            if (_displayImages != null && SameImage(_displayImages[index], images[index])) continue;
+            ThrowIfInterrupted(session);
+            await InSessionAsync(session, session.Surface.SetDisplayImageAsync(index, images[index], session.Token)).ConfigureAwait(false);
+            changed = true;
+        }
+        return changed;
     }
 
     private static ShortcutEntry SnapshotEntry(ShortcutEntry entry)
@@ -492,7 +726,11 @@ public sealed class StreamDockService : IAsyncDisposable
             _displayed = null;
         }
         _presses.Clear();
-        _displays = [];
+        _displayImages = null;
+        _displaysBlack = false;
+        _readingUsages = Task.CompletedTask;
+        _usageTimer?.Dispose();
+        _usageTimer = null;
         if (session == null) return;
         session.Interrupted.TrySetResult();
         _closing = CloseSurfaceAsync(session);
@@ -503,6 +741,8 @@ public sealed class StreamDockService : IAsyncDisposable
         using var budget = new CancellationTokenSource(ShutdownBudget, _time);
         session.Interrupted.TrySetResult();
         _ = session.Cancel.Value;
+        var refresh = session.UsageRefresh;
+        if (refresh != null) _ = refresh.Cancel.Value;
         try { await session.Close.Value.WaitAsync(budget.Token).ConfigureAwait(false); }
         catch (Exception ex) { ReportFailure(ex, "Stream Dock : fermeture incomplète."); }
     }
@@ -532,6 +772,7 @@ public sealed class StreamDockService : IAsyncDisposable
             {
                 _retry?.Dispose();
                 _redraw?.Dispose();
+                _usageTimer?.Dispose();
                 _driver.SurfacesChanged -= OnSurfacesChanged;
             }
             catch (Exception ex) { ReportFailure(ex, "Stream Dock : surveillance persistante après arrêt."); }
@@ -552,9 +793,23 @@ public sealed class StreamDockService : IAsyncDisposable
         }
     }
 
+    private sealed class UsageRefresh
+    {
+        public CancellationToken Token { get; }
+        public Lazy<Task> Cancel { get; }
+
+        public UsageRefresh(CancellationToken sessionToken, Func<CancellationTokenSource, Task> cancelAndDispose)
+        {
+            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(sessionToken);
+            Token = cancellation.Token;
+            Cancel = new Lazy<Task>(() => cancelAndDispose(cancellation));
+        }
+    }
+
     private sealed class Session
     {
         private readonly CancellationTokenSource _cancellation = new();
+        public UsageRefresh? UsageRefresh { get; set; }
         public IControlSurface Surface { get; }
         public CancellationToken Token { get; }
         public Exception? Disconnection { get; set; }
@@ -588,5 +843,5 @@ public sealed class StreamDockService : IAsyncDisposable
     }
 
     private sealed record DisplayedView(long Number, DockView View, SurfaceImage[] Normal,
-        SurfaceImage[] Pressed, UsageDisplay?[] Displays);
+        SurfaceImage[] Pressed);
 }
