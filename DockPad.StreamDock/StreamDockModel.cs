@@ -27,7 +27,10 @@ internal static class StreamDockModel
         { 15, 12, 9, 6, 3 },
     };
 
-    private const byte FirstDisplayId = 16;
+    internal const byte FirstDisplayId = 16;
+    public static readonly SurfaceSize SideStrip = new(75, 380);
+    public const int StripWidth = 80, StripHeight = 420, StripStep = 150;
+    public static IReadOnlyList<int> StripSliceHeights { get; } = Array.AsReadOnly(new[] { 152, 152, 120 });
 
     public static byte KeyId(SurfaceKey key)
     {

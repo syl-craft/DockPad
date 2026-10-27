@@ -17,12 +17,18 @@ internal static class JpegEncodingThread
     /// Un encodage annulé avant son tour n'est jamais commencé.
     /// </summary>
     public static Task<byte[]> EncodeAsync(SurfaceImage image, int size, CancellationToken ct)
+        => EncodeAsync(() => StreamDockImage.ToJpeg(image, size), ct);
+
+    public static Task<byte[]?> EncodeAsync(SurfaceImage image, CancellationToken ct)
+        => EncodeAsync(() => StreamDockImage.ToJpeg(image), ct);
+
+    private static Task<T> EncodeAsync<T>(Func<T> encode, CancellationToken ct)
     {
         if (ct.IsCancellationRequested)
-            return Task.FromCanceled<byte[]>(ct);
+            return Task.FromCanceled<T>(ct);
 
         _ = Worker.Value;
-        var encoded = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var encoded = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
         Pending.Add(() =>
         {
             if (ct.IsCancellationRequested)
@@ -32,7 +38,7 @@ internal static class JpegEncodingThread
             }
             try
             {
-                encoded.TrySetResult(StreamDockImage.ToJpeg(image, size));
+                encoded.TrySetResult(encode());
             }
             catch (Exception ex)
             {

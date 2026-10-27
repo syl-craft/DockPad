@@ -23,6 +23,7 @@ internal sealed class ProbeReport(bool automatic)
     public List<ProbeCheck> Checks { get; } =
     [
         new(1, "Les numéros sont-ils dans le bon ordre et à l'endroit ?"),
+        new(1, "La colonne de droite est-elle continue, sans bande noire, avec le cadre vert entier ?"),
         new(2, "Image entière, sans bande grise ?"),
         new(3, "Rien n'a changé avant le Commit ?"),
         new(3, "Elle apparaît maintenant ?"),

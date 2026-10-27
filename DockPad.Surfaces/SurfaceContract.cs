@@ -1,5 +1,7 @@
 namespace DockPad.Surfaces;
 
+public readonly record struct SurfaceSize(int Width, int Height);
+
 public readonly record struct SurfaceKey(int Row, int Column);
 
 public enum KeyState { Pressed, Released }
@@ -24,7 +26,7 @@ public sealed record SurfaceImage(int Width, int Height, byte[] Bgra32)
 }
 
 public sealed record SurfaceDescription(string Model, int KeyRows, int KeyColumns, int KeyImageSize,
-    int DisplayCount, int DisplayImageSize);
+    int DisplayCount, int DisplayImageSize, SurfaceSize? SideStrip);
 
 public sealed record SurfaceInfo(string DriverName, string DevicePath, string Model, string? SerialNumber);
 
@@ -45,6 +47,12 @@ public interface IControlSurface : IAsyncDisposable
     Task SetKeyImageAsync(SurfaceKey key, SurfaceImage image, CancellationToken ct);
 
     Task SetDisplayImageAsync(int display, SurfaceImage image, CancellationToken ct);
+
+    /// <summary>
+    /// Taille différente de SideStrip : ArgumentException ; découpe par le pilote, seules les tranches modifiées partent, visibles après CommitAsync.
+    /// Une demande abandonnée par ClearAsync pendant l'encodage lève OperationCanceledException.
+    /// </summary>
+    Task SetSideStripImageAsync(SurfaceImage image, CancellationToken ct);
 
     Task ClearAsync(CancellationToken ct);
 

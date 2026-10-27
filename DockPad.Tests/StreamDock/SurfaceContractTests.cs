@@ -3,12 +3,23 @@ using DockPad.Surfaces;
 namespace DockPad.Tests;
 
 /// <summary>
-/// Contrat de surface de contrôle : une image dont la taille ne colle pas à ses pixels est
-/// refusée dès la construction, y compris quand largeur × hauteur × 4 déborde un entier, une
-/// dimension nulle ou négative aussi, et une image cohérente est acceptée telle quelle.
+/// Images cohérentes acceptées, dimensions et longueurs invalides refusées, y compris les débordements.
+/// Description avec ou sans colonne, dimensions de la colonne et anciens écrans conservés.
 /// </summary>
 public class SurfaceContractTests
 {
+    [Fact]
+    public void Description_ColonneOptionnelle_ConserveLesDimensions()
+    {
+        var withStrip = new SurfaceDescription("Strip", 3, 5, 96, 3, 80, new SurfaceSize(75, 380));
+        var withoutStrip = new SurfaceDescription("Keys", 3, 5, 96, 0, 0, SideStrip: null);
+
+        Assert.Equal(new SurfaceSize(75, 380), withStrip.SideStrip);
+        Assert.Null(withoutStrip.SideStrip);
+        Assert.Equal(3, withStrip.DisplayCount);
+        Assert.Equal(80, withStrip.DisplayImageSize);
+    }
+
     [Fact]
     public void SurfaceImage_TailleIncoherente_Refusee()
         => Assert.Throws<ArgumentException>(() => new SurfaceImage(96, 96, new byte[10]));

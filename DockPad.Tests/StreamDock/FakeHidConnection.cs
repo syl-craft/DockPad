@@ -23,6 +23,8 @@ internal sealed class FakeHidConnection : IHidConnection
 
     public bool IsDisposed { get; private set; }
 
+    public Action<byte[]>? WriteStarting { get; set; }
+
     public IReadOnlyList<byte[]> Written
     {
         get
@@ -69,6 +71,7 @@ internal sealed class FakeHidConnection : IHidConnection
     public async Task WriteAsync(byte[] report, CancellationToken ct)
     {
         await Task.Yield();
+        WriteStarting?.Invoke(report);
         if (_writeFailure != null)
             throw _writeFailure;
         if (_blocksWrites)

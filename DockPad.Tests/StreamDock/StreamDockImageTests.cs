@@ -8,10 +8,70 @@ namespace DockPad.Tests;
 
 /// <summary>
 /// Encodage du 293S V3 sur un thread STA : rotation antihoraire sans miroir et réduction à la taille demandée.
-/// Le bruit tient sous la limite JPEG ; une image simple garde la qualité maximale.
+/// Touches au-delà du plafond à qualité minimale, tranches rectangulaires refusées et images simples à qualité maximale.
 /// </summary>
 public class StreamDockImageTests
 {
+    [Theory]
+    [InlineData(152)]
+    [InlineData(120)]
+    public async Task Jpeg_Rectangulaire_TourneSansRedimensionner(int height)
+    {
+        var pixels = new byte[80 * height * 4];
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < 80; x++)
+            {
+                var offset = (y * 80 + x) * 4;
+                pixels[offset + 2] = x < 20 && y < 20 ? (byte)255 : (byte)0;
+                pixels[offset + 1] = x >= 60 && y < 20 ? (byte)255 : (byte)0;
+                pixels[offset + 3] = 255;
+            }
+        }
+        var image = new SurfaceImage(80, height, pixels);
+        var decoded = await OnStaThread(() => Decode(StreamDockImage.ToJpeg(image)
+            ?? throw new InvalidOperationException("Test image exceeds JPEG limit.")));
+
+        Assert.Equal(height, decoded.PixelWidth);
+        Assert.Equal(80, decoded.PixelHeight);
+        Assert.True(IsRed(PixelAt(decoded, x: 5, y: 75)));
+        Assert.True(IsGreen(PixelAt(decoded, x: 5, y: 5)));
+        Assert.False(IsRed(PixelAt(decoded, x: height - 5, y: 75)));
+    }
+
+    [Fact]
+    public async Task Jpeg_Rectangulaire_TropLourd_RenvoieNull()
+    {
+        var image = new SurfaceImage(80, 152, new byte[80 * 152 * 4]);
+
+        Assert.Null(await OnStaThread(() => StreamDockImage.EncodeJpeg(image, size: null, maxLength: 1)));
+    }
+
+    [Fact]
+    public async Task Jpeg_ToucheTropLourde_RenvoieLaQualiteMinimale()
+    {
+        const int size = 96;
+        const int maxLength = 1;
+        var image = RedTopLeftGreenTopRight(size);
+        var minimum = await OnStaThread(() =>
+        {
+            var source = BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32,
+                palette: null, image.Bgra32, stride: size * 4);
+            var rotated = new TransformedBitmap(source, new RotateTransform(-90));
+            var opaque = new FormatConvertedBitmap(rotated, PixelFormats.Bgr24, destinationPalette: null, alphaThreshold: 0);
+            var encoder = new JpegBitmapEncoder { QualityLevel = 35 };
+            encoder.Frames.Add(BitmapFrame.Create(opaque));
+            using var jpeg = new MemoryStream();
+            encoder.Save(jpeg);
+            return jpeg.ToArray();
+        });
+
+        var actual = await OnStaThread(() => StreamDockImage.ToJpeg(image, size, maxLength));
+
+        Assert.True(actual.Length > maxLength);
+        Assert.Equal(minimum, actual);
+    }
+
     [Fact]
     public async Task Jpeg_TourneDUnQuartAntihoraire()
     {

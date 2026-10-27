@@ -12,12 +12,12 @@ namespace StreamDockProbe;
 /// </summary>
 internal sealed class ProbeImages
 {
-    private const int KeySize = 96, DisplaySize = 80;
+    private const int KeySize = 96;
     private static readonly Color[] RowColors = [Color.FromRgb(32, 96, 160), Color.FromRgb(34, 125, 72), Color.FromRgb(151, 66, 111)];
 
     public Dictionary<SurfaceKey, SurfaceImage> Normal { get; } = [];
     public Dictionary<SurfaceKey, SurfaceImage> Pressed { get; } = [];
-    public List<SurfaceImage> Displays { get; } = [];
+    public SurfaceImage SideStrip { get; } = DrawSideStrip();
     public SurfaceImage Noise { get; private set; } = new(KeySize, KeySize, new byte[KeySize * KeySize * 4]);
     public SurfaceImage Red { get; private set; } = new(KeySize, KeySize, new byte[KeySize * KeySize * 4]);
     public int NoiseJpegBytes { get; private set; }
@@ -40,10 +40,6 @@ internal sealed class ProbeImages
                 images.Pressed.Add(key, DrawPressed(normal, RowColors[row]));
             }
         }
-        for (var display = 0; display < StreamDockModel.DisplayCount; display++)
-        {
-            images.Displays.Add(DrawLabel(((char)('A' + display)).ToString(), DisplaySize, RowColors[display], fontSize: 48));
-        }
         images.Red = DrawLabel("", KeySize, Colors.Red, fontSize: 25);
         var pixels = new byte[KeySize * KeySize * 4];
         Random.Shared.NextBytes(pixels);
@@ -58,6 +54,28 @@ internal sealed class ProbeImages
         images.NoiseJpegBytes = jpeg.Length;
         images.NoiseChunks = StreamDockProtocol.Image(StreamDockModel.KeyId(new SurfaceKey(0, 0)), jpeg).Count - 1;
         return images;
+    }
+
+    private static SurfaceImage DrawSideStrip()
+    {
+        const int border = 2;
+        var width = StreamDockModel.SideStrip.Width;
+        var height = StreamDockModel.SideStrip.Height;
+        var pixels = new byte[width * height * 4];
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var offset = (y * width + x) * 4;
+                var frame = x < border || x >= width - border || y < border || y >= height - border;
+                var graduation = y % 50 == 0 && x < 20;
+                pixels[offset] = frame || graduation ? (byte)0 : (byte)20;
+                pixels[offset + 1] = frame || graduation ? (byte)255 : (byte)20;
+                pixels[offset + 2] = frame || graduation ? (byte)0 : (byte)20;
+                pixels[offset + 3] = 255;
+            }
+        }
+        return new SurfaceImage(width, height, pixels);
     }
 
     private static SurfaceImage DrawLabel(string label, int size, Color background, double fontSize)

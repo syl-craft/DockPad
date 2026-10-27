@@ -10,9 +10,10 @@ internal sealed class FakeSurface : IControlSurface
     private int _disposeCalls;
     private Exception? _disconnection;
     private Action<Exception>? _disconnected;
-    public SurfaceDescription Description { get; } = new("Fake", 3, 5, 4, 3, 4);
+    public SurfaceDescription Description { get; } = new("Fake", 3, 5, 4, 3, 4, new SurfaceSize(75, 380));
     public ConcurrentQueue<(SurfaceKey Key, SurfaceImage Image)> Images { get; } = new();
     public ConcurrentQueue<(int Display, SurfaceImage Image)> Displays { get; } = new();
+    public ConcurrentQueue<SurfaceImage> SideStrips { get; } = new();
     public int Commits => Volatile.Read(ref _commits);
     public int DisposeCalls => Volatile.Read(ref _disposeCalls);
     public TaskCompletionSource? WriteGate { get; set; }
@@ -60,6 +61,15 @@ internal sealed class FakeSurface : IControlSurface
     {
         ct.ThrowIfCancellationRequested();
         Displays.Enqueue((display, image));
+        return Task.CompletedTask;
+    }
+
+    public Task SetSideStripImageAsync(SurfaceImage image, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (image.Width != Description.SideStrip?.Width || image.Height != Description.SideStrip?.Height)
+            throw new ArgumentException("Side strip image size does not match the surface.", nameof(image));
+        SideStrips.Enqueue(image);
         return Task.CompletedTask;
     }
 

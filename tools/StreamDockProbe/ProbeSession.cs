@@ -9,9 +9,10 @@ internal sealed class ProbeSession(StreamDockSurface surface, ProbeImages images
 {
     public async Task RunAsync(CancellationToken ct)
     {
-        Console.WriteLine("1. Repérage des 15 touches et des 3 écrans latéraux.");
+        Console.WriteLine("1. Repérage des 15 touches et de la colonne latérale.");
         await ShowNumbersAsync(ct);
-        await AskAsync(step: 1, ct);
+        await AskAsync(step: 1, ct, occurrence: 0);
+        await AskAsync(step: 1, ct, occurrence: 1);
 
         Console.WriteLine("2. Image bruitée sur L1 C1.");
         Console.WriteLine($"JPEG : {images.NoiseJpegBytes} octets, {images.NoiseChunks} blocs de données HID.");
@@ -61,10 +62,7 @@ internal sealed class ProbeSession(StreamDockSurface surface, ProbeImages images
         {
             await surface.SetKeyImageAsync(key, image, ct);
         }
-        for (var display = 0; display < images.Displays.Count; display++)
-        {
-            await surface.SetDisplayImageAsync(display, images.Displays[display], ct);
-        }
+        await surface.SetSideStripImageAsync(images.SideStrip, ct);
         await surface.CommitAsync(ct);
     }
 

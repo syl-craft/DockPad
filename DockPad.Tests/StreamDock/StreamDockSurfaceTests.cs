@@ -7,17 +7,8 @@ using DockPad.Surfaces;
 namespace DockPad.Tests;
 
 /// <summary>
-/// Surface du 293S V3 contre un faux handle HID :
-/// - démarrage DIS, LIG 100, CLE 0xFF, STP avant que la surface soit rendue ; en échec, handle fermé et erreur levée ;
-/// - une image part d'un bloc (en-tête BAT puis ses blocs, sans rapport intercalé) avec le numéro matériel de la
-///   touche ou de l'écran 16 à 18 ; seule la dernière image non commencée d'une touche est écrite ; image annulée jamais écrite ;
-/// - CommitAsync rend la main une fois STP écrit, échoue si la surface se déconnecte avant ;
-/// - CONNECT toutes les 10 s, devant les images en attente ;
-/// - appuis lus et levés en KeyChanged, même si un abonné lève ;
-/// - Disconnected levé une seule fois sur erreur de lecture, d'écriture ou délai dépassé, aussi à un abonné tardif,
-///   handle fermé, puis envois refusés par IOException ;
-/// - fermeture qui efface et met en veille, rend la main en une seconde même si l'écriture ou la fermeture du handle
-///   bloque, partagée entre appels concurrents, sans lever Disconnected ; envois après fermeture refusés.
+/// Faux HID : démarrage, images atomiques, dernière demande gagnante, validation STP, maintien en vie et fermeture.
+/// Colonne : tranches modifiées, chevauchements, refus JPEG, annulation, effacement et déconnexion pendant l'envoi.
 /// </summary>
 public class StreamDockSurfaceTests
 {
@@ -32,7 +23,7 @@ public class StreamDockSurfaceTests
         Assert.Equal(["DIS", "LIG", "CLE", "STP"], written.Select(CommandOf));
         Assert.Equal(100, written[1][11]);
         Assert.Equal(0xFF, written[2][12]);
-        Assert.Equal(new SurfaceDescription("293S V3", 3, 5, 96, 3, 80), surface.Description);
+        Assert.Equal(new SurfaceDescription("293S V3", 3, 5, 96, 3, 80, new SurfaceSize(75, 380)), surface.Description);
         await surface.DisposeAsync();
     }
 
@@ -390,6 +381,467 @@ public class StreamDockSurfaceTests
         await Assert.ThrowsAsync<ObjectDisposedException>(() => surface.CommitAsync(CancellationToken.None));
         await Assert.ThrowsAsync<ObjectDisposedException>(() => surface.SetKeyImageAsync(new SurfaceKey(0, 0), Noise(96, seed: 1), CancellationToken.None));
         await surface.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Colonne_OrdreDEnvoi16_17_18PuisCommit()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18 }, StripTargets(connection));
+        Assert.Equal(new[] { "BAT", "BAT", "BAT", "STP" }, connection.Written.Skip(4)
+            .Select(CommandOf).Where(command => command != ""));
+    }
+
+    [Fact]
+    public async Task Colonne_TrancheInchangee_PasRenvoyee()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        var strip = Strip();
+        await surface.SetSideStripImageAsync(strip, CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        Assert.Equal(new byte[] { 16, 17, 18 }, StripTargets(connection));
+
+        strip.Bgra32[(200 * 75 + 10) * 4] = 200;
+        await surface.SetSideStripImageAsync(strip, CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        Assert.Equal(new byte[] { 16, 17, 18, 17 }, StripTargets(connection));
+    }
+
+    [Theory]
+    [InlineData(150, 16, 17)]
+    [InlineData(151, 16, 17)]
+    [InlineData(300, 17, 18)]
+    [InlineData(301, 17, 18)]
+    public async Task Colonne_LigneCommuneModifiee_DeuxTranchesRenvoyees(int row, byte first, byte second)
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        var strip = Strip();
+        await surface.SetSideStripImageAsync(strip, CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+
+        strip.Bgra32[(row * 75 + 10) * 4] = 200;
+        await surface.SetSideStripImageAsync(strip, CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18, first, second }, StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_ApresEffacement_ToutesLesTranchesRenvoyees()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        await surface.ClearAsync(CancellationToken.None);
+
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18, 16, 17, 18 }, StripTargets(connection));
+    }
+
+    [Theory]
+    [InlineData(80, 380)]
+    [InlineData(75, 420)]
+    [InlineData(380, 75)]
+    public async Task Colonne_MauvaiseTaille_Refusee(int width, int height)
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+
+        await Assert.ThrowsAsync<ArgumentException>(() => surface.SetSideStripImageAsync(
+            new SurfaceImage(width, height, new byte[width * height * 4]), CancellationToken.None));
+
+        Assert.Empty(StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_AvantCommit_LesTranchesNeSontPasAffichees()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.SendCommandAsync(StreamDockProtocol.Wake(), CancellationToken.None);
+
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18, 16, 17, 18 }, StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_DeuxDemandesEnAttente_SeuleLaDerniereEstEcrite()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        connection.PauseWrites();
+        var blocker = surface.CommitAsync(CancellationToken.None);
+        var latest = Strip();
+        latest.Bgra32[0] = 200;
+        try
+        {
+            await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+            await surface.SetSideStripImageAsync(latest, CancellationToken.None);
+        }
+        finally
+        {
+            connection.ResumeWrites();
+        }
+        await blocker.WaitAsync(EventWait);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18 }, StripTargets(connection));
+        var written = connection.Written;
+        var expected = await OnStaThread(() => StreamDockImage.ToJpeg(StreamDockStrip.Slice(latest)[0].Image));
+        Assert.Equal(expected, ImageAt(written, written.ToList().FindIndex(report => CommandOf(report) == "BAT")).Jpeg);
+    }
+
+    [Fact]
+    public async Task Colonne_RetourALImageAffichee_RetireLaTrancheEnAttente()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        connection.PauseWrites();
+        var blocker = surface.CommitAsync(CancellationToken.None);
+        var changed = Strip();
+        changed.Bgra32[0] = 200;
+        try
+        {
+            await surface.SetSideStripImageAsync(changed, CancellationToken.None);
+            await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        }
+        finally
+        {
+            connection.ResumeWrites();
+        }
+        await blocker.WaitAsync(EventWait);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18 }, StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_RetourALImageAffichee_RestaureLaTrancheDejaEcrite()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        var changed = Strip();
+        changed.Bgra32[0] = 200;
+        await surface.SetSideStripImageAsync(changed, CancellationToken.None);
+        await surface.SendCommandAsync(StreamDockProtocol.Wake(), CancellationToken.None);
+
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18, 16, 16 }, StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_TrancheTropLourde_NonEnvoyeeEtRetentee()
+    {
+        var connection = new FakeHidConnection();
+        var encodings = 0;
+        await using var surface = new StreamDockSurface(connection, new ManualTimeProvider(), (image, ct) =>
+            Interlocked.Increment(ref encodings) == 1
+                ? Task.FromResult<byte[]?>(null)
+                : JpegEncodingThread.EncodeAsync(image, ct));
+        await surface.StartAsync(CancellationToken.None);
+
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        Assert.Equal(new byte[] { 17, 18 }, StripTargets(connection));
+
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        Assert.Equal(new byte[] { 17, 18, 16 }, StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_EncodageDepasse_NeRemplacePasLaDerniereDemande()
+    {
+        var connection = new FakeHidConnection();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var encodings = 0;
+        await using var surface = new StreamDockSurface(connection, new ManualTimeProvider(), async (image, ct) =>
+        {
+            if (Interlocked.Increment(ref encodings) == 1)
+            {
+                started.TrySetResult();
+                await resume.Task.WaitAsync(EventWait);
+            }
+            return await JpegEncodingThread.EncodeAsync(image, ct);
+        });
+        await surface.StartAsync(CancellationToken.None);
+        var obsolete = surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await started.Task.WaitAsync(EventWait);
+        var latest = Strip();
+        latest.Bgra32[0] = 200;
+        try
+        {
+            await surface.SetSideStripImageAsync(latest, CancellationToken.None);
+            await surface.CommitAsync(CancellationToken.None);
+        }
+        finally
+        {
+            resume.TrySetResult();
+        }
+        await obsolete.WaitAsync(EventWait);
+        await surface.SetSideStripImageAsync(latest, CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18 }, StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_EffacementPendantEncodage_AppelAnnule()
+    {
+        var connection = new FakeHidConnection();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var encodings = 0;
+        await using var surface = new StreamDockSurface(connection, new ManualTimeProvider(), async (image, ct) =>
+        {
+            if (Interlocked.Increment(ref encodings) == 1)
+            {
+                started.TrySetResult();
+                await resume.Task.WaitAsync(EventWait);
+            }
+            return await JpegEncodingThread.EncodeAsync(image, ct);
+        });
+        await surface.StartAsync(CancellationToken.None);
+        var obsolete = surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await started.Task.WaitAsync(EventWait);
+        try
+        {
+            await surface.ClearAsync(CancellationToken.None);
+        }
+        finally
+        {
+            resume.TrySetResult();
+        }
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => obsolete.WaitAsync(EventWait));
+        await surface.CommitAsync(CancellationToken.None);
+        Assert.Empty(StripTargets(connection));
+
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        Assert.Equal(new byte[] { 16, 17, 18 }, StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_CommitBloque_NeMarquePasLesTranchesAffichees()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.SendCommandAsync(StreamDockProtocol.Wake(), CancellationToken.None);
+        connection.PauseWrites();
+        var commit = surface.CommitAsync(CancellationToken.None);
+        try
+        {
+            await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+            Assert.False(commit.IsCompleted);
+        }
+        finally
+        {
+            connection.ResumeWrites();
+        }
+        await commit.WaitAsync(EventWait);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18, 16, 17, 18 }, StripTargets(connection));
+    }
+
+    [Fact]
+    public async Task Colonne_DeconnexionPendantEnvoi_ReconnexionRenvoieTout()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        connection.PauseWrites();
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        var commit = surface.CommitAsync(CancellationToken.None);
+        connection.FailReads(new IOException("Device removed."));
+        await Assert.ThrowsAsync<IOException>(() => commit.WaitAsync(EventWait));
+
+        var (reconnected, _, reopened) = await OpenAsync();
+        await using var reopenedCleanup = reopened;
+        await reopened.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await reopened.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18 }, StripTargets(reconnected));
+    }
+
+    [Fact]
+    public async Task Colonne_DemandeAnnulee_AucuneTrancheEnvoyee()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => surface.SetSideStripImageAsync(Strip(), cancelled.Token));
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Empty(StripTargets(connection));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Colonne_DemandeAnnuleePendantEncodage_PrecedenteConservee(bool observesCancellation)
+    {
+        var connection = new FakeHidConnection();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var encodings = 0;
+        await using var surface = new StreamDockSurface(connection, new ManualTimeProvider(), async (image, ct) =>
+        {
+            if (Interlocked.Increment(ref encodings) == 4)
+            {
+                started.TrySetResult();
+                await resume.Task.WaitAsync(EventWait);
+            }
+            return await JpegEncodingThread.EncodeAsync(image, observesCancellation ? ct : CancellationToken.None);
+        });
+        await surface.StartAsync(CancellationToken.None);
+        connection.PauseWrites();
+        var blocker = surface.CommitAsync(CancellationToken.None);
+        var previous = Strip();
+        using var cancelled = new CancellationTokenSource();
+        try
+        {
+            await surface.SetSideStripImageAsync(previous, CancellationToken.None);
+            var latest = Strip();
+            latest.Bgra32[0] = 200;
+            var pending = surface.SetSideStripImageAsync(latest, cancelled.Token);
+            await started.Task.WaitAsync(EventWait);
+            cancelled.Cancel();
+            resume.TrySetResult();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending.WaitAsync(EventWait));
+        }
+        finally
+        {
+            resume.TrySetResult();
+            connection.ResumeWrites();
+        }
+        await blocker.WaitAsync(EventWait);
+        await surface.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(new byte[] { 16, 17, 18 }, StripTargets(connection));
+        var written = connection.Written;
+        var headers = written.Select((report, index) => (Report: report, Index: index))
+            .Where(entry => CommandOf(entry.Report) == "BAT").ToArray();
+        var slices = StreamDockStrip.Slice(previous);
+        for (var index = 0; index < slices.Count; index++)
+        {
+            var expected = await OnStaThread(() => StreamDockImage.ToJpeg(slices[index].Image));
+            Assert.Equal(expected, ImageAt(written, headers[index].Index).Jpeg);
+        }
+    }
+
+    [Fact]
+    public async Task EcranLateral_EffacementPendantEncodage_AppelAnnule()
+    {
+        var connection = new FakeHidConnection();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var surface = new StreamDockSurface(connection, new ManualTimeProvider(),
+            JpegEncodingThread.EncodeAsync, async (image, size, ct) =>
+            {
+                started.TrySetResult();
+                await resume.Task.WaitAsync(EventWait);
+                return await JpegEncodingThread.EncodeAsync(image, size, ct);
+            });
+        await surface.StartAsync(CancellationToken.None);
+        var pending = surface.SetDisplayImageAsync(0, Noise(80, seed: 1), CancellationToken.None);
+        try
+        {
+            await started.Task.WaitAsync(EventWait);
+            await surface.ClearAsync(CancellationToken.None);
+        }
+        finally
+        {
+            resume.TrySetResult();
+        }
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending.WaitAsync(EventWait));
+        await surface.CommitAsync(CancellationToken.None);
+        Assert.Empty(StripTargets(connection));
+    }
+
+    [Theory]
+    [InlineData("BAT")]
+    [InlineData("STP")]
+    public async Task Colonne_FermetureDeFile_RienTenuPourAffiche(string pausedCommand)
+    {
+        var (connection, _, surface) = await OpenAsync();
+        await using var cleanup = surface;
+        await surface.SetSideStripImageAsync(Strip(), CancellationToken.None);
+        await surface.CommitAsync(CancellationToken.None);
+        Assert.Equal(3, surface.DisplayedStripCount);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.WriteStarting = report =>
+        {
+            if (CommandOf(report) != pausedCommand)
+                return;
+            connection.WriteStarting = null;
+            connection.PauseWrites();
+            started.TrySetResult();
+        };
+        var changed = Strip();
+        changed.Bgra32[0] = 200;
+        Task? commit = null;
+        Task closing;
+        try
+        {
+            await surface.SetSideStripImageAsync(changed, CancellationToken.None);
+            if (pausedCommand == "STP")
+                commit = surface.CommitAsync(CancellationToken.None);
+            await started.Task.WaitAsync(EventWait);
+            closing = surface.DisposeAsync().AsTask();
+            Assert.Equal(0, surface.DisplayedStripCount);
+            Assert.Equal(0, surface.WrittenStripCount);
+        }
+        finally
+        {
+            connection.WriteStarting = null;
+            connection.ResumeWrites();
+        }
+        await closing.WaitAsync(EventWait);
+        if (commit != null)
+            await commit.WaitAsync(EventWait);
+
+        Assert.Equal(0, surface.DisplayedStripCount);
+        Assert.Equal(0, surface.WrittenStripCount);
+        Assert.True(connection.IsDisposed);
+    }
+
+    private static byte[] StripTargets(FakeHidConnection connection)
+        => connection.Written.Where(report => CommandOf(report) == "BAT").Select(report => report[13]).ToArray();
+
+    private static SurfaceImage Strip()
+    {
+        var pixels = new byte[75 * 380 * 4];
+        for (var offset = 3; offset < pixels.Length; offset += 4)
+            pixels[offset] = 255;
+        return new SurfaceImage(75, 380, pixels);
     }
 
     private static async Task<(FakeHidConnection Connection, ManualTimeProvider Time, StreamDockSurface Surface)> OpenAsync()
