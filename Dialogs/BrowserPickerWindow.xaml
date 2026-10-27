@@ -161,7 +161,7 @@
                             <Image Grid.Column="1" Source="{Binding Icon}" Width="24" Height="24"
                                    VerticalAlignment="Center">
                                 <Image.Style>
-                                    <Style TargetType="Image">
+                                    <Style TargetType="Image" BasedOn="{StaticResource {x:Type Image}}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsChild}" Value="True">
                                                 <Setter Property="Width"  Value="20"/>
