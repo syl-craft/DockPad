@@ -124,6 +124,15 @@ public static class SettingsService
     public static void SaveStreamDockSideStrip(SideStripStyle style) =>
         AppSettingsService.Update(s => s.StreamDockSideStrip = style);
 
+    public static DockKeyStyle LoadStreamDockKeyStyle()
+    {
+        var style = AppSettingsService.Current.StreamDockKeyStyle;
+        return Enum.IsDefined(style) ? style : DockKeyStyle.Halo;
+    }
+
+    public static void SaveStreamDockKeyStyle(DockKeyStyle style) =>
+        AppSettingsService.Update(s => s.StreamDockKeyStyle = style);
+
     public static string LoadClaudeArgs() => AppSettingsService.Current.ClaudeArgs;
 
     public static void SaveClaudeArgs(string args) =>

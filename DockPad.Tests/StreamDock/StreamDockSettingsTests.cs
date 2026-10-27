@@ -71,6 +71,51 @@ public sealed class StreamDockSettingsTests : IDisposable
         Assert.Equal("fr", settings.Language);
     }
 
+    [Fact]
+    public void StyleDesTouches_DefautHalo()
+    {
+        Assert.Equal(DockKeyStyle.Halo, new AppSettings().StreamDockKeyStyle);
+
+        File.WriteAllText(SettingsPath, """{ "language": "fr" }""");
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(DockKeyStyle.Halo, settings.StreamDockKeyStyle);
+    }
+
+    [Theory]
+    [InlineData(DockKeyStyle.Halo)]
+    [InlineData(DockKeyStyle.Classic)]
+    public void StyleDesTouches_RelueApresSauvegarde(DockKeyStyle style)
+    {
+        AppSettingsService.SaveTo(SettingsPath, new AppSettings { Language = "fr", StreamDockKeyStyle = style });
+
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(style, settings.StreamDockKeyStyle);
+        Assert.Equal("fr", settings.Language);
+    }
+
+    [Theory]
+    [InlineData("999")]
+    [InlineData("\"FutureStyle\"")]
+    [InlineData("null")]
+    [InlineData("\"classic\"")]
+    public void StyleDesTouches_ValeurInconnueOuTexte(string value)
+    {
+        File.WriteAllText(SettingsPath, $$"""
+            {
+              "language": "fr",
+              "streamDockKeyStyle": {{value}},
+              "clipboardClearSeconds": 123
+            }
+            """);
+
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(value == "\"classic\"" ? DockKeyStyle.Classic : DockKeyStyle.Halo, settings.StreamDockKeyStyle);
+        Assert.Equal(123, settings.ClipboardClearSeconds);
+    }
+
     [Theory]
     [InlineData(SideStripStyle.Columns)]
     [InlineData(SideStripStyle.HeroStack)]

@@ -81,6 +81,7 @@ public partial class SettingsDialog : Window
         ChkStreamDockEnabled.IsChecked = SettingsService.LoadStreamDockEnabled();
         ChkStreamDockSyncPages.IsChecked = SettingsService.LoadStreamDockSyncPages();
         FillSideStripPreviews();
+        FillKeyStylePreviews();
         TxtStreamDockDriverMissing.Visibility = File.Exists(Path.Combine(
             SurfaceDriverLoader.PluginsFolder, "StreamDock", "DockPad.StreamDock.dll"))
             ? Visibility.Collapsed : Visibility.Visible;
@@ -176,6 +177,71 @@ public partial class SettingsDialog : Window
                 (Application.Current as App)?.PreviewStreamDockSideStrip(saved);
         };
     }
+
+    /// <summary>
+    /// Vignettes des deux styles : Accueil et les premières tuiles de la grille, par le vrai rendu des touches.
+    /// </summary>
+    private void FillKeyStylePreviews()
+    {
+        var keys = PreviewKeys();
+        (DockKeyStyle Style, Image Preview)[] previews =
+        [
+            (DockKeyStyle.Halo, ImgKeyStyleHalo),
+            (DockKeyStyle.Classic, ImgKeyStyleClassic),
+        ];
+        foreach (var (style, preview) in previews)
+            preview.Source = KeyRow(keys, style);
+
+        var saved = SettingsService.LoadStreamDockKeyStyle();
+        LstStreamDockKeyStyle.SelectedItem = LstStreamDockKeyStyle.Items.Cast<ListBoxItem>()
+            .Where(item => item.Tag is DockKeyStyle style && style == saved)
+            .FirstOrDefault();
+
+        // Chaque clic redessine les touches du dock ; sans Sauvegarder, la fermeture remet le style enregistré.
+        LstStreamDockKeyStyle.SelectionChanged += (_, _) =>
+            (Application.Current as App)?.PreviewStreamDockKeyStyle(SelectedKeyStyle);
+        Closed += (_, _) =>
+        {
+            if (DialogResult != true)
+                (Application.Current as App)?.PreviewStreamDockKeyStyle(saved);
+        };
+    }
+
+    /// <summary>
+    /// Les trois premières touches de la première page garnie ; deux tuiles sans icône sur une grille vide.
+    /// </summary>
+    private static DockKey[] PreviewKeys()
+    {
+        var window = Application.Current.Windows.OfType<QuickAccessWindow>().FirstOrDefault();
+        var entries = window?.ShortcutEntries() ?? [];
+        var pagesWithTiles = DockLayout.PagesWithTiles(entries);
+        if (window == null || pagesWithTiles.Count == 0)
+            return [new DockKey.GoHome(), new DockKey.RunTile(new ShortcutEntry { Name = "DockPad" }),
+                new DockKey.RunTile(new ShortcutEntry { Name = "Terminal" })];
+
+        var view = DockLayout.Build(new DockScreen.Page(pagesWithTiles[0], 0), entries, window.ShortcutPages(), keyCount: 15);
+        return view.Keys.Take(3).ToArray();
+    }
+
+    private static BitmapSource KeyRow(DockKey[] keys, DockKeyStyle style)
+    {
+        const int size = 96, gap = 8;
+        int width = keys.Length * size + (keys.Length - 1) * gap;
+        var pixels = new byte[width * size * 4];
+        for (int index = 0; index < keys.Length; index++)
+        {
+            var key = DockImageRenderer.RenderKey(keys[index], style, pressed: false, size);
+            for (int y = 0; y < size; y++)
+                Buffer.BlockCopy(key.Bgra32, y * size * 4, pixels, (y * width + index * (size + gap)) * 4, size * 4);
+        }
+        var bitmap = BitmapSource.Create(width, size, 96, 96, PixelFormats.Bgra32, null, pixels, width * 4);
+        bitmap.Freeze();
+        return bitmap;
+    }
+
+    private DockKeyStyle SelectedKeyStyle =>
+        LstStreamDockKeyStyle.SelectedItem is ListBoxItem { Tag: DockKeyStyle style }
+            ? style : DockKeyStyle.Halo;
 
     private SideStripStyle SelectedSideStripStyle =>
         LstStreamDockSideStrip.SelectedItem is ListBoxItem { Tag: SideStripStyle style }
@@ -419,6 +485,7 @@ public partial class SettingsDialog : Window
         SettingsService.SaveStreamDockEnabled(ChkStreamDockEnabled.IsChecked == true);
         SettingsService.SaveStreamDockSyncPages(ChkStreamDockSyncPages.IsChecked == true);
         SettingsService.SaveStreamDockSideStrip(SelectedSideStripStyle);
+        SettingsService.SaveStreamDockKeyStyle(SelectedKeyStyle);
         (Application.Current as App)?.ApplyStreamDockSettings();
 
         DialogResult = true;

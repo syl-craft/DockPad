@@ -23,6 +23,26 @@ public class StreamDockServiceTests
     }
 
     [Fact]
+    public async Task StyleDesTouches_HaloParDefautPuisRedessineSansChangerDEcran()
+    {
+        await using var dock = new TestDock();
+        await dock.Start();
+        Assert.All(dock.Renderer.KeyStyles, style => Assert.Equal(DockKeyStyle.Halo, style));
+        int images = dock.Surface.Images.Count;
+
+        dock.Service.KeyStyle = DockKeyStyle.Classic;
+        await dock.Idle();
+        Assert.Equal(DockKeyStyle.Classic, dock.Renderer.KeyStyles.Last());
+        Assert.Equal(new DockScreen.Home(0), dock.Service.Screen);
+        Assert.True(dock.Surface.Images.Count > images);
+
+        int renders = dock.Renderer.Keys.Count;
+        dock.Service.KeyStyle = DockKeyStyle.Classic;
+        await dock.Idle();
+        Assert.Equal(renders, dock.Renderer.Keys.Count);
+    }
+
+    [Fact]
     public async Task SansSurface_ReessaieToutesLes5Secondes()
     {
         await using var dock = new TestDock();
@@ -506,7 +526,7 @@ public class StreamDockServiceTests
         var normal = dock.Surface.Images.Where(image => image.Key == FakeSurface.Key(1)).Last().Image;
         Assert.False(previous.Bgra32.SequenceEqual(normal.Bgra32));
         var tile = new DockKey.RunTile(dock.Sources.Tiles[0]);
-        var pressed = await dock.Renderer.RenderKeyAsync(tile, pressed: true, dock.Surface.Description.KeyImageSize);
+        var pressed = await dock.Renderer.RenderKeyAsync(tile, dock.Service.KeyStyle, pressed: true, dock.Surface.Description.KeyImageSize);
         dock.Surface.Press(1);
         await dock.Idle();
         Assert.Equal(pressed.Bgra32, dock.Surface.Images.Last().Image.Bgra32);

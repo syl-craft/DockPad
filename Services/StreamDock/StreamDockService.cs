@@ -38,6 +38,7 @@ public sealed class StreamDockService : IAsyncDisposable
     private DockScreen _wantedScreen = new DockScreen.Home(0);
     private SideStripState _sideStrip = new([], new UsageConfig(), new SystemLoad(null, null), SideStripStyle.Columns, "");
     private long _sideStripRevision;
+    private DockKeyStyle _keyStyle;
     private SurfaceImage? _publishedSideStrip;
     private Task _renderingSideStrip = Task.CompletedTask;
     private Task _pendingSideStripRenders = Task.CompletedTask;
@@ -102,6 +103,24 @@ public sealed class StreamDockService : IAsyncDisposable
                 _sideStrip = _sideStrip with { Style = style };
                 ++_sideStripRevision;
                 if (_started && _stopped == false) Enqueue(RedrawSideStripAsync);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Dessin des touches ; un changement redessine l'écran affiché sans en changer.
+    /// </summary>
+    public DockKeyStyle KeyStyle
+    {
+        get { lock (_gate) return _keyStyle; }
+        set
+        {
+            lock (_gate)
+            {
+                var style = Enum.IsDefined(value) ? value : DockKeyStyle.Halo;
+                if (_keyStyle == style) return;
+                _keyStyle = style;
+                if (_started && _stopped == false) Enqueue(RedrawAsync);
             }
         }
     }
@@ -524,14 +543,15 @@ public sealed class StreamDockService : IAsyncDisposable
         try
         {
             var description = session.Surface.Description;
+            var style = KeyStyle;
             var normal = new SurfaceImage[view.Keys.Count];
             var pressed = new SurfaceImage[view.Keys.Count];
             for (int index = 0; index < view.Keys.Count; index++)
             {
                 normal[index] = await InSessionAsync(session, _renderer.RenderKeyAsync(
-                    view.Keys[index], pressed: false, description.KeyImageSize)).ConfigureAwait(false);
+                    view.Keys[index], style, pressed: false, description.KeyImageSize)).ConfigureAwait(false);
                 pressed[index] = await InSessionAsync(session, _renderer.RenderKeyAsync(
-                    view.Keys[index], pressed: true, description.KeyImageSize)).ConfigureAwait(false);
+                    view.Keys[index], style, pressed: true, description.KeyImageSize)).ConfigureAwait(false);
                 if (revision != CurrentRevision()) return;
             }
             Enqueue(() => PublishViewAsync(session, revision, view, normal, pressed, shortcutPage));

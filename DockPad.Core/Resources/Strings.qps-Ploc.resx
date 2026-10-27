@@ -1874,6 +1874,15 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Settings_Tab_StreamDock" xml:space="preserve">
     <value>5tr34m D0ck</value>
   </data>
+  <data name="Settings_StreamDock_KeyStyle" xml:space="preserve">
+    <value>5tyl3 d35 t0uch35</value>
+  </data>
+  <data name="Settings_StreamDock_KeyStyle_Halo" xml:space="preserve">
+    <value>H4l0</value>
+  </data>
+  <data name="Settings_StreamDock_KeyStyle_Classic" xml:space="preserve">
+    <value>Cl4551qu3</value>
+  </data>
   <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
     <value>3cr4n l4t3r4l</value>
   </data>

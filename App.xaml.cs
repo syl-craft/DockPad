@@ -277,6 +277,16 @@ public partial class App : Application
     }
 
     /// <summary>
+    /// Affiche un style de touches sur le dock connecté sans l'enregistrer.
+    /// </summary>
+    public void PreviewStreamDockKeyStyle(Models.DockKeyStyle style)
+    {
+        Dispatcher.VerifyAccess();
+        if (_streamDock != null)
+            _streamDock.KeyStyle = style;
+    }
+
+    /// <summary>
     /// Applique les réglages du dock sur le thread UI, uniquement dans l’instance propriétaire du mutex.
     /// </summary>
     public void ApplyStreamDockSettings()
@@ -311,6 +321,7 @@ public partial class App : Application
                 _mainWindow.ShortcutPage.Changed += _streamDock.OnShortcutPageChanged;
                 _streamDock.SyncPages = Services.SettingsService.LoadStreamDockSyncPages();
                 _streamDock.SideStripStyle = Services.SettingsService.LoadStreamDockSideStrip();
+                _streamDock.KeyStyle = Services.SettingsService.LoadStreamDockKeyStyle();
                 _streamDock.PrincipalProviderId = _mainWindow.UsageBanner.ViewModel?.SoloProviderId ?? "";
                 if (_mainWindow.UsageBanner.ViewModel != null)
                     _mainWindow.UsageBanner.ViewModel.PropertyChanged += OnUsageBannerChanged;
@@ -320,6 +331,7 @@ public partial class App : Application
 
             _streamDock.SyncPages = Services.SettingsService.LoadStreamDockSyncPages();
             _streamDock.SideStripStyle = Services.SettingsService.LoadStreamDockSideStrip();
+            _streamDock.KeyStyle = Services.SettingsService.LoadStreamDockKeyStyle();
         }
         catch (Exception ex)
         {
