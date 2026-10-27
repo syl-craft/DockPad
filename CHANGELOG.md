@@ -1,10 +1,14 @@
 # Changelog
 
-## [Non publié]
+## [1.31.0] — 2026-10-27
 
 ### Nouveautés
 
 - **Stream Dock 293S V3** : pilotage depuis l'onglet dédié **Options → Stream Dock**, avec synchronisation facultative des pages Raccourcis dans les deux sens. La colonne latérale continue affiche les quotas IA, le processeur et la mémoire, avec quatre rendus au choix par vignettes : **Colonnes** (par défaut), **Pile héro**, **Anneaux** et **Réservoir** ; un clic sur une vignette l'affiche aussitôt sur le dock. Dans le rendu Colonnes, le logo de chaque IA couvre ses fenêtres de quota. L'IA choisie dans les onglets du bandeau Usage IA passe en tête de la colonne (grande jauge de Pile héro et du Réservoir, premier cadran des Anneaux, premières barres des Colonnes). Le rendu Réservoir indique le temps restant avant la remise à zéro des fenêtres 5 h (arrondi au-dessus : en heures, puis en minutes sous l'heure). La colonne conserve le processeur et la mémoire lorsque le bandeau Usage IA est désactivé. Les réglages s'appliquent à la sauvegarde sans redémarrage ; Annuler conserve les valeurs précédentes. Les deux cases sont désactivées par défaut. Fermer le logiciel du fabricant avant activation ; le dock continue de fonctionner fenêtre cachée et reprend après la veille Windows.
+
+### Corrections
+
+- **Icônes plus nettes** : une icône plus grande que sa case garde ses traits fins une fois réduite, dans la grille comme dans les fenêtres de DockPad.
 
 ### Documentation
 
