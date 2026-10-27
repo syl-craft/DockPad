@@ -36,12 +36,12 @@ public class SideStripPlannerTests
 
         QuotaGauge[] expected =
         [
-            new("codex", "Codex", "5 h", 90, IsAlert: true, IsStale: false, ResetsAt: null),
-            new("claude", "Claude Code", "5 h", 70, IsAlert: false, IsStale: false, ResetsAt: sessionReset),
-            new("claude", "Claude Code", "Semaine", 70, IsAlert: false, IsStale: false, ResetsAt: weekReset),
-            new("codex", "Codex", "Semaine", 70, IsAlert: false, IsStale: false, ResetsAt: null),
-            new("antigravity", "Antigravity", "5 h", 70, IsAlert: false, IsStale: false, ResetsAt: null),
-            new("antigravity", "Antigravity", "Semaine", 10, IsAlert: false, IsStale: false, ResetsAt: null),
+            new("codex", "Codex", "5 h", 90, IsAlert: true, IsStale: false, ResetsAt: null, WindowKind: UsageWindowKind.Session),
+            new("claude", "Claude Code", "5 h", 70, IsAlert: false, IsStale: false, ResetsAt: sessionReset, WindowKind: UsageWindowKind.Session),
+            new("claude", "Claude Code", "Semaine", 70, IsAlert: false, IsStale: false, ResetsAt: weekReset, WindowKind: UsageWindowKind.Week),
+            new("codex", "Codex", "Semaine", 70, IsAlert: false, IsStale: false, ResetsAt: null, WindowKind: UsageWindowKind.Week),
+            new("antigravity", "Antigravity", "5 h", 70, IsAlert: false, IsStale: false, ResetsAt: null, WindowKind: UsageWindowKind.Session),
+            new("antigravity", "Antigravity", "Semaine", 10, IsAlert: false, IsStale: false, ResetsAt: null, WindowKind: UsageWindowKind.Week),
         ];
         Assert.Equal(expected, content.Quotas);
         Assert.Null(content.CpuPct);
@@ -64,7 +64,7 @@ public class SideStripPlannerTests
 
         var quota = Assert.Single(content.Quotas);
         Assert.Equal(new QuotaGauge("codex", "Mon Codex", "Semaine", 25,
-            IsAlert: false, IsStale: false, ResetsAt: null), quota);
+            IsAlert: false, IsStale: false, ResetsAt: null, WindowKind: UsageWindowKind.Week), quota);
         Assert.Equal(42, content.CpuPct);
         Assert.Equal(61, content.MemoryPct);
     }
@@ -106,6 +106,8 @@ public class SideStripPlannerTests
 
         Assert.Equal(new[] { "Gemini", "Claude · GPT", session, week },
             content.Quotas.Select(quota => quota.WindowLabel));
+        Assert.Equal(new[] { UsageWindowKind.Session, UsageWindowKind.Week, UsageWindowKind.Session, UsageWindowKind.Week },
+            content.Quotas.Select(quota => quota.WindowKind));
     }
 
     [Theory]
@@ -144,9 +146,9 @@ public class SideStripPlannerTests
 
         QuotaGauge[] expected =
         [
-            new("codex", "codex", "5 h", 95, IsAlert: true, IsStale: sessionAncienne, ResetsAt: null),
-            new("claude", "claude", "5 h", 80, IsAlert: true, IsStale: false, ResetsAt: null),
-            new("codex", "codex", "Semaine", 30, IsAlert: false, IsStale: sessionAncienne == false, ResetsAt: null),
+            new("codex", "codex", "5 h", 95, IsAlert: true, IsStale: sessionAncienne, ResetsAt: null, WindowKind: UsageWindowKind.Session),
+            new("claude", "claude", "5 h", 80, IsAlert: true, IsStale: false, ResetsAt: null, WindowKind: UsageWindowKind.Session),
+            new("codex", "codex", "Semaine", 30, IsAlert: false, IsStale: sessionAncienne == false, ResetsAt: null, WindowKind: UsageWindowKind.Week),
         ];
         Assert.Equal(expected, content.Quotas);
     }

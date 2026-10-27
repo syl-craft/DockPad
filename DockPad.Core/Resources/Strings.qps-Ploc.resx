@@ -1853,4 +1853,16 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Settings_StreamDock_DriverMissing" xml:space="preserve">
     <value>L3 p1l0t3 5tr34m D0ck 35t 1ntr0uv4bl3. R31n5t4ll3z D0ckP4d p0ur 1n5t4ll3r l3 p1l0t3, pu15 r3d3m4rr3z D0ckP4d p0ur 4ct1v3r c3tt3 1nt3gr4t10n.</value>
   </data>
+  <data name="StreamDock_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="StreamDock_Memory" xml:space="preserve">
+    <value>R4M</value>
+  </data>
+  <data name="StreamDock_WeekShort" xml:space="preserve">
+    <value>7j</value>
+  </data>
+  <data name="StreamDock_SessionShort" xml:space="preserve">
+    <value>5h</value>
+  </data>
 </root>

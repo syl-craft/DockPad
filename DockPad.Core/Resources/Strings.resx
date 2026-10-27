@@ -1853,4 +1853,16 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Settings_StreamDock_DriverMissing" xml:space="preserve">
     <value>The Stream Dock driver is missing. Reinstall DockPad to install the driver, then restart DockPad to enable this integration.</value>
   </data>
+  <data name="StreamDock_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="StreamDock_Memory" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="StreamDock_WeekShort" xml:space="preserve">
+    <value>7d</value>
+  </data>
+  <data name="StreamDock_SessionShort" xml:space="preserve">
+    <value>5h</value>
+  </data>
 </root>
