@@ -399,7 +399,7 @@ public static class SideStripRenderer
             double remainingTop = valueTop + valueHeight + remainingHeight <= tank.Bottom - gap
                 ? valueTop + valueHeight
                 : valueTop - remainingHeight;
-            DrawText(context, Loc.F("StreamDock_ResetIn", heroRemaining),
+            DrawText(context, heroRemaining,
                 new Rect(tank.X + tank.Width * 0.06, remainingTop, tank.Width * 0.88, remainingHeight),
                 Font(bounds, 0.16), hero.IsStale ? Stale : Foreground);
         }
@@ -522,7 +522,7 @@ public static class SideStripRenderer
     };
 
     /// <summary>
-    /// Temps restant d'une fenêtre 5 h : en heures entières, puis en minutes sous l'heure.
+    /// Temps restant d'une fenêtre 5 h, arrondi au-dessus : en heures, puis en minutes sous l'heure.
     /// </summary>
     private static string? SessionRemaining(Meter meter)
     {
@@ -531,7 +531,7 @@ public static class SideStripRenderer
         int minutes = (int)Math.Ceiling(remaining.TotalMinutes);
         return minutes < 60
             ? Loc.F("StreamDock_RemainingMinutes", minutes)
-            : Loc.F("StreamDock_RemainingHours", (int)remaining.TotalHours);
+            : Loc.F("StreamDock_RemainingHours", (int)Math.Ceiling(minutes / 60d));
     }
 
     private static string Percent(int? value, bool withSymbol = true) => value == null ? "—" :

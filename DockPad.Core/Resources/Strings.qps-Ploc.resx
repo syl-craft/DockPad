@@ -1865,9 +1865,6 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="StreamDock_SessionShort" xml:space="preserve">
     <value>5h</value>
   </data>
-  <data name="StreamDock_ResetIn" xml:space="preserve">
-    <value>r353t {0}</value>
-  </data>
   <data name="StreamDock_RemainingHours" xml:space="preserve">
     <value>{0}h</value>
   </data>

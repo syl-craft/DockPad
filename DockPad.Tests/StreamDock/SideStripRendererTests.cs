@@ -584,12 +584,14 @@ public class SideStripRendererTests : IDisposable
     }
 
     [Theory]
-    [InlineData(158, "reset 2h", "5h·2h")]
-    [InlineData(61, "reset 1h", "5h·1h")]
-    [InlineData(60, "reset 1h", "5h·1h")]
-    [InlineData(38, "reset 38m", "5h·38m")]
-    [InlineData(0.5, "reset 1m", "5h·1m")]
-    public async Task Reservoir_FenetreCinqHeures_TempsRestantEnHeuresPuisMinutes(double minutes, string hero, string badge)
+    [InlineData(158, "3h", "5h·3h")]
+    [InlineData(121, "3h", "5h·3h")]
+    [InlineData(61, "2h", "5h·2h")]
+    [InlineData(60, "1h", "5h·1h")]
+    [InlineData(59.5, "1h", "5h·1h")]
+    [InlineData(38, "38m", "5h·38m")]
+    [InlineData(0.5, "1m", "5h·1m")]
+    public async Task Reservoir_FenetreCinqHeures_TempsRestantArrondiAuDessus(double minutes, string hero, string badge)
     {
         await OnStaThread(() =>
         {
@@ -605,7 +607,7 @@ public class SideStripRendererTests : IDisposable
             var badgeTexts = CollectTexts(new SideStripContent([week with { UsedPct = 80 }, session], 23, 61),
                 SideStripStyle.Reservoir);
             Assert.Contains(badgeTexts, text => text.Text == badge);
-            Assert.DoesNotContain(badgeTexts, text => text.Text.StartsWith("reset"));
+            Assert.DoesNotContain(badgeTexts, text => text.Text == hero);
             return true;
         });
     }
@@ -619,7 +621,7 @@ public class SideStripRendererTests : IDisposable
                 ResetsAt: null, WindowKind: UsageWindowKind.Week, ResetIn: TimeSpan.FromHours(30));
             var session = week with { UsedPct = 40, WindowKind = UsageWindowKind.Session, ResetIn = null };
             var texts = CollectTexts(new SideStripContent([week, session], 23, 61), SideStripStyle.Reservoir);
-            Assert.DoesNotContain(texts, text => text.Text.StartsWith("reset") || text.Text.Contains('·'));
+            Assert.DoesNotContain(texts, text => text.Text == "30h" || text.Text.Contains('·'));
             return true;
         });
     }
