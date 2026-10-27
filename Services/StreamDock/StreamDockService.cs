@@ -714,7 +714,7 @@ public sealed class StreamDockService : IAsyncDisposable
     {
         try
         {
-            var content = SideStripPlanner.Plan(state.Usages, state.Config, state.Load);
+            var content = SideStripPlanner.Plan(state.Usages, state.Config, state.Load, _time.GetLocalNow().DateTime);
             var image = await _renderer.RenderSideStripAsync(content, state.Style, size).ConfigureAwait(false);
             if (IsCurrentSideStrip(session, revision))
                 Enqueue(() => PublishSideStripAsync(session, revision, image));

@@ -583,6 +583,47 @@ public class SideStripRendererTests : IDisposable
         });
     }
 
+    [Theory]
+    [InlineData(158, "reset 2h", "5h·2h")]
+    [InlineData(61, "reset 1h", "5h·1h")]
+    [InlineData(60, "reset 1h", "5h·1h")]
+    [InlineData(38, "reset 38m", "5h·38m")]
+    [InlineData(0.5, "reset 1m", "5h·1m")]
+    public async Task Reservoir_FenetreCinqHeures_TempsRestantEnHeuresPuisMinutes(double minutes, string hero, string badge)
+    {
+        await OnStaThread(() =>
+        {
+            var remaining = TimeSpan.FromMinutes(minutes);
+            var session = new QuotaGauge("claude", "Claude", "Session", 70, IsAlert: false, IsStale: false,
+                ResetsAt: null, WindowKind: UsageWindowKind.Session, ResetIn: remaining);
+            var week = session with { UsedPct = 40, WindowKind = UsageWindowKind.Week, WindowLabel = "Semaine" };
+
+            var heroTexts = CollectTexts(new SideStripContent([session, week], 23, 61), SideStripStyle.Reservoir);
+            Assert.Contains(heroTexts, text => text.Text == hero);
+            Assert.DoesNotContain(heroTexts, text => text.Text.Contains('·'));
+
+            var badgeTexts = CollectTexts(new SideStripContent([week with { UsedPct = 80 }, session], 23, 61),
+                SideStripStyle.Reservoir);
+            Assert.Contains(badgeTexts, text => text.Text == badge);
+            Assert.DoesNotContain(badgeTexts, text => text.Text.StartsWith("reset"));
+            return true;
+        });
+    }
+
+    [Fact]
+    public async Task Reservoir_SemaineOuRemiseInconnue_AucunTempsRestant()
+    {
+        await OnStaThread(() =>
+        {
+            var week = new QuotaGauge("claude", "Claude", "Semaine", 70, IsAlert: false, IsStale: false,
+                ResetsAt: null, WindowKind: UsageWindowKind.Week, ResetIn: TimeSpan.FromHours(30));
+            var session = week with { UsedPct = 40, WindowKind = UsageWindowKind.Session, ResetIn = null };
+            var texts = CollectTexts(new SideStripContent([week, session], 23, 61), SideStripStyle.Reservoir);
+            Assert.DoesNotContain(texts, text => text.Text.StartsWith("reset") || text.Text.Contains('·'));
+            return true;
+        });
+    }
+
     private static List<SideStripRenderer.DrawnText> CollectTexts(SideStripContent content, SideStripStyle style, int height = 380)
     {
         var texts = new List<SideStripRenderer.DrawnText>();
@@ -607,6 +648,11 @@ public class SideStripRendererTests : IDisposable
         yield return ("stale", content with { Quotas = content.Quotas.Select(q => q with { IsStale = true, IsAlert = true }).ToArray() });
         yield return ("alert", content with { Quotas = content.Quotas.Select(q => q with { IsAlert = true }).ToArray() });
         yield return ("no-reset", content with { Quotas = content.Quotas.Select(q => q with { ResetsAt = null }).ToArray() });
+        yield return ("session-reset", content with { Quotas = content.Quotas
+            .Select(q => q with { UsedPct = q.WindowKind == UsageWindowKind.Session ? 81 : 40, ResetIn = TimeSpan.FromMinutes(158) })
+            .OrderByDescending(q => q.UsedPct).ToArray() });
+        yield return ("session-reset-badge", content with { Quotas = content.Quotas
+            .Select(q => q with { ResetIn = TimeSpan.FromMinutes(38) }).ToArray() });
         yield return ("no-cpu", content with { CpuPct = null });
         yield return ("no-measures", new SideStripContent([], null, null));
         yield return ("cpu-hero", new SideStripContent([], 83, 12));

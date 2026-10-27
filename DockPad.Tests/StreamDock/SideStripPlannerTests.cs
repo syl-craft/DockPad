@@ -173,6 +173,25 @@ public class SideStripPlannerTests
         Assert.Null(content.MemoryPct);
     }
 
+    [Fact]
+    public void Plan_TempsRestant_SeulementPourUneRemiseAZeroFuture()
+    {
+        var now = new DateTime(2026, 10, 27, 15, 20, 0);
+        AiUsage[] usages =
+        [
+            Usage("claude", session: new UsageWindow { UsedPct = 70, ResetsAt = now.AddMinutes(158) },
+                week: new UsageWindow { UsedPct = 60, ResetsAt = now.AddMinutes(-1) }),
+            Usage("codex", session: new UsageWindow { UsedPct = 50 }),
+        ];
+
+        var content = SideStripPlanner.Plan(usages, new UsageConfig(), new SystemLoad(23, 61), now);
+
+        Assert.Equal(new TimeSpan?[] { TimeSpan.FromMinutes(158), null, null },
+            content.Quotas.Select(quota => quota.ResetIn));
+        Assert.All(SideStripPlanner.Plan(usages, new UsageConfig(), new SystemLoad(23, 61)).Quotas,
+            quota => Assert.Null(quota.ResetIn));
+    }
+
     private static AiUsage Usage(string id, UsageWindow? session = null, UsageWindow? week = null,
         string? name = null, bool demo = false) => new()
     {

@@ -30,7 +30,8 @@ public static class SideStripRenderer
         FontWeights.Bold, FontStretches.Normal);
 
     private sealed record Meter(string Label, string ProviderId, string ProviderName, int? Percent,
-        Brush Color, bool IsStale = false, DateTime? ResetsAt = null, UsageWindowKind? WindowKind = null);
+        Brush Color, bool IsStale = false, DateTime? ResetsAt = null, UsageWindowKind? WindowKind = null,
+        TimeSpan? ResetIn = null);
 
     internal sealed record DrawnText(string SourceText, string Text, Rect Zone, Size MeasuredSize, double FontSize);
 
@@ -122,7 +123,7 @@ public static class SideStripRenderer
 
     private static Meter ToMeter(QuotaGauge quota) => new(quota.WindowLabel, quota.ProviderId,
         quota.ProviderName, quota.UsedPct, quota.IsStale ? Stale : quota.IsAlert ? Alert : IdentityColor(quota.ProviderId),
-        quota.IsStale, quota.ResetsAt, quota.WindowKind);
+        quota.IsStale, quota.ResetsAt, quota.WindowKind, quota.ResetIn);
 
     private static Brush IdentityColor(string providerId) => providerId.ToLowerInvariant() switch
     {
@@ -391,6 +392,17 @@ public static class SideStripRenderer
             : level - surfaceGap - valueHeight;
         DrawText(context, Percent(hero.Percent), new Rect(tank.X + tank.Width * 0.06, valueTop, tank.Width * 0.88, valueHeight),
             Font(bounds, 0.43), hero.Color);
+        string? heroRemaining = SessionRemaining(hero);
+        if (heroRemaining != null)
+        {
+            double remainingHeight = tank.Height * 0.07;
+            double remainingTop = valueTop + valueHeight + remainingHeight <= tank.Bottom - gap
+                ? valueTop + valueHeight
+                : valueTop - remainingHeight;
+            DrawText(context, Loc.F("StreamDock_ResetIn", heroRemaining),
+                new Rect(tank.X + tank.Width * 0.06, remainingTop, tank.Width * 0.88, remainingHeight),
+                Font(bounds, 0.16), hero.IsStale ? Stale : Foreground);
+        }
         context.DrawGeometry(null, new Pen(hero.Color, Math.Max(1, bounds.Width * 0.02)), surface);
         context.Pop();
 
@@ -410,8 +422,9 @@ public static class SideStripRenderer
             DrawRing(context, center, radius, thickness, meter, track: Muted);
             DrawText(context, Percent(meter.Percent), new Rect(center.X - radius * 0.9, center.Y - radius * 0.55,
                 radius * 1.8, radius * 1.1), Font(bounds, 0.17), meter.Color);
-            DrawText(context, ShortLabel(meter), Part(cell, 0.02, 0.7, 0.96, 0.27),
-                Font(bounds, 0.14), meter.IsStale ? Stale : Muted);
+            string? remaining = SessionRemaining(meter);
+            DrawText(context, remaining == null ? ShortLabel(meter) : ShortLabel(meter) + "·" + remaining,
+                Part(cell, 0.02, 0.7, 0.96, 0.27), Font(bounds, 0.14), meter.IsStale ? Stale : Muted);
         }
     }
 
@@ -507,6 +520,19 @@ public static class SideStripRenderer
         UsageWindowKind.Week => Loc.T("StreamDock_WeekShort"),
         _ => meter.Label,
     };
+
+    /// <summary>
+    /// Temps restant d'une fenêtre 5 h : en heures entières, puis en minutes sous l'heure.
+    /// </summary>
+    private static string? SessionRemaining(Meter meter)
+    {
+        if (meter.WindowKind != UsageWindowKind.Session || meter.ResetIn is not { } remaining)
+            return null;
+        int minutes = (int)Math.Ceiling(remaining.TotalMinutes);
+        return minutes < 60
+            ? Loc.F("StreamDock_RemainingMinutes", minutes)
+            : Loc.F("StreamDock_RemainingHours", (int)remaining.TotalHours);
+    }
 
     private static string Percent(int? value, bool withSymbol = true) => value == null ? "—" :
         Math.Clamp(value.Value, 0, 100).ToString(Loc.Formatting) + (withSymbol ? "%" : "");

@@ -1865,6 +1865,15 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="StreamDock_SessionShort" xml:space="preserve">
     <value>5h</value>
   </data>
+  <data name="StreamDock_ResetIn" xml:space="preserve">
+    <value>reset {0}</value>
+  </data>
+  <data name="StreamDock_RemainingHours" xml:space="preserve">
+    <value>{0}h</value>
+  </data>
+  <data name="StreamDock_RemainingMinutes" xml:space="preserve">
+    <value>{0}m</value>
+  </data>
   <data name="Settings_Tab_StreamDock" xml:space="preserve">
     <value>Stream Dock</value>
   </data>
