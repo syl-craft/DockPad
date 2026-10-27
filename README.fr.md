@@ -36,6 +36,15 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Démarrage automatique** avec Windows configurable
 - **Mises à jour intégrées** : recherche automatique désactivable, téléchargement et redémarrage depuis l'application, gestion des processus bloquants avec consentement
 
+## Stream Dock
+
+DockPad peut piloter un **Stream Dock 293S V3** pour parcourir les pages de raccourcis et les groupes et lancer les tuiles.
+Fermez **StreamDock.exe**, le logiciel du fabricant, puis activez **Piloter le Stream Dock** dans
+**Options → Intégrations** et enregistrez. Les deux options sont désactivées par défaut ; **Synchroniser les pages avec le Stream Dock**
+maintient les pages de raccourcis synchronisées dans les deux sens, sans ouvrir la fenêtre DockPad ni quitter le mode Favoris.
+Les trois écrans latéraux affichent les quotas des fournisseurs visibles du bandeau Usage IA ; désactiver ce bandeau laisse
+ces écrans noirs. Le dock fonctionne lorsque DockPad est masqué et se reconnecte après la sortie de veille de Windows.
+
 ## Mises à jour
 
 **☰ Menu → Mises à jour → Rechercher** affiche la version disponible et ses notes.

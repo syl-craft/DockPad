@@ -1,9 +1,11 @@
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using DockPad.Services;
 using DockPad.Services.Localization;
+using DockPad.Services.StreamDock;
 
 namespace DockPad;
 
@@ -70,6 +72,11 @@ public partial class SettingsDialog : Window
 
         ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
         ChkAutoFavicon.IsChecked = SettingsService.LoadAutoFavicon();
+        ChkStreamDockEnabled.IsChecked = SettingsService.LoadStreamDockEnabled();
+        ChkStreamDockSyncPages.IsChecked = SettingsService.LoadStreamDockSyncPages();
+        TxtStreamDockDriverMissing.Visibility = File.Exists(Path.Combine(
+            SurfaceDriverLoader.PluginsFolder, "StreamDock", "DockPad.StreamDock.dll"))
+            ? Visibility.Collapsed : Visibility.Visible;
         TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
         FillTerminals(SettingsService.LoadDefaultTerminal());
 
@@ -351,6 +358,10 @@ public partial class SettingsDialog : Window
             int.TryParse(TxtClearSeconds.Text.Trim(), out var seconds) && seconds >= 0 ? seconds : 90);
 
         ApplyContextMenu();
+
+        SettingsService.SaveStreamDockEnabled(ChkStreamDockEnabled.IsChecked == true);
+        SettingsService.SaveStreamDockSyncPages(ChkStreamDockSyncPages.IsChecked == true);
+        (Application.Current as App)?.ApplyStreamDockSettings();
 
         DialogResult = true;
     }

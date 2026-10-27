@@ -1,5 +1,11 @@
 # Changelog
 
+## [Non publié]
+
+### Nouveautés
+
+- **Stream Dock 293S V3** : pilotage depuis **Options → Intégrations**, avec synchronisation facultative des pages Raccourcis dans les deux sens et quotas IA sur les trois écrans latéraux. Les deux réglages sont désactivés par défaut et appliqués à la sauvegarde. Fermer le logiciel du fabricant avant activation ; le dock continue de fonctionner fenêtre cachée et reprend après la veille Windows.
+
 ## [1.30.1] — 2026-10-13
 
 ### Corrections

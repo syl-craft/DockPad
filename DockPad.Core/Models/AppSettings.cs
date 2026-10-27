@@ -64,6 +64,16 @@ public class AppSettings
     public bool AutoFavicon { get; set; } = true;
 
     /// <summary>
+    /// Pilotage du Stream Dock par l’instance résidente, désactivé par défaut.
+    /// </summary>
+    public bool StreamDockEnabled { get; set; }
+
+    /// <summary>
+    /// Synchronisation des pages Raccourcis avec le Stream Dock, désactivée par défaut.
+    /// </summary>
+    public bool StreamDockSyncPages { get; set; }
+
+    /// <summary>
     /// Chemin de <c>bw.exe</c>, ou vide pour laisser DockPad le chercher.
     /// </summary>
     /// <remarks>

@@ -4,6 +4,9 @@ using DockPad.Services;
 
 namespace DockPad.Tests;
 
+/// <summary>
+/// Lecture tolérante, persistance des réglages et notification après sauvegarde réussie, avec isolation des abonnés.
+/// </summary>
 public class UsageConfigServiceTests : IDisposable
 {
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"usage_{Guid.NewGuid():N}.json");
@@ -50,6 +53,69 @@ public class UsageConfigServiceTests : IDisposable
         Assert.Equal(30, cfg.AlertThreshold);
         Assert.False(cfg.ShowCost);
         Assert.Equal("claude", cfg.DefaultProviderId);
+    }
+
+    [Fact]
+    public void Save_NotifieApresChaqueSauvegardeReussie()
+    {
+        var thresholds = new List<int>();
+        Action changed = () => thresholds.Add(UsageConfigService.Load(_path).AlertThreshold);
+        UsageConfigService.Changed += changed;
+        try
+        {
+            var config = new UsageConfig { AlertThreshold = 30 };
+            UsageConfigService.Save(config, _path);
+            UsageConfigService.Save(config, _path);
+
+            Assert.Equal(new[] { 30, 30 }, thresholds);
+        }
+        finally
+        {
+            UsageConfigService.Changed -= changed;
+        }
+    }
+
+    [Fact]
+    public void Save_UnAbonneEnErreurNEmpechePasLesSuivants()
+    {
+        var notifications = 0;
+        Action failing = () => throw new InvalidOperationException("Subscriber failed.");
+        Action changed = () => notifications++;
+        UsageConfigService.Changed += failing;
+        UsageConfigService.Changed += changed;
+        try
+        {
+            UsageConfigService.Save(new UsageConfig { AlertThreshold = 30 }, _path);
+
+            Assert.Equal(1, notifications);
+            Assert.Equal(30, UsageConfigService.Load(_path).AlertThreshold);
+        }
+        finally
+        {
+            UsageConfigService.Changed -= failing;
+            UsageConfigService.Changed -= changed;
+        }
+    }
+
+    [Fact]
+    public void Save_EchecDeSauvegardeNeNotifiePas()
+    {
+        File.WriteAllText(_path, "{invalid json");
+        var notifications = 0;
+        Action changed = () => notifications++;
+        UsageConfigService.Changed += changed;
+        try
+        {
+            Assert.Throws<System.Text.Json.JsonException>(() =>
+                UsageConfigService.Save(new UsageConfig(), _path));
+
+            Assert.Equal(0, notifications);
+            Assert.Equal("{invalid json", File.ReadAllText(_path));
+        }
+        finally
+        {
+            UsageConfigService.Changed -= changed;
+        }
     }
 
     [Fact]

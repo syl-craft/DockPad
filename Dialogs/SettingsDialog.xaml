@@ -192,6 +192,20 @@
                                   VerticalContentAlignment="Center"/>
                         <TextBlock Text="{loc:T Settings_Network_AutoFaviconHint}" Margin="0,8,0,0"
                                    Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+
+                        <Separator Margin="0,12,0,10"/>
+
+                        <TextBlock Text="{loc:T Settings_StreamDock_Section}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,0,0,10"/>
+                        <CheckBox x:Name="ChkStreamDockEnabled" Content="{loc:T Settings_StreamDock_Enabled}"
+                                  VerticalContentAlignment="Center"/>
+                        <CheckBox x:Name="ChkStreamDockSyncPages" Margin="0,8,0,0"
+                                  Content="{loc:T Settings_StreamDock_SyncPages}"
+                                  IsEnabled="{Binding IsChecked, ElementName=ChkStreamDockEnabled}"
+                                  VerticalContentAlignment="Center"/>
+                        <TextBlock x:Name="TxtStreamDockDriverMissing" Margin="0,8,0,0"
+                                   Text="{loc:T Settings_StreamDock_DriverMissing}" Visibility="Collapsed"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
                 </ScrollViewer>

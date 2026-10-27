@@ -105,6 +105,16 @@ public static class SettingsService
     public static void SaveAutoFavicon(bool enabled) =>
         AppSettingsService.Update(s => s.AutoFavicon = enabled);
 
+    public static bool LoadStreamDockEnabled() => AppSettingsService.Current.StreamDockEnabled;
+
+    public static void SaveStreamDockEnabled(bool enabled) =>
+        AppSettingsService.Update(s => s.StreamDockEnabled = enabled);
+
+    public static bool LoadStreamDockSyncPages() => AppSettingsService.Current.StreamDockSyncPages;
+
+    public static void SaveStreamDockSyncPages(bool syncPages) =>
+        AppSettingsService.Update(s => s.StreamDockSyncPages = syncPages);
+
     public static string LoadClaudeArgs() => AppSettingsService.Current.ClaudeArgs;
 
     public static void SaveClaudeArgs(string args) =>

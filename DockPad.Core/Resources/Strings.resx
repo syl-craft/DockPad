@@ -1841,4 +1841,16 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="StreamDock_Next" xml:space="preserve">
     <value>Next</value>
   </data>
+  <data name="Settings_StreamDock_Section" xml:space="preserve">
+    <value>Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_Enabled" xml:space="preserve">
+    <value>Control the Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_SyncPages" xml:space="preserve">
+    <value>Sync pages with the Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_DriverMissing" xml:space="preserve">
+    <value>The Stream Dock driver is missing. Reinstall DockPad to install the driver, then restart DockPad to enable this integration.</value>
+  </data>
 </root>

@@ -36,6 +36,15 @@ A WPF application (.NET 8, x64): a **quick launch bar** for Windows, with a mana
 - **Start with Windows**, configurable
 - **Built-in updates**: optional automatic check, download and restart from the application, handling of blocking processes with consent
 
+## Stream Dock
+
+DockPad can control a **Stream Dock 293S V3** to browse shortcut pages and groups and launch tiles.
+Close the manufacturer's **StreamDock.exe**, then enable **Control the Stream Dock** under
+**Options → Integrations** and save. Both options are off by default; **Sync pages with the Stream Dock**
+keeps shortcut pages aligned in both directions without opening the DockPad window or leaving favourites mode.
+The three side displays show quotas from visible providers in the AI usage panel; disabling that panel leaves
+these displays black. The dock works while DockPad is hidden and reconnects after Windows resumes from sleep.
+
 ## Updates
 
 **☰ Menu → Updates → Check for updates** shows the available version and its notes.

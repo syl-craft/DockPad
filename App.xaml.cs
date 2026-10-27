@@ -1,8 +1,11 @@
 ﻿using System.Drawing;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Markup;
 using DockPad.Services.Localization;
+using DockPad.Services.StreamDock;
+using Microsoft.Win32;
 using WinForms = System.Windows.Forms;
 
 namespace DockPad;
@@ -24,6 +27,9 @@ public partial class App : Application
     private WinForms.NotifyIcon _trayIcon = null!;
     private QuickAccessWindow _mainWindow = null!;
     private Mutex? _mutex;
+    private StreamDockService? _streamDock;
+    private StaDockRenderer? _streamDockRenderer;
+    private Task _streamDockStopping = Task.CompletedTask;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -140,6 +146,9 @@ public partial class App : Application
 
         _mainWindow = new QuickAccessWindow();
         MainWindow = _mainWindow;
+        try { SystemEvents.PowerModeChanged += OnPowerModeChanged; }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : surveillance de la veille indisponible."); }
+        ApplyStreamDockSettings();
 
         if (url is null && injectPath is null)
         {
@@ -257,8 +266,123 @@ public partial class App : Application
         Secrets.SecretInjection.ClipboardChanged += OnChanged;
     }
 
+    /// <summary>
+    /// Applique les réglages du dock sur le thread UI, uniquement dans l’instance propriétaire du mutex.
+    /// </summary>
+    public void ApplyStreamDockSettings()
+    {
+        Dispatcher.VerifyAccess();
+        if (_mutex == null || _mainWindow == null || IsExiting) return;
+
+        try
+        {
+            if (Services.SettingsService.LoadStreamDockEnabled() == false)
+            {
+                _ = StopStreamDockAsync();
+                return;
+            }
+
+            // Une réactivation attend la libération de la surface et relit ensuite les derniers réglages.
+            if (_streamDockStopping.IsCompleted == false)
+            {
+                _ = ApplyAfterStreamDockStopAsync(_streamDockStopping);
+                return;
+            }
+            if (_streamDock == null)
+            {
+                var result = SurfaceDriverLoader.Load("StreamDock", SurfaceDriverLoader.PluginsFolder);
+                if (result.Driver == null) return;
+
+                _streamDockRenderer = new StaDockRenderer();
+                _streamDock = new StreamDockService(result.Driver, new DockSources(_mainWindow),
+                    _streamDockRenderer, TimeProvider.System);
+                Services.TileEvents.GridChanged += _streamDock.OnGridChanged;
+                Services.UsageConfigService.Changed += _streamDock.OnUsageConfigChanged;
+                _mainWindow.ShortcutPage.Changed += _streamDock.OnShortcutPageChanged;
+                _streamDock.SyncPages = Services.SettingsService.LoadStreamDockSyncPages();
+                _streamDock.Start();
+                return;
+            }
+
+            _streamDock.SyncPages = Services.SettingsService.LoadStreamDockSyncPages();
+        }
+        catch (Exception ex)
+        {
+            Services.LogService.Warn(ex, "Stream Dock : application des réglages échouée.");
+            _ = StopStreamDockAsync(applySettingsAfterStop: false);
+        }
+    }
+
+    private Task StopStreamDockAsync(bool applySettingsAfterStop = true)
+    {
+        var service = _streamDock;
+        var renderer = _streamDockRenderer;
+        _streamDock = null;
+        _streamDockRenderer = null;
+        if (service != null)
+        {
+            Services.TileEvents.GridChanged -= service.OnGridChanged;
+            Services.UsageConfigService.Changed -= service.OnUsageConfigChanged;
+            _mainWindow.ShortcutPage.Changed -= service.OnShortcutPageChanged;
+        }
+
+        if (service != null || renderer != null)
+        {
+            // Dispose du renderer peut attendre son thread STA : tout l’arrêt reste hors du thread UI.
+            _streamDockStopping = Task.Run(async () =>
+            {
+                try
+                {
+                    if (service != null) await service.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : arrêt du service échoué."); }
+                finally
+                {
+                    try { renderer?.Dispose(); }
+                    catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : arrêt du rendu échoué."); }
+                }
+            });
+            if (applySettingsAfterStop && IsExiting == false) _ = ApplyAfterStreamDockStopAsync(_streamDockStopping);
+        }
+        return WaitForStreamDockStopAsync(_streamDockStopping);
+    }
+
+    private static async Task WaitForStreamDockStopAsync(Task stopping)
+    {
+        try { await stopping.WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false); }
+        catch (TimeoutException ex) { Services.LogService.Warn(ex, "Stream Dock : délai d’arrêt d’une seconde atteint."); }
+    }
+
+    private async Task ApplyAfterStreamDockStopAsync(Task stopping)
+    {
+        try { await stopping.WaitAsync(TimeSpan.FromSeconds(2)); }
+        catch (TimeoutException ex)
+        {
+            Services.LogService.Warn(ex, "Stream Dock : délai d’arrêt de deux secondes atteint, réactivation abandonnée.");
+            return;
+        }
+        if (IsExiting == false && Dispatcher.HasShutdownStarted == false)
+            ApplyStreamDockSettings();
+    }
+
+    private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+    {
+        if (e.Mode != PowerModes.Resume) return;
+        try
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (IsExiting == false && _streamDock != null) _ = StopStreamDockAsync();
+            });
+        }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : reprise après veille impossible."); }
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
+        IsExiting = true;
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        StopStreamDockAsync().GetAwaiter().GetResult();
         Services.Updates.UpdateService.Stop();
         // Filet de sortie : un rendu encore dans le presse-papier en est retiré, à condition qu'il
         // s'y trouve toujours — l'utilisateur a pu copier autre chose entre-temps.

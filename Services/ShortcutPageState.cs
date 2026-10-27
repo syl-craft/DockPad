@@ -10,13 +10,14 @@ public enum PageChangeOrigin { DockPad, StreamDock }
 public sealed class ShortcutPageState
 {
     private readonly Dispatcher? _dispatcher;
+    private volatile int _page;
 
     public ShortcutPageState(Dispatcher? dispatcher = null)
     {
         _dispatcher = dispatcher;
     }
 
-    public int Page { get; private set; }
+    public int Page => _page;
     public event Action<int, PageChangeOrigin>? Changed;
 
     /// <summary>
@@ -27,7 +28,7 @@ public sealed class ShortcutPageState
         _dispatcher?.VerifyAccess();
         if (Page == page) return;
 
-        Page = page;
+        _page = page;
         var subscribers = Changed;
         if (subscribers == null) return;
         foreach (Action<int, PageChangeOrigin> subscriber in subscribers.GetInvocationList())

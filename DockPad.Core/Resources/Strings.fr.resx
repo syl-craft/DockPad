@@ -1841,4 +1841,16 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="StreamDock_Next" xml:space="preserve">
     <value>Suite</value>
   </data>
+  <data name="Settings_StreamDock_Section" xml:space="preserve">
+    <value>Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_Enabled" xml:space="preserve">
+    <value>Piloter le Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_SyncPages" xml:space="preserve">
+    <value>Synchroniser les pages avec le Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_DriverMissing" xml:space="preserve">
+    <value>Le pilote Stream Dock est introuvable. Réinstallez DockPad pour installer le pilote, puis redémarrez DockPad pour activer cette intégration.</value>
+  </data>
 </root>
