@@ -19,6 +19,11 @@
             <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
             <local:StringToBrushConverter x:Key="StringToBrushConverter"/>
 
+            <!-- Une icone plus grande que sa case garde ses traits fins une fois reduite.
+                 Un Style local d'Image doit le reprendre par BasedOn. -->
+            <Style TargetType="Image">
+                <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
+            </Style>
 
             <!-- ContextMenu -->
             <Style TargetType="ContextMenu">
