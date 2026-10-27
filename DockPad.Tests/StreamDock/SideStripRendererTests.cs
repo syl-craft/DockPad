@@ -152,9 +152,9 @@ public class SideStripRendererTests : IDisposable
     }
 
     [Theory]
-    [InlineData("claude", 106, 146, 240)]
-    [InlineData("codex", 208, 200, 92)]
-    [InlineData("antigravity", 255, 152, 127)]
+    [InlineData("claude", 87, 119, 217)]
+    [InlineData("codex", 220, 212, 208)]
+    [InlineData("antigravity", 232, 115, 26)]
     [InlineData("unknown", 212, 212, 212)]
     public async Task Rendus_PaletteIdentiteEtMesuresPc(string provider, byte blue, byte green, byte red)
     {
@@ -345,7 +345,7 @@ public class SideStripRendererTests : IDisposable
             content = content with { Quotas = content.Quotas.Take(quotaCount)
                 .Select(quota => quota with { UsedPct = 100 }).ToArray() };
             var texts = CollectTexts(content, SideStripStyle.Columns);
-            Assert.Equal((quotaCount + 2) * 2, texts.Count);
+            Assert.Equal(quotaCount * 2 + 2, texts.Count);
             Assert.Equal(quotaCount + 2, texts.Where(text => text.Text == "100").Count());
             Assert.All(texts, text => Assert.DoesNotContain("%", text.Text));
             Assert.All(texts, text => Assert.DoesNotContain(" ", text.Text));
@@ -363,7 +363,7 @@ public class SideStripRendererTests : IDisposable
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
-    public async Task Colonnes_CellulesEtroites_TextesEnQuinconce(int quotaCount)
+    public async Task Colonnes_CellulesEtroites_ValeursEnQuinconceNomsSurUneLigne(int quotaCount)
     {
         await OnStaThread(() =>
         {
@@ -373,24 +373,66 @@ public class SideStripRendererTests : IDisposable
             var values = texts.Where(text => text.Zone.Y < 100).ToArray();
             var labels = texts.Where(text => text.Zone.Y > 300).ToArray();
             Assert.Equal(quotaCount + 2, values.Length);
-            Assert.Equal(values.Length, labels.Length);
+            Assert.Equal(quotaCount, labels.Length);
             for (int index = 0; index < values.Length; index++)
             {
                 Assert.Equal(values[index % 2].Zone.Y, values[index].Zone.Y);
-                Assert.Equal(labels[index % 2].Zone.Y, labels[index].Zone.Y);
                 Assert.True(values[index].Zone.Width > 69d / values.Length);
             }
             Assert.True(values[0].Zone.Bottom < values[1].Zone.Top);
-            Assert.True(labels[0].Zone.Bottom < labels[1].Zone.Top);
+            Assert.All(labels, label => Assert.Equal(labels[0].Zone.Y, label.Zone.Y));
+            Assert.All(labels, label => Assert.Equal(label.SourceText, label.Text));
+            return true;
+        });
+    }
+
+    [Fact]
+    public async Task Colonnes_FenetresDuFournisseurCoteACoteSousUnSeulLogo()
+    {
+        await OnStaThread(() =>
+        {
+            var content = new SideStripContent(
+            [
+                new QuotaGauge("claude", "Claude", "Semaine", 68, IsAlert: false, IsStale: false, ResetsAt: null,
+                    WindowKind: UsageWindowKind.Week),
+                new QuotaGauge("codex", "Codex", "Semaine", 65, IsAlert: false, IsStale: false, ResetsAt: null,
+                    WindowKind: UsageWindowKind.Week),
+                new QuotaGauge("claude", "Claude", "Session", 30, IsAlert: false, IsStale: false, ResetsAt: null,
+                    WindowKind: UsageWindowKind.Session),
+            ], 23, 61);
+            var values = CollectTexts(content, SideStripStyle.Columns).Where(text => text.Zone.Y < 100)
+                .OrderBy(text => text.Zone.X).Select(text => text.Text);
+            Assert.Equal(new[] { "68", "30", "65", "23", "61" }, values);
+
+            var image = Render(content, SideStripStyle.Columns);
+            var claude = ColumnsWithColor(image, (87, 119, 217), fromRow: 340);
+            var codex = ColumnsWithColor(image, (220, 212, 208), fromRow: 340);
+            double cellWidth = 69d / 5;
+            Assert.True(claude.Min() < 3 + cellWidth && claude.Max() > 3 + cellWidth);
+            Assert.True(codex.Min() > 3 + cellWidth * 2 && codex.Max() < 3 + cellWidth * 3);
+            return true;
+        });
+    }
+
+    [Fact]
+    public async Task Colonnes_FournisseurAncien_LogoGrise()
+    {
+        await OnStaThread(() =>
+        {
+            var content = Content(1);
+            content = content with { Quotas = content.Quotas.Select(quota => quota with { IsStale = true }).ToArray() };
+            var image = Render(content, SideStripStyle.Columns);
+            Assert.Empty(ColumnsWithColor(image, (87, 119, 217), fromRow: 340));
+            Assert.NotEmpty(ColumnsWithColor(image, (145, 145, 145), fromRow: 340));
             return true;
         });
     }
 
     [Theory]
-    [InlineData("fr", "5h", "7j", "RAM")]
-    [InlineData("en", "5h", "7d", "RAM")]
-    [InlineData("qps-Ploc", "5h", "7j", "R4M")]
-    public async Task Colonnes_NomsCourts_SuiventLeTypeDeFenetre(string culture, string session, string week, string memory)
+    [InlineData("fr", "5h", "7j")]
+    [InlineData("en", "5h", "7d")]
+    [InlineData("qps-Ploc", "5h", "7j")]
+    public async Task Colonnes_NomsCourts_SuiventLeTypeDeFenetre(string culture, string session, string week)
     {
         Loc.SetCulture(CultureInfo.GetCultureInfo(culture));
         await OnStaThread(() =>
@@ -399,7 +441,7 @@ public class SideStripRendererTests : IDisposable
             content = content with { Quotas = content.Quotas.Select(quota => quota with
                 { WindowLabel = "Nom fourni", ProviderName = "Nom fournisseur" }).ToArray() };
             var texts = CollectTexts(content, SideStripStyle.Columns);
-            Assert.Equal(new[] { week, session, "CPU", memory },
+            Assert.Equal(new[] { week, session },
                 texts.Where(text => text.Zone.Y > 300).Select(text => text.Text));
             var hero = CollectTexts(content, SideStripStyle.HeroStack);
             Assert.Contains(hero, text => text.SourceText == "Nom fourni");
@@ -599,6 +641,11 @@ public class SideStripRendererTests : IDisposable
         int offset = (y * image.Width + x) * 4;
         return (image.Bgra32[offset], image.Bgra32[offset + 1], image.Bgra32[offset + 2]);
     }
+
+    private static int[] ColumnsWithColor(SurfaceImage image, (byte Blue, byte Green, byte Red) color, int fromRow) =>
+        Enumerable.Range(fromRow, image.Height - fromRow)
+            .SelectMany(y => Enumerable.Range(0, image.Width).Where(x => PixelAt(image, x, y) == color))
+            .Distinct().ToArray();
 
     private static int CountColor(SurfaceImage image, (byte Blue, byte Green, byte Red) color) =>
         Enumerable.Range(0, image.Width * image.Height)

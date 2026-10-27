@@ -44,7 +44,7 @@ Close the manufacturer's **StreamDock.exe**, then enable **Control the Stream Do
 keeps shortcut pages aligned in both directions without opening the DockPad window or leaving favourites mode.
 The continuous side column shows quotas from visible providers in the AI usage panel, plus CPU and memory load.
 Under **Side display**, four thumbnails select **Columns** (default), **Hero stack**, **Rings** or **Reservoir**.
-The choice applies when saving, without restarting; cancelling keeps the previous choice. With the AI usage panel
+Clicking a thumbnail shows it on the dock; saving keeps it, cancelling restores the previous one. With the AI usage panel
 disabled, the column still shows CPU and memory load. The dock works while DockPad is hidden and reconnects after
 Windows resumes from sleep.
 

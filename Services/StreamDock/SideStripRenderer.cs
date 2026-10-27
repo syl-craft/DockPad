@@ -18,9 +18,10 @@ public static class SideStripRenderer
     private static readonly Brush Foreground = FrozenBrush(238, 240, 244);
     private static readonly Brush Muted = FrozenBrush(166, 172, 184);
     private static readonly Brush Stale = FrozenBrush(145, 145, 145);
-    private static readonly Brush Claude = FrozenBrush(240, 146, 106);
-    private static readonly Brush Codex = FrozenBrush(92, 200, 208);
-    private static readonly Brush Antigravity = FrozenBrush(127, 152, 255);
+    private static readonly Brush Claude = ProviderLogos.ClaudeBrush;
+    // Le logo de Codex est noir dans le bandeau : un gris clair le garde lisible sur le fond noir.
+    private static readonly Brush Codex = FrozenBrush(208, 212, 220);
+    private static readonly Brush Antigravity = ProviderLogos.AntigravityBrush;
     private static readonly Brush Neutral = FrozenBrush(212, 212, 212);
     private static readonly Brush Cpu = FrozenBrush(242, 193, 78);
     private static readonly Brush Memory = FrozenBrush(181, 140, 242);
@@ -68,7 +69,7 @@ public static class SideStripRenderer
                     DrawReservoir(context, bounds, quotas, pc);
                     break;
                 default:
-                    DrawColumns(context, bounds, quotas.Take(3).Concat(pc).ToArray());
+                    DrawColumns(context, bounds, GroupedByProvider(quotas.Take(3)), pc);
                     break;
             }
             context.Pop();
@@ -134,15 +135,21 @@ public static class SideStripRenderer
     private static Meter Hero(IReadOnlyList<Meter> quotas, Meter[] pc) =>
         quotas.Count > 0 ? quotas[0] : pc.OrderByDescending(meter => meter.Percent ?? -1).First();
 
-    private static void DrawColumns(DrawingContext context, Rect bounds, Meter[] meters)
+    /// <summary>
+    /// Les fenêtres d'un même fournisseur restent côte à côte, sous un seul logo.
+    /// </summary>
+    private static Meter[] GroupedByProvider(IEnumerable<Meter> quotas) => quotas
+        .GroupBy(quota => quota.ProviderId, StringComparer.OrdinalIgnoreCase)
+        .SelectMany(group => group)
+        .ToArray();
+
+    private static void DrawColumns(DrawingContext context, Rect bounds, Meter[] quotas, Meter[] pc)
     {
+        var meters = quotas.Concat(pc).ToArray();
         double cellWidth = bounds.Width / meters.Length;
         double gap = Math.Max(2, bounds.Width * 0.045);
         double valueSize = Font(bounds, 0.18);
-        double labelSize = Font(bounds, 0.14);
-        double desiredWidth = Math.Max(Measure("100", valueSize).WidthIncludingTrailingWhitespace,
-            meters.Max(meter => Measure(ShortLabel(meter), labelSize).WidthIncludingTrailingWhitespace));
-        bool stagger = desiredWidth + gap > cellWidth;
+        bool stagger = Measure("100", valueSize).WidthIncludingTrailingWhitespace + gap > cellWidth;
         for (int index = 0; index < meters.Length; index++)
         {
             var meter = meters[index];
@@ -154,18 +161,72 @@ public static class SideStripRenderer
             double row = stagger ? index % 2 : 0;
             var value = new Rect(left, bounds.Y + bounds.Height * (0.01 + row * 0.07), right - left,
                 bounds.Height * (stagger ? 0.06 : 0.13));
-            var label = new Rect(left, bounds.Y + bounds.Height * (0.84 + row * 0.075), right - left,
-                bounds.Height * (stagger ? 0.065 : 0.15));
             DrawText(context, Percent(meter.Percent, withSymbol: false), value, valueSize, meter.Color);
-            DrawText(context, ShortLabel(meter), label, labelSize, meter.IsStale ? Stale : Foreground);
-            var track = Part(cell, 0.24, 0.16, 0.52, 0.66);
+            var track = Part(cell, 0.24, 0.16, 0.52, 0.64);
             var clip = new RectangleGeometry(track, track.Width / 2, track.Width / 2);
             context.DrawGeometry(Track, null, clip);
             context.PushClip(clip);
             double fillHeight = track.Height * Fraction(meter.Percent);
             context.DrawRectangle(meter.Color, null, new Rect(track.X, track.Bottom - fillHeight, track.Width, fillHeight));
             context.Pop();
+            if (index < quotas.Length)
+                DrawText(context, ShortLabel(meter), new Rect(cell.X + 1, bounds.Y + bounds.Height * 0.815,
+                    cellWidth - 2, bounds.Height * 0.06), Font(bounds, 0.13), meter.IsStale ? Stale : Muted);
         }
+
+        var iconRow = Part(bounds, 0, 0.885, 1, 0.115);
+        int first = 0;
+        foreach (var group in quotas.GroupBy(quota => quota.ProviderId, StringComparer.OrdinalIgnoreCase))
+        {
+            var logo = Icon(iconRow, bounds.X + first * cellWidth, cellWidth * group.Count());
+            DrawProvider(context, group.First() with { IsStale = group.All(meter => meter.IsStale) }, logo);
+            first += group.Count();
+        }
+        DrawCpuIcon(context, Icon(iconRow, bounds.X + quotas.Length * cellWidth, cellWidth), pc[0].Color);
+        DrawMemoryIcon(context, Icon(iconRow, bounds.X + (quotas.Length + 1) * cellWidth, cellWidth), pc[1].Color);
+    }
+
+    private static Rect Icon(Rect row, double left, double width)
+    {
+        double side = Math.Min(width - 2, row.Height);
+        return new Rect(left + (width - side) / 2, row.Y + (row.Height - side) / 2, side, side);
+    }
+
+    /// <summary>
+    /// Puce carrée à broches, lisible dès 10 px.
+    /// </summary>
+    private static void DrawCpuIcon(DrawingContext context, Rect bounds, Brush color)
+    {
+        double unit = bounds.Width / 10;
+        var pen = new Pen(color, Math.Max(1, unit));
+        var body = new Rect(bounds.X + unit * 2.5, bounds.Y + unit * 2.5, unit * 5, unit * 5);
+        context.DrawRectangle(null, pen, body);
+        context.DrawRectangle(color, null, new Rect(body.X + unit * 1.5, body.Y + unit * 1.5, unit * 2, unit * 2));
+        foreach (double offset in new[] { 3.5, 6.5 })
+        {
+            double along = bounds.X + unit * offset;
+            double across = bounds.Y + unit * offset;
+            context.DrawLine(pen, new Point(along, bounds.Y + unit * 0.5), new Point(along, body.Top));
+            context.DrawLine(pen, new Point(along, body.Bottom), new Point(along, bounds.Bottom - unit * 0.5));
+            context.DrawLine(pen, new Point(bounds.X + unit * 0.5, across), new Point(body.Left, across));
+            context.DrawLine(pen, new Point(body.Right, across), new Point(bounds.Right - unit * 0.5, across));
+        }
+    }
+
+    /// <summary>
+    /// Barrette de mémoire vue de face, avec ses puces et ses contacts.
+    /// </summary>
+    private static void DrawMemoryIcon(DrawingContext context, Rect bounds, Brush color)
+    {
+        double unit = bounds.Width / 10;
+        var pen = new Pen(color, Math.Max(1, unit));
+        var stick = new Rect(bounds.X + unit * 0.5, bounds.Y + unit * 2.5, unit * 9, unit * 4);
+        context.DrawRectangle(null, pen, stick);
+        foreach (double offset in new[] { 1.5, 4, 6.5 })
+            context.DrawRectangle(color, null, new Rect(bounds.X + unit * offset, stick.Y + unit, unit * 2, unit * 2));
+        foreach (double offset in new[] { 2, 4, 6, 8 })
+            context.DrawLine(pen, new Point(bounds.X + unit * offset, stick.Bottom),
+                new Point(bounds.X + unit * offset, stick.Bottom + unit * 2));
     }
 
     private static void DrawHeroStack(DrawingContext context, Rect bounds, Meter[] quotas, Meter[] pc)
@@ -372,9 +433,9 @@ public static class SideStripRenderer
     private static void DrawProvider(DrawingContext context, Meter meter, Rect bounds)
     {
         Brush color = meter.IsStale ? Stale : IdentityColor(meter.ProviderId);
-        if (string.Equals(meter.ProviderId, "antigravity", StringComparison.OrdinalIgnoreCase))
+        var geometry = Logo(meter.ProviderId);
+        if (geometry != null)
         {
-            var geometry = ProviderLogos.Antigravity;
             var source = geometry.Bounds;
             double scale = Math.Min(bounds.Width / source.Width, bounds.Height / source.Height);
             context.PushTransform(new TranslateTransform(bounds.X + (bounds.Width - source.Width * scale) / 2 - source.X * scale,
@@ -389,6 +450,14 @@ public static class SideStripRenderer
         string initial = StringInfo.GetNextTextElement(meter.ProviderId).ToUpper(Loc.Formatting);
         DrawText(context, initial, bounds, Math.Max(9, bounds.Height * 0.7), color);
     }
+
+    private static Geometry? Logo(string providerId) => providerId.ToLowerInvariant() switch
+    {
+        "claude" => ProviderLogos.Claude,
+        "codex" => ProviderLogos.Codex,
+        "antigravity" => ProviderLogos.Antigravity,
+        _ => null,
+    };
 
     private static void DrawCard(DrawingContext context, Rect bounds, Brush tint)
     {

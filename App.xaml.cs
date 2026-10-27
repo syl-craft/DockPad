@@ -267,6 +267,16 @@ public partial class App : Application
     }
 
     /// <summary>
+    /// Affiche un rendu de la colonne sur le dock connecté sans l'enregistrer.
+    /// </summary>
+    public void PreviewStreamDockSideStrip(Models.SideStripStyle style)
+    {
+        Dispatcher.VerifyAccess();
+        if (_streamDock != null)
+            _streamDock.SideStripStyle = style;
+    }
+
+    /// <summary>
     /// Applique les réglages du dock sur le thread UI, uniquement dans l’instance propriétaire du mutex.
     /// </summary>
     public void ApplyStreamDockSettings()

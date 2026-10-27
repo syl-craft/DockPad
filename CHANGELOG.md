@@ -4,7 +4,7 @@
 
 ### Nouveautés
 
-- **Stream Dock 293S V3** : pilotage depuis l'onglet dédié **Options → Stream Dock**, avec synchronisation facultative des pages Raccourcis dans les deux sens. La colonne latérale continue affiche les quotas IA, le processeur et la mémoire, avec quatre rendus au choix par vignettes : **Colonnes** (par défaut), **Pile héro**, **Anneaux** et **Réservoir**. La colonne conserve le processeur et la mémoire lorsque le bandeau Usage IA est désactivé. Les réglages s'appliquent à la sauvegarde sans redémarrage ; Annuler conserve les valeurs précédentes. Les deux cases sont désactivées par défaut. Fermer le logiciel du fabricant avant activation ; le dock continue de fonctionner fenêtre cachée et reprend après la veille Windows.
+- **Stream Dock 293S V3** : pilotage depuis l'onglet dédié **Options → Stream Dock**, avec synchronisation facultative des pages Raccourcis dans les deux sens. La colonne latérale continue affiche les quotas IA, le processeur et la mémoire, avec quatre rendus au choix par vignettes : **Colonnes** (par défaut), **Pile héro**, **Anneaux** et **Réservoir** ; un clic sur une vignette l'affiche aussitôt sur le dock. Dans le rendu Colonnes, le logo de chaque IA couvre ses fenêtres de quota. La colonne conserve le processeur et la mémoire lorsque le bandeau Usage IA est désactivé. Les réglages s'appliquent à la sauvegarde sans redémarrage ; Annuler conserve les valeurs précédentes. Les deux cases sont désactivées par défaut. Fermer le logiciel du fabricant avant activation ; le dock continue de fonctionner fenêtre cachée et reprend après la veille Windows.
 
 ## [1.30.1] — 2026-10-13
 

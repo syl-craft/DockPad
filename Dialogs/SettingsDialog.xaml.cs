@@ -162,10 +162,19 @@ public partial class SettingsDialog : Window
             preview.Source = bitmap;
         }
 
-        var selected = SettingsService.LoadStreamDockSideStrip();
+        var saved = SettingsService.LoadStreamDockSideStrip();
         LstStreamDockSideStrip.SelectedItem = LstStreamDockSideStrip.Items.Cast<ListBoxItem>()
-            .Where(item => item.Tag is SideStripStyle style && style == selected)
+            .Where(item => item.Tag is SideStripStyle style && style == saved)
             .FirstOrDefault();
+
+        // Chaque clic montre le rendu sur le dock ; sans Sauvegarder, la fermeture remet celui enregistré.
+        LstStreamDockSideStrip.SelectionChanged += (_, _) =>
+            (Application.Current as App)?.PreviewStreamDockSideStrip(SelectedSideStripStyle);
+        Closed += (_, _) =>
+        {
+            if (DialogResult != true)
+                (Application.Current as App)?.PreviewStreamDockSideStrip(saved);
+        };
     }
 
     private SideStripStyle SelectedSideStripStyle =>
