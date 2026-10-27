@@ -84,6 +84,26 @@ public class StreamDockSideStripServiceTests
     }
 
     [Fact]
+    public async Task Colonne_IaPrincipaleChangee_RedessineeAvecSesFenetresEnTete()
+    {
+        await using var dock = new TestDock();
+        dock.Sources.Usages = [Usage(80), Usage(20, "codex")];
+        await dock.Start();
+        Assert.Equal("claude", dock.Renderer.SideStrips.Last().Content.Quotas[0].ProviderId);
+
+        dock.Service.PrincipalProviderId = "codex";
+        await dock.Idle();
+        Assert.Equal(1, dock.Load.Samples);
+        Assert.Equal("codex", dock.Renderer.SideStrips.Last().Content.Quotas[0].ProviderId);
+        dock.AssertColumn();
+
+        int renders = dock.Renderer.SideStrips.Count;
+        dock.Service.PrincipalProviderId = "Codex";
+        await dock.Idle();
+        Assert.Equal(renders, dock.Renderer.SideStrips.Count);
+    }
+
+    [Fact]
     public async Task Colonne_LectureTardive_GardeRenduEtMesureRecents()
     {
         await using var dock = new TestDock();
@@ -422,9 +442,9 @@ public class StreamDockSideStripServiceTests
         Assert.Single(replacement.SideStrips);
     }
 
-    private static AiUsage Usage(int used) => new()
+    private static AiUsage Usage(int used, string providerId = "claude") => new()
     {
-        ProviderId = "claude", Name = "Claude", Glyph = "C", AccentColor = "#FFFFFF",
+        ProviderId = providerId, Name = providerId, Glyph = "C", AccentColor = "#FFFFFF",
         Session = new UsageWindow { UsedPct = used },
     };
 
@@ -465,7 +485,8 @@ public class StreamDockSideStripServiceTests
 
         public void AssertColumn()
         {
-            var content = SideStripPlanner.Plan(Sources.Usages, Sources.Config, Load.Value);
+            var content = SideStripPlanner.Plan(Sources.Usages, Sources.Config, Load.Value,
+                principalProviderId: Service.PrincipalProviderId);
             var size = Surface.Description.SideStrip ?? throw new InvalidOperationException("No side strip.");
             var expected = FakeDockRenderer.CreateSideStripImage(content, Service.SideStripStyle, size, Renderer.SideStripVersion);
             Assert.Equal(expected.Bgra32, Surface.SideStrips.Last().Bgra32);

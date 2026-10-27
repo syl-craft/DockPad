@@ -192,6 +192,27 @@ public class SideStripPlannerTests
             quota => Assert.Null(quota.ResetIn));
     }
 
+    [Theory]
+    [InlineData("codex", "", new[] { "codex", "codex", "claude", "claude" })]
+    [InlineData("CODEX", "claude", new[] { "codex", "codex", "claude", "claude" })]
+    [InlineData("", "codex", new[] { "codex", "codex", "claude", "claude" })]
+    [InlineData("", "", new[] { "claude", "claude", "codex", "codex" })]
+    [InlineData("gemini", "", new[] { "claude", "claude", "codex", "codex" })]
+    public void Plan_IaPrincipale_SesFenetresEnTete(string principal, string defaultProvider, string[] expected)
+    {
+        AiUsage[] usages =
+        [
+            Usage("claude", session: new UsageWindow { UsedPct = 90 }, week: new UsageWindow { UsedPct = 60 }),
+            Usage("codex", session: new UsageWindow { UsedPct = 10 }, week: new UsageWindow { UsedPct = 30 }),
+        ];
+
+        var content = SideStripPlanner.Plan(usages, new UsageConfig { DefaultProviderId = defaultProvider },
+            new SystemLoad(23, 61), principalProviderId: principal);
+
+        Assert.Equal(expected, content.Quotas.Select(quota => quota.ProviderId));
+        Assert.True(content.Quotas[0].UsedPct >= content.Quotas[1].UsedPct);
+    }
+
     private static AiUsage Usage(string id, UsageWindow? session = null, UsageWindow? week = null,
         string? name = null, bool demo = false) => new()
     {

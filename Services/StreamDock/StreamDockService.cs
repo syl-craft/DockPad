@@ -36,7 +36,7 @@ public sealed class StreamDockService : IAsyncDisposable
     private Session? _session;
     private DisplayedView? _displayed;
     private DockScreen _wantedScreen = new DockScreen.Home(0);
-    private SideStripState _sideStrip = new([], new UsageConfig(), new SystemLoad(null, null), SideStripStyle.Columns);
+    private SideStripState _sideStrip = new([], new UsageConfig(), new SystemLoad(null, null), SideStripStyle.Columns, "");
     private long _sideStripRevision;
     private SurfaceImage? _publishedSideStrip;
     private Task _renderingSideStrip = Task.CompletedTask;
@@ -100,6 +100,24 @@ public sealed class StreamDockService : IAsyncDisposable
                 var style = Enum.IsDefined(value) ? value : SideStripStyle.Columns;
                 if (_sideStrip.Style == style) return;
                 _sideStrip = _sideStrip with { Style = style };
+                ++_sideStripRevision;
+                if (_started && _stopped == false) Enqueue(RedrawSideStripAsync);
+            }
+        }
+    }
+
+    /// <summary>
+    /// L'IA affichée par le bandeau Usage IA : ses fenêtres passent en tête de la colonne.
+    /// </summary>
+    public string PrincipalProviderId
+    {
+        get { lock (_gate) return _sideStrip.PrincipalProviderId; }
+        set
+        {
+            lock (_gate)
+            {
+                if (string.Equals(_sideStrip.PrincipalProviderId, value, StringComparison.OrdinalIgnoreCase)) return;
+                _sideStrip = _sideStrip with { PrincipalProviderId = value };
                 ++_sideStripRevision;
                 if (_started && _stopped == false) Enqueue(RedrawSideStripAsync);
             }
@@ -309,7 +327,8 @@ public sealed class StreamDockService : IAsyncDisposable
             _wantedScreen = new DockScreen.Home(0);
             lock (_gate)
             {
-                _sideStrip = new SideStripState([], new UsageConfig(), new SystemLoad(null, null), _sideStrip.Style);
+                _sideStrip = new SideStripState([], new UsageConfig(), new SystemLoad(null, null), _sideStrip.Style,
+                    _sideStrip.PrincipalProviderId);
                 ++_sideStripRevision;
                 _publishedSideStrip = null;
             }
@@ -714,7 +733,8 @@ public sealed class StreamDockService : IAsyncDisposable
     {
         try
         {
-            var content = SideStripPlanner.Plan(state.Usages, state.Config, state.Load, _time.GetLocalNow().DateTime);
+            var content = SideStripPlanner.Plan(state.Usages, state.Config, state.Load, _time.GetLocalNow().DateTime,
+                state.PrincipalProviderId);
             var image = await _renderer.RenderSideStripAsync(content, state.Style, size).ConfigureAwait(false);
             if (IsCurrentSideStrip(session, revision))
                 Enqueue(() => PublishSideStripAsync(session, revision, image));
@@ -907,7 +927,8 @@ public sealed class StreamDockService : IAsyncDisposable
         }
     }
 
-    private sealed record SideStripState(IReadOnlyList<AiUsage> Usages, UsageConfig Config, SystemLoad Load, SideStripStyle Style);
+    private sealed record SideStripState(IReadOnlyList<AiUsage> Usages, UsageConfig Config, SystemLoad Load, SideStripStyle Style,
+        string PrincipalProviderId);
 
     private sealed class UsageRefresh
     {

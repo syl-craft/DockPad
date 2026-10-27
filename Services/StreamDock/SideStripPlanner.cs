@@ -13,27 +13,32 @@ public sealed record QuotaGauge(string ProviderId, string ProviderName, string W
 public enum UsageWindowKind { Session, Week }
 
 /// <summary>
-/// Quotas de la plus consommée à la moins consommée ; null pour une mesure pas encore disponible.
+/// Quotas de l'IA principale d'abord, puis de la plus consommée à la moins consommée ; null pour une mesure
+/// pas encore disponible.
 /// </summary>
 public sealed record SideStripContent(IReadOnlyList<QuotaGauge> Quotas, int? CpuPct, int? MemoryPct);
 
 public static class SideStripPlanner
 {
     /// <summary>
-    /// Entrée dans l'ordre du bandeau, masqués exclus ; sans démo ni fournisseur sans quota, tri stable par consommation.
+    /// Entrée dans l'ordre du bandeau, masqués exclus ; sans démo ni fournisseur sans quota, tri stable par consommation
+    /// après les fenêtres de <paramref name="principalProviderId"/>, l'IA choisie dans le bandeau.
     /// Bandeau désactivé : aucun quota, la charge du PC reste. Sans <paramref name="now"/>, aucun temps restant.
     /// </summary>
     public static SideStripContent Plan(IReadOnlyList<AiUsage> usages, UsageConfig config, SystemLoad load,
-        DateTime? now = null)
+        DateTime? now = null, string? principalProviderId = null)
     {
         if (config.Enabled == false)
             return new SideStripContent([], load.CpuPct, load.MemoryPct);
 
+        // Même repli que le bandeau tant qu'il n'a rien affiché : son fournisseur par défaut.
+        var principal = string.IsNullOrEmpty(principalProviderId) ? config.DefaultProviderId : principalProviderId;
         var quotas = usages
             .Where(usage => usage.IsDemo == false && (usage.Session != null || usage.Week != null))
             .SelectMany(usage => Windows(usage)
                 .Select(window => CreateGauge(usage, window.Window, window.Kind, window.DefaultLabel, config.AlertThreshold, now)))
-            .OrderByDescending(quota => quota.UsedPct)
+            .OrderByDescending(quota => string.Equals(quota.ProviderId, principal, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(quota => quota.UsedPct)
             .ToArray();
 
         return new SideStripContent(quotas, load.CpuPct, load.MemoryPct);

@@ -311,6 +311,9 @@ public partial class App : Application
                 _mainWindow.ShortcutPage.Changed += _streamDock.OnShortcutPageChanged;
                 _streamDock.SyncPages = Services.SettingsService.LoadStreamDockSyncPages();
                 _streamDock.SideStripStyle = Services.SettingsService.LoadStreamDockSideStrip();
+                _streamDock.PrincipalProviderId = _mainWindow.UsageBanner.ViewModel?.SoloProviderId ?? "";
+                if (_mainWindow.UsageBanner.ViewModel != null)
+                    _mainWindow.UsageBanner.ViewModel.PropertyChanged += OnUsageBannerChanged;
                 _streamDock.Start();
                 return;
             }
@@ -325,6 +328,13 @@ public partial class App : Application
         }
     }
 
+    private void OnUsageBannerChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Services.Usage.UsageViewModel.SoloProviderId)
+            && sender is Services.Usage.UsageViewModel viewModel && _streamDock != null)
+            _streamDock.PrincipalProviderId = viewModel.SoloProviderId;
+    }
+
     private Task StopStreamDockAsync(bool applySettingsAfterStop = true)
     {
         var service = _streamDock;
@@ -336,6 +346,8 @@ public partial class App : Application
             Services.TileEvents.GridChanged -= service.OnGridChanged;
             Services.UsageConfigService.Changed -= service.OnUsageConfigChanged;
             _mainWindow.ShortcutPage.Changed -= service.OnShortcutPageChanged;
+            if (_mainWindow.UsageBanner.ViewModel != null)
+                _mainWindow.UsageBanner.ViewModel.PropertyChanged -= OnUsageBannerChanged;
         }
 
         if (service != null || renderer != null)
