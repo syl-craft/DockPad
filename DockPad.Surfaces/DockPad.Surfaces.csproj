@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <Product>DockPad</Product>
+    <Authors>syl-craft</Authors>
+    <Copyright>Copyright (c) 2026 syl-craft</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RootNamespace>DockPad.Surfaces</RootNamespace>
+  </PropertyGroup>
+
+</Project>

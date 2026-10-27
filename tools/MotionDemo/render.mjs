@@ -3,6 +3,7 @@
 //   node render.mjs                              tous les clips, les deux themes, dans ../DockPad-media/videos
 //   node render.mjs --clip 01-launcher --theme dark
 //   node render.mjs --clip 01-launcher --stills 1.5,3.4   images cles en PNG, pour relecture
+//   node render.mjs --clip 15-stream-dock --theme dark --lang fr   clip a textes traduits, suffixe -fr
 //   node render.mjs --serve                      http://localhost:4173/clips/01-launcher.html
 //
 // Les icones sont lues sur le disque, jamais copiees dans le depot : ce sont des logos de produits.
@@ -60,19 +61,20 @@ function ffmpeg(argv) {
 
 const write = (stream, buf) => new Promise(ok => (stream.write(buf) ? ok() : stream.once('drain', ok)));
 
-async function renderClip(browser, base, clip, theme, stills) {
+async function renderClip(browser, base, clip, theme, lang, stills) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
-  await page.goto(`${base}/clips/${clip}.html?render=1&theme=${theme}`);
+  await page.goto(`${base}/clips/${clip}.html?render=1&theme=${theme}${lang ? `&lang=${lang}` : ''}`);
   await page.waitForFunction(() => window.READY === true, null, { timeout: 30000 });
   const duration = await page.evaluate(() => window.DURATION);
   const stage = page.locator('#stage');
+  const name = lang ? `${clip}-${theme}-${lang}` : `${clip}-${theme}`;
 
   if (stills) {
     const dir = path.join(here, 'out', 'stills');
     fs.mkdirSync(dir, { recursive: true });
     for (const t of stills) {
       await page.evaluate(x => window.seek(x), t);
-      const f = path.join(dir, `${clip}-${theme}-${t.toFixed(2)}.png`);
+      const f = path.join(dir, `${name}-${t.toFixed(2)}.png`);
       await stage.screenshot({ path: f });
       console.log(`  ${f}`);
     }
@@ -82,8 +84,8 @@ async function renderClip(browser, base, clip, theme, stills) {
 
   if (!fs.existsSync(path.dirname(outDir))) throw new Error(`depot media introuvable : ${path.dirname(outDir)} — git clone https://github.com/syl-craft/DockPad-media a cote de DockPad, ou DOCKPAD_MEDIA_DIR`);
   fs.mkdirSync(outDir, { recursive: true });
-  const mp4 = path.join(outDir, `${clip}-${theme}.mp4`);
-  const gif = path.join(outDir, `${clip}-${theme}.gif`);
+  const mp4 = path.join(outDir, `${name}.mp4`);
+  const gif = path.join(outDir, `${name}.gif`);
   const frames = Math.round(duration * FPS);
   const enc = ffmpeg(['-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'png', '-i', '-',
     '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', mp4]);
@@ -96,14 +98,20 @@ async function renderClip(browser, base, clip, theme, stills) {
   await enc.done;
   await page.close();
 
+  const mb = f => (fs.statSync(f).size / 1048576).toFixed(2);
+  // Au-dela de 10 s, le GIF depasserait le poids qu'affiche GitHub : le clip reste en MP4 seul.
+  if (duration > 10) {
+    console.log(`  ${name} : ${frames} images en ${((Date.now() - t0) / 1000).toFixed(0)} s — mp4 ${mb(mp4)} Mo`);
+    return;
+  }
+
   // GIF pour le README : 960 x 540, 20 i/s, palette calculee sur le clip lui-meme.
   const g = ffmpeg(['-i', mp4, '-filter_complex',
     'fps=20,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
     '-loop', '0', gif]);
   g.stdin.end();
   await g.done;
-  const mb = f => (fs.statSync(f).size / 1048576).toFixed(2);
-  console.log(`  ${clip}-${theme} : ${frames} images en ${((Date.now() - t0) / 1000).toFixed(0)} s — mp4 ${mb(mp4)} Mo, gif ${mb(gif)} Mo`);
+  console.log(`  ${name} : ${frames} images en ${((Date.now() - t0) / 1000).toFixed(0)} s — mp4 ${mb(mp4)} Mo, gif ${mb(gif)} Mo`);
 }
 
 const port = 4173;
@@ -116,10 +124,11 @@ if (opt('serve')) {
   const all = fs.readdirSync(path.join(here, 'clips')).filter(f => f.endsWith('.html')).map(f => f.replace('.html', '')).sort();
   const clips = opt('clip') ? [opt('clip')] : all;
   const themes = opt('theme') ? [opt('theme')] : ['light', 'dark'];
+  const langs = opt('lang') ? String(opt('lang')).split(',') : [null];
   const stills = opt('stills') ? String(opt('stills')).split(',').map(Number) : null;
   const browser = await chromium.launch();
   try {
-    for (const c of clips) for (const th of themes) await renderClip(browser, base, c, th, stills);
+    for (const c of clips) for (const th of themes) for (const lg of langs) await renderClip(browser, base, c, th, lg, stills);
   } finally {
     await browser.close();
     server.close();

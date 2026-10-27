@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using DockPad.Services;
+
 namespace DockPad.Models;
 
 /// <summary>
@@ -62,6 +65,22 @@ public class AppSettings
     /// n'a jamais vu ne peut pas avoir été refusé.
     /// </summary>
     public bool AutoFavicon { get; set; } = true;
+
+    /// <summary>
+    /// Pilotage du Stream Dock par l’instance résidente, désactivé par défaut.
+    /// </summary>
+    public bool StreamDockEnabled { get; set; }
+
+    /// <summary>
+    /// Synchronisation des pages Raccourcis avec le Stream Dock, désactivée par défaut.
+    /// </summary>
+    public bool StreamDockSyncPages { get; set; }
+
+    /// <summary>
+    /// Rendu de la colonne latérale du Stream Dock, Colonnes par défaut.
+    /// </summary>
+    [JsonConverter(typeof(SideStripStyleJsonConverter))]
+    public SideStripStyle StreamDockSideStrip { get; set; } = SideStripStyle.Columns;
 
     /// <summary>
     /// Chemin de <c>bw.exe</c>, ou vide pour laisser DockPad le chercher.

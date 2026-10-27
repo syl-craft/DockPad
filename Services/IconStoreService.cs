@@ -26,6 +26,19 @@ public static class IconStoreService
             : Path.Combine(ProfileRoot, relativePath);
 
     /// <summary>
+    /// Icône de page : origine existante sur disque, sinon chemin du profil résolu, ou null.
+    /// </summary>
+    public static string? ResolvePageIconPath(PageConfig? page)
+    {
+        if (page == null)
+            return null;
+
+        return !string.IsNullOrEmpty(page.IconPath) && File.Exists(page.IconPath)
+            ? page.IconPath
+            : ResolveProfilePath(page.IconProfilePath);
+    }
+
+    /// <summary>
     /// Copie l'icône source dans %APPDATA%\DockPad\icons\ avec déduplication SHA1.
     /// Pour .exe/.dll, l'icône est extraite et sauvegardée en .png.
     /// Retourne le chemin de destination, ou null si échec.

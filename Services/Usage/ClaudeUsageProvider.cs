@@ -66,7 +66,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
     /// Identité visuelle, déclarée une seule fois : la sonde et l'instantané la lisent ici.
     /// </summary>
     private const string PastilleGlyph = "✳";
-    private const string PastilleAccent = "#D97757";
+    private const string PastilleAccent = ProviderLogos.ClaudeAccent;
 
     public ClaudeUsageProvider(string? home = null, HttpClient? http = null, Func<DateTime>? clock = null)
     {

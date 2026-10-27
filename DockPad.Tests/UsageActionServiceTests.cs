@@ -208,10 +208,10 @@ public class UsageActionServiceTests
     {
         var mutations = 0;
         var previousService = UsageActionService.Service;
-        var previousMutation = McpDispatcher.OnMutation;
+        Action onMutation = () => mutations++;
         UsageActionService.Service = new UsageService([new FakeProvider("demo",
             Usage("demo", session: new UsageWindow { UsedPct = 62 }, isDemo: true))]);
-        McpDispatcher.OnMutation = () => mutations++;
+        McpDispatcher.Mutated += onMutation;
         try
         {
             var response = JsonDocument.Parse(McpDispatcher.Handle(
@@ -224,7 +224,7 @@ public class UsageActionServiceTests
         finally
         {
             UsageActionService.Service = previousService;
-            McpDispatcher.OnMutation = previousMutation;
+            McpDispatcher.Mutated -= onMutation;
         }
     }
 }

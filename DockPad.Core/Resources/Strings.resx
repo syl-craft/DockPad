@@ -1826,4 +1826,67 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
     <value>Not saved — allowed characters: {0}, not starting with a dash.</value>
   </data>
+  <data name="StreamDock_Session" xml:space="preserve">
+    <value>5 h</value>
+  </data>
+  <data name="StreamDock_Week" xml:space="preserve">
+    <value>Week</value>
+  </data>
+  <data name="StreamDock_Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="StreamDock_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="StreamDock_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Settings_StreamDock_Section" xml:space="preserve">
+    <value>Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_Enabled" xml:space="preserve">
+    <value>Control the Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_SyncPages" xml:space="preserve">
+    <value>Sync pages with the Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_DriverMissing" xml:space="preserve">
+    <value>The Stream Dock driver is missing. Reinstall DockPad to install the driver, then restart DockPad to enable this integration.</value>
+  </data>
+  <data name="StreamDock_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="StreamDock_Memory" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="StreamDock_WeekShort" xml:space="preserve">
+    <value>7d</value>
+  </data>
+  <data name="StreamDock_SessionShort" xml:space="preserve">
+    <value>5h</value>
+  </data>
+  <data name="StreamDock_RemainingHours" xml:space="preserve">
+    <value>{0}h</value>
+  </data>
+  <data name="StreamDock_RemainingMinutes" xml:space="preserve">
+    <value>{0}m</value>
+  </data>
+  <data name="Settings_Tab_StreamDock" xml:space="preserve">
+    <value>Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
+    <value>Side display</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Columns" xml:space="preserve">
+    <value>Columns</value>
+  </data>
+  <data name="Settings_StreamDock_Style_HeroStack" xml:space="preserve">
+    <value>Hero stack</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Rings" xml:space="preserve">
+    <value>Rings</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
+    <value>Reservoir</value>
+  </data>
 </root>

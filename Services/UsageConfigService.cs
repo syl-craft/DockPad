@@ -4,10 +4,13 @@ using DockPad.Models;
 
 namespace DockPad.Services;
 
-/// <summary>Load/Save de usage.json (%APPDATA%\DockPad\usage.json).</summary>
+/// <summary>
+/// Réglages du bandeau Usage IA et notification après sauvegarde réussie.
+/// </summary>
 public static class UsageConfigService
 {
     public static readonly string FilePath = AppPaths.File("usage.json");
+    public static event Action? Changed;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -58,5 +61,13 @@ public static class UsageConfigService
     public static void Save(UsageConfig config, string path)
     {
         JsonConfigFile.Save(path, config, JsonOptions);
+
+        var subscribers = Changed;
+        if (subscribers == null) return;
+        foreach (Action subscriber in subscribers.GetInvocationList())
+        {
+            try { subscriber(); }
+            catch (Exception ex) { LogService.Warn(ex, "Échec d’un abonné au changement de configuration Usage IA."); }
+        }
     }
 }

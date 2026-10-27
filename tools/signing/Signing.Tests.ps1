@@ -34,6 +34,17 @@ Describe 'Application signature gates (certificate responses mocked; real publis
         { & $verifyApplication -Directory $fixture -Version 1.24.0 -CertificateThumbprint $thumbprint } | Should -Not -Throw
         Should -Invoke Get-AuthenticodeSignature -Times 5 -Exactly
     }
+    It 'PiloteNonSigneDansSousDossier_RefuseLaSignature' {
+        $pluginFolder = Join-Path $fixture 'plugins/StreamDock/nested'
+        New-Item -ItemType Directory -Path $pluginFolder -Force | Out-Null
+        Copy-Item -LiteralPath "$application/DockPad.dll" -Destination "$pluginFolder/DockPad.TestDriver.dll"
+        Mock Get-AuthenticodeSignature {
+            $signature = Trusted-Signature
+            if ($LiteralPath -like '*plugins*') { $signature.Status = 'NotSigned' }
+            $signature
+        }
+        { & $verifyApplication -Directory $fixture -Version 1.24.0 -CertificateThumbprint $thumbprint } | Should -Throw '*signature missing*'
+    }
     It 'rejects a different trusted publisher' {
         Mock Get-AuthenticodeSignature { $s = Trusted-Signature; $s.SignerCertificate.Thumbprint = '0000000000000000000000000000000000000000'; $s }
         { & $verifyApplication -Directory $fixture -Version 1.24.0 -CertificateThumbprint $thumbprint } | Should -Throw '*signature missing*'

@@ -1826,4 +1826,67 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
     <value>Non enregistré — caractères autorisés : {0}, sans tiret au début.</value>
   </data>
+  <data name="StreamDock_Session" xml:space="preserve">
+    <value>5 h</value>
+  </data>
+  <data name="StreamDock_Week" xml:space="preserve">
+    <value>Semaine</value>
+  </data>
+  <data name="StreamDock_Home" xml:space="preserve">
+    <value>Accueil</value>
+  </data>
+  <data name="StreamDock_Back" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="StreamDock_Next" xml:space="preserve">
+    <value>Suite</value>
+  </data>
+  <data name="Settings_StreamDock_Section" xml:space="preserve">
+    <value>Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_Enabled" xml:space="preserve">
+    <value>Piloter le Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_SyncPages" xml:space="preserve">
+    <value>Synchroniser les pages avec le Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_DriverMissing" xml:space="preserve">
+    <value>Le pilote Stream Dock est introuvable. Réinstallez DockPad pour installer le pilote, puis redémarrez DockPad pour activer cette intégration.</value>
+  </data>
+  <data name="StreamDock_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="StreamDock_Memory" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="StreamDock_WeekShort" xml:space="preserve">
+    <value>7j</value>
+  </data>
+  <data name="StreamDock_SessionShort" xml:space="preserve">
+    <value>5h</value>
+  </data>
+  <data name="StreamDock_RemainingHours" xml:space="preserve">
+    <value>{0}h</value>
+  </data>
+  <data name="StreamDock_RemainingMinutes" xml:space="preserve">
+    <value>{0}m</value>
+  </data>
+  <data name="Settings_Tab_StreamDock" xml:space="preserve">
+    <value>Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
+    <value>Écran latéral</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Columns" xml:space="preserve">
+    <value>Colonnes</value>
+  </data>
+  <data name="Settings_StreamDock_Style_HeroStack" xml:space="preserve">
+    <value>Pile héro</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Rings" xml:space="preserve">
+    <value>Anneaux</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
+    <value>Réservoir</value>
+  </data>
 </root>

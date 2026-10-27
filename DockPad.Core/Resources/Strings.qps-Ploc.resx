@@ -1826,4 +1826,67 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="UsageCfg_OllamaInvalid" xml:space="preserve">
     <value>N0n 3nr3g15tr3 — c4r4ct3r35 4ut0r1535 : {0}, 54n5 t1r3t 4u d3but.</value>
   </data>
+  <data name="StreamDock_Session" xml:space="preserve">
+    <value>5 h</value>
+  </data>
+  <data name="StreamDock_Week" xml:space="preserve">
+    <value>53m41n3</value>
+  </data>
+  <data name="StreamDock_Home" xml:space="preserve">
+    <value>4ccu31l</value>
+  </data>
+  <data name="StreamDock_Back" xml:space="preserve">
+    <value>R3t0ur</value>
+  </data>
+  <data name="StreamDock_Next" xml:space="preserve">
+    <value>5u1t3</value>
+  </data>
+  <data name="Settings_StreamDock_Section" xml:space="preserve">
+    <value>5tr34m D0ck</value>
+  </data>
+  <data name="Settings_StreamDock_Enabled" xml:space="preserve">
+    <value>P1l0t3r l3 5tr34m D0ck</value>
+  </data>
+  <data name="Settings_StreamDock_SyncPages" xml:space="preserve">
+    <value>5ynchr0n153r l35 p4g35 4v3c l3 5tr34m D0ck</value>
+  </data>
+  <data name="Settings_StreamDock_DriverMissing" xml:space="preserve">
+    <value>L3 p1l0t3 5tr34m D0ck 35t 1ntr0uv4bl3. R31n5t4ll3z D0ckP4d p0ur 1n5t4ll3r l3 p1l0t3, pu15 r3d3m4rr3z D0ckP4d p0ur 4ct1v3r c3tt3 1nt3gr4t10n.</value>
+  </data>
+  <data name="StreamDock_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="StreamDock_Memory" xml:space="preserve">
+    <value>R4M</value>
+  </data>
+  <data name="StreamDock_WeekShort" xml:space="preserve">
+    <value>7j</value>
+  </data>
+  <data name="StreamDock_SessionShort" xml:space="preserve">
+    <value>5h</value>
+  </data>
+  <data name="StreamDock_RemainingHours" xml:space="preserve">
+    <value>{0}h</value>
+  </data>
+  <data name="StreamDock_RemainingMinutes" xml:space="preserve">
+    <value>{0}m</value>
+  </data>
+  <data name="Settings_Tab_StreamDock" xml:space="preserve">
+    <value>5tr34m D0ck</value>
+  </data>
+  <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
+    <value>3cr4n l4t3r4l</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Columns" xml:space="preserve">
+    <value>C0l0nn35</value>
+  </data>
+  <data name="Settings_StreamDock_Style_HeroStack" xml:space="preserve">
+    <value>P1l3 h3r0</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Rings" xml:space="preserve">
+    <value>4nn34ux</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
+    <value>R353rv01r</value>
+  </data>
 </root>

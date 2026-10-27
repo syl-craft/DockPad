@@ -36,6 +36,21 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 - **Démarrage automatique** avec Windows configurable
 - **Mises à jour intégrées** : recherche automatique désactivable, téléchargement et redémarrage depuis l'application, gestion des processus bloquants avec consentement
 
+## Stream Dock
+
+DockPad peut piloter un **Stream Dock 293S V3** pour parcourir les pages de raccourcis et les groupes et lancer les tuiles.
+Fermez **StreamDock.exe**, le logiciel du fabricant, puis activez **Piloter le Stream Dock** dans l'onglet dédié
+**Options → Stream Dock** et enregistrez. Les deux cases sont désactivées par défaut ; **Synchroniser les pages avec le Stream Dock**
+maintient les pages de raccourcis synchronisées dans les deux sens, sans ouvrir la fenêtre DockPad ni quitter le mode Favoris.
+La colonne latérale continue affiche les quotas des fournisseurs visibles du bandeau Usage IA, ainsi que la charge du processeur et de la mémoire.
+Sous **Écran latéral**, quatre vignettes permettent de choisir **Colonnes** (par défaut), **Pile héro**, **Anneaux** ou **Réservoir**.
+L'IA choisie dans les onglets du bandeau Usage IA passe en tête de la colonne. Un clic sur une vignette affiche le rendu sur le dock ; Sauvegarder le garde, Annuler remet le précédent. Quand le bandeau Usage IA est désactivé,
+la colonne affiche toujours le processeur et la mémoire. Le dock fonctionne lorsque DockPad est masqué et se reconnecte après la sortie de veille de Windows.
+
+<a href="https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4"><img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-poster-fr.jpg" alt="Vidéo de démonstration : les pages DockPad sur les touches du Stream Dock, la synchro des pages dans les deux sens, le lancement d'une tuile, les quotas IA sur les écrans latéraux et les quatre rendus" width="960"></a>
+
+▶ [Voir la vidéo de 30 secondes](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4)
+
 ## Mises à jour
 
 **☰ Menu → Mises à jour → Rechercher** affiche la version disponible et ses notes.

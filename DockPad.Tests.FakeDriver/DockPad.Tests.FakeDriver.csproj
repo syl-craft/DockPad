@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <Product>DockPad</Product>
+    <Authors>syl-craft</Authors>
+    <Copyright>Copyright (c) 2026 syl-craft</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AssemblyName>DockPad.FakeDriver</AssemblyName>
+    <RootNamespace>DockPad.Tests.FakeDriver</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DockPad.Surfaces\DockPad.Surfaces.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+</Project>

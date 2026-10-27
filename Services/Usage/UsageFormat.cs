@@ -30,10 +30,15 @@ public static class UsageFormat
     /// </summary>
     public static string GaugeColor(int usedPct, int thresholdPct)
     {
-        if (100 - usedPct <= thresholdPct) return Critical;
+        if (IsCritical(usedPct, thresholdPct)) return Critical;
         if (usedPct >= 60) return High;
         return Ok;
     }
+
+    /// <summary>
+    /// Alerte du bandeau : il reste au plus le pourcentage réglé.
+    /// </summary>
+    public static bool IsCritical(int usedPct, int thresholdPct) => 100 - usedPct <= thresholdPct;
 
     /// <summary>
     /// 987 → « 987 », 12 400 → « 12,4k », 1 200 000 → « 1,2M », 2 740 000 000 → « 2,7 Md ».

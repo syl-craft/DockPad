@@ -1,0 +1,351 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DockPad — Stream Dock</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+/* Stream Dock 293S V3 : 5 x 3 touches a ecran et la colonne des ecrans lateraux, en coordonnees du dock (823 x 452). */
+.hw { position: absolute; left: 0; top: 0; width: 823px; height: 452px; transform-origin: 0 0; z-index: 5; }
+.hw-tilt { position: absolute; inset: 0; transform-origin: 50% 100%; }
+.hw-floor { position: absolute; left: 40px; right: 40px; bottom: -34px; height: 60px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0,0,0,.6), rgba(0,0,0,0)); }
+.hw-body { position: absolute; inset: 0; border-radius: 28px;
+  background: linear-gradient(180deg, #2B2D33 0%, #1B1C20 55%, #141518 100%);
+  box-shadow: 0 40px 90px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 2px 0 rgba(255,255,255,.09); }
+.key { position: absolute; width: 120px; height: 120px; border-radius: 14px; background: #0B0B0D;
+  box-shadow: 0 0 0 2px #08080A, 0 4px 0 #09090B, inset 0 1px 0 rgba(255,255,255,.05); }
+.key .scr { position: absolute; left: 6px; top: 6px; width: 108px; height: 108px; border-radius: 6px; overflow: hidden;
+  background: #000; transform-origin: 50% 50%; }
+.key .glass { position: absolute; inset: 0; border-radius: 14px; pointer-events: none;
+  background: linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,0) 42%); }
+.kc { position: absolute; inset: 0; }
+.kc .ki { position: absolute; left: 27px; top: 9px; width: 54px; height: 54px; object-fit: contain; transform-origin: 50% 50%; }
+.kc .kp { position: absolute; left: 13.5px; top: 13.5px; width: 81px; height: 81px; object-fit: contain; transform-origin: 50% 50%; }
+.kc .kl { position: absolute; left: 4.5px; top: 67.5px; width: 99px; height: 36px; display: flex; align-items: center;
+  justify-content: center; text-align: center; color: #fff; font: 600 14.6px/1.12 "Segoe UI", sans-serif; overflow: hidden; }
+.strip-hw { position: absolute; left: 716px; top: 30px; width: 77px; height: 392px; border-radius: 7px; overflow: hidden;
+  background: #000; box-shadow: 0 0 0 2px #08080A, 0 4px 0 #09090B; }
+.strip-hw img { position: absolute; left: 0; top: 0; width: 77px; height: 392px; display: none; }
+.strip-hw .glass { position: absolute; inset: 0; background: linear-gradient(170deg, rgba(255,255,255,.09), rgba(255,255,255,0) 35%); }
+.touch { position: absolute; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; z-index: 40;
+  border: 3px solid rgba(255,255,255,.85); box-shadow: 0 0 24px rgba(120,180,255,.6); pointer-events: none; opacity: 0; }
+
+/* Titres de l'ouverture et de la fin. */
+.title { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  color: #F4F6FA; z-index: 60; pointer-events: none; }
+.title .wm { display: flex; align-items: center; gap: 26px; font: 700 92px/1 "Segoe UI", sans-serif; letter-spacing: -1px; }
+.title .sub { font: 400 36px/1.2 "Segoe UI", sans-serif; color: #AEB6C4; }
+.title .big { font: 600 58px/1.15 "Segoe UI", sans-serif; text-align: center; }
+.title .url { font: 500 30px/1 Consolas, monospace; color: #8FD3FF; margin-top: 10px; }
+.chip { position: absolute; left: 1350px; top: 440px; z-index: 60; color: #F4F6FA; pointer-events: none; }
+.chip .n { font: 500 26px/1 Consolas, monospace; color: #8FD3FF; }
+.chip .s { font: 700 64px/1.1 "Segoe UI", sans-serif; margin-top: 10px; }
+.link { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; overflow: visible; }
+</style></head>
+<body><div id="stage"></div>
+<script type="module">
+import { clip, prog, E, lerp, track, env, el, style } from '../shared/engine.js';
+import { stage, buildDock, placeDock, showPage, renderUsage, cursor, renderCursor, legend, setCamera, centerOf,
+  appWindow, renderLaunch, EDITOR_BODY, PAGES, icon } from '../shared/ui.js';
+
+const LANG = new URLSearchParams(location.search).get('lang') === 'fr' ? 'fr' : 'en';
+
+// Libelles recopies de Strings.resx et Strings.fr.resx ; noms de tuiles traduits comme dans window-fr.png.
+const TX = {
+  en: {
+    home: 'Home', next: 'Next', hotkey: 'Alt + Space',
+    captions: [
+      [.9, 3.3, 'Your launcher, now under your fingertips'],
+      [4.3, 7.9, 'Your DockPad pages, right on the keys'],
+      [8.1, 10.8, 'Two-way sync with DockPad'],
+      [11.1, 14.6, 'One press launches the tile'],
+      [15.3, 18.3, 'Your AI quotas, live on the side screens'],
+      [18.5, 21.5, 'Follows the AI selected in DockPad'],
+      [21.9, 25.4, 'Four styles, with CPU and RAM'],
+    ],
+    styles: ['Columns', 'Hero stack', 'Rings', 'Reservoir'],
+    sub: 'now drives your Stream Dock',
+    vendor: 'No vendor software.<br>Just DockPad.',
+    end: 'Stream Dock 293S V3 support',
+  },
+  fr: {
+    home: 'Accueil', next: 'Suite', hotkey: 'Alt + Espace',
+    captions: [
+      [.9, 3.3, 'Votre lanceur, désormais sous vos doigts'],
+      [4.3, 7.9, 'Vos pages DockPad, directement sur les touches'],
+      [8.1, 10.8, 'Synchronisées dans les deux sens'],
+      [11.1, 14.6, 'Une pression lance la tuile'],
+      [15.3, 18.3, 'Vos quotas IA en direct sur les écrans latéraux'],
+      [18.5, 21.5, "Suit l'IA choisie dans DockPad"],
+      [21.9, 25.4, 'Quatre styles, avec processeur et mémoire'],
+    ],
+    styles: ['Colonnes', 'Pile héro', 'Anneaux', 'Réservoir'],
+    sub: 'pilote votre Stream Dock',
+    vendor: 'Sans le logiciel du fabricant.<br>Juste DockPad.',
+    end: 'Compatible Stream Dock 293S V3',
+  },
+}[LANG];
+
+const FR_NAMES = { Projects: 'Projets', '3D Prints': 'Impressions 3D', Explorer: 'Explorateur', Board: 'Tableau',
+  Calendar: 'Agenda', 'Task Manager': 'Gestionnaire', Notepad: 'Bloc-notes', Database: 'Base de données',
+  Backups: 'Sauvegardes', Scheduled: 'Planifié', Downloads: 'Téléchargements' };
+const pages = PAGES.map(page => page.map(tile => ({ ...tile, name: LANG === 'fr' ? FR_NAMES[tile.name] ?? tile.name : tile.name })));
+const PAGE_ICONS = ['claude-code', 'linear', 'notepad'];
+
+// ---------- Ecrans du dock (DockLayout) ----------
+const HOME_PATH = 'M 2,11 L 12,2 L 22,11 L 19,11 L 19,22 L 14,22 L 14,15 L 10,15 L 10,22 L 5,22 L 5,11 Z';
+const NEXT_PATH = 'M 11,2 L 21,12 L 11,22 L 8,19 L 13,14 L 1,14 L 1,10 L 13,10 L 8,5 Z';
+
+/** Accueil : une touche par page garnie ; page : Accueil, les tuiles dans l'ordre de la grille, Suite au-dela de 14. */
+function screenKeys(screen) {
+  const keys = Array(15).fill({ kind: 'empty' });
+  if (screen === 'off') return keys.map(() => ({ kind: 'off' }));
+  if (screen === 'home') return keys.map((k, i) => i < pages.length ? { kind: 'page', icon: PAGE_ICONS[i] } : k);
+  const tiles = [...pages[screen]].sort((a, b) => a.r - b.r || a.c - b.c);
+  const shown = tiles.length > 14 ? [...tiles.slice(0, 13), { kind: 'next' }] : tiles;
+  return keys.map((k, i) => i === 0 ? { kind: 'home' } : shown[i - 1] ? { kind: 'tile', ...shown[i - 1] } : k);
+}
+
+const svgKey = d => `<svg class="ki" viewBox="1 2 22 20"><path d="${d}" fill="#fff"/></svg>`;
+function keyHTML(k) {
+  switch (k.kind) {
+    case 'tile': return `<img class="ki" src="${icon(k.icon)}"><div class="kl">${k.name}</div>`;
+    case 'home': return `${svgKey(HOME_PATH)}<div class="kl">${TX.home}</div>`;
+    case 'next': return `${svgKey(NEXT_PATH)}<div class="kl">${TX.next}</div>`;
+    case 'page': return `<img class="kp" src="${icon(k.icon)}">`;
+    default: return '';
+  }
+}
+
+const K = 120, G = 16, PAD = 30;
+const keyBox = i => ({ x: PAD + (i % 5) * (K + G), y: PAD + Math.floor(i / 5) * (K + G), w: K, h: K });
+
+function buildHardware(parent) {
+  const root = el('<div class="hw"><div class="hw-tilt"><div class="hw-floor"></div><div class="hw-body"></div></div></div>');
+  const tilt = root.firstChild;
+  const keys = [];
+  for (let i = 0; i < 15; i++) {
+    const b = keyBox(i);
+    const node = el(`<div class="key" style="left:${b.x}px;top:${b.y}px"><div class="scr"><div class="kc"></div></div><div class="glass"></div></div>`);
+    tilt.appendChild(node);
+    keys.push({ node, scr: node.querySelector('.scr'), kc: node.querySelector('.kc'), sig: null });
+  }
+  const strip = el('<div class="strip-hw"></div>');
+  const frames = {};
+  const names = [...Array.from({ length: 31 }, (_, i) => `fill-${String(i).padStart(2, '0')}`), 'columns-codex', 'hero', 'rings', 'reservoir'];
+  for (const n of names) {
+    const img = el(`<img src="../out/strip/${LANG}/${n}.png">`);
+    strip.appendChild(img);
+    frames[n] = img;
+  }
+  strip.appendChild(el('<div class="glass"></div>'));
+  tilt.appendChild(strip);
+  parent.appendChild(root);
+  return { root, tilt, keys, frames, x: 0, y: 0, s: 1 };
+}
+
+function placeHardware(hw, x, y, s, { tilt = 0, opacity = 1 } = {}) {
+  hw.x = x; hw.y = y; hw.s = s;
+  style(hw.root, { transform: `translate(${x}px, ${y}px) scale(${s})`, opacity });
+  hw.tilt.style.transform = `perspective(1600px) rotateX(${tilt}deg)`;
+}
+const hwPoint = (hw, x, y) => ({ x: hw.x + x * hw.s, y: hw.y + y * hw.s });
+
+// ---------- Scenario ----------
+// Ecrans successifs du dock ; une vague de bascule, colonne par colonne, a chaque changement.
+const SCREENS = [[0, 'off'], [1.4, 0], [5.0, 'home'], [6.0, 1], [9.2, 0]];
+// Appuis sur le dock : enfoncee a t, action au relachement (t + .2), comme le vrai dock.
+const PRESSES = [[4.8, 0], [5.8, 1], [11.6, 2]];
+
+function renderKeys(hw, t) {
+  hw.keys.forEach((key, i) => {
+    const delay = (i % 5) * .045 + Math.floor(i / 5) * .03;
+    let current = SCREENS[0], previous = null;
+    for (const s of SCREENS) if (t >= s[0] + delay) { previous = current; current = s; }
+    const since = t - current[0] - delay;
+    const flip = previous && since < .3 ? Math.abs(Math.cos(Math.PI * since / .3)) : 1;
+    // Premiere moitie de la bascule : encore l'ancien ecran.
+    const shown = previous && since < .15 ? previous : current;
+    const k = screenKeys(shown[1])[i];
+    const sig = JSON.stringify(k);
+    if (key.sig !== sig) { key.kc.innerHTML = keyHTML(k); key.sig = sig; }
+    let down = 0;
+    for (const [tp, ki] of PRESSES) if (ki === i && t >= tp && t < tp + .2) down = 1;
+    key.scr.style.background = k.kind === 'off' || k.kind === 'empty' ? '#000' : down ? '#3A3A3A' : '#1E1E1E';
+    key.scr.style.transform = `scaleY(${flip})`;
+    key.kc.querySelectorAll('.ki, .kp').forEach(n => { n.style.transform = `scale(${down ? .85 : 1})`; });
+  });
+}
+
+/** Image de l'ecran lateral : [debut, image ou fonction de t], avec un balayage vertical entre deux rendus. */
+const STRIP = [
+  [0, 'off'],
+  [1.6, t => `fill-${String(Math.round(30 * prog(t, 1.6, 2.8, E.out))).padStart(2, '0')}`],
+  [15.45, t => `fill-${String(Math.round(30 * (1 - prog(t, 15.45, 15.75, E.in)))).padStart(2, '0')}`],
+  [15.8, t => `fill-${String(Math.round(30 * prog(t, 15.8, 17.4, E.out))).padStart(2, '0')}`],
+  [19.9, 'columns-codex', true],
+  [21.2, 'fill-30', true],
+  [22.9, 'hero', true],
+  [23.8, 'rings', true],
+  [24.7, 'reservoir', true],
+  [26.6, 'fill-30', true],
+];
+const stripName = (entry, t) => typeof entry[1] === 'function' ? entry[1](t) : entry[1];
+
+function renderStrip(hw, t) {
+  Object.values(hw.frames).forEach(img => { img.style.display = 'none'; img.style.transform = ''; });
+  let k = 0;
+  STRIP.forEach((s, i) => { if (t >= s[0]) k = i; });
+  const cur = STRIP[k];
+  const name = stripName(cur, t);
+  if (name === 'off') return;
+  const p = cur[2] ? prog(t, cur[0], cur[0] + .35, E.inOut) : 1;
+  const img = hw.frames[name];
+  img.style.display = 'block';
+  if (p < 1) {
+    const prevName = stripName(STRIP[k - 1], cur[0]);
+    const prev = hw.frames[prevName];
+    prev.style.display = 'block';
+    prev.style.transform = `translateY(${-p * 392}px)`;
+    img.style.transform = `translateY(${(1 - p) * 392}px)`;
+  }
+}
+
+// Mises en page : ouverture au centre, puis DockPad a gauche et le dock a droite, puis fin au centre.
+const L0 = { x: 548.5, y: 380, s: 1 }, L1 = { x: 1100, y: 300, s: .85 }, L2 = { x: 548.5, y: 400, s: 1 };
+const W1 = { x: 110, y: 180 };
+const ZOOM = { x: 1180, y: 510, z: 2.5 };
+
+const LOGO = `<svg width="96" height="96" viewBox="0 0 256 256"><defs>
+  <linearGradient id="lp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A47BFF"/><stop offset="1" stop-color="#7A3FE4"/></linearGradient>
+  <linearGradient id="lb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#33D1F5"/><stop offset="1" stop-color="#0A8FE8"/></linearGradient></defs>
+  ${[20, 98, 176].map(y => `<rect x="14" y="${y}" width="66" height="62" rx="18" fill="url(#lp)"/><rect x="104" y="${y + 23}" width="138" height="16" rx="8" fill="url(#lb)"/>`).join('')}</svg>`;
+
+function fixUsageFr(u) {
+  if (LANG !== 'fr') return;
+  const resets = { '↻ 19:32': '↻ 19h32', '↻ Wed 16:52': '↻ mer. 16h', '↻ Mon 20:00': '↻ lun. 20h' };
+  const metrics = ['Session', 'Jour', 'Mois', 'Requêtes', 'Coût est.', 'Modèle'];
+  u.g.forEach(g => {
+    const lbl = g.querySelector('.lbl'), reset = g.querySelector('.reset');
+    if (lbl.textContent === 'week') lbl.textContent = 'semaine';
+    reset.textContent = resets[reset.textContent] ?? reset.textContent;
+  });
+  u.mEls.forEach((m, i) => {
+    m.querySelector('.k').textContent = metrics[i];
+    const v = m.querySelector('.v');
+    if (i < 3) v.textContent = v.textContent.replace('.', ',');
+  });
+}
+
+clip({
+  duration: 30,
+  async build() {
+    document.documentElement.dataset.theme = 'dark';
+    const { st, camera } = stage();
+
+    const dock = buildDock(camera, { usage: 'tabs', pages, hotkey: TX.hotkey });
+    dock.root.querySelector('.version').textContent = 'v1.30.1';
+    if (LANG === 'fr') dock.root.querySelectorAll('.badge-demo').forEach(b => { b.textContent = 'démo'; });
+    placeDock(dock, W1.x, W1.y, 1);
+    showPage(dock, 0);
+    renderUsage(dock.usage, 'claude');
+    const pager1 = centerOf(dock.pbtns[0]);
+    const tabs = dock.usage.tabs.map(centerOf);
+
+    const link = el(`<svg class="link" width="1920" height="1080"><path d="M 968 492 C 1010 430, 1060 430, 1096 492" fill="none"
+      stroke="#8FD3FF" stroke-width="3" stroke-dasharray="6 9" stroke-linecap="round"/><circle r="8" fill="#BDE6FF"/></svg>`);
+    camera.appendChild(link);
+
+    const hw = buildHardware(camera);
+    const touch = el('<div class="touch"></div>');
+    camera.appendChild(touch);
+    const vscode = appWindow(camera, { w: 1100, h: 640, icon: 'vscode', title: 'VS Code', body: EDITOR_BODY() });
+    vscode.style.zIndex = 30;
+
+    const intro = el(`<div class="title" style="top:120px"><div class="wm">${LOGO}DockPad</div><div class="sub">${TX.sub}</div></div>`);
+    const vendor = el(`<div class="title" style="top:150px"><div class="big">${TX.vendor}</div></div>`);
+    const outro = el(`<div class="title" style="top:120px"><div class="wm">${LOGO}DockPad</div><div class="sub">${TX.end}</div></div>`);
+    const url = el('<div class="title" style="top:905px"><div class="url">github.com/syl-craft/DockPad</div></div>');
+    const chip = el('<div class="chip"><div class="n"></div><div class="s"></div></div>');
+    [intro, vendor, outro, url, chip].forEach(n => st.appendChild(n));
+
+    return { st, camera, dock, hw, link, touch, vscode, pager1, tabs, intro, vendor, outro, url, chip,
+      cur1: cursor(camera), cur2: cursor(camera), leg: legend(st) };
+  },
+
+  render(t, x) {
+    const { dock, hw } = x;
+
+    // Dock : arrivee basculee au centre, glissement a droite, retour au centre pour la fin.
+    const toL1 = prog(t, 3.4, 4.2), toL2 = prog(t, 25.6, 26.5);
+    const lay = k => lerp(lerp(L0[k], L1[k], toL1), L2[k], toL2);
+    const arrive = prog(t, .2, 1.5, E.out);
+    placeHardware(hw, lay('x'), lay('y') + (1 - arrive) * 140, lay('s'), { tilt: (1 - arrive) * 28, opacity: arrive });
+    renderKeys(hw, t);
+    renderStrip(hw, t);
+
+    // Fenetre DockPad : entre par la gauche, sort a la fin.
+    const win = prog(t, 3.5, 4.3, E.out) * (1 - prog(t, 25.6, 26.3, E.in));
+    placeDock(dock, W1.x - (1 - win) * 160, W1.y, 1, { opacity: win, scale: .96 + .04 * win });
+    showPage(dock, track(t, [[6.5, 0], [7.0, 1], [8.6, 1], [9.1, 0]]));
+    if (t >= 19.4 && t < 20.8) {
+      renderUsage(dock.usage, 'codex', { loading: t < 19.8 ? 1 : 0, t, gauges: t >= 19.8, fill: prog(t, 19.8, 20.4, E.out), count: t < 19.8 ? 0 : prog(t, 19.8, 20.4, E.linear) });
+    } else {
+      renderUsage(dock.usage, 'claude');
+    }
+    fixUsageFr(dock.usage);
+
+    // Lien de synchro : un point part de celui qui change de page vers l'autre.
+    const linkOn = env(t, 4.0, 25.6, .4);
+    x.link.style.opacity = linkOn * (.35 + .65 * Math.max(env(t, 6.0, 6.8, .15), env(t, 8.7, 9.4, .15), env(t, 19.4, 20.0, .15), env(t, 20.8, 21.4, .15)));
+    const path = x.link.querySelector('path'), dot = x.link.querySelector('circle');
+    const travel = [[6.05, 6.6, -1], [8.7, 9.2, 1], [19.45, 19.95, 1], [20.85, 21.35, 1]].find(([a, b]) => t >= a && t < b);
+    if (travel) {
+      const p = prog(t, travel[0], travel[1], E.inOut);
+      const pt = path.getPointAtLength(path.getTotalLength() * (travel[2] > 0 ? p : 1 - p));
+      style(dot, { opacity: 1 }); dot.setAttribute('cx', pt.x); dot.setAttribute('cy', pt.y);
+    } else dot.style.opacity = 0;
+
+    // Appui sur une touche : anneau a l'endroit du doigt.
+    const press = PRESSES.find(([tp]) => t >= tp - .12 && t < tp + .5);
+    if (press) {
+      const b = keyBox(press[1]);
+      const c = hwPoint(hw, b.x + 60, b.y + 60);
+      const p = (t - press[0] + .12) / .62;
+      style(x.touch, { left: `${c.x}px`, top: `${c.y}px`, opacity: (1 - p) * .9, transform: `scale(${.55 + p * .6})` });
+    } else x.touch.style.opacity = 0;
+
+    // Lancement depuis la touche VS Code.
+    const vb = keyBox(2), vk = hwPoint(hw, vb.x, vb.y);
+    renderLaunch(x.vscode, t, { x: vk.x, y: vk.y, w: K * hw.s, h: K * hw.s }, { x: 410, y: 190, w: 1100, h: 640 }, [11.8, 12.3], [13.9, 14.3]);
+
+    // Camera : deux rapprochements sur l'ecran lateral.
+    const zp = prog(t, 15.0, 15.8) * (1 - prog(t, 17.9, 18.6)) + prog(t, 21.6, 22.3) * (1 - prog(t, 25.4, 26.1));
+    const focus = hwPoint(hw, 754.5, 226);
+    setCamera(x.camera, 1 + (ZOOM.z - 1) * zp, focus.x, focus.y, lerp(focus.x, ZOOM.x, zp), lerp(focus.y, ZOOM.y, zp));
+
+    // Nom du rendu affiche, pendant le second rapprochement.
+    const styleAt = [22.0, 22.9, 23.8, 24.7];
+    let si = -1; styleAt.forEach((s, i) => { if (t >= s) si = i; });
+    if (si >= 0 && t < 25.4) {
+      x.chip.querySelector('.n').textContent = `${si + 1} / 4`;
+      x.chip.querySelector('.s').textContent = TX.styles[si];
+      const o = env(t, styleAt[si], si < 3 ? styleAt[si + 1] : 25.4, .18);
+      style(x.chip, { opacity: o, transform: `translateX(${(1 - o) * 24}px)` });
+    } else x.chip.style.opacity = 0;
+
+    renderCursor(x.cur1, t, [[7.6, 640, 980], [8.4, x.pager1.x, x.pager1.y], [9.0, x.pager1.x, x.pager1.y], [9.8, 720, 960]], [8.6], [7.6, 10.0]);
+    renderCursor(x.cur2, t, [[18.6, 640, 980], [19.2, x.tabs[1].x, x.tabs[1].y], [20.3, x.tabs[1].x, x.tabs[1].y],
+      [20.6, x.tabs[0].x, x.tabs[0].y], [21.0, x.tabs[0].x, x.tabs[0].y], [21.6, 640, 980]], [19.4, 20.8], [18.6, 21.7]);
+
+    // Titres.
+    const io = env(t, .5, 3.4, .5);
+    style(x.intro, { opacity: io, transform: `translateY(${(1 - prog(t, .5, 1.2, E.out)) * 30}px)` });
+    const vo = env(t, 26.0, 27.7, .4);
+    style(x.vendor, { opacity: vo, transform: `translateY(${(1 - prog(t, 26.0, 26.6, E.out)) * 24}px)` });
+    const oo = prog(t, 27.7, 28.3, E.out);
+    style(x.outro, { opacity: oo, transform: `translateY(${(1 - oo) * 24}px)` });
+    x.url.style.opacity = prog(t, 28.0, 28.6, E.out);
+
+    x.leg(t, TX.captions);
+  },
+});
+</script></body></html>

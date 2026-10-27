@@ -1,19 +1,26 @@
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using DockPad.Models;
 using DockPad.Services;
 using DockPad.Services.Localization;
+using DockPad.Services.StreamDock;
 
 namespace DockPad;
 
-/// <summary>Onglet sur lequel ouvrir la fenêtre.</summary>
+/// <summary>
+/// Onglet sur lequel ouvrir la fenêtre.
+/// </summary>
 /// <remarks>
 /// La sélection se fait par <b>référence à l'onglet nommé</b>, pas par index : un index se
 /// désynchronise en silence dès qu'on réordonne le XAML, et on ouvrirait alors le mauvais onglet
 /// sans que rien ne le signale.
 /// </remarks>
-public enum SettingsTab { General, Integrations, Secrets }
+public enum SettingsTab { General, Integrations, Secrets, StreamDock }
 
 public partial class SettingsDialog : Window
 {
@@ -54,6 +61,7 @@ public partial class SettingsDialog : Window
         {
             SettingsTab.Integrations => TabIntegrations,
             SettingsTab.Secrets => TabSecrets,
+            SettingsTab.StreamDock => TabStreamDock,
             _ => TabGeneral,
         };
 
@@ -70,6 +78,12 @@ public partial class SettingsDialog : Window
 
         ChkAutoStart.IsChecked = SettingsService.LoadAutoStart();
         ChkAutoFavicon.IsChecked = SettingsService.LoadAutoFavicon();
+        ChkStreamDockEnabled.IsChecked = SettingsService.LoadStreamDockEnabled();
+        ChkStreamDockSyncPages.IsChecked = SettingsService.LoadStreamDockSyncPages();
+        FillSideStripPreviews();
+        TxtStreamDockDriverMissing.Visibility = File.Exists(Path.Combine(
+            SurfaceDriverLoader.PluginsFolder, "StreamDock", "DockPad.StreamDock.dll"))
+            ? Visibility.Collapsed : Visibility.Visible;
         TxtClaudeArgs.Text = SettingsService.LoadClaudeArgs();
         FillTerminals(SettingsService.LoadDefaultTerminal());
 
@@ -116,6 +130,56 @@ public partial class SettingsDialog : Window
         Loc.LanguageChanged += OnLanguageChanged;
         Closed += (_, _) => Loc.LanguageChanged -= OnLanguageChanged;
     }
+
+    /// <summary>
+    /// Vignettes dessinées par le vrai rendu de la colonne, avec des valeurs d'exemple fixes.
+    /// </summary>
+    private void FillSideStripPreviews()
+    {
+        var example = new SideStripContent(
+        [
+            new QuotaGauge("claude", "Claude", Loc.T("StreamDock_Week"), 68,
+                IsAlert: false, IsStale: false, ResetsAt: DateTime.Now.AddDays(2), WindowKind: UsageWindowKind.Week),
+            new QuotaGauge("claude", "Claude", Loc.T("StreamDock_Session"), 42,
+                IsAlert: false, IsStale: false, ResetsAt: null, WindowKind: UsageWindowKind.Session),
+            new QuotaGauge("codex", "Codex", Loc.T("StreamDock_Week"), 12,
+                IsAlert: false, IsStale: false, ResetsAt: null, WindowKind: UsageWindowKind.Week),
+        ], CpuPct: 23, MemoryPct: 61);
+
+        (SideStripStyle Style, Image Preview)[] previews =
+        [
+            (SideStripStyle.Columns, ImgSideStripColumns),
+            (SideStripStyle.HeroStack, ImgSideStripHeroStack),
+            (SideStripStyle.Rings, ImgSideStripRings),
+            (SideStripStyle.Reservoir, ImgSideStripReservoir),
+        ];
+        foreach (var (style, preview) in previews)
+        {
+            var image = SideStripRenderer.Render(example, style, width: 75, height: 380);
+            var bitmap = BitmapSource.Create(image.Width, image.Height, 96, 96, PixelFormats.Bgra32,
+                null, image.Bgra32, image.Width * 4);
+            bitmap.Freeze();
+            preview.Source = bitmap;
+        }
+
+        var saved = SettingsService.LoadStreamDockSideStrip();
+        LstStreamDockSideStrip.SelectedItem = LstStreamDockSideStrip.Items.Cast<ListBoxItem>()
+            .Where(item => item.Tag is SideStripStyle style && style == saved)
+            .FirstOrDefault();
+
+        // Chaque clic montre le rendu sur le dock ; sans Sauvegarder, la fermeture remet celui enregistré.
+        LstStreamDockSideStrip.SelectionChanged += (_, _) =>
+            (Application.Current as App)?.PreviewStreamDockSideStrip(SelectedSideStripStyle);
+        Closed += (_, _) =>
+        {
+            if (DialogResult != true)
+                (Application.Current as App)?.PreviewStreamDockSideStrip(saved);
+        };
+    }
+
+    private SideStripStyle SelectedSideStripStyle =>
+        LstStreamDockSideStrip.SelectedItem is ListBoxItem { Tag: SideStripStyle style }
+            ? style : SideStripStyle.Columns;
 
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
@@ -351,6 +415,11 @@ public partial class SettingsDialog : Window
             int.TryParse(TxtClearSeconds.Text.Trim(), out var seconds) && seconds >= 0 ? seconds : 90);
 
         ApplyContextMenu();
+
+        SettingsService.SaveStreamDockEnabled(ChkStreamDockEnabled.IsChecked == true);
+        SettingsService.SaveStreamDockSyncPages(ChkStreamDockSyncPages.IsChecked == true);
+        SettingsService.SaveStreamDockSideStrip(SelectedSideStripStyle);
+        (Application.Current as App)?.ApplyStreamDockSettings();
 
         DialogResult = true;
     }
