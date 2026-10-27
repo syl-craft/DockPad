@@ -1865,4 +1865,22 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="StreamDock_SessionShort" xml:space="preserve">
     <value>5h</value>
   </data>
+  <data name="Settings_Tab_StreamDock" xml:space="preserve">
+    <value>Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
+    <value>Side display</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Columns" xml:space="preserve">
+    <value>Columns</value>
+  </data>
+  <data name="Settings_StreamDock_Style_HeroStack" xml:space="preserve">
+    <value>Hero stack</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Rings" xml:space="preserve">
+    <value>Rings</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
+    <value>Reservoir</value>
+  </data>
 </root>

@@ -1865,4 +1865,22 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="StreamDock_SessionShort" xml:space="preserve">
     <value>5h</value>
   </data>
+  <data name="Settings_Tab_StreamDock" xml:space="preserve">
+    <value>Stream Dock</value>
+  </data>
+  <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
+    <value>Écran latéral</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Columns" xml:space="preserve">
+    <value>Colonnes</value>
+  </data>
+  <data name="Settings_StreamDock_Style_HeroStack" xml:space="preserve">
+    <value>Pile héro</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Rings" xml:space="preserve">
+    <value>Anneaux</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
+    <value>Réservoir</value>
+  </data>
 </root>

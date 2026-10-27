@@ -39,11 +39,13 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 ## Stream Dock
 
 DockPad peut piloter un **Stream Dock 293S V3** pour parcourir les pages de raccourcis et les groupes et lancer les tuiles.
-Fermez **StreamDock.exe**, le logiciel du fabricant, puis activez **Piloter le Stream Dock** dans
-**Options → Intégrations** et enregistrez. Les deux options sont désactivées par défaut ; **Synchroniser les pages avec le Stream Dock**
+Fermez **StreamDock.exe**, le logiciel du fabricant, puis activez **Piloter le Stream Dock** dans l'onglet dédié
+**Options → Stream Dock** et enregistrez. Les deux cases sont désactivées par défaut ; **Synchroniser les pages avec le Stream Dock**
 maintient les pages de raccourcis synchronisées dans les deux sens, sans ouvrir la fenêtre DockPad ni quitter le mode Favoris.
-Les trois écrans latéraux affichent les quotas des fournisseurs visibles du bandeau Usage IA ; désactiver ce bandeau laisse
-ces écrans noirs. Le dock fonctionne lorsque DockPad est masqué et se reconnecte après la sortie de veille de Windows.
+La colonne latérale continue affiche les quotas des fournisseurs visibles du bandeau Usage IA, ainsi que la charge du processeur et de la mémoire.
+Sous **Écran latéral**, quatre vignettes permettent de choisir **Colonnes** (par défaut), **Pile héro**, **Anneaux** ou **Réservoir**.
+Le choix s'applique à la sauvegarde, sans redémarrage ; Annuler conserve le choix précédent. Quand le bandeau Usage IA est désactivé,
+la colonne affiche toujours le processeur et la mémoire. Le dock fonctionne lorsque DockPad est masqué et se reconnecte après la sortie de veille de Windows.
 
 ## Mises à jour
 

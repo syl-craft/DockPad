@@ -300,11 +300,13 @@ public partial class App : Application
                 Services.UsageConfigService.Changed += _streamDock.OnUsageConfigChanged;
                 _mainWindow.ShortcutPage.Changed += _streamDock.OnShortcutPageChanged;
                 _streamDock.SyncPages = Services.SettingsService.LoadStreamDockSyncPages();
+                _streamDock.SideStripStyle = Services.SettingsService.LoadStreamDockSideStrip();
                 _streamDock.Start();
                 return;
             }
 
             _streamDock.SyncPages = Services.SettingsService.LoadStreamDockSyncPages();
+            _streamDock.SideStripStyle = Services.SettingsService.LoadStreamDockSideStrip();
         }
         catch (Exception ex)
         {

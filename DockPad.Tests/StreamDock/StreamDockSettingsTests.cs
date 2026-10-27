@@ -5,7 +5,8 @@ using DockPad.Services;
 namespace DockPad.Tests.StreamDock;
 
 /// <summary>
-/// Réglages désactivés par défaut, y compris dans un ancien fichier, et persistance des deux options indépendantes.
+/// Réglages désactivés par défaut et persistance des options indépendantes.
+/// Rendu Colonnes par défaut, relecture des quatre rendus et repli des valeurs inconnues sans perdre les autres réglages.
 /// </summary>
 public sealed class StreamDockSettingsTests : IDisposable
 {
@@ -56,5 +57,69 @@ public sealed class StreamDockSettingsTests : IDisposable
 
         Assert.Equal(enabled, reloaded.StreamDockEnabled);
         Assert.Equal(syncPages, reloaded.StreamDockSyncPages);
+    }
+
+    [Fact]
+    public void Rendu_DefautColonnes()
+    {
+        Assert.Equal(SideStripStyle.Columns, new AppSettings().StreamDockSideStrip);
+
+        File.WriteAllText(SettingsPath, """{ "language": "fr" }""");
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(SideStripStyle.Columns, settings.StreamDockSideStrip);
+        Assert.Equal("fr", settings.Language);
+    }
+
+    [Theory]
+    [InlineData(SideStripStyle.Columns)]
+    [InlineData(SideStripStyle.HeroStack)]
+    [InlineData(SideStripStyle.Rings)]
+    [InlineData(SideStripStyle.Reservoir)]
+    public void Rendu_RelueApresSauvegarde(SideStripStyle style)
+    {
+        AppSettingsService.SaveTo(SettingsPath, new AppSettings
+        {
+            Language = "fr",
+            StreamDockEnabled = true,
+            StreamDockSyncPages = true,
+            StreamDockSideStrip = style,
+        });
+
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(style, settings.StreamDockSideStrip);
+        Assert.Equal("fr", settings.Language);
+        Assert.True(settings.StreamDockEnabled);
+        Assert.True(settings.StreamDockSyncPages);
+    }
+
+    [Theory]
+    [InlineData("999")]
+    [InlineData("-1")]
+    [InlineData("\"FutureStyle\"")]
+    [InlineData("\"999\"")]
+    [InlineData("null")]
+    [InlineData("{ \"futureStyle\": true }")]
+    public void Rendu_ValeurInconnue_Colonnes(string value)
+    {
+        File.WriteAllText(SettingsPath, $$"""
+            {
+              "language": "fr",
+              "streamDockEnabled": true,
+              "streamDockSideStrip": {{value}},
+              "streamDockSyncPages": true,
+              "clipboardClearSeconds": 123
+            }
+            """);
+
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(SideStripStyle.Columns, settings.StreamDockSideStrip);
+        Assert.Equal("fr", settings.Language);
+        Assert.True(settings.StreamDockEnabled);
+        Assert.True(settings.StreamDockSyncPages);
+        Assert.Equal(123, settings.ClipboardClearSeconds);
+        Assert.False(JsonConfigFile.IsReadOnly(SettingsPath));
     }
 }

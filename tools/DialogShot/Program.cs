@@ -39,7 +39,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|ctxmenu|presets|mcp|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en> <chemin.png> [onglet]");
+            Console.WriteLine("usage : DialogShot <settings|settings-streamdock|ctxmenu|presets|mcp|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en> <chemin.png> [onglet]");
             return;
         }
 
@@ -117,6 +117,7 @@ internal static class Program
         Window window = target switch
         {
             "settings" => new SettingsDialog(),
+            "settings-streamdock" => new SettingsDialog(SettingsTab.StreamDock),
             "updates" => UpdateShots.Create(),
             "updates-preparing" => UpdateShots.Create(preparing: true),
             "update-blockers" => new UpdateBlockersDialog(Path.GetTempPath(), [

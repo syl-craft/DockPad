@@ -1865,4 +1865,22 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="StreamDock_SessionShort" xml:space="preserve">
     <value>5h</value>
   </data>
+  <data name="Settings_Tab_StreamDock" xml:space="preserve">
+    <value>5tr34m D0ck</value>
+  </data>
+  <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
+    <value>3cr4n l4t3r4l</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Columns" xml:space="preserve">
+    <value>C0l0nn35</value>
+  </data>
+  <data name="Settings_StreamDock_Style_HeroStack" xml:space="preserve">
+    <value>P1l3 h3r0</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Rings" xml:space="preserve">
+    <value>4nn34ux</value>
+  </data>
+  <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
+    <value>R353rv01r</value>
+  </data>
 </root>

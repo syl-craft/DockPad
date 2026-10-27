@@ -115,6 +115,15 @@ public static class SettingsService
     public static void SaveStreamDockSyncPages(bool syncPages) =>
         AppSettingsService.Update(s => s.StreamDockSyncPages = syncPages);
 
+    public static SideStripStyle LoadStreamDockSideStrip()
+    {
+        var style = AppSettingsService.Current.StreamDockSideStrip;
+        return Enum.IsDefined(style) ? style : SideStripStyle.Columns;
+    }
+
+    public static void SaveStreamDockSideStrip(SideStripStyle style) =>
+        AppSettingsService.Update(s => s.StreamDockSideStrip = style);
+
     public static string LoadClaudeArgs() => AppSettingsService.Current.ClaudeArgs;
 
     public static void SaveClaudeArgs(string args) =>
