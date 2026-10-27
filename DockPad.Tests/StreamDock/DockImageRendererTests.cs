@@ -426,7 +426,7 @@ public class DockImageRendererTests : IDisposable
             DockImageRenderer.RenderKey(new DockKey.GoHome(), DockKeyStyle.Flat, pressed: false, size: 96),
             DockImageRenderer.RenderKey(new DockKey.GoHome(), DockKeyStyle.Flat, pressed: true, size: 96)));
 
-        Assert.Equal(((byte)52, (byte)54, (byte)60), PixelAt(normal, x: 5, y: 5));
+        Assert.Equal(((byte)60, (byte)54, (byte)52), PixelAt(normal, x: 5, y: 5));
         Assert.True(PixelAt(pressed, x: 5, y: 5).Red < 52);
     }
 
@@ -445,7 +445,7 @@ public class DockImageRendererTests : IDisposable
             Assert.True(WhitePixels(image, top: 66, bottom: 84) > 15);
         }
         foreach (var image in flat)
-            Assert.Equal(((byte)52, (byte)54, (byte)60), PixelAt(image, x: 5, y: 5));
+            Assert.Equal(((byte)60, (byte)54, (byte)52), PixelAt(image, x: 5, y: 5));
     }
 
     [Theory]
