@@ -462,6 +462,38 @@ public class DockImageRendererTests : IDisposable
         Assert.True(WhitePixels(page, top: 12, bottom: 80) > 40);
     }
 
+    [Theory]
+    [InlineData(DockKeyStyle.Neon)]
+    [InlineData(DockKeyStyle.Flat)]
+    public async Task Styles_Groupe_NomSepareDeLaMosaique(DockKeyStyle style)
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "DockPadRenderer-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var image = await OnStaThread(() =>
+            {
+                string icon = Path.Combine(folder, "white.png");
+                WritePng(icon, SolidImage(blue: 255, green: 255, red: 255, alpha: 255));
+                var group = new ShortcutEntry
+                {
+                    Name = "Outils",
+                    Layout = TileLayout.Quad,
+                    Children = [Tile(icon), Tile(icon), Tile(icon), Tile(icon)],
+                };
+                return DockImageRenderer.RenderKey(new DockKey.OpenGroup(group), style, pressed: false, size: 96);
+            });
+
+            Assert.True(WhitePixels(image, top: 4, bottom: 52) > 200);
+            Assert.Equal(0, WhitePixels(image, top: 55, bottom: 66));
+            Assert.True(WhitePixels(image, top: 66, bottom: 84) > 15);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task Couleur_IconeRemplaceeAuMemeChemin_Recalculee()
     {

@@ -57,6 +57,10 @@ public static partial class DockImageRenderer
             case LookKind.Glyph:
                 DrawGeometry(context, look.Glyph!, Brushes.White, new Rect(26, 12, 44, 44));
                 break;
+            case LookKind.Group:
+                // Mosaïque plus petite et plus haute : le nom ne touche pas les icônes du bas.
+                DrawLookImage(context, look, new Rect(24, 4, 48, 48));
+                break;
             default:
                 DrawLookImage(context, look, new Rect(19, 6, 58, 58));
                 break;
@@ -76,6 +80,9 @@ public static partial class DockImageRenderer
                 break;
             case LookKind.Glyph:
                 DrawGeometry(context, look.Glyph!, Brushes.White, new Rect(27, 13, 42, 42));
+                break;
+            case LookKind.Group:
+                DrawLookImage(context, look, new Rect(26, 7, 44, 44));
                 break;
             default:
                 DrawLookImage(context, look, new Rect(21, 8, 54, 54));
