@@ -10,13 +10,14 @@ using DockPad.Surfaces;
 namespace DockPad.Services.StreamDock;
 
 /// <summary>
-/// Styles Néon et Aplat, pensés pour l'écran du dock : aplats et noir, sans dégradé, icône en grand.
+/// Styles Néon et Aplat, pensés pour l'écran du dock : aplats et anthracite, sans dégradé, icône en grand.
 /// </summary>
 public static partial class DockImageRenderer
 {
     private static readonly Color NeutralAccent = Color.FromRgb(150, 160, 175);
     private static readonly Color FlatNeutral = Color.FromRgb(52, 54, 60);
-    private static readonly Brush NeonPressedBackground = FrozenBrush(Color.FromRgb(40, 40, 40));
+    private static readonly Brush NeonBackground = FrozenBrush(Color.FromRgb(38, 40, 44));
+    private static readonly Brush NeonPressedBackground = FrozenBrush(Color.FromRgb(58, 60, 65));
     private static readonly Brush PressedShade = FrozenBrush(Color.FromArgb(46, 0, 0, 0));
 
     // Clé : chemin, date et taille du fichier ; une icône remplacée au même chemin est recalculée.
@@ -30,7 +31,7 @@ public static partial class DockImageRenderer
 
         var background = style == DockKeyStyle.Flat
             ? FrozenBrush(look.Accent == null ? FlatNeutral : Mix(look.Accent.Value, Colors.Black, 0.55))
-            : pressed ? NeonPressedBackground : Brushes.Black;
+            : pressed ? NeonPressedBackground : NeonBackground;
         return Render(size, designSize: 96, background, context =>
         {
             // Appuyée : le contenu recule ; en Aplat, la couleur s'assombrit en plus.

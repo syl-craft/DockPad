@@ -6,7 +6,7 @@ namespace DockPad.Models;
 public enum DockKeyStyle
 {
     /// <summary>
-    /// Fond noir, icône en grand, nom blanc, trait de la couleur de l'icône en bas.
+    /// Fond gris anthracite, icône en grand, nom blanc, trait de la couleur de l'icône en bas.
     /// </summary>
     Neon,
 

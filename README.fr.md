@@ -43,7 +43,7 @@ Fermez **StreamDock.exe**, le logiciel du fabricant, puis activez **Piloter le S
 **Options → Stream Dock** et enregistrez. Les deux cases sont désactivées par défaut ; **Synchroniser les pages avec le Stream Dock**
 maintient les pages de raccourcis synchronisées dans les deux sens, sans ouvrir la fenêtre DockPad ni quitter le mode Favoris.
 La colonne latérale continue affiche les quotas des fournisseurs visibles du bandeau Usage IA, ainsi que la charge du processeur et de la mémoire.
-Sous **Style des touches**, **Néon** (par défaut) montre une grande icône sur fond noir avec un trait de sa couleur,
+Sous **Style des touches**, **Néon** (par défaut) montre une grande icône sur fond gris anthracite avec un trait de sa couleur,
 **Aplat** remplit la touche de cette couleur et **Classique** garde les touches grises. Sous **Écran latéral**, quatre vignettes permettent de choisir **Colonnes** (par défaut), **Pile héro**, **Anneaux** ou **Réservoir**.
 L'IA choisie dans les onglets du bandeau Usage IA passe en tête de la colonne. Un clic sur une vignette affiche le rendu sur le dock ; Sauvegarder le garde, Annuler remet le précédent. Quand le bandeau Usage IA est désactivé,
 la colonne affiche toujours le processeur et la mémoire. Le dock fonctionne lorsque DockPad est masqué et se reconnecte après la sortie de veille de Windows.

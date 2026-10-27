@@ -4,7 +4,7 @@
 
 ### Nouveautés
 
-- **Stream Dock : styles des touches Néon et Aplat**, pensés pour le petit écran du dock. **Néon**, désormais par défaut : fond noir, icône en grand, nom blanc et un trait de la couleur de l'icône. **Aplat** : la couleur de l'icône en aplat sur toute la touche. Le style **Classique** reste disponible : **Options → Stream Dock → Style des touches**, trois vignettes dessinées avec vos premières tuiles ; un clic l'affiche aussitôt sur le dock, Enregistrer le garde, Annuler remet l'ancien.
+- **Stream Dock : styles des touches Néon et Aplat**, pensés pour le petit écran du dock. **Néon**, désormais par défaut : fond gris anthracite, icône en grand, nom blanc et un trait de la couleur de l'icône. **Aplat** : la couleur de l'icône en aplat sur toute la touche. Le style **Classique** reste disponible : **Options → Stream Dock → Style des touches**, trois vignettes dessinées avec vos premières tuiles ; un clic l'affiche aussitôt sur le dock, Enregistrer le garde, Annuler remet l'ancien.
 
 ## [1.31.0] — 2026-10-27
 
