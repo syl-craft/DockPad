@@ -48,6 +48,10 @@ The AI selected in the usage panel tabs leads the column. Clicking a thumbnail s
 disabled, the column still shows CPU and memory load. The dock works while DockPad is hidden and reconnects after
 Windows resumes from sleep.
 
+<a href="https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-en.mp4"><img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-poster-en.jpg" alt="Demo video: DockPad pages on the Stream Dock keys, two-way page sync, launching a tile, AI quotas on the side screens and the four styles" width="960"></a>
+
+▶ [Watch the 30-second video](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-en.mp4)
+
 ## Updates
 
 **☰ Menu → Updates → Check for updates** shows the available version and its notes.

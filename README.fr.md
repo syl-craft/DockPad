@@ -47,6 +47,10 @@ Sous **Écran latéral**, quatre vignettes permettent de choisir **Colonnes** (p
 L'IA choisie dans les onglets du bandeau Usage IA passe en tête de la colonne. Un clic sur une vignette affiche le rendu sur le dock ; Sauvegarder le garde, Annuler remet le précédent. Quand le bandeau Usage IA est désactivé,
 la colonne affiche toujours le processeur et la mémoire. Le dock fonctionne lorsque DockPad est masqué et se reconnecte après la sortie de veille de Windows.
 
+<a href="https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4"><img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-poster-fr.jpg" alt="Vidéo de démonstration : les pages DockPad sur les touches du Stream Dock, la synchro des pages dans les deux sens, le lancement d'une tuile, les quotas IA sur les écrans latéraux et les quatre rendus" width="960"></a>
+
+▶ [Voir la vidéo de 30 secondes](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4)
+
 ## Mises à jour
 
 **☰ Menu → Mises à jour → Rechercher** affiche la version disponible et ses notes.
