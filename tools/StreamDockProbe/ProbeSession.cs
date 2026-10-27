@@ -38,7 +38,7 @@ internal sealed class ProbeSession(StreamDockSurface surface, ProbeImages images
         await surface.SendCommandAsync(StreamDockProtocol.Clear(StreamDockModel.KeyId(new SurfaceKey(0, 0))), ct);
         await surface.CommitAsync(ct);
         await AskAsync(step: 5, ct, occurrence: 1);
-        Console.WriteLine("5. Effacement de toutes les touches et des écrans, puis Commit.");
+        Console.WriteLine("5. Effacement de toutes les touches et de la colonne, puis Commit.");
         await surface.ClearAsync(ct);
         await surface.CommitAsync(ct);
         await AskAsync(step: 5, ct, occurrence: 2);

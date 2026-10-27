@@ -12,7 +12,7 @@ namespace DockPad.Tests;
 
 /// <summary>
 /// Dimensions, opacité, appui, replis d’icônes, noms longs et mosaïques avec trous ou six emplacements.
-/// Jauges anciennes ou invalides, pourcentages bornés, file STA avec arrêt et références PNG.
+/// File STA commune aux touches et à la colonne, arrêt et références PNG.
 /// </summary>
 public class DockImageRendererTests : IDisposable
 {
@@ -33,17 +33,6 @@ public class DockImageRendererTests : IDisposable
         Assert.Equal(size * size * 4, image.Bgra32.Length);
     }
 
-    [Theory]
-    [InlineData(80)]
-    [InlineData(60)]
-    public async Task Ecran_TailleDemandee(int size)
-    {
-        var image = await OnStaThread(() => DockImageRenderer.RenderDisplay(Gauge(), size: size));
-        Assert.Equal(size, image.Width);
-        Assert.Equal(size, image.Height);
-        Assert.Equal(size * size * 4, image.Bgra32.Length);
-    }
-
     [Fact]
     public async Task Rendu_EntierementOpaque()
     {
@@ -51,11 +40,9 @@ public class DockImageRendererTests : IDisposable
         {
             DockKey[] keys = [new DockKey.Empty(), new DockKey.GoHome(), new DockKey.Back(), new DockKey.Next(),
                 new DockKey.OpenPage(2, null), new DockKey.RunTile(Tile()), new DockKey.OpenGroup(Group())];
-            UsageDisplay?[] displays = [null, Gauge(), Gauge() with { IsStale = true },
-                new UsageDisplay.Identity("antigravity", "Antigravity", DateTime.Today.AddHours(23))];
             return keys.SelectMany(key => new[] { false, true }.Select(pressed =>
                     DockImageRenderer.RenderKey(key, pressed, size: 96)))
-                .Concat(displays.Select(display => DockImageRenderer.RenderDisplay(display, size: 80))).ToArray();
+                .ToArray();
         });
         foreach (var image in images)
             for (int offset = 3; offset < image.Bgra32.Length; offset += 4)
@@ -280,8 +267,7 @@ public class DockImageRendererTests : IDisposable
     {
         var images = await OnStaThread(() => new[] {
             DockImageRenderer.RenderKey(new DockKey.Empty(), pressed: false, size: 96),
-            DockImageRenderer.RenderKey(new DockKey.Empty(), pressed: true, size: 96),
-            DockImageRenderer.RenderDisplay(null, size: 80) });
+            DockImageRenderer.RenderKey(new DockKey.Empty(), pressed: true, size: 96) });
         foreach (var image in images)
             for (int offset = 0; offset < image.Bgra32.Length; offset += 4)
             {
@@ -290,68 +276,6 @@ public class DockImageRendererTests : IDisposable
                 Assert.Equal((byte)0, image.Bgra32[offset + 2]);
                 Assert.Equal((byte)255, image.Bgra32[offset + 3]);
             }
-    }
-
-    [Fact]
-    public async Task Jauge_AncienneEstGrisee()
-    {
-        var (fresh, stale) = await OnStaThread(() => (
-            DockImageRenderer.RenderDisplay(Gauge(), size: 80),
-            DockImageRenderer.RenderDisplay(Gauge() with { IsStale = true }, size: 80)));
-        Assert.False(fresh.Bgra32.SequenceEqual(stale.Bgra32));
-        Assert.Contains(Enumerable.Range(0, fresh.Width * fresh.Height), index =>
-            fresh.Bgra32[index * 4] != fresh.Bgra32[index * 4 + 2]);
-        for (int offset = 0; offset < stale.Bgra32.Length; offset += 4)
-        {
-            Assert.Equal(stale.Bgra32[offset], stale.Bgra32[offset + 1]);
-            Assert.Equal(stale.Bgra32[offset], stale.Bgra32[offset + 2]);
-        }
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData(" ")]
-    [InlineData("invalid")]
-    [InlineData("#XYZXYZ")]
-    public async Task Jauge_CouleurInvalide_RepliSansException(string? color)
-    {
-        await OnStaThread(() =>
-        {
-            var gauge = Gauge();
-            var colorProperty = typeof(UsageDisplay.Gauge).GetProperty(nameof(UsageDisplay.Gauge.Color))
-                ?? throw new InvalidOperationException("Missing gauge color property.");
-            colorProperty.SetValue(gauge, color);
-            var fallback = DockImageRenderer.RenderDisplay(Gauge() with { Color = "#AFAFAF" }, size: 80);
-
-            var image = DockImageRenderer.RenderDisplay(gauge, size: 80);
-
-            Assert.Equal(fallback.Bgra32, image.Bgra32);
-            Assert.Equal(((byte)175, (byte)175, (byte)175), PixelAt(image, x: 12, y: 75));
-            Assert.Equal(DockImageRenderer.RenderDisplay(Gauge() with { IsStale = true }, size: 80).Bgra32,
-                DockImageRenderer.RenderDisplay(gauge with { IsStale = true }, size: 80).Bgra32);
-            return true;
-        });
-    }
-
-    [Theory]
-    [InlineData(-5, 0)]
-    [InlineData(150, 100)]
-    public async Task Jauge_PourcentageHorsLimites_BarreBorneeSansException(int usedPct, int boundedPct)
-    {
-        var (image, bounded) = await OnStaThread(() => (
-            DockImageRenderer.RenderDisplay(Gauge() with { UsedPct = usedPct }, size: 80),
-            DockImageRenderer.RenderDisplay(Gauge() with { UsedPct = boundedPct }, size: 80)));
-
-        for (int y = 72; y < image.Height; y++)
-            for (int x = 0; x < image.Width; x++)
-                Assert.Equal(PixelAt(bounded, x, y), PixelAt(image, x, y));
-        var expected = boundedPct == 0
-            ? ((byte)55, (byte)55, (byte)55)
-            : ((byte)83, (byte)168, (byte)52);
-        Assert.Equal(expected, PixelAt(image, x: 40, y: 75));
-        Assert.Equal(((byte)30, (byte)30, (byte)30), PixelAt(image, x: 4, y: 75));
-        Assert.Equal(((byte)30, (byte)30, (byte)30), PixelAt(image, x: 75, y: 75));
     }
 
     [Fact]
@@ -365,9 +289,9 @@ public class DockImageRendererTests : IDisposable
                 Thread.CurrentThread.GetApartmentState(), Thread.CurrentThread.IsBackground));
             using var renderer = new StaDockRenderer(
                 (key, pressed, size) => { Observe(); return DockImageRenderer.RenderKey(key, pressed, size); },
-                (display, size) => { Observe(); return DockImageRenderer.RenderDisplay(display, size); });
+                (content, style, size) => { Observe(); return SideStripRenderer.Render(content, style, size.Width, size.Height); });
             var keyTask = renderer.RenderKeyAsync(new DockKey.GoHome(), pressed: false, size: 96);
-            var displayTask = renderer.RenderDisplayAsync(Gauge(), size: 80);
+            var displayTask = renderer.RenderSideStripAsync(Column(), SideStripStyle.Rings, new SurfaceSize(75, 380));
             Task.WhenAll(keyTask, displayTask).WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
             return (Caller: caller, Threads: threads.ToArray());
         });
@@ -387,8 +311,9 @@ public class DockImageRendererTests : IDisposable
         using var renderer = new StaDockRenderer();
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             renderer.RenderKeyAsync(new DockKey.GoHome(), pressed: false, size: 0));
-        var image = await renderer.RenderDisplayAsync(null, size: 80).WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.Equal(80, image.Width);
+        var image = await renderer.RenderSideStripAsync(Column(), SideStripStyle.Columns, new SurfaceSize(75, 380)).WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(75, image.Width);
+        Assert.Equal(380, image.Height);
     }
 
     [Fact]
@@ -399,7 +324,7 @@ public class DockImageRendererTests : IDisposable
         {
             worker = Thread.CurrentThread;
             return DockImageRenderer.RenderKey(key, pressed, size);
-        }, DockImageRenderer.RenderDisplay);
+        }, (content, style, size) => SideStripRenderer.Render(content, style, size.Width, size.Height));
         try
         {
             await renderer.RenderKeyAsync(new DockKey.Empty(), pressed: false, size: 96).WaitAsync(TimeSpan.FromSeconds(10));
@@ -408,7 +333,7 @@ public class DockImageRendererTests : IDisposable
         Assert.NotNull(worker);
         Assert.False(worker.IsAlive);
         renderer.Dispose();
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => renderer.RenderDisplayAsync(null, size: 80));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => renderer.RenderSideStripAsync(Column(), SideStripStyle.Columns, new SurfaceSize(75, 380)));
     }
 
     [Fact]
@@ -428,17 +353,11 @@ public class DockImageRendererTests : IDisposable
             WriteView(folder, "group", DockLayout.Build(new DockScreen.Group(0, 0, 1, 0, 0), entries, [], keyCount: 15));
             WritePng(Path.Combine(folder, "pressed.png"), DockImageRenderer.RenderKey(
                 new DockKey.RunTile(Tile()), pressed: true, size: 96));
-            UsageDisplay[] displays = [Gauge(),
-                Gauge() with { UsedPct = 82, Label = Loc.T("StreamDock_Week"), IsStale = true },
-                new UsageDisplay.Identity("antigravity", "Antigravity", DateTime.Today.AddHours(23))];
-            for (int index = 0; index < displays.Length; index++)
-                WritePng(Path.Combine(folder, $"display-{index + 1}.png"),
-                    DockImageRenderer.RenderDisplay(displays[index], size: 80));
             return true;
         });
     }
 
-    private static UsageDisplay.Gauge Gauge() => new("antigravity", Loc.T("StreamDock_Session"), 42, "#34A853", IsStale: false);
+    private static SideStripContent Column() => new([], 23, 61);
 
     private static ShortcutEntry Tile(string iconPath = "") => new() { Name = "Atlas", IconPath = iconPath };
 

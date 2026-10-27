@@ -13,7 +13,7 @@ namespace DockPad.StreamDock;
 internal sealed class StreamDockSurface : IControlSurface
 {
     public const string ModelName = "293S V3";
-    private const int KeyImageSize = 96, DisplayImageSize = 80;
+    private const int KeyImageSize = 96;
     private const byte AllKeys = 0xFF;
     private const int StartupBrightness = 100;
     private static readonly TimeSpan KeepAliveInterval = TimeSpan.FromSeconds(10);
@@ -65,7 +65,7 @@ internal sealed class StreamDockSurface : IControlSurface
     }
 
     public SurfaceDescription Description { get; } = new(ModelName, StreamDockModel.KeyRows, StreamDockModel.KeyColumns,
-        KeyImageSize, StreamDockModel.DisplayCount, DisplayImageSize, StreamDockModel.SideStrip);
+        KeyImageSize, StreamDockModel.SideStrip);
 
     internal int DisplayedStripCount
     {
@@ -149,12 +149,6 @@ internal sealed class StreamDockSurface : IControlSurface
     {
         var keyId = StreamDockModel.KeyId(key);
         await SendImageAsync(keyId, image, KeyImageSize, ct);
-    }
-
-    public async Task SetDisplayImageAsync(int display, SurfaceImage image, CancellationToken ct)
-    {
-        var displayId = StreamDockModel.DisplayId(display);
-        await SendImageAsync(displayId, image, DisplayImageSize, ct);
     }
 
     public async Task SetSideStripImageAsync(SurfaceImage image, CancellationToken ct)
@@ -279,9 +273,9 @@ internal sealed class StreamDockSurface : IControlSurface
         _stripEpoch++;
         _displayedStrip.Clear();
         _writtenStrip.Clear();
-        for (var display = 0; display < StreamDockModel.DisplayCount; display++)
+        for (var display = 0; display < StreamDockModel.StripSliceHeights.Count; display++)
         {
-            var target = StreamDockModel.DisplayId(display);
+            var target = (byte)(StreamDockModel.FirstDisplayId + display);
             _encodingByTarget.Remove(target);
             RemoveQueuedImage(target);
         }
@@ -308,18 +302,16 @@ internal sealed class StreamDockSurface : IControlSurface
     public ValueTask DisposeAsync() => new(_shutdown.Value);
 
     /// <summary>
-    /// Seule la dernière image demandée pour une touche ou un écran est écrite : une demande plus récente abandonne
+    /// Seule la dernière image demandée pour une touche est écrite : une demande plus récente abandonne
     /// l'encodage et l'écriture non commencée de la précédente, qui rend la main sans erreur.
     /// </summary>
     private async Task SendImageAsync(byte target, SurfaceImage image, int size, CancellationToken ct)
     {
         CancellationTokenSource superseded;
         CancellationTokenSource? older;
-        long? epoch;
         lock (_gate)
         {
             ThrowIfUnusable();
-            epoch = target >= StreamDockModel.FirstDisplayId ? _stripEpoch : null;
             _encodingByTarget.TryGetValue(target, out older);
             superseded = CancellationTokenSource.CreateLinkedTokenSource(ct);
             _encodingByTarget[target] = superseded;
@@ -332,24 +324,18 @@ internal sealed class StreamDockSurface : IControlSurface
             lock (_gate)
             {
                 ThrowIfUnusable();
-                ThrowIfStripInvalidated(epoch);
                 ct.ThrowIfCancellationRequested();
                 if (_encodingByTarget.GetValueOrDefault(target) != superseded)
                     return;
                 RemoveQueuedImage(target);
                 _queue.AddLast(new PendingWrite([.. StreamDockProtocol.Image(target, jpeg)], target,
-                    Written: null, IsKeepAlive: false, OnWritten: () =>
-                    {
-                        _displayedStrip.Remove(target);
-                        _writtenStrip.Remove(target);
-                    }));
+                    Written: null, IsKeepAlive: false));
             }
             _queueSignal.Release();
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested == false && superseded.IsCancellationRequested)
         {
-            lock (_gate)
-                ThrowIfStripInvalidated(epoch);
+            // Une image plus récente pour la même touche remplace cet encodage.
         }
         finally
         {

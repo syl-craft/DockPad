@@ -4,20 +4,19 @@ namespace DockPad.Tests;
 
 /// <summary>
 /// Images cohérentes acceptées, dimensions et longueurs invalides refusées, y compris les débordements.
-/// Description avec ou sans colonne, dimensions de la colonne et anciens écrans conservés.
+/// Description avec ou sans colonne, dimensions de la colonne conservées.
 /// </summary>
 public class SurfaceContractTests
 {
     [Fact]
     public void Description_ColonneOptionnelle_ConserveLesDimensions()
     {
-        var withStrip = new SurfaceDescription("Strip", 3, 5, 96, 3, 80, new SurfaceSize(75, 380));
-        var withoutStrip = new SurfaceDescription("Keys", 3, 5, 96, 0, 0, SideStrip: null);
+        var withStrip = new SurfaceDescription("Strip", 3, 5, 96, new SurfaceSize(75, 380));
+        var withoutStrip = new SurfaceDescription("Keys", 3, 5, 96, SideStrip: null);
 
         Assert.Equal(new SurfaceSize(75, 380), withStrip.SideStrip);
         Assert.Null(withoutStrip.SideStrip);
-        Assert.Equal(3, withStrip.DisplayCount);
-        Assert.Equal(80, withStrip.DisplayImageSize);
+        Assert.Equal(96, withStrip.KeyImageSize);
     }
 
     [Fact]

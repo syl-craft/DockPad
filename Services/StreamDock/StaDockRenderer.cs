@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using DockPad.Models;
 using DockPad.Surfaces;
 
 namespace DockPad.Services.StreamDock;
@@ -14,16 +15,17 @@ public sealed class StaDockRenderer : IDockRenderer, IDisposable
     private readonly object _gate = new();
     private readonly Thread _thread;
     private readonly Func<DockKey, bool, int, SurfaceImage> _renderKey;
-    private readonly Func<UsageDisplay?, int, SurfaceImage> _renderDisplay;
+    private readonly Func<SideStripContent, SideStripStyle, SurfaceSize, SurfaceImage> _renderSideStrip;
     private bool _disposed;
 
-    public StaDockRenderer() : this(DockImageRenderer.RenderKey, DockImageRenderer.RenderDisplay) { }
+    public StaDockRenderer() : this(DockImageRenderer.RenderKey,
+        (content, style, size) => SideStripRenderer.Render(content, style, size.Width, size.Height)) { }
 
     internal StaDockRenderer(Func<DockKey, bool, int, SurfaceImage> renderKey,
-        Func<UsageDisplay?, int, SurfaceImage> renderDisplay)
+        Func<SideStripContent, SideStripStyle, SurfaceSize, SurfaceImage> renderSideStrip)
     {
         _renderKey = renderKey;
-        _renderDisplay = renderDisplay;
+        _renderSideStrip = renderSideStrip;
         _thread = new Thread(RenderQueuedImages) { IsBackground = true, Name = "DockPad Stream Dock renderer" };
         _thread.SetApartmentState(ApartmentState.STA);
         _thread.Start();
@@ -32,8 +34,8 @@ public sealed class StaDockRenderer : IDockRenderer, IDisposable
     public Task<SurfaceImage> RenderKeyAsync(DockKey key, bool pressed, int size) =>
         Enqueue(() => _renderKey(key, pressed, size));
 
-    public Task<SurfaceImage> RenderDisplayAsync(UsageDisplay? display, int size) =>
-        Enqueue(() => _renderDisplay(display, size));
+    public Task<SurfaceImage> RenderSideStripAsync(SideStripContent content, SideStripStyle style, SurfaceSize size) =>
+        Enqueue(() => _renderSideStrip(content, style, size));
 
     private Task<SurfaceImage> Enqueue(Func<SurfaceImage> render)
     {

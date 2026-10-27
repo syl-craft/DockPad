@@ -15,7 +15,7 @@ internal static class StreamDockModel
     /// </summary>
     public const int MaxJpegLength = 8 * 1024;
 
-    public const int KeyRows = 3, KeyColumns = 5, DisplayCount = 3;
+    public const int KeyRows = 3, KeyColumns = 5;
 
     /// <summary>
     /// Numéro matériel de chaque touche, lignes de haut en bas, colonnes de gauche à droite.
@@ -55,11 +55,4 @@ internal static class StreamDockModel
         return null;
     }
 
-    public static byte DisplayId(int display)
-    {
-        if (display < 0 || display >= DisplayCount)
-            throw new ArgumentOutOfRangeException(nameof(display), display, "Side display outside 0..2.");
-
-        return (byte)(FirstDisplayId + display);
-    }
 }

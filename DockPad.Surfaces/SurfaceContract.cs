@@ -26,7 +26,7 @@ public sealed record SurfaceImage(int Width, int Height, byte[] Bgra32)
 }
 
 public sealed record SurfaceDescription(string Model, int KeyRows, int KeyColumns, int KeyImageSize,
-    int DisplayCount, int DisplayImageSize, SurfaceSize? SideStrip);
+    SurfaceSize? SideStrip);
 
 public sealed record SurfaceInfo(string DriverName, string DevicePath, string Model, string? SerialNumber);
 
@@ -45,8 +45,6 @@ public interface IControlSurface : IAsyncDisposable
     event Action<Exception>? Disconnected;
 
     Task SetKeyImageAsync(SurfaceKey key, SurfaceImage image, CancellationToken ct);
-
-    Task SetDisplayImageAsync(int display, SurfaceImage image, CancellationToken ct);
 
     /// <summary>
     /// Taille différente de SideStrip : ArgumentException ; découpe par le pilote, seules les tranches modifiées partent, visibles après CommitAsync.

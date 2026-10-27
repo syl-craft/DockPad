@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DockPad.Models;
-using DockPad.Services.Usage;
 using DockPad.Surfaces;
 using DockPad.Views;
 
@@ -16,9 +15,6 @@ public static class DockImageRenderer
 {
     private static readonly Brush KeyBackground = FrozenBrush(Color.FromRgb(30, 30, 30));
     private static readonly Brush PressedBackground = FrozenBrush(Color.FromRgb(58, 58, 58));
-    private static readonly Brush Muted = FrozenBrush(Color.FromRgb(175, 175, 175));
-    private static readonly Brush Stale = FrozenBrush(Color.FromRgb(145, 145, 145));
-    private static readonly Brush GaugeTrack = FrozenBrush(Color.FromRgb(55, 55, 55));
     private static readonly Typeface Typeface = new(new FontFamily("Segoe UI"), FontStyles.Normal,
         FontWeights.SemiBold, FontStretches.Normal);
     private static readonly Geometry Home = FrozenGeometry("M 2,11 L 12,2 L 22,11 L 19,11 L 19,22 L 14,22 L 14,15 L 10,15 L 10,22 L 5,22 L 5,11 Z");
@@ -64,24 +60,6 @@ public static class DockImageRenderer
             }
         });
     }
-
-    public static SurfaceImage RenderDisplay(UsageDisplay? display, int size) =>
-        Render(size, designSize: 80, display == null ? Brushes.Black : KeyBackground, context =>
-        {
-            switch (display)
-            {
-                case null:
-                    return;
-                case UsageDisplay.Gauge gauge:
-                    DrawGauge(context, gauge);
-                    break;
-                case UsageDisplay.Identity identity:
-                    DrawIdentity(context, identity);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(display), "Unknown usage display.");
-            }
-        });
 
     private static void DrawNavigation(DrawingContext context, Geometry icon, string label, Rect bounds)
     {
@@ -140,50 +118,6 @@ public static class DockImageRenderer
     private static void DrawKeyLabel(DrawingContext context, string label) =>
         DrawText(context, label, new Rect(4, 60, 88, 32), fontSize: 13, lineCount: 2);
 
-    private static void DrawGauge(DrawingContext context, UsageDisplay.Gauge gauge)
-    {
-        Brush foreground = gauge.IsStale ? Stale : Brushes.White;
-        DrawProvider(context, gauge.ProviderId, new Rect(30, 5, 20, 20), gauge.IsStale);
-        DrawText(context, gauge.UsedPct.ToString(Loc.Formatting) + "%",
-            new Rect(4, 27, 72, 29), fontSize: 23, fill: foreground);
-        DrawText(context, gauge.Label, new Rect(4, 56, 72, 14), fontSize: 10,
-            fill: gauge.IsStale ? Stale : Muted);
-        var track = new Rect(6, 73, 68, 4);
-        context.DrawRoundedRectangle(GaugeTrack, null, track, 2, 2);
-        double width = track.Width * Math.Clamp(gauge.UsedPct, 0, 100) / 100d;
-        if (width > 0)
-            context.DrawRoundedRectangle(gauge.IsStale ? Stale : ResolveGaugeBrush(gauge.Color), null,
-                new Rect(track.X, track.Y, width, track.Height), 2, 2);
-    }
-
-    private static Brush ResolveGaugeBrush(string? color)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(color))
-                throw new FormatException("Gauge color is missing.");
-
-            var converted = ColorConverter.ConvertFromString(color);
-            if (converted is Color gaugeColor)
-                return FrozenBrush(gaugeColor);
-
-            throw new FormatException("Gauge color is invalid.");
-        }
-        catch (Exception ex)
-        {
-            LogService.Warn(ex, "Couleur de jauge Stream Dock invalide : utilisation de la couleur atténuée.");
-            return Muted;
-        }
-    }
-
-    private static void DrawIdentity(DrawingContext context, UsageDisplay.Identity identity)
-    {
-        DrawProvider(context, identity.ProviderId, new Rect(27, 5, 26, 26), stale: false);
-        DrawText(context, identity.Name, new Rect(4, 34, 72, 28), fontSize: 11, lineCount: 2);
-        DrawText(context, UsageFormat.Reset(identity.NextReset, DateTime.Now),
-            new Rect(4, 63, 72, 13), fontSize: 10, fill: Muted);
-    }
-
     private static SurfaceImage Render(int size, double designSize, Brush background, Action<DrawingContext> draw)
     {
         if (size <= 0)
@@ -239,15 +173,6 @@ public static class DockImageRenderer
             LogService.Warn(ex, "Impossible de charger une icône de page du Stream Dock.");
             return null;
         }
-    }
-
-    private static void DrawProvider(DrawingContext context, string providerId, Rect bounds, bool stale)
-    {
-        if (string.Equals(providerId, "antigravity", StringComparison.OrdinalIgnoreCase))
-            DrawGeometry(context, ProviderLogos.Antigravity, stale ? Stale : ProviderLogos.AntigravityBrush, bounds);
-        else
-            DrawInitial(context, providerId, bounds, stale ? GaugeTrack : InitialBackground(providerId),
-                stale ? Stale : Brushes.White);
     }
 
     private static void DrawInitial(DrawingContext context, string name, Rect bounds, Brush background, Brush foreground)

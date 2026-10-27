@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using DockPad.Models;
 using DockPad.Surfaces;
 
 namespace DockPad.Services.StreamDock;
@@ -6,5 +7,5 @@ namespace DockPad.Services.StreamDock;
 public interface IDockRenderer
 {
     Task<SurfaceImage> RenderKeyAsync(DockKey key, bool pressed, int size);
-    Task<SurfaceImage> RenderDisplayAsync(UsageDisplay? display, int size);
+    Task<SurfaceImage> RenderSideStripAsync(SideStripContent content, SideStripStyle style, SurfaceSize size);
 }

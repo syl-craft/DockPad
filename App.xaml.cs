@@ -295,7 +295,7 @@ public partial class App : Application
 
                 _streamDockRenderer = new StaDockRenderer();
                 _streamDock = new StreamDockService(result.Driver, new DockSources(_mainWindow),
-                    _streamDockRenderer, TimeProvider.System);
+                    _streamDockRenderer, TimeProvider.System, new SystemLoadMonitor());
                 Services.TileEvents.GridChanged += _streamDock.OnGridChanged;
                 Services.UsageConfigService.Changed += _streamDock.OnUsageConfigChanged;
                 _mainWindow.ShortcutPage.Changed += _streamDock.OnShortcutPageChanged;

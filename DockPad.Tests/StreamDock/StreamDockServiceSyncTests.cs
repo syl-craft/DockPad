@@ -145,7 +145,7 @@ public class StreamDockServiceSyncTests
         dock.Surface.Disconnect();
         await dock.Idle();
         Assert.Equal(new DockScreen.Page(0, 0), dock.Service.Screen);
-        Assert.Equal(1, replacement.Commits);
+        Assert.Equal(2, replacement.Commits);
         Assert.Equal(2, dock.Sources.UsageReads.Count);
         Assert.Empty(dock.Sources.ShownPages);
     }
@@ -186,24 +186,23 @@ public class StreamDockServiceSyncTests
         dock.Sources.Usages = [Usage(10)];
         await dock.Start();
         Assert.Single(dock.Sources.UsageReads);
-        await dock.AssertDisplays();
+        dock.AssertColumn();
         int keys = dock.Surface.Images.Count;
-        int displays = dock.Surface.Displays.Count;
+        int columns = dock.Surface.SideStrips.Count;
         int commits = dock.Surface.Commits;
         dock.Sources.Usages = [Usage(20)];
         await dock.Advance(59999);
         Assert.Single(dock.Sources.UsageReads);
         await dock.Advance(1);
         Assert.Equal(2, dock.Sources.UsageReads.Count);
-        Assert.Equal(displays + 1, dock.Surface.Displays.Count);
-        Assert.Equal(0, dock.Surface.Displays.Last().Display);
+        Assert.Equal(columns + 1, dock.Surface.SideStrips.Count);
         Assert.Equal(keys, dock.Surface.Images.Count);
         Assert.Equal(commits + 1, dock.Surface.Commits);
-        await dock.AssertDisplays();
+        dock.AssertColumn();
         dock.Sources.Usages = [Usage(30)];
         await dock.Advance(60000);
         Assert.Equal(3, dock.Sources.UsageReads.Count);
-        await dock.AssertDisplays();
+        dock.AssertColumn();
     }
 
     [Fact]
@@ -232,40 +231,40 @@ public class StreamDockServiceSyncTests
         dock.Sources.Usages = [Usage(10)];
         await dock.Start();
         int keys = dock.Surface.Images.Count;
-        int displays = dock.Surface.Displays.Count;
+        int columns = dock.Surface.SideStrips.Count;
         int commits = dock.Surface.Commits;
         dock.Sources.Usages = [Usage(10)];
         await dock.Advance(60000);
         Assert.Equal(2, dock.Sources.UsageReads.Count);
         Assert.Equal(keys, dock.Surface.Images.Count);
-        Assert.Equal(displays, dock.Surface.Displays.Count);
+        Assert.Equal(columns, dock.Surface.SideStrips.Count);
         Assert.Equal(commits, dock.Surface.Commits);
     }
 
     [Fact]
-    public async Task Quotas_BandeauDesactive_EcransNoirsSansLecture()
+    public async Task Quotas_BandeauDesactive_ColonnePcSansLecture()
     {
         await using var dock = new TestDock();
         dock.Sources.Config.Enabled = false;
         dock.Sources.Usages = [Usage(10)];
         await dock.Start();
-        int renders = dock.Renderer.Displays.Count;
+        int renders = dock.Renderer.SideStrips.Count;
         await dock.Advance(60000);
         await dock.Advance(60000);
-        Assert.Equal(renders, dock.Renderer.Displays.Count);
+        Assert.True(dock.Renderer.SideStrips.Count > renders);
         Assert.Empty(dock.Sources.UsageReads);
-        Assert.Equal(3, dock.Surface.Displays.Count);
-        Assert.Equal(1, dock.Surface.Commits);
-        await dock.AssertDisplays();
+        Assert.Single(dock.Surface.SideStrips);
+        Assert.Equal(2, dock.Surface.Commits);
+        dock.AssertColumn();
     }
 
     [Fact]
-    public async Task Quotas_LectureEnEchec_EcransInchanges()
+    public async Task Quotas_LectureEnEchec_ColonneInchangee()
     {
         await using var dock = new TestDock();
         dock.Sources.Usages = [Usage(10)];
         await dock.Start();
-        int displays = dock.Surface.Displays.Count;
+        int columns = dock.Surface.SideStrips.Count;
         var failure = new InvalidOperationException("Fake usage read failed.");
         dock.Sources.ReadUsages = _ => Task.FromException<IReadOnlyList<AiUsage>>(failure);
         int commits = dock.Surface.Commits;
@@ -273,7 +272,7 @@ public class StreamDockServiceSyncTests
         Assert.Equal(commits, dock.Surface.Commits);
         await dock.Click(0);
         await dock.Advance(60000);
-        Assert.Equal(displays, dock.Surface.Displays.Count);
+        Assert.Equal(columns, dock.Surface.SideStrips.Count);
         var failures = dock.Logs.Where(line => line.Cause != null).ToArray();
         Assert.Same(failure, Assert.Single(failures).Cause);
         Assert.Equal(1, dock.Driver.Opens);
@@ -281,7 +280,7 @@ public class StreamDockServiceSyncTests
         dock.Sources.ReadUsages = null;
         dock.Sources.Usages = [Usage(30)];
         await dock.Advance(60000);
-        Assert.Equal(displays + 1, dock.Surface.Displays.Count);
+        Assert.Equal(columns + 1, dock.Surface.SideStrips.Count);
         dock.Sources.ReadUsages = _ => Task.FromException<IReadOnlyList<AiUsage>>(failure);
         await dock.Advance(60000);
         Assert.Equal(2, dock.Logs.Where(line => line.Cause != null).Count());
@@ -294,8 +293,12 @@ public class StreamDockServiceSyncTests
         var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         dock.Sources.ReadUsages = async ct =>
         {
-            using var registration = ct.Register(() => cancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            try { await NewRead().Task.WaitAsync(ct); }
+            catch (OperationCanceledException)
+            {
+                cancelled.TrySetResult();
+                throw;
+            }
             return Array.Empty<AiUsage>();
         };
         await dock.Start(includeUsages: false);
@@ -315,11 +318,11 @@ public class StreamDockServiceSyncTests
         await using var dock = new TestDock();
         dock.Sources.Usages = [Usage(10)];
         await dock.Start();
-        int displays = dock.Surface.Displays.Count;
-        dock.Renderer.DisplayVersion++;
+        int columns = dock.Surface.SideStrips.Count;
+        dock.Renderer.SideStripVersion++;
         await dock.Advance(60000);
-        Assert.Equal(displays + 3, dock.Surface.Displays.Count);
-        await dock.AssertDisplays();
+        Assert.Equal(columns + 1, dock.Surface.SideStrips.Count);
+        dock.AssertColumn();
     }
 
     [Fact]
@@ -352,17 +355,17 @@ public class StreamDockServiceSyncTests
         dock.Driver.Surface = replacement;
         dock.Surface.Disconnect();
         await dock.Idle();
-        int displays = replacement.Displays.Count;
+        int columns = replacement.SideStrips.Count;
         read.SetResult([Usage(90)]);
         await dock.Idle();
         Assert.True(oldToken.IsCancellationRequested);
-        Assert.Equal(displays, replacement.Displays.Count);
+        Assert.Equal(columns, replacement.SideStrips.Count);
         Assert.Equal(2, dock.Sources.UsageReads.Count);
-        await dock.AssertDisplays(replacement);
+        dock.AssertColumn(replacement);
     }
 
     [Fact]
-    public async Task Quotas_Desactivation_EffaceLesEcransSansLectureSupplementaire()
+    public async Task Quotas_Desactivation_RetireLesQuotasSansLectureSupplementaire()
     {
         await using var dock = new TestDock();
         dock.Sources.Usages = [Usage(10)];
@@ -370,7 +373,7 @@ public class StreamDockServiceSyncTests
         dock.Sources.Config.Enabled = false;
         await dock.Advance(60000);
         Assert.Single(dock.Sources.UsageReads);
-        await dock.AssertDisplays();
+        dock.AssertColumn();
     }
 
     [Fact]
@@ -409,9 +412,9 @@ public class StreamDockServiceSyncTests
         await Bounded(dock.Surface.CommitStarted.Task);
         rendering.SetResult();
         await dock.Idle();
-        Assert.Equal(3, dock.Surface.Displays.Count);
+        Assert.InRange(dock.Surface.SideStrips.Count, 1, 2);
         Assert.Equal(15, dock.Surface.Images.Count);
-        await dock.AssertDisplays();
+        dock.AssertColumn();
     }
 
     [Theory]
@@ -486,7 +489,7 @@ public class StreamDockServiceSyncTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Quotas_BandeauDesactiveEnCours_LectureAnnuleeEtEcransNoirs(bool ignoreAnnulation)
+    public async Task Quotas_BandeauDesactiveEnCours_LectureAnnuleeEtColonnePc(bool ignoreAnnulation)
     {
         await using var dock = new TestDock();
         dock.Sources.Usages = [Usage(10)];
@@ -500,15 +503,15 @@ public class StreamDockServiceSyncTests
         await dock.Idle();
         Assert.True(token.IsCancellationRequested);
         Assert.Equal(2, dock.Sources.UsageReads.Count);
-        await dock.AssertDisplays();
-        int displays = dock.Surface.Displays.Count;
+        dock.AssertColumn();
+        int columns = dock.Surface.SideStrips.Count;
         int commits = dock.Surface.Commits;
-        int renders = dock.Renderer.Displays.Count;
+        int renders = dock.Renderer.SideStrips.Count;
         read.SetResult([Usage(90)]);
         await dock.Advance(60000);
-        Assert.Equal(displays, dock.Surface.Displays.Count);
+        Assert.Equal(columns, dock.Surface.SideStrips.Count);
         Assert.Equal(commits, dock.Surface.Commits);
-        Assert.Equal(renders, dock.Renderer.Displays.Count);
+        Assert.True(dock.Renderer.SideStrips.Count > renders);
         Assert.Equal(2, dock.Sources.UsageReads.Count);
         Assert.DoesNotContain(dock.Logs, line => line.Cause != null);
         dock.Sources.ReadUsages = null;
@@ -517,7 +520,7 @@ public class StreamDockServiceSyncTests
         dock.Service.OnUsageConfigChanged();
         await dock.Idle();
         Assert.Equal(3, dock.Sources.UsageReads.Count);
-        await dock.AssertDisplays();
+        dock.AssertColumn();
     }
 
     [Fact]
@@ -536,15 +539,15 @@ public class StreamDockServiceSyncTests
         await dock.Idle(includeUsages: false);
         Assert.True(previousToken.IsCancellationRequested);
         Assert.Equal(3, dock.Sources.UsageReads.Count);
-        int displays = dock.Surface.Displays.Count;
+        int columns = dock.Surface.SideStrips.Count;
         previousRead.SetResult([Usage(90)]);
         await dock.Advance(60000, includeUsages: false);
         Assert.Equal(3, dock.Sources.UsageReads.Count);
-        Assert.Equal(displays, dock.Surface.Displays.Count);
+        Assert.Equal(columns, dock.Surface.SideStrips.Count);
         currentRead.SetResult([Usage(30)]);
         await dock.Idle();
         dock.Sources.Usages = [Usage(30)];
-        await dock.AssertDisplays();
+        dock.AssertColumn();
         Assert.DoesNotContain(dock.Logs, line => line.Cause != null);
     }
 
@@ -577,7 +580,7 @@ public class StreamDockServiceSyncTests
         public TestDock()
         {
             Surface = Driver.Surface ?? throw new InvalidOperationException("No fake surface.");
-            Service = new StreamDockService(Driver, Sources, Renderer, Time, (message, cause) => Logs.Enqueue((message, cause)));
+            Service = new StreamDockService(Driver, Sources, Renderer, Time, new FakeSystemLoadMonitor(), (message, cause) => Logs.Enqueue((message, cause)));
         }
 
         public async Task Start(bool includeUsages = true)
@@ -601,16 +604,13 @@ public class StreamDockServiceSyncTests
             await Idle(includeUsages);
         }
 
-        public async Task AssertDisplays(FakeSurface? surface = null)
+        public void AssertColumn(FakeSurface? surface = null)
         {
             surface ??= Surface;
-            var planned = UsageDisplayPlanner.Plan(Sources.Usages, Sources.Config, surface.Description.DisplayCount);
-            for (int index = 0; index < planned.Count; index++)
-            {
-                var expected = await Renderer.RenderDisplayAsync(planned[index], surface.Description.DisplayImageSize);
-                var actual = surface.Displays.Where(display => display.Display == index).Last().Image;
-                Assert.Equal(expected.Bgra32, actual.Bgra32);
-            }
+            var planned = SideStripPlanner.Plan(Sources.Usages, Sources.Config, new SystemLoad(23, 61));
+            var size = surface.Description.SideStrip ?? throw new InvalidOperationException("No side strip.");
+            var expected = FakeDockRenderer.CreateSideStripImage(planned, Service.SideStripStyle, size, Renderer.SideStripVersion);
+            Assert.Equal(expected.Bgra32, surface.SideStrips.Last().Bgra32);
         }
 
         public ValueTask DisposeAsync() => new(Bounded(Service.DisposeAsync().AsTask()));

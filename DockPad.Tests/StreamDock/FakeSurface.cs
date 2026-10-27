@@ -10,16 +10,19 @@ internal sealed class FakeSurface : IControlSurface
     private int _disposeCalls;
     private Exception? _disconnection;
     private Action<Exception>? _disconnected;
-    public SurfaceDescription Description { get; } = new("Fake", 3, 5, 4, 3, 4, new SurfaceSize(75, 380));
+    public SurfaceDescription Description { get; set; } = new("Fake", 3, 5, 4, new SurfaceSize(75, 380));
     public ConcurrentQueue<(SurfaceKey Key, SurfaceImage Image)> Images { get; } = new();
-    public ConcurrentQueue<(int Display, SurfaceImage Image)> Displays { get; } = new();
     public ConcurrentQueue<SurfaceImage> SideStrips { get; } = new();
+    public Func<CancellationToken, Task>? BeforeSideStrip { get; set; }
+    public int Clears { get; private set; }
     public int Commits => Volatile.Read(ref _commits);
     public int DisposeCalls => Volatile.Read(ref _disposeCalls);
     public TaskCompletionSource? WriteGate { get; set; }
     public TaskCompletionSource? CommitGate { get; set; }
     public TaskCompletionSource? DisposeGate { get; set; }
     public Exception? WriteFailure { get; set; }
+    public Exception? CommitFailure { get; set; }
+    public Action? AfterCommit { get; set; }
     public Action? BeforeImage { get; set; }
     public TaskCompletionSource WriteStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public TaskCompletionSource CommitStarted { get; set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -57,20 +60,14 @@ internal sealed class FakeSurface : IControlSurface
         Images.Enqueue((key, image));
     }
 
-    public Task SetDisplayImageAsync(int display, SurfaceImage image, CancellationToken ct)
+    public async Task SetSideStripImageAsync(SurfaceImage image, CancellationToken ct)
     {
+        if (BeforeSideStrip != null) await BeforeSideStrip(ct);
         ct.ThrowIfCancellationRequested();
-        Displays.Enqueue((display, image));
-        return Task.CompletedTask;
-    }
-
-    public Task SetSideStripImageAsync(SurfaceImage image, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
+        if (_disconnection != null) throw _disconnection;
         if (image.Width != Description.SideStrip?.Width || image.Height != Description.SideStrip?.Height)
             throw new ArgumentException("Side strip image size does not match the surface.", nameof(image));
         SideStrips.Enqueue(image);
-        return Task.CompletedTask;
     }
 
     public async Task CommitAsync(CancellationToken ct)
@@ -79,10 +76,17 @@ internal sealed class FakeSurface : IControlSurface
         if (CommitGate != null) await CommitGate.Task;
         if (_disconnection != null) throw _disconnection;
         ct.ThrowIfCancellationRequested();
+        if (CommitFailure != null) throw CommitFailure;
         Interlocked.Increment(ref _commits);
+        AfterCommit?.Invoke();
     }
 
-    public Task ClearAsync(CancellationToken ct) => Task.CompletedTask;
+    public Task ClearAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        Clears++;
+        return Task.CompletedTask;
+    }
     public Task SleepAsync(CancellationToken ct) => Task.CompletedTask;
 
     public async ValueTask DisposeAsync()

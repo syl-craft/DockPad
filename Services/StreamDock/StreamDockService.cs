@@ -13,6 +13,7 @@ namespace DockPad.Services.StreamDock;
 /// </summary>
 public sealed class StreamDockService : IAsyncDisposable
 {
+    private static readonly TimeSpan LoadInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan UsageInterval = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan RetryInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RedrawInterval = TimeSpan.FromMilliseconds(30);
@@ -22,6 +23,7 @@ public sealed class StreamDockService : IAsyncDisposable
     private readonly IDockSources _sources;
     private readonly IDockRenderer _renderer;
     private readonly TimeProvider _time;
+    private readonly ISystemLoadMonitor _load;
     private readonly Action<string, Exception?> _log;
     private readonly CancellationToken _stopToken;
     private readonly object _gate = new();
@@ -34,8 +36,14 @@ public sealed class StreamDockService : IAsyncDisposable
     private Session? _session;
     private DisplayedView? _displayed;
     private DockScreen _wantedScreen = new DockScreen.Home(0);
-    private SurfaceImage[]? _displayImages;
-    private bool _displaysBlack;
+    private SideStripState _sideStrip = new([], new UsageConfig(), new SystemLoad(null, null), SideStripStyle.Columns);
+    private long _sideStripRevision;
+    private SurfaceImage? _publishedSideStrip;
+    private Task _renderingSideStrip = Task.CompletedTask;
+    private Task _pendingSideStripRenders = Task.CompletedTask;
+    private Type? _loadFailure;
+    private ITimer? _loadTimer;
+    private Type? _sideStripFailure;
     private ITimer? _usageTimer;
     private Task _readingUsages = Task.CompletedTask;
     private Type? _usageFailure;
@@ -55,12 +63,13 @@ public sealed class StreamDockService : IAsyncDisposable
     private string? _connectionState;
 
     public StreamDockService(IControlSurfaceDriver driver, IDockSources sources, IDockRenderer renderer, TimeProvider time,
-        Action<string, Exception?>? log = null)
+        ISystemLoadMonitor load, Action<string, Exception?>? log = null)
     {
         _driver = driver;
         _sources = sources;
         _renderer = renderer;
         _time = time;
+        _load = load;
         _log = log ?? WriteLog;
         _stopToken = _stopping.Token;
         _shutdown = new Lazy<Task>(StopAsync);
@@ -77,6 +86,22 @@ public sealed class StreamDockService : IAsyncDisposable
                 Volatile.Write(ref _syncPages, value);
                 if (value && _started && _stopped == false)
                     Enqueue(AlignShortcutPageAsync);
+            }
+        }
+    }
+
+    public SideStripStyle SideStripStyle
+    {
+        get { lock (_gate) return _sideStrip.Style; }
+        set
+        {
+            lock (_gate)
+            {
+                var style = Enum.IsDefined(value) ? value : SideStripStyle.Columns;
+                if (_sideStrip.Style == style) return;
+                _sideStrip = _sideStrip with { Style = style };
+                ++_sideStripRevision;
+                if (_started && _stopped == false) Enqueue(RedrawSideStripAsync);
             }
         }
     }
@@ -190,16 +215,22 @@ public sealed class StreamDockService : IAsyncDisposable
             if (_started == false || _stopped) return Task.CompletedTask;
             Enqueue(() =>
             {
-                _ = CompleteWhenIdleAsync(_rendering, includeUsages ? _readingUsages : Task.CompletedTask, includeUsages, idle);
+                _ = CompleteWhenIdleAsync(_rendering, _renderingSideStrip, includeUsages ? _readingUsages : Task.CompletedTask, includeUsages, idle);
                 return Task.CompletedTask;
             });
         }
         return idle.Task;
     }
 
-    private async Task CompleteWhenIdleAsync(Task rendering, Task readingUsages, bool includeUsages, TaskCompletionSource idle)
+    // Inclut la continuation des rendus des sessions interrompues, sans retarder la fermeture.
+    internal Task WhenSideStripRendersCompleteAsync()
     {
-        await Task.WhenAny(Task.WhenAll(rendering, readingUsages), _stopSignal.Task).ConfigureAwait(false);
+        lock (_gate) return _pendingSideStripRenders;
+    }
+
+    private async Task CompleteWhenIdleAsync(Task rendering, Task renderingSideStrip, Task readingUsages, bool includeUsages, TaskCompletionSource idle)
+    {
+        await Task.WhenAny(Task.WhenAll(rendering, renderingSideStrip, readingUsages), _stopSignal.Task).ConfigureAwait(false);
         lock (_gate)
         {
             if (_stopped)
@@ -211,8 +242,8 @@ public sealed class StreamDockService : IAsyncDisposable
             {
                 var currentUsages = includeUsages ? _readingUsages : Task.CompletedTask;
                 // Une lecture terminée de façon synchrone renvoie la même tâche partagée : seule la file vide prouve que sa publication est passée.
-                if (rendering == _rendering && readingUsages == currentUsages && Volatile.Read(ref _queuedWork) == 0) idle.TrySetResult();
-                else _ = CompleteWhenIdleAsync(_rendering, currentUsages, includeUsages, idle);
+                if (rendering == _rendering && renderingSideStrip == _renderingSideStrip && readingUsages == currentUsages && Volatile.Read(ref _queuedWork) == 0) idle.TrySetResult();
+                else _ = CompleteWhenIdleAsync(_rendering, _renderingSideStrip, currentUsages, includeUsages, idle);
                 return Task.CompletedTask;
             });
         }
@@ -276,8 +307,12 @@ public sealed class StreamDockService : IAsyncDisposable
             if (session == null) return;
             _presses.Clear();
             _wantedScreen = new DockScreen.Home(0);
-            _displayImages = null;
-            _displaysBlack = false;
+            lock (_gate)
+            {
+                _sideStrip = new SideStripState([], new UsageConfig(), new SystemLoad(null, null), _sideStrip.Style);
+                ++_sideStripRevision;
+                _publishedSideStrip = null;
+            }
             if (SyncPages)
             {
                 try
@@ -292,6 +327,10 @@ public sealed class StreamDockService : IAsyncDisposable
             lock (_gate)
             {
                 if (_stopped || _session != session || session.Interrupted.Task.IsCompleted) return;
+                if (session.Surface.Description.SideStrip == null) return;
+                _load.Reset();
+                _loadTimer = _time.CreateTimer(_ => Enqueue(() => SampleLoadAsync(session)), null, LoadInterval, LoadInterval);
+                Enqueue(() => SampleLoadAsync(session));
                 _usageTimer = _time.CreateTimer(_ => QueueUsageRefresh(session), null, UsageInterval, UsageInterval);
                 QueueUsageRefresh(session);
             }
@@ -457,18 +496,17 @@ public sealed class StreamDockService : IAsyncDisposable
             ReportFailure(ex, "Stream Dock : sources illisibles.");
             return Task.CompletedTask;
         }
-        _rendering = RenderAndQueueAsync(session, revision, view, initializeDisplays: _displayImages == null, shortcutPage: shortcutPage);
+        _rendering = RenderAndQueueAsync(session, revision, view, shortcutPage);
         return Task.CompletedTask;
     }
 
-    private async Task RenderAndQueueAsync(Session session, long revision, DockView view, bool initializeDisplays, int? shortcutPage)
+    private async Task RenderAndQueueAsync(Session session, long revision, DockView view, int? shortcutPage)
     {
         try
         {
             var description = session.Surface.Description;
             var normal = new SurfaceImage[view.Keys.Count];
             var pressed = new SurfaceImage[view.Keys.Count];
-            SurfaceImage[]? initialDisplays = null;
             for (int index = 0; index < view.Keys.Count; index++)
             {
                 normal[index] = await InSessionAsync(session, _renderer.RenderKeyAsync(
@@ -477,14 +515,7 @@ public sealed class StreamDockService : IAsyncDisposable
                     view.Keys[index], pressed: true, description.KeyImageSize)).ConfigureAwait(false);
                 if (revision != CurrentRevision()) return;
             }
-            if (initializeDisplays)
-            {
-                initialDisplays = new SurfaceImage[description.DisplayCount];
-                for (int index = 0; index < initialDisplays.Length; index++)
-                    initialDisplays[index] = await InSessionAsync(session,
-                        _renderer.RenderDisplayAsync(null, description.DisplayImageSize)).ConfigureAwait(false);
-            }
-            Enqueue(() => PublishViewAsync(session, revision, view, normal, pressed, initialDisplays, shortcutPage));
+            Enqueue(() => PublishViewAsync(session, revision, view, normal, pressed, shortcutPage));
         }
         catch (Exception ex)
         {
@@ -494,7 +525,7 @@ public sealed class StreamDockService : IAsyncDisposable
     }
 
     private async Task PublishViewAsync(Session session, long revision, DockView view,
-        SurfaceImage[] normal, SurfaceImage[] pressed, SurfaceImage[]? initialDisplays, int? shortcutPage)
+        SurfaceImage[] normal, SurfaceImage[] pressed, int? shortcutPage)
     {
         if (_session != session || revision != CurrentRevision()) return;
         ThrowIfInterrupted(session);
@@ -506,15 +537,7 @@ public sealed class StreamDockService : IAsyncDisposable
             var key = new SurfaceKey(index / description.KeyColumns, index % description.KeyColumns);
             await InSessionAsync(session, session.Surface.SetKeyImageAsync(key, normal[index], session.Token)).ConfigureAwait(false);
         }
-        // Un rendu de touches tardif ne doit pas écraser des quotas déjà publiés.
-        if (_displayImages == null && initialDisplays != null)
-            await WriteDisplaysAsync(session, initialDisplays).ConfigureAwait(false);
         await InSessionAsync(session, session.Surface.CommitAsync(session.Token)).ConfigureAwait(false);
-        if (_displayImages == null && initialDisplays != null)
-        {
-            _displayImages = initialDisplays;
-            _displaysBlack = true;
-        }
         lock (_gate)
         {
             ThrowIfInterrupted(session);
@@ -537,7 +560,7 @@ public sealed class StreamDockService : IAsyncDisposable
             Enqueue(() =>
             {
                 var session = _session;
-                if (session == null || session.Interrupted.Task.IsCompleted) return Task.CompletedTask;
+                if (session == null || session.Interrupted.Task.IsCompleted || session.Surface.Description.SideStrip == null) return Task.CompletedTask;
                 lock (_gate)
                 {
                     var refresh = session.UsageRefresh;
@@ -554,45 +577,34 @@ public sealed class StreamDockService : IAsyncDisposable
     {
         lock (_gate)
         {
-            if (_stopped || _session != session || session.Interrupted.Task.IsCompleted || session.UsageRefresh != null) return;
+            if (_stopped || _session != session || session.Interrupted.Task.IsCompleted || session.UsageRefresh != null
+                || session.Surface.Description.SideStrip == null) return;
             var refresh = new UsageRefresh(session.Token, CancelAndDisposeAsync);
             session.UsageRefresh = refresh;
             Enqueue(() =>
             {
                 if (session.UsageRefresh == refresh)
-                    _readingUsages = ReadAndRenderUsagesAsync(session, refresh);
+                    _readingUsages = ReadUsagesAsync(session, refresh);
                 return Task.CompletedTask;
             });
         }
     }
 
-    private async Task ReadAndRenderUsagesAsync(Session session, UsageRefresh refresh)
+    private async Task ReadUsagesAsync(Session session, UsageRefresh refresh)
     {
         try
         {
             ThrowIfInterrupted(session);
             refresh.Token.ThrowIfCancellationRequested();
             var config = _sources.UsageConfig();
-            if (config.Enabled == false && _displaysBlack)
-            {
-                _usageFailure = null;
-                FinishUsageRefresh(session, refresh);
-                return;
-            }
             IReadOnlyList<AiUsage> usages = [];
             if (config.Enabled)
             {
                 usages = await InUsageRefreshAsync(session, refresh, _sources.ReadUsagesAsync(refresh.Token)).ConfigureAwait(false);
                 config = _sources.UsageConfig();
             }
-            var description = session.Surface.Description;
-            var displays = UsageDisplayPlanner.Plan(usages, config, description.DisplayCount);
-            var images = new SurfaceImage[displays.Count];
-            for (int index = 0; index < displays.Count; index++)
-                images[index] = await InUsageRefreshAsync(session, refresh,
-                    _renderer.RenderDisplayAsync(displays[index], description.DisplayImageSize)).ConfigureAwait(false);
-            bool displaysBlack = displays.All(display => display == null);
-            Enqueue(() => CompleteUsageRefreshAsync(session, refresh, images, displaysBlack));
+            var snapshot = new UsageConfig { Enabled = config.Enabled, AlertThreshold = config.AlertThreshold };
+            Enqueue(() => CompleteUsageRefreshAsync(session, refresh, usages, snapshot));
         }
         catch (Exception ex)
         {
@@ -626,16 +638,18 @@ public sealed class StreamDockService : IAsyncDisposable
         _session == session && session.UsageRefresh == refresh && session.Interrupted.Task.IsCompleted == false
         && _stopSignal.Task.IsCompleted == false && refresh.Token.IsCancellationRequested == false;
 
-    private async Task CompleteUsageRefreshAsync(Session session, UsageRefresh refresh, SurfaceImage[] images, bool displaysBlack)
+    private Task CompleteUsageRefreshAsync(Session session, UsageRefresh refresh, IReadOnlyList<AiUsage> usages, UsageConfig config)
     {
         try
         {
-            if (IsCurrentUsageRefresh(session, refresh) == false) return;
-            if (await WriteDisplaysAsync(session, images).ConfigureAwait(false))
-                await InSessionAsync(session, session.Surface.CommitAsync(session.Token)).ConfigureAwait(false);
-            _displayImages = images;
-            _displaysBlack = displaysBlack;
+            if (IsCurrentUsageRefresh(session, refresh) == false) return Task.CompletedTask;
+            lock (_gate)
+            {
+                _sideStrip = _sideStrip with { Usages = config.Enabled ? usages : [], Config = config };
+                ++_sideStripRevision;
+            }
             _usageFailure = null;
+            return RedrawSideStripAsync();
         }
         finally { FinishUsageRefresh(session, refresh); }
     }
@@ -649,17 +663,114 @@ public sealed class StreamDockService : IAsyncDisposable
         _ = refresh.Cancel.Value;
     }
 
-    private async Task<bool> WriteDisplaysAsync(Session session, SurfaceImage[] images)
+    private Task SampleLoadAsync(Session session)
     {
-        bool changed = false;
-        for (int index = 0; index < images.Length; index++)
+        if (IsCurrentSession(session) == false || session.Surface.Description.SideStrip == null) return Task.CompletedTask;
+        SystemLoad load;
+        try
         {
-            if (_displayImages != null && SameImage(_displayImages[index], images[index])) continue;
-            ThrowIfInterrupted(session);
-            await InSessionAsync(session, session.Surface.SetDisplayImageAsync(index, images[index], session.Token)).ConfigureAwait(false);
-            changed = true;
+            load = _load.Sample();
+            _loadFailure = null;
         }
-        return changed;
+        catch (Exception ex)
+        {
+            if (IsCurrentSession(session) && _loadFailure != ex.GetType())
+            {
+                _loadFailure = ex.GetType();
+                _log("Stream Dock : mesure système indisponible, valeurs précédentes conservées.", ex);
+            }
+            return Task.CompletedTask;
+        }
+        lock (_gate)
+        {
+            if (IsCurrentSession(session) == false) return Task.CompletedTask;
+            _sideStrip = _sideStrip with { Load = load };
+            ++_sideStripRevision;
+        }
+        return RedrawSideStripAsync();
+    }
+
+    private Task RedrawSideStripAsync()
+    {
+        var session = _session;
+        if (session == null || IsCurrentSession(session) == false) return Task.CompletedTask;
+        var size = session.Surface.Description.SideStrip;
+        if (size == null) return Task.CompletedTask;
+        SideStripState state;
+        long revision;
+        lock (_gate)
+        {
+            state = _sideStrip;
+            revision = _sideStripRevision;
+        }
+        var rendering = RenderSideStripAndQueueAsync(session, revision, state, size.Value);
+        _renderingSideStrip = _renderingSideStrip.IsCompleted ? rendering : Task.WhenAll(_renderingSideStrip, rendering);
+        lock (_gate)
+            _pendingSideStripRenders = _pendingSideStripRenders.IsCompleted ? rendering : Task.WhenAll(_pendingSideStripRenders, rendering);
+        return Task.CompletedTask;
+    }
+
+    private async Task RenderSideStripAndQueueAsync(Session session, long revision, SideStripState state, SurfaceSize size)
+    {
+        try
+        {
+            var content = SideStripPlanner.Plan(state.Usages, state.Config, state.Load);
+            var image = await _renderer.RenderSideStripAsync(content, state.Style, size).ConfigureAwait(false);
+            if (IsCurrentSideStrip(session, revision))
+                Enqueue(() => PublishSideStripAsync(session, revision, image));
+        }
+        catch (Exception ex)
+        {
+            Enqueue(() =>
+            {
+                if (IsCurrentSession(session)) ReportSideStripFailure(ex);
+                return Task.CompletedTask;
+            });
+        }
+    }
+
+    private async Task PublishSideStripAsync(Session session, long revision, SurfaceImage image)
+    {
+        if (IsCurrentSideStrip(session, revision) == false) return;
+        if (_publishedSideStrip != null && SameImage(_publishedSideStrip, image))
+        {
+            _sideStripFailure = null;
+            return;
+        }
+        try
+        {
+            await InSessionAsync(session, session.Surface.SetSideStripImageAsync(image, session.Token)).ConfigureAwait(false);
+            // Une image mise en file peut encore être validée par le prochain appui, même si son rendu est dépassé.
+            _publishedSideStrip = null;
+            if (IsCurrentSideStrip(session, revision) == false) return;
+            await InSessionAsync(session, session.Surface.CommitAsync(session.Token)).ConfigureAwait(false);
+            lock (_gate)
+            {
+                if (IsCurrentSession(session) == false) return;
+                _publishedSideStrip = image;
+            }
+            _sideStripFailure = null;
+        }
+        catch (Exception ex) when (ex is not IOException)
+        {
+            _publishedSideStrip = null;
+            if (IsCurrentSession(session)) ReportSideStripFailure(ex);
+        }
+    }
+
+    private bool IsCurrentSession(Session session) =>
+        _session == session && session.Interrupted.Task.IsCompleted == false && _stopSignal.Task.IsCompleted == false;
+
+    private bool IsCurrentSideStrip(Session session, long revision)
+    {
+        lock (_gate) return IsCurrentSession(session) && revision == _sideStripRevision;
+    }
+
+    private void ReportSideStripFailure(Exception cause)
+    {
+        if (_sideStripFailure == cause.GetType()) return;
+        _sideStripFailure = cause.GetType();
+        _log("Stream Dock : colonne indisponible, nouvelle tentative prévue.", cause);
     }
 
     private static ShortcutEntry SnapshotEntry(ShortcutEntry entry)
@@ -726,8 +837,10 @@ public sealed class StreamDockService : IAsyncDisposable
             _displayed = null;
         }
         _presses.Clear();
-        _displayImages = null;
-        _displaysBlack = false;
+        _publishedSideStrip = null;
+        _renderingSideStrip = Task.CompletedTask;
+        _loadTimer?.Dispose();
+        _loadTimer = null;
         _readingUsages = Task.CompletedTask;
         _usageTimer?.Dispose();
         _usageTimer = null;
@@ -773,6 +886,7 @@ public sealed class StreamDockService : IAsyncDisposable
                 _retry?.Dispose();
                 _redraw?.Dispose();
                 _usageTimer?.Dispose();
+                _loadTimer?.Dispose();
                 _driver.SurfacesChanged -= OnSurfacesChanged;
             }
             catch (Exception ex) { ReportFailure(ex, "Stream Dock : surveillance persistante après arrêt."); }
@@ -792,6 +906,8 @@ public sealed class StreamDockService : IAsyncDisposable
             _ = ObserveAsync(cleanup);
         }
     }
+
+    private sealed record SideStripState(IReadOnlyList<AiUsage> Usages, UsageConfig Config, SystemLoad Load, SideStripStyle Style);
 
     private sealed class UsageRefresh
     {

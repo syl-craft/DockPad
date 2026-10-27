@@ -30,7 +30,7 @@ internal sealed class ProbeReport(bool automatic)
         new(4, "Les positions écrites correspondent aux touches appuyées ?"),
         new(5, "Le dock est toujours allumé ?"),
         new(5, "Seule la touche L1 C1 est effacée ?"),
-        new(5, "Toutes les touches et les écrans latéraux sont effacés ?"),
+        new(5, "Toutes les touches et la colonne latérale sont effacées ?"),
         new(5, "Écran éteint ?"),
         new(6, "Réaction immédiate ?"),
     ];

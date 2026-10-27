@@ -18,7 +18,7 @@ public class StreamDockServiceTests
         await dock.Start();
         Assert.Equal(new DockScreen.Home(0), dock.Service.Screen);
         Assert.Equal(15, dock.Surface.Images.Count);
-        Assert.Equal(1, dock.Surface.Commits);
+        Assert.Equal(2, dock.Surface.Commits);
         Assert.IsType<DockKey.OpenPage>(dock.Renderer.Keys.First().Key);
     }
 
@@ -38,7 +38,7 @@ public class StreamDockServiceTests
         dock.Driver.Surface = dock.Surface;
         dock.Driver.Changed();
         await dock.Idle();
-        Assert.Equal(1, dock.Surface.Commits);
+        Assert.Equal(2, dock.Surface.Commits);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class StreamDockServiceTests
         dock.Driver.Changed();
         await dock.Idle();
         Assert.Equal(4, dock.Driver.Opens);
-        Assert.Equal(1, dock.Surface.Commits);
+        Assert.Equal(2, dock.Surface.Commits);
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class StreamDockServiceTests
         dock.Driver.Changed();
         await dock.Idle();
         Assert.Equal(new DockScreen.Home(0), dock.Service.Screen);
-        Assert.Equal(1, replacement.Commits);
+        Assert.Equal(2, replacement.Commits);
         Assert.Empty(dock.Sources.Runs);
     }
 
@@ -218,8 +218,9 @@ public class StreamDockServiceTests
         var failure = new System.IO.IOException("Disconnected during write.");
         dock.Surface.Disconnect(failure);
         await dock.Idle();
-        Assert.Equal(1, dock.Driver.Surface.Commits);
-        Assert.Same(failure, Assert.Single(dock.Logs.Where(line => line.Cause != null).ToList()).Cause);
+        Assert.Equal(2, dock.Driver.Surface.Commits);
+        var failures = dock.Logs.Where(line => line.Cause != null).ToArray();
+        Assert.Same(failure, Assert.Single(failures).Cause);
         gate.TrySetResult();
     }
 
@@ -311,7 +312,7 @@ public class StreamDockServiceTests
         dock.Surface.Release(14);
         dock.Surface.Release(0);
         await dock.Idle();
-        Assert.Equal(1, dock.Surface.Commits);
+        Assert.Equal(2, dock.Surface.Commits);
         Assert.Empty(dock.Sources.Runs);
     }
 
@@ -326,7 +327,7 @@ public class StreamDockServiceTests
         await dock.Idle();
         dock.Driver.Surface = new FakeSurface();
         await dock.Advance(5000);
-        Assert.Equal(1, dock.Driver.Surface.Commits);
+        Assert.Equal(2, dock.Driver.Surface.Commits);
         Assert.Empty(dock.Sources.Runs);
     }
 
@@ -393,7 +394,7 @@ public class StreamDockServiceTests
         gate.TrySetResult();
         await dock.Idle();
         Assert.Equal(new DockScreen.Home(0), dock.Service.Screen);
-        Assert.Equal(1, dock.Surface.Commits);
+        Assert.Equal(2, dock.Surface.Commits);
     }
 
     [Fact]
@@ -470,7 +471,7 @@ public class StreamDockServiceTests
         dock.Driver.Surface = replacement;
         dock.Driver.Changed();
         await dock.Idle();
-        Assert.Equal(1, replacement.Commits);
+        Assert.Equal(2, replacement.Commits);
     }
 
     [Fact]
@@ -488,7 +489,7 @@ public class StreamDockServiceTests
         var replacement = new FakeSurface();
         dock.Driver.Surface = replacement;
         await dock.Advance(5000);
-        Assert.Equal(1, replacement.Commits);
+        Assert.Equal(2, replacement.Commits);
     }
 
     [Fact]
@@ -534,7 +535,7 @@ public class StreamDockServiceTests
         else gate.TrySetResult();
         await dock.Idle();
         Assert.Equal(2, dock.Driver.Opens);
-        Assert.Equal(1, replacement.Commits);
+        Assert.Equal(2, replacement.Commits);
         gate.TrySetResult();
     }
 
@@ -566,7 +567,8 @@ public class StreamDockServiceTests
         dock.Sources.RunFailure = failure;
         await dock.Click(1);
         await dock.Click(1);
-        Assert.Same(failure, Assert.Single(dock.Logs.Where(line => line.Cause != null).ToList()).Cause);
+        var failures = dock.Logs.Where(line => line.Cause != null).ToArray();
+        Assert.Same(failure, Assert.Single(failures).Cause);
         Assert.Equal(new DockScreen.Page(0, 0), dock.Service.Screen);
         Assert.Equal(0, dock.Surface.DisposeCalls);
         Assert.Equal(1, dock.Driver.Opens);
@@ -587,7 +589,8 @@ public class StreamDockServiceTests
         else dock.Sources.EntriesFailure = failure;
         dock.Service.OnGridChanged();
         await dock.Advance(30);
-        Assert.Same(failure, Assert.Single(dock.Logs.Where(line => line.Cause != null).ToList()).Cause);
+        var failures = dock.Logs.Where(line => line.Cause != null).ToArray();
+        Assert.Same(failure, Assert.Single(failures).Cause);
         Assert.Equal(new DockScreen.Page(0, 0), dock.Service.Screen);
         Assert.Equal(0, dock.Surface.DisposeCalls);
         Assert.Equal(1, dock.Driver.Opens);
@@ -644,7 +647,7 @@ public class StreamDockServiceTests
         public TestDock()
         {
             Surface = Driver.Surface ?? throw new InvalidOperationException("No fake surface.");
-            Service = new StreamDockService(Driver, Sources, Renderer, Time, (message, cause) => Logs.Enqueue((message, cause)));
+            Service = new StreamDockService(Driver, Sources, Renderer, Time, new FakeSystemLoadMonitor(), (message, cause) => Logs.Enqueue((message, cause)));
         }
 
         public async Task Start()

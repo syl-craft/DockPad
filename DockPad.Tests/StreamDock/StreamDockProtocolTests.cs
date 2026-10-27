@@ -65,15 +65,6 @@ public class StreamDockProtocolTests
         => Assert.Throws<ArgumentOutOfRangeException>(() => StreamDockModel.KeyId(new SurfaceKey(row, column)));
 
     [Fact]
-    public void DisplayId_EcransDe16A18()
-    {
-        Assert.Equal(16, StreamDockModel.DisplayId(0));
-        Assert.Equal(17, StreamDockModel.DisplayId(1));
-        Assert.Equal(18, StreamDockModel.DisplayId(2));
-        Assert.Throws<ArgumentOutOfRangeException>(() => StreamDockModel.DisplayId(3));
-    }
-
-    [Fact]
     public void Commande_CommenceParCrtEtLeNom()
     {
         var report = StreamDockProtocol.Wake();

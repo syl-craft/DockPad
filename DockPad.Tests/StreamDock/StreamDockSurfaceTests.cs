@@ -23,7 +23,7 @@ public class StreamDockSurfaceTests
         Assert.Equal(["DIS", "LIG", "CLE", "STP"], written.Select(CommandOf));
         Assert.Equal(100, written[1][11]);
         Assert.Equal(0xFF, written[2][12]);
-        Assert.Equal(new SurfaceDescription("293S V3", 3, 5, 96, 3, 80, new SurfaceSize(75, 380)), surface.Description);
+        Assert.Equal(new SurfaceDescription("293S V3", 3, 5, 96, new SurfaceSize(75, 380)), surface.Description);
         await surface.DisposeAsync();
     }
 
@@ -61,22 +61,6 @@ public class StreamDockSurfaceTests
         Assert.Equal(13, keyId);
         Assert.True(expectedJpeg.Length > 1024, "L'image doit tenir sur plusieurs blocs.");
         Assert.Equal(expectedJpeg, jpeg);
-        await surface.DisposeAsync();
-    }
-
-    [Theory]
-    [InlineData(0, 16)]
-    [InlineData(1, 17)]
-    [InlineData(2, 18)]
-    public async Task EcranLateral_UtiliseLesNumeros16A18(int display, byte displayId)
-    {
-        var (connection, _, surface) = await OpenAsync();
-
-        await surface.SetDisplayImageAsync(display, Noise(80, seed: 1), CancellationToken.None);
-        await surface.CommitAsync(CancellationToken.None);
-
-        var header = connection.Written.Where(report => CommandOf(report) == "BAT").First();
-        Assert.Equal(displayId, header[13]);
         await surface.DisposeAsync();
     }
 
@@ -754,36 +738,6 @@ public class StreamDockSurfaceTests
             var expected = await OnStaThread(() => StreamDockImage.ToJpeg(slices[index].Image));
             Assert.Equal(expected, ImageAt(written, headers[index].Index).Jpeg);
         }
-    }
-
-    [Fact]
-    public async Task EcranLateral_EffacementPendantEncodage_AppelAnnule()
-    {
-        var connection = new FakeHidConnection();
-        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        await using var surface = new StreamDockSurface(connection, new ManualTimeProvider(),
-            JpegEncodingThread.EncodeAsync, async (image, size, ct) =>
-            {
-                started.TrySetResult();
-                await resume.Task.WaitAsync(EventWait);
-                return await JpegEncodingThread.EncodeAsync(image, size, ct);
-            });
-        await surface.StartAsync(CancellationToken.None);
-        var pending = surface.SetDisplayImageAsync(0, Noise(80, seed: 1), CancellationToken.None);
-        try
-        {
-            await started.Task.WaitAsync(EventWait);
-            await surface.ClearAsync(CancellationToken.None);
-        }
-        finally
-        {
-            resume.TrySetResult();
-        }
-
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending.WaitAsync(EventWait));
-        await surface.CommitAsync(CancellationToken.None);
-        Assert.Empty(StripTargets(connection));
     }
 
     [Theory]
