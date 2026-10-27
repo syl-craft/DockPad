@@ -16,7 +16,7 @@ public static partial class DockImageRenderer
 {
     private static readonly Color NeutralAccent = Color.FromRgb(150, 160, 175);
     private static readonly Color FlatNeutral = Color.FromRgb(52, 54, 60);
-    private static readonly Brush NeonBackground = FrozenBrush(Color.FromRgb(38, 40, 44));
+    private static readonly Brush NeonBackground = FrozenBrush(Color.FromRgb(22, 23, 26));
     private static readonly Brush NeonPressedBackground = FrozenBrush(Color.FromRgb(58, 60, 65));
     private static readonly Brush PressedShade = FrozenBrush(Color.FromArgb(46, 0, 0, 0));
 

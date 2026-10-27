@@ -383,7 +383,7 @@ public class DockImageRendererTests : IDisposable
             bool bluish = probe.Blue > probe.Red + 60 && probe.Blue > probe.Green + 60;
             Assert.True(red > blue ? reddish : bluish, $"{probe}");
             if (style == DockKeyStyle.Neon)
-                Assert.Equal(((byte)44, (byte)40, (byte)38), PixelAt(image, x: 5, y: 50));
+                Assert.Equal(((byte)26, (byte)23, (byte)22), PixelAt(image, x: 5, y: 50));
             else
                 Assert.InRange(Math.Max(probe.Red, probe.Blue), (byte)90, (byte)130);
         }
@@ -413,10 +413,10 @@ public class DockImageRendererTests : IDisposable
             DockImageRenderer.RenderKey(new DockKey.RunTile(Tile()), DockKeyStyle.Neon, pressed: false, size: 96),
             DockImageRenderer.RenderKey(new DockKey.RunTile(Tile()), DockKeyStyle.Neon, pressed: true, size: 96)));
 
-        Assert.Equal(((byte)44, (byte)40, (byte)38), PixelAt(normal, x: 5, y: 50));
+        Assert.Equal(((byte)26, (byte)23, (byte)22), PixelAt(normal, x: 5, y: 50));
         Assert.Equal(((byte)65, (byte)60, (byte)58), PixelAt(pressed, x: 5, y: 50));
         Assert.Equal(((byte)65, (byte)60, (byte)58), PixelAt(pressed, x: 16, y: 87));
-        Assert.NotEqual(((byte)44, (byte)40, (byte)38), PixelAt(normal, x: 16, y: 87));
+        Assert.NotEqual(((byte)26, (byte)23, (byte)22), PixelAt(normal, x: 16, y: 87));
     }
 
     [Fact]
@@ -441,7 +441,7 @@ public class DockImageRendererTests : IDisposable
 
         foreach (var image in neon)
         {
-            Assert.Equal(((byte)44, (byte)40, (byte)38), PixelAt(image, x: 48, y: 87));
+            Assert.Equal(((byte)26, (byte)23, (byte)22), PixelAt(image, x: 48, y: 87));
             Assert.True(WhitePixels(image, top: 66, bottom: 84) > 15);
         }
         foreach (var image in flat)
