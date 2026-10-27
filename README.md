@@ -52,6 +52,8 @@ Windows resumes from sleep.
 
 ▶ [Watch the 30-second video](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-en.mp4)
 
+Where to buy: [MiraBox Stream Dock 293S on AliExpress](https://a.aliexpress.com/_Ev68jQE) (affiliate link).
+
 ## Updates
 
 **☰ Menu → Updates → Check for updates** shows the available version and its notes.

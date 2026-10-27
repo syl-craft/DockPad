@@ -51,6 +51,8 @@ la colonne affiche toujours le processeur et la mémoire. Le dock fonctionne lor
 
 ▶ [Voir la vidéo de 30 secondes](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4)
 
+Où l'acheter : [MiraBox Stream Dock 293S sur AliExpress](https://a.aliexpress.com/_Ev68jQE) (lien affilié).
+
 ## Mises à jour
 
 **☰ Menu → Mises à jour → Rechercher** affiche la version disponible et ses notes.

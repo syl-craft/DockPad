@@ -13,8 +13,8 @@ namespace SideStripShot;
 /// tools/MotionDemo/clips/15-stream-dock.html. Chiffres fictifs, aucun relevé réel.
 /// </summary>
 /// <remarks>
-/// Sortie par défaut : tools/MotionDemo/out/strip/{en,fr}/ — remplissage des jauges (fill-00 à fill-30), Codex en
-/// tête (columns-codex) et les trois autres rendus (hero, rings, reservoir).
+/// Sortie par défaut : tools/MotionDemo/out/strip/{en,fr}/ — remplissage du Réservoir (fill-00 à fill-30), Codex en
+/// tête (reservoir-codex) et les trois autres rendus (columns, hero, rings).
 /// </remarks>
 internal static class Program
 {
@@ -44,14 +44,14 @@ internal static class Program
             {
                 double fill = step / 30d;
                 Save(folder, $"fill-{step:00}", new SideStripContent(ClaudeFirst(fill),
-                    (int)Math.Round(23 * fill), (int)Math.Round(61 * fill)), SideStripStyle.Columns);
+                    (int)Math.Round(23 * fill), (int)Math.Round(61 * fill)), SideStripStyle.Reservoir);
             }
 
             var quotas = ClaudeFirst(1);
-            Save(folder, "columns-codex", new SideStripContent([quotas[2], quotas[0], quotas[1]], 23, 61), SideStripStyle.Columns);
+            Save(folder, "reservoir-codex", new SideStripContent([quotas[2], quotas[0], quotas[1]], 23, 61), SideStripStyle.Reservoir);
+            Save(folder, "columns", new SideStripContent(quotas, 23, 61), SideStripStyle.Columns);
             Save(folder, "hero", new SideStripContent(quotas, 23, 61), SideStripStyle.HeroStack);
             Save(folder, "rings", new SideStripContent(quotas, 23, 61), SideStripStyle.Rings);
-            Save(folder, "reservoir", new SideStripContent(quotas, 23, 61), SideStripStyle.Reservoir);
         }
     }
 
@@ -66,7 +66,7 @@ internal static class Program
     ];
 
     private static QuotaGauge Gauge(string providerId, string name, UsageWindowKind kind, int usedPct, TimeSpan? resetIn = null) =>
-        new(providerId, name, kind == UsageWindowKind.Session ? "Session" : "Week", usedPct, IsAlert: false,
+        new(providerId, name, Loc.T(kind == UsageWindowKind.Session ? "StreamDock_Session" : "StreamDock_Week"), usedPct, IsAlert: false,
             IsStale: false, ResetsAt: null, WindowKind: kind, ResetIn: resetIn);
 
     private static void Save(string folder, string name, SideStripContent content, SideStripStyle style)
