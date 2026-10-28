@@ -89,6 +89,18 @@ internal sealed class FakeSurface : IControlSurface
     }
     public Task SleepAsync(CancellationToken ct) => Task.CompletedTask;
 
+    public ConcurrentQueue<SurfaceImage> BootImages { get; } = new();
+    public Exception? BootImageFailure { get; set; }
+
+    public Task SetBootImageAsync(SurfaceImage image, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (_disconnection != null) throw _disconnection;
+        if (BootImageFailure != null) throw BootImageFailure;
+        BootImages.Enqueue(image);
+        return Task.CompletedTask;
+    }
+
     public async ValueTask DisposeAsync()
     {
         Interlocked.Increment(ref _disposeCalls);

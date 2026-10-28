@@ -220,6 +220,115 @@
                         <TextBlock x:Name="TxtStreamDockDriverMissing" Margin="0,8,0,0"
                                    Text="{loc:T Settings_StreamDock_DriverMissing}" Visibility="Collapsed"
                                    Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                        <TextBlock Text="{loc:T Settings_StreamDock_KeyStyle}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,22,0,10"/>
+                        <ListBox x:Name="LstStreamDockKeyStyle" SelectionMode="Single"
+                                 AutomationProperties.Name="{loc:T Settings_StreamDock_KeyStyle}"
+                                 IsEnabled="{Binding IsChecked, ElementName=ChkStreamDockEnabled}"
+                                 BorderThickness="0" Padding="0" Background="Transparent"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                            <ListBox.Style>
+                                <Style TargetType="ListBox" BasedOn="{StaticResource {x:Type ListBox}}">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.45"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.Style>
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                    <Setter Property="Width" Value="112"/>
+                                    <Setter Property="Padding" Value="5,8"/>
+                                    <Setter Property="Margin" Value="0,0,8,0"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                            <Setter Property="Background" Value="{DynamicResource Brush.AccentSoft}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBoxItem Tag="{x:Static models:DockKeyStyle.Neon}"
+                                         AutomationProperties.Name="{loc:T Settings_StreamDock_KeyStyle_Neon}">
+                                <StackPanel>
+                                    <Image x:Name="ImgKeyStyleNeon" Height="32" HorizontalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <TextBlock Text="{loc:T Settings_StreamDock_KeyStyle_Neon}" Margin="0,8,0,0"
+                                               TextAlignment="Center" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </ListBoxItem>
+                            <ListBoxItem Tag="{x:Static models:DockKeyStyle.Flat}"
+                                         AutomationProperties.Name="{loc:T Settings_StreamDock_KeyStyle_Flat}">
+                                <StackPanel>
+                                    <Image x:Name="ImgKeyStyleFlat" Height="32" HorizontalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <TextBlock Text="{loc:T Settings_StreamDock_KeyStyle_Flat}" Margin="0,8,0,0"
+                                               TextAlignment="Center" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </ListBoxItem>
+                            <ListBoxItem Tag="{x:Static models:DockKeyStyle.Classic}"
+                                         AutomationProperties.Name="{loc:T Settings_StreamDock_KeyStyle_Classic}">
+                                <StackPanel>
+                                    <Image x:Name="ImgKeyStyleClassic" Height="32" HorizontalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <TextBlock Text="{loc:T Settings_StreamDock_KeyStyle_Classic}" Margin="0,8,0,0"
+                                               TextAlignment="Center" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </ListBoxItem>
+                        </ListBox>
+                        <TextBlock Text="{loc:T Settings_StreamDock_BootImage}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,22,0,4"/>
+                        <TextBlock Text="{loc:T Settings_StreamDock_BootImage_Hint}" Margin="0,0,0,8"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                        <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                                HorizontalAlignment="Left">
+                            <Image x:Name="ImgStreamDockBootImage" Width="256" Height="144" Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   AutomationProperties.Name="{loc:T Settings_StreamDock_BootImage_Preview}"/>
+                        </Border>
+                        <WrapPanel Margin="0,8,0,0">
+                            <Button Content="{loc:T Settings_StreamDock_BootImage_Choose}"
+                                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="ChooseBootImage_Click"/>
+                            <Button Content="{loc:T Settings_StreamDock_BootImage_Default}"
+                                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="DefaultBootImage_Click"/>
+                            <Button x:Name="BtnStreamDockBootImageApply"
+                                    Content="{loc:T Settings_StreamDock_BootImage_Apply}"
+                                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="ApplyBootImage_Click"/>
+                        </WrapPanel>
+                        <TextBlock x:Name="TxtStreamDockBootImageStatus" FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource Brush.TextHint}" Visibility="Collapsed"/>
                     </StackPanel>
                     <Border Grid.Column="1" Width="1" HorizontalAlignment="Center"
                             Background="{DynamicResource Brush.Border}"/>

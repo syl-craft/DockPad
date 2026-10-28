@@ -7,6 +7,7 @@ namespace DockPad.Tests.StreamDock;
 /// <summary>
 /// Réglages désactivés par défaut et persistance des options indépendantes.
 /// Rendu Colonnes par défaut, relecture des quatre rendus et repli des valeurs inconnues sans perdre les autres réglages.
+/// Image de démarrage : celle de DockPad par défaut, chemin choisi relu.
 /// </summary>
 public sealed class StreamDockSettingsTests : IDisposable
 {
@@ -69,6 +70,64 @@ public sealed class StreamDockSettingsTests : IDisposable
 
         Assert.Equal(SideStripStyle.Columns, settings.StreamDockSideStrip);
         Assert.Equal("fr", settings.Language);
+    }
+
+    [Fact]
+    public void StyleDesTouches_DefautNeon()
+    {
+        Assert.Equal(DockKeyStyle.Neon, new AppSettings().StreamDockKeyStyle);
+
+        File.WriteAllText(SettingsPath, """{ "language": "fr" }""");
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(DockKeyStyle.Neon, settings.StreamDockKeyStyle);
+    }
+
+    [Theory]
+    [InlineData(DockKeyStyle.Neon)]
+    [InlineData(DockKeyStyle.Classic)]
+    [InlineData(DockKeyStyle.Flat)]
+    public void StyleDesTouches_RelueApresSauvegarde(DockKeyStyle style)
+    {
+        AppSettingsService.SaveTo(SettingsPath, new AppSettings { Language = "fr", StreamDockKeyStyle = style });
+
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(style, settings.StreamDockKeyStyle);
+        Assert.Equal("fr", settings.Language);
+    }
+
+    [Fact]
+    public void ImageDeDemarrage_DockPadParDefautPuisCheminRelu()
+    {
+        Assert.Null(new AppSettings().StreamDockBootImage);
+
+        AppSettingsService.SaveTo(SettingsPath, new AppSettings { Language = "fr", StreamDockBootImage = @"C:\Images\dock.png" });
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(@"C:\Images\dock.png", settings.StreamDockBootImage);
+        Assert.Equal("fr", settings.Language);
+    }
+
+    [Theory]
+    [InlineData("999")]
+    [InlineData("\"FutureStyle\"")]
+    [InlineData("null")]
+    [InlineData("\"classic\"")]
+    public void StyleDesTouches_ValeurInconnueOuTexte(string value)
+    {
+        File.WriteAllText(SettingsPath, $$"""
+            {
+              "language": "fr",
+              "streamDockKeyStyle": {{value}},
+              "clipboardClearSeconds": 123
+            }
+            """);
+
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(value == "\"classic\"" ? DockKeyStyle.Classic : DockKeyStyle.Neon, settings.StreamDockKeyStyle);
+        Assert.Equal(123, settings.ClipboardClearSeconds);
     }
 
     [Theory]

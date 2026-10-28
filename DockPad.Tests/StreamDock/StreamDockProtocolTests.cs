@@ -8,7 +8,8 @@ namespace DockPad.Tests;
 /// Protocole du 293S V3 : numérotation des touches par position et son inverse, écrans latéraux 16 à 18,
 /// commandes préfixées par « CRT\0\0 » dans des rapports de 1025 octets complétés de zéros, luminosité à
 /// l'octet 11 bornée à 0..100, effacement à l'octet 12, déconnexion « CLE\0\0DC », image en en-tête « BAT »
-/// suivi de blocs de 1024 octets, et décodage des entrées « ACK » : appui, relâchement, accusé et inconnues ignorés.
+/// suivi de blocs de 1024 octets, image de démarrage en en-tête « LOG », et décodage des entrées « ACK » : appui,
+/// relâchement, accusé et inconnues ignorés ; un accusé d'écriture « ACK…OK » sans touche est reconnu.
 /// </summary>
 public class StreamDockProtocolTests
 {
@@ -140,6 +141,38 @@ public class StreamDockProtocolTests
         Assert.Equal(jpeg[1024..2048], reports[2][1..]);
         Assert.Equal(jpeg[2048..], reports[3][1..453]);
         Assert.All(reports[3][453..], value => Assert.Equal(0, value));
+    }
+
+    [Fact]
+    public void ImageDeDemarrage_EnTeteLogAvecUnPuisBlocsDe1024()
+    {
+        var jpeg = Enumerable.Range(0, 1500).Select(index => (byte)(index % 251 + 1)).ToArray();
+
+        var reports = StreamDockProtocol.BootImage(jpeg);
+
+        Assert.Equal(3, reports.Count);
+        Assert.All(reports, report => Assert.Equal(1025, report.Length));
+        var header = reports[0];
+        Assert.Equal("CRT\0\0LOG", Ascii(header[1..9]));
+        Assert.Equal(new byte[] { 0x00, 0x00, 0x05, 0xDC }, header[9..13]);
+        Assert.Equal(1, header[13]);
+        Assert.All(header[14..], value => Assert.Equal(0, value));
+        Assert.Equal(jpeg[..1024], reports[1][1..]);
+        Assert.Equal(jpeg[1024..], reports[2][1..477]);
+    }
+
+    [Fact]
+    public void AccuseDEcriture_AckOkSansTouche()
+    {
+        var acknowledgement = InputReport(keyId: 0, state: 0);
+        Encoding.ASCII.GetBytes("OK").CopyTo(acknowledgement, 6);
+        var keyPress = InputReport(keyId: 13, state: 1);
+        Encoding.ASCII.GetBytes("OK").CopyTo(keyPress, 6);
+
+        Assert.True(StreamDockProtocol.IsWriteAcknowledgement(acknowledgement));
+        Assert.False(StreamDockProtocol.IsWriteAcknowledgement(keyPress));
+        Assert.False(StreamDockProtocol.IsWriteAcknowledgement(InputReport(keyId: 0, state: 0)));
+        Assert.False(StreamDockProtocol.IsWriteAcknowledgement(new byte[] { 0, (byte)'A', (byte)'C', (byte)'K' }));
     }
 
     [Theory]

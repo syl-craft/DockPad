@@ -18,15 +18,17 @@ internal sealed class FakeDockRenderer : IDockRenderer
     public TaskCompletionSource? SideStripGate { get; set; }
     public TaskCompletionSource SideStripStarted { get; set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public ConcurrentQueue<(DockKey Key, bool Pressed)> Keys { get; } = new();
+    public ConcurrentQueue<DockKeyStyle> KeyStyles { get; } = new();
     public TaskCompletionSource? Gate { get; set; }
     public TaskCompletionSource Started { get; set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    public async Task<SurfaceImage> RenderKeyAsync(DockKey key, bool pressed, int size)
+    public async Task<SurfaceImage> RenderKeyAsync(DockKey key, DockKeyStyle style, bool pressed, int size)
     {
         Keys.Enqueue((key, pressed));
+        KeyStyles.Enqueue(style);
         Started.TrySetResult();
         if (Gate != null) await Gate.Task;
-        string content = key.GetType().Name + JsonSerializer.Serialize(key, key.GetType()) + pressed + Version;
+        string content = key.GetType().Name + JsonSerializer.Serialize(key, key.GetType()) + style + pressed + Version;
         return Image(content, size);
     }
 

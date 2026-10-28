@@ -6,7 +6,7 @@ namespace DockPad.StreamDock;
 
 internal static class StreamDockImage
 {
-    private const int JpegQuality = 95, MinimumJpegQuality = 35;
+    private const int JpegQuality = 95, MinimumJpegQuality = 35, BootImageJpegQuality = 85;
     private const double ScreenDpi = 96;
 
     /// <summary>
@@ -24,6 +24,17 @@ internal static class StreamDockImage
     public static byte[]? ToJpeg(SurfaceImage image)
         => EncodeJpeg(image, size: null, maxLength: StreamDockModel.MaxJpegLength);
 
+    /// <summary>
+    /// Image de démarrage tournée de 90° antihoraire, en qualité fixe ; le plafond est celui du tampon du dock.
+    /// </summary>
+    public static byte[] ToBootJpeg(SurfaceImage image)
+    {
+        var jpeg = Encode(Rotate(image, size: null), BootImageJpegQuality);
+        if (jpeg.Length > StreamDockModel.MaxBootJpegLength)
+            throw new ArgumentException($"Boot image JPEG is {jpeg.Length} bytes, over the {StreamDockModel.MaxBootJpegLength} byte limit.", nameof(image));
+        return jpeg;
+    }
+
     internal static byte[]? EncodeJpeg(SurfaceImage image, int? size, int maxLength)
     {
         var jpeg = EncodeJpegAtBestQuality(image, size, maxLength);
@@ -31,6 +42,17 @@ internal static class StreamDockImage
     }
 
     private static byte[] EncodeJpegAtBestQuality(SurfaceImage image, int? size, int maxLength)
+    {
+        var frame = Rotate(image, size);
+        for (var quality = JpegQuality; ; quality -= 10)
+        {
+            var jpeg = Encode(frame, quality);
+            if (jpeg.Length <= maxLength || quality == MinimumJpegQuality)
+                return jpeg;
+        }
+    }
+
+    private static BitmapFrame Rotate(SurfaceImage image, int? size)
     {
         var source = BitmapSource.Create(image.Width, image.Height, ScreenDpi, ScreenDpi, PixelFormats.Bgra32,
             palette: null, image.Bgra32, stride: image.Width * 4);
@@ -43,15 +65,15 @@ internal static class StreamDockImage
         var rotated = new TransformedBitmap(source, transform);
         var opaque = new FormatConvertedBitmap(rotated, PixelFormats.Bgr24, destinationPalette: null, alphaThreshold: 0);
 
-        var frame = BitmapFrame.Create(opaque);
-        for (var quality = JpegQuality; ; quality -= 10)
-        {
-            var encoder = new JpegBitmapEncoder { QualityLevel = quality };
-            encoder.Frames.Add(frame);
-            using var jpeg = new MemoryStream();
-            encoder.Save(jpeg);
-            if (jpeg.Length <= maxLength || quality == MinimumJpegQuality)
-                return jpeg.ToArray();
-        }
+        return BitmapFrame.Create(opaque);
+    }
+
+    private static byte[] Encode(BitmapFrame frame, int quality)
+    {
+        var encoder = new JpegBitmapEncoder { QualityLevel = quality };
+        encoder.Frames.Add(frame);
+        using var jpeg = new MemoryStream();
+        encoder.Save(jpeg);
+        return jpeg.ToArray();
     }
 }

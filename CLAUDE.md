@@ -49,6 +49,7 @@ DockPad.csproj / DockPad.sln
 
 Assets/
     folder.png                           Icône dossier par défaut (jaune, style Windows 11) — ressource embarquée
+    StreamDockBoot.png                   Image de démarrage du Stream Dock (854 × 480), rendue par tools/StreamDockBoot
 
 Converters/
     InverseBoolConverter.cs              Converter WPF bool inversé
@@ -236,6 +237,7 @@ tools/
                                          et chronomètre un peuplement (bench)
     UsageShot/                           Outil console : capture le bandeau Usage IA et sa fenêtre de réglages en PNG (doc)
     MotionDemo/                          Outil Node : les quatorze motion designs de démonstration (16:9, ≤ 10 s, clair + sombre) → dépôt DockPad-media
+    StreamDockBoot/                      Source HTML de Assets/StreamDockBoot.png ; `node render.mjs` (Playwright de MotionDemo)
 ```
 
 ## Fonctionnalités

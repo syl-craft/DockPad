@@ -9,6 +9,7 @@ namespace DockPad.Tests;
 /// <summary>
 /// Faux HID : démarrage, images atomiques, dernière demande gagnante, validation STP, maintien en vie et fermeture.
 /// Colonne : tranches modifiées, chevauchements, refus JPEG, annulation, effacement et déconnexion pendant l'envoi.
+/// Image de démarrage : « LOG », accusé reçu après l'écriture, taille refusée, délai dépassé.
 /// </summary>
 public class StreamDockSurfaceTests
 {
@@ -23,7 +24,8 @@ public class StreamDockSurfaceTests
         Assert.Equal(["DIS", "LIG", "CLE", "STP"], written.Select(CommandOf));
         Assert.Equal(100, written[1][11]);
         Assert.Equal(0xFF, written[2][12]);
-        Assert.Equal(new SurfaceDescription("293S V3", 3, 5, 96, new SurfaceSize(75, 380)), surface.Description);
+        Assert.Equal(new SurfaceDescription("293S V3", 3, 5, 96, new SurfaceSize(75, 380), new SurfaceSize(854, 480)),
+            surface.Description);
         await surface.DisposeAsync();
     }
 
@@ -796,6 +798,122 @@ public class StreamDockSurfaceTests
         for (var offset = 3; offset < pixels.Length; offset += 4)
             pixels[offset] = 255;
         return new SurfaceImage(75, 380, pixels);
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_EnvoieLogPuisRendLaMainALAccuse()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        var image = Gradient(854, 480);
+        var expectedJpeg = await OnStaThread(() => StreamDockImage.ToBootJpeg(image));
+
+        var sending = surface.SetBootImageAsync(image, CancellationToken.None);
+        await connection.WaitUntilWrittenAsync(written => written.Where(report => CommandOf(report) == "LOG").Any()
+            && written.Count >= 5 + (expectedJpeg.Length + 1023) / 1024);
+        await Task.Delay(50);
+        Assert.False(sending.IsCompleted);
+        connection.QueueInput(WriteAcknowledgement());
+        await sending.WaitAsync(EventWait);
+
+        var written = connection.Written;
+        var header = written.ToList().FindIndex(report => CommandOf(report) == "LOG");
+        var (slot, jpeg) = ImageAt(written, header);
+        Assert.Equal(1, slot);
+        Assert.Equal(expectedJpeg, jpeg);
+
+        // Indépendamment de l'encodeur : JPEG baseline, tourné d'un quart de tour antihoraire (la gauche rouge en bas).
+        Assert.Contains(new byte[] { 0xFF, 0xC0 }, Pairs(jpeg));
+        Assert.DoesNotContain(new byte[] { 0xFF, 0xC2 }, Pairs(jpeg));
+        var (width, height, top, bottom) = await OnStaThread(() =>
+        {
+            var frame = new System.Windows.Media.Imaging.JpegBitmapDecoder(new MemoryStream(jpeg),
+                System.Windows.Media.Imaging.BitmapCreateOptions.None, System.Windows.Media.Imaging.BitmapCacheOption.OnLoad).Frames[0];
+            var bgra = new System.Windows.Media.Imaging.FormatConvertedBitmap(frame, System.Windows.Media.PixelFormats.Bgra32, null, 0);
+            var pixels = new byte[bgra.PixelWidth * bgra.PixelHeight * 4];
+            bgra.CopyPixels(pixels, bgra.PixelWidth * 4, 0);
+            int Offset(int x, int y) => (y * bgra.PixelWidth + x) * 4;
+            return (bgra.PixelWidth, bgra.PixelHeight, pixels[Offset(240, 4)..(Offset(240, 4) + 3)],
+                pixels[Offset(240, 849)..(Offset(240, 849) + 3)]);
+        });
+        Assert.Equal((480, 854), (width, height));
+        Assert.True(top[0] > 200 && top[2] < 60, $"Haut attendu bleu : {string.Join(",", top)}.");
+        Assert.True(bottom[2] > 200 && bottom[0] < 60, $"Bas attendu rouge : {string.Join(",", bottom)}.");
+        await surface.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_AccuseAnterieurALEcriture_Ignore()
+    {
+        var (connection, _, surface) = await OpenAsync();
+        connection.PauseWrites();
+
+        var sending = surface.SetBootImageAsync(Gradient(854, 480), CancellationToken.None);
+        connection.QueueInput(WriteAcknowledgement());
+        await Task.Delay(100);
+        connection.ResumeWrites();
+        await connection.WaitUntilWrittenAsync(written => written.Where(report => CommandOf(report) == "LOG").Any());
+        await Task.Delay(100);
+        Assert.False(sending.IsCompleted);
+
+        connection.QueueInput(WriteAcknowledgement());
+        await sending.WaitAsync(EventWait);
+        await surface.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_SansAccuse_ExpireApresDixSecondes()
+    {
+        var (connection, time, surface) = await OpenAsync();
+
+        var sending = surface.SetBootImageAsync(Gradient(854, 480), CancellationToken.None);
+        await connection.WaitUntilWrittenAsync(written => written.Where(report => CommandOf(report) == "LOG").Any());
+        await Task.Delay(200);
+        time.Advance(TimeSpan.FromSeconds(9));
+        await Task.Delay(50);
+        Assert.False(sending.IsCompleted);
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        await Assert.ThrowsAsync<TimeoutException>(() => sending.WaitAsync(EventWait));
+        await surface.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_MauvaiseTaille_RefuseeSansEcriture()
+    {
+        var (connection, _, surface) = await OpenAsync();
+
+        await Assert.ThrowsAsync<ArgumentException>(() => surface.SetBootImageAsync(Gradient(800, 480), CancellationToken.None));
+
+        await Task.Delay(50);
+        Assert.Equal(4, connection.Written.Count);
+        await surface.DisposeAsync();
+    }
+
+    private static IEnumerable<byte[]> Pairs(byte[] bytes) => bytes.Zip(bytes.Skip(1), (first, second) => new[] { first, second });
+
+    private static byte[] WriteAcknowledgement()
+    {
+        var report = new byte[513];
+        Encoding.ASCII.GetBytes("ACK").CopyTo(report, 1);
+        Encoding.ASCII.GetBytes("OK").CopyTo(report, 6);
+        return report;
+    }
+
+    /// <summary>
+    /// Dégradé opaque, qui se compresse bien : le JPEG reste sous le plafond de l'image de démarrage.
+    /// </summary>
+    private static SurfaceImage Gradient(int width, int height)
+    {
+        var pixels = new byte[width * height * 4];
+        for (var offset = 0; offset < pixels.Length; offset += 4)
+        {
+            var x = offset / 4 % width;
+            pixels[offset] = (byte)(x * 255 / width);
+            pixels[offset + 1] = 40;
+            pixels[offset + 2] = (byte)(255 - x * 255 / width);
+            pixels[offset + 3] = 255;
+        }
+        return new SurfaceImage(width, height, pixels);
     }
 
     private static async Task<(FakeHidConnection Connection, ManualTimeProvider Time, StreamDockSurface Surface)> OpenAsync()

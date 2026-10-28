@@ -19,6 +19,11 @@ public sealed class StreamDockService : IAsyncDisposable
     private static readonly TimeSpan RedrawInterval = TimeSpan.FromMilliseconds(30);
     private static readonly TimeSpan MaximumRedrawInterval = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan ShutdownBudget = TimeSpan.FromSeconds(1);
+
+    /// <summary>
+    /// Image de démarrage laissée affichée après son envoi, le temps de la voir.
+    /// </summary>
+    private static readonly TimeSpan BootImagePreview = TimeSpan.FromSeconds(3);
     private readonly IControlSurfaceDriver _driver;
     private readonly IDockSources _sources;
     private readonly IDockRenderer _renderer;
@@ -38,6 +43,7 @@ public sealed class StreamDockService : IAsyncDisposable
     private DockScreen _wantedScreen = new DockScreen.Home(0);
     private SideStripState _sideStrip = new([], new UsageConfig(), new SystemLoad(null, null), SideStripStyle.Columns, "");
     private long _sideStripRevision;
+    private DockKeyStyle _keyStyle;
     private SurfaceImage? _publishedSideStrip;
     private Task _renderingSideStrip = Task.CompletedTask;
     private Task _pendingSideStripRenders = Task.CompletedTask;
@@ -107,6 +113,24 @@ public sealed class StreamDockService : IAsyncDisposable
     }
 
     /// <summary>
+    /// Dessin des touches ; un changement redessine l'écran affiché sans en changer.
+    /// </summary>
+    public DockKeyStyle KeyStyle
+    {
+        get { lock (_gate) return _keyStyle; }
+        set
+        {
+            lock (_gate)
+            {
+                var style = Enum.IsDefined(value) ? value : DockKeyStyle.Neon;
+                if (_keyStyle == style) return;
+                _keyStyle = style;
+                if (_started && _stopped == false) Enqueue(RedrawAsync);
+            }
+        }
+    }
+
+    /// <summary>
     /// L'IA affichée par le bandeau Usage IA : ses fenêtres passent en tête de la colonne.
     /// </summary>
     public string PrincipalProviderId
@@ -131,6 +155,47 @@ public sealed class StreamDockService : IAsyncDisposable
             lock (_gate)
                 return _displayed?.View.Screen ?? new DockScreen.Home(0);
         }
+    }
+
+    /// <summary>
+    /// Écrit l'image de démarrage sur le dock connecté, puis renvoie les touches et la colonne qu'elle a pu masquer.
+    /// Faux sans dock connecté qui en accepte une ; un échec d'écriture remonte sans couper la connexion.
+    /// </summary>
+    public async Task<bool> ApplyBootImageAsync(SurfaceImage image)
+    {
+        var applied = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (_gate)
+        {
+            if (_started == false || _stopped) return false;
+            Enqueue(() => WriteBootImageAsync(image, applied));
+        }
+        var finished = await Task.WhenAny(applied.Task, _stopSignal.Task).ConfigureAwait(false);
+        return finished == applied.Task && await applied.Task.ConfigureAwait(false);
+    }
+
+    private async Task WriteBootImageAsync(SurfaceImage image, TaskCompletionSource<bool> applied)
+    {
+        var session = _session;
+        if (session == null || IsCurrentSession(session) == false || session.Surface.Description.BootImage == null)
+        {
+            applied.TrySetResult(false);
+            return;
+        }
+        try
+        {
+            await InSessionAsync(session, session.Surface.SetBootImageAsync(image, session.Token)).ConfigureAwait(false);
+            applied.TrySetResult(true);
+        }
+        catch (Exception ex) { applied.TrySetException(ex); }
+
+        // Le dock montre l'image qu'il vient d'écrire et la garde ensuite en fond : seule une nouvelle connexion le remet
+        // au propre. La file attend pendant l'aperçu, connexion ouverte : ni appui ni rafraîchissement ne la recouvre, et
+        // la fermeture, qui éteint l'écran, ne vient qu'après.
+        if (IsCurrentSession(session) == false) return;
+        var screen = _wantedScreen;
+        await Task.Delay(BootImagePreview, _time, _stopToken).ConfigureAwait(false);
+        ForgetSurface();
+        await ConnectAsync(keptScreen: screen).ConfigureAwait(false);
     }
 
     public void Start()
@@ -298,7 +363,12 @@ public sealed class StreamDockService : IAsyncDisposable
         catch (Exception ex) { ReportFailure(ex, "Stream Dock : boucle interrompue."); }
     }
 
-    private async Task ConnectAsync()
+    private Task ConnectAsync() => ConnectAsync(keptScreen: null);
+
+    /// <summary>
+    /// keptScreen : écran à rouvrir, sinon l'accueil ou la page de DockPad.
+    /// </summary>
+    private async Task ConnectAsync(DockScreen? keptScreen)
     {
         if (_session != null || _stopSignal.Task.IsCompleted) return;
         try
@@ -324,7 +394,7 @@ public sealed class StreamDockService : IAsyncDisposable
             var session = _session;
             if (session == null) return;
             _presses.Clear();
-            _wantedScreen = new DockScreen.Home(0);
+            _wantedScreen = keptScreen ?? new DockScreen.Home(0);
             lock (_gate)
             {
                 _sideStrip = new SideStripState([], new UsageConfig(), new SystemLoad(null, null), _sideStrip.Style,
@@ -332,7 +402,7 @@ public sealed class StreamDockService : IAsyncDisposable
                 ++_sideStripRevision;
                 _publishedSideStrip = null;
             }
-            if (SyncPages)
+            if (SyncPages && keptScreen == null)
             {
                 try
                 {
@@ -342,7 +412,7 @@ public sealed class StreamDockService : IAsyncDisposable
                 }
                 catch (Exception ex) { ReportFailure(ex, "Stream Dock : source Raccourcis illisible."); }
             }
-            await ShowScreenAsync(session, CurrentRevision()).ConfigureAwait(false);
+            await ShowScreenAsync(session, CurrentRevision(), keepScreen: keptScreen != null).ConfigureAwait(false);
             lock (_gate)
             {
                 if (_stopped || _session != session || session.Interrupted.Task.IsCompleted) return;
@@ -524,14 +594,15 @@ public sealed class StreamDockService : IAsyncDisposable
         try
         {
             var description = session.Surface.Description;
+            var style = KeyStyle;
             var normal = new SurfaceImage[view.Keys.Count];
             var pressed = new SurfaceImage[view.Keys.Count];
             for (int index = 0; index < view.Keys.Count; index++)
             {
                 normal[index] = await InSessionAsync(session, _renderer.RenderKeyAsync(
-                    view.Keys[index], pressed: false, description.KeyImageSize)).ConfigureAwait(false);
+                    view.Keys[index], style, pressed: false, description.KeyImageSize)).ConfigureAwait(false);
                 pressed[index] = await InSessionAsync(session, _renderer.RenderKeyAsync(
-                    view.Keys[index], pressed: true, description.KeyImageSize)).ConfigureAwait(false);
+                    view.Keys[index], style, pressed: true, description.KeyImageSize)).ConfigureAwait(false);
                 if (revision != CurrentRevision()) return;
             }
             Enqueue(() => PublishViewAsync(session, revision, view, normal, pressed, shortcutPage));

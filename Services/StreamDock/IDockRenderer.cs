@@ -6,6 +6,6 @@ namespace DockPad.Services.StreamDock;
 
 public interface IDockRenderer
 {
-    Task<SurfaceImage> RenderKeyAsync(DockKey key, bool pressed, int size);
+    Task<SurfaceImage> RenderKeyAsync(DockKey key, DockKeyStyle style, bool pressed, int size);
     Task<SurfaceImage> RenderSideStripAsync(SideStripContent content, SideStripStyle style, SurfaceSize size);
 }

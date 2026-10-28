@@ -81,6 +81,8 @@ public partial class SettingsDialog : Window
         ChkStreamDockEnabled.IsChecked = SettingsService.LoadStreamDockEnabled();
         ChkStreamDockSyncPages.IsChecked = SettingsService.LoadStreamDockSyncPages();
         FillSideStripPreviews();
+        FillKeyStylePreviews();
+        FillBootImage();
         TxtStreamDockDriverMissing.Visibility = File.Exists(Path.Combine(
             SurfaceDriverLoader.PluginsFolder, "StreamDock", "DockPad.StreamDock.dll"))
             ? Visibility.Collapsed : Visibility.Visible;
@@ -177,12 +179,190 @@ public partial class SettingsDialog : Window
         };
     }
 
+    /// <summary>
+    /// Vignettes des styles : Accueil et les premières tuiles de la grille, par le vrai rendu des touches.
+    /// </summary>
+    private void FillKeyStylePreviews()
+    {
+        DrawKeyStylePreviews();
+        var saved = SettingsService.LoadStreamDockKeyStyle();
+        LstStreamDockKeyStyle.SelectedItem = LstStreamDockKeyStyle.Items.Cast<ListBoxItem>()
+            .Where(item => item.Tag is DockKeyStyle style && style == saved)
+            .FirstOrDefault();
+
+        // Chaque clic redessine les touches du dock ; sans Sauvegarder, la fermeture remet le style enregistré.
+        LstStreamDockKeyStyle.SelectionChanged += (_, _) =>
+            (Application.Current as App)?.PreviewStreamDockKeyStyle(SelectedKeyStyle);
+        Closed += (_, _) =>
+        {
+            if (DialogResult != true)
+                (Application.Current as App)?.PreviewStreamDockKeyStyle(saved);
+        };
+    }
+
+    /// <summary>
+    /// Redessinées aussi au changement de langue : « Accueil » est écrit dans l'image.
+    /// </summary>
+    /// <summary>
+    /// Image choisie dans la fenêtre, null pour celle de DockPad ; enregistrée avec les autres réglages.
+    /// </summary>
+    private string? _bootImagePath;
+
+    /// <summary>
+    /// Image vérifiée et affichée en aperçu : c'est elle qu'envoie « Appliquer au dock », sans relire le fichier.
+    /// </summary>
+    private BitmapSource _bootImage = null!;
+
+    /// <summary>
+    /// Dernier message, recalculé au changement de langue.
+    /// </summary>
+    private (Func<string> Message, bool IsError)? _bootImageStatus;
+
+    private void FillBootImage()
+    {
+        var saved = SettingsService.LoadStreamDockBootImage();
+        var image = saved == null ? null : DockBootImage.Read(saved);
+        bool isUsable = image != null && DockBootImage.HasBootSize(image);
+        ShowBootImage(isUsable ? image! : DockBootImage.Default(), isUsable ? saved : null);
+    }
+
+    private void ShowBootImage(BitmapSource image, string? path)
+    {
+        _bootImage = image;
+        _bootImagePath = path;
+        ImgStreamDockBootImage.Source = image;
+    }
+
+    private void ChooseBootImage_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = Loc.T("Settings_StreamDock_BootImage_Filter"),
+            CheckFileExists = true,
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        var image = DockBootImage.Read(dialog.FileName);
+        if (image == null)
+        {
+            ShowBootImageStatus(() => Loc.T("Settings_StreamDock_BootImage_Unreadable"), isError: true);
+            return;
+        }
+        if (DockBootImage.HasBootSize(image) == false)
+        {
+            ShowBootImageStatus(() => Loc.F("Settings_StreamDock_BootImage_WrongSize", image.PixelWidth, image.PixelHeight,
+                DockBootImage.Size.Width, DockBootImage.Size.Height), isError: true);
+            return;
+        }
+        ShowBootImage(image, dialog.FileName);
+        ShowBootImageStatus(null, isError: false);
+    }
+
+    private void DefaultBootImage_Click(object sender, RoutedEventArgs e)
+    {
+        ShowBootImage(DockBootImage.Default(), path: null);
+        ShowBootImageStatus(null, isError: false);
+    }
+
+    /// <summary>
+    /// Seul envoi de l'image de démarrage : le dock l'écrit dans sa mémoire permanente.
+    /// </summary>
+    private async void ApplyBootImage_Click(object sender, RoutedEventArgs e)
+    {
+        if (Application.Current is not App app) return;
+        var image = DockBootImage.ToSurfaceImage(_bootImage);
+        BtnStreamDockBootImageApply.IsEnabled = false;
+        ShowBootImageStatus(() => Loc.T("Settings_StreamDock_BootImage_Sending"), isError: false);
+        try
+        {
+            bool isSent = await app.ApplyStreamDockBootImageAsync(image);
+            ShowBootImageStatus(isSent
+                ? () => Loc.T("Settings_StreamDock_BootImage_Sent")
+                : () => Loc.T("Settings_StreamDock_BootImage_NoDock"), isError: isSent == false);
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Stream Dock : envoi de l'image de démarrage échoué.");
+            ShowBootImageStatus(() => Loc.T("Settings_StreamDock_BootImage_Failed"), isError: true);
+        }
+        finally
+        {
+            BtnStreamDockBootImageApply.IsEnabled = true;
+        }
+    }
+
+    private void ShowBootImageStatus(Func<string>? message, bool isError)
+    {
+        _bootImageStatus = message == null ? null : (message, isError);
+        DrawBootImageStatus();
+    }
+
+    private void DrawBootImageStatus()
+    {
+        var status = _bootImageStatus;
+        TxtStreamDockBootImageStatus.Text = status == null ? "" : status.Value.Message();
+        TxtStreamDockBootImageStatus.Visibility = status == null ? Visibility.Collapsed : Visibility.Visible;
+        TxtStreamDockBootImageStatus.SetResourceReference(TextBlock.ForegroundProperty,
+            status?.IsError == true ? "Brush.Danger" : "Brush.TextHint");
+    }
+
+    private void DrawKeyStylePreviews()
+    {
+        var keys = PreviewKeys();
+        (DockKeyStyle Style, Image Preview)[] previews =
+        [
+            (DockKeyStyle.Neon, ImgKeyStyleNeon),
+            (DockKeyStyle.Flat, ImgKeyStyleFlat),
+            (DockKeyStyle.Classic, ImgKeyStyleClassic),
+        ];
+        foreach (var (style, preview) in previews)
+            preview.Source = KeyRow(keys, style);
+    }
+
+    /// <summary>
+    /// Les trois premières touches de la première page garnie ; deux tuiles sans icône sur une grille vide.
+    /// </summary>
+    private static DockKey[] PreviewKeys()
+    {
+        var window = Application.Current.Windows.OfType<QuickAccessWindow>().FirstOrDefault();
+        var entries = window?.ShortcutEntries() ?? [];
+        var pagesWithTiles = DockLayout.PagesWithTiles(entries);
+        if (window == null || pagesWithTiles.Count == 0)
+            return [new DockKey.GoHome(), new DockKey.RunTile(new ShortcutEntry { Name = "DockPad" }),
+                new DockKey.RunTile(new ShortcutEntry { Name = "Terminal" })];
+
+        var view = DockLayout.Build(new DockScreen.Page(pagesWithTiles[0], 0), entries, window.ShortcutPages(), keyCount: 15);
+        return view.Keys.Take(3).ToArray();
+    }
+
+    private static BitmapSource KeyRow(DockKey[] keys, DockKeyStyle style)
+    {
+        const int size = 96, gap = 8;
+        int width = keys.Length * size + (keys.Length - 1) * gap;
+        var pixels = new byte[width * size * 4];
+        for (int index = 0; index < keys.Length; index++)
+        {
+            var key = DockImageRenderer.RenderKey(keys[index], style, pressed: false, size);
+            for (int y = 0; y < size; y++)
+                Buffer.BlockCopy(key.Bgra32, y * size * 4, pixels, (y * width + index * (size + gap)) * 4, size * 4);
+        }
+        var bitmap = BitmapSource.Create(width, size, 96, 96, PixelFormats.Bgra32, null, pixels, width * 4);
+        bitmap.Freeze();
+        return bitmap;
+    }
+
+    private DockKeyStyle SelectedKeyStyle =>
+        LstStreamDockKeyStyle.SelectedItem is ListBoxItem { Tag: DockKeyStyle style }
+            ? style : DockKeyStyle.Neon;
+
     private SideStripStyle SelectedSideStripStyle =>
         LstStreamDockSideStrip.SelectedItem is ListBoxItem { Tag: SideStripStyle style }
             ? style : SideStripStyle.Columns;
 
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
+        DrawKeyStylePreviews();
+        DrawBootImageStatus();
         FillLanguages();
         FillThemes();
         FillTerminals((CmbDefaultTerminal.SelectedItem as TerminalChoice)?.Tag ?? "");
@@ -419,6 +599,8 @@ public partial class SettingsDialog : Window
         SettingsService.SaveStreamDockEnabled(ChkStreamDockEnabled.IsChecked == true);
         SettingsService.SaveStreamDockSyncPages(ChkStreamDockSyncPages.IsChecked == true);
         SettingsService.SaveStreamDockSideStrip(SelectedSideStripStyle);
+        SettingsService.SaveStreamDockKeyStyle(SelectedKeyStyle);
+        SettingsService.SaveStreamDockBootImage(_bootImagePath);
         (Application.Current as App)?.ApplyStreamDockSettings();
 
         DialogResult = true;

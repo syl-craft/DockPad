@@ -2,12 +2,15 @@ using System.Collections.Concurrent;
 using DockPad.Models;
 using DockPad.Services;
 using DockPad.Services.StreamDock;
+using DockPad.Surfaces;
 
 namespace DockPad.Tests;
 
 /// <summary>
 /// Synchro bidirectionnelle sans boucle, reconnexion et maintien après modification de la grille.
 /// Activation à chaud, publication validée, quotas périodiques et annulation au changement de configuration ou à l'arrêt.
+/// Image de démarrage : envoyée au dock connecté puis connexion rouverte sur le même écran après trois secondes
+/// d'aperçu, refusée sans dock, échec remonté et connexion rouverte aussi.
 /// </summary>
 public class StreamDockServiceSyncTests
 {
@@ -239,6 +242,86 @@ public class StreamDockServiceSyncTests
         Assert.Equal(keys, dock.Surface.Images.Count);
         Assert.Equal(columns, dock.Surface.SideStrips.Count);
         Assert.Equal(commits, dock.Surface.Commits);
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_EnvoyeePuisTouchesEtColonneRenvoyees()
+    {
+        await using var dock = new TestDock();
+        dock.Surface.Description = dock.Surface.Description with { BootImage = new SurfaceSize(854, 480) };
+        dock.Sources.Usages = [Usage(10)];
+        await dock.Start();
+        int keys = dock.Surface.Images.Count;
+        int columns = dock.Surface.SideStrips.Count;
+        var image = new SurfaceImage(854, 480, new byte[854 * 480 * 4]);
+
+        await dock.Click(1);
+        var screen = dock.Service.Screen;
+        keys = dock.Surface.Images.Count;
+
+        Assert.True(await Bounded(dock.Service.ApplyBootImageAsync(image)));
+        await Task.Delay(50);
+        dock.Time.Advance(TimeSpan.FromMilliseconds(2999));
+        await Task.Delay(50);
+        Assert.Equal(1, dock.Driver.Opens);
+        Assert.Equal(0, dock.Surface.DisposeCalls);
+        await dock.Advance(1);
+
+        Assert.Same(image, Assert.Single(dock.Surface.BootImages));
+        Assert.Equal(2, dock.Driver.Opens);
+        Assert.Equal(1, dock.Surface.DisposeCalls);
+        Assert.Equal(screen, dock.Service.Screen);
+        Assert.Equal(keys + 15, dock.Surface.Images.Count);
+        Assert.True(dock.Surface.SideStrips.Count > columns);
+        dock.AssertColumn();
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_RelachementPendantLeRedessin_ClicSuivantLance()
+    {
+        await using var dock = new TestDock();
+        dock.Surface.Description = dock.Surface.Description with { BootImage = new SurfaceSize(854, 480) };
+        await dock.Start();
+        await dock.Click(0);
+        dock.Surface.Press(1);
+        await dock.Idle();
+
+        var applying = dock.Service.ApplyBootImageAsync(new SurfaceImage(854, 480, new byte[854 * 480 * 4]));
+        dock.Surface.Release(1);
+        Assert.True(await Bounded(applying));
+        await dock.PreviewBootImage();
+        await dock.Click(1);
+
+        Assert.Equal("Tile 0", Assert.Single(dock.Sources.Runs).Name);
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_SansDockOuSansImageDeDemarrage_Faux()
+    {
+        await using var dock = new TestDock();
+        var image = new SurfaceImage(854, 480, new byte[854 * 480 * 4]);
+        Assert.False(await Bounded(dock.Service.ApplyBootImageAsync(image)));
+
+        await dock.Start();
+        Assert.False(await Bounded(dock.Service.ApplyBootImageAsync(image)));
+        Assert.Empty(dock.Surface.BootImages);
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_EchecDEcriture_RemonteEtDockRedessine()
+    {
+        await using var dock = new TestDock();
+        dock.Surface.Description = dock.Surface.Description with { BootImage = new SurfaceSize(854, 480) };
+        await dock.Start();
+        int keys = dock.Surface.Images.Count;
+        dock.Surface.BootImageFailure = new TimeoutException("No acknowledgement.");
+
+        await Assert.ThrowsAsync<TimeoutException>(() =>
+            Bounded(dock.Service.ApplyBootImageAsync(new SurfaceImage(854, 480, new byte[854 * 480 * 4]))));
+        await dock.PreviewBootImage();
+
+        Assert.Equal(keys + 15, dock.Surface.Images.Count);
+        Assert.Equal(2, dock.Driver.Opens);
     }
 
     [Fact]
@@ -566,6 +649,7 @@ public class StreamDockServiceSyncTests
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private static Task Bounded(Task task) => task.WaitAsync(TimeSpan.FromSeconds(5));
+    private static Task<T> Bounded<T>(Task<T> task) => task.WaitAsync(TimeSpan.FromSeconds(5));
 
     private sealed class TestDock : IAsyncDisposable
     {
@@ -590,6 +674,15 @@ public class StreamDockServiceSyncTests
         }
 
         public Task Idle(bool includeUsages = true) => Bounded(Service.WhenIdleAsync(includeUsages));
+
+        /// <summary>
+        /// Les trois secondes pendant lesquelles le dock montre son image de démarrage, avant la reconnexion.
+        /// </summary>
+        public async Task PreviewBootImage()
+        {
+            await Task.Delay(50);
+            await Advance(3000);
+        }
 
         public async Task Click(int index, bool includeUsages = true)
         {

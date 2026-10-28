@@ -22,6 +22,9 @@ internal static class JpegEncodingThread
     public static Task<byte[]?> EncodeAsync(SurfaceImage image, CancellationToken ct)
         => EncodeAsync(() => StreamDockImage.ToJpeg(image), ct);
 
+    public static Task<byte[]> EncodeBootImageAsync(SurfaceImage image, CancellationToken ct)
+        => EncodeAsync(() => StreamDockImage.ToBootJpeg(image), ct);
+
     private static Task<T> EncodeAsync<T>(Func<T> encode, CancellationToken ct)
     {
         if (ct.IsCancellationRequested)

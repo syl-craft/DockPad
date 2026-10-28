@@ -11,7 +11,7 @@ namespace DockPad.Services.StreamDock;
 /// <summary>
 /// Images droites et opaques destinées à l’encodage JPEG du pilote, à rendre depuis un thread STA.
 /// </summary>
-public static class DockImageRenderer
+public static partial class DockImageRenderer
 {
     private static readonly Brush KeyBackground = FrozenBrush(Color.FromRgb(30, 30, 30));
     private static readonly Brush PressedBackground = FrozenBrush(Color.FromRgb(58, 58, 58));
@@ -21,9 +21,12 @@ public static class DockImageRenderer
     private static readonly Geometry Left = FrozenGeometry("M 13,2 L 3,12 L 13,22 L 16,19 L 11,14 L 23,14 L 23,10 L 11,10 L 16,5 Z");
     private static readonly Geometry Right = FrozenGeometry("M 11,2 L 21,12 L 11,22 L 8,19 L 13,14 L 1,14 L 1,10 L 13,10 L 8,5 Z");
 
-    public static SurfaceImage RenderKey(DockKey key, bool pressed, int size)
+    public static SurfaceImage RenderKey(DockKey key, DockKeyStyle style, bool pressed, int size)
     {
         ArgumentNullException.ThrowIfNull(key);
+        if (style != DockKeyStyle.Classic)
+            return RenderStyledKey(key, style, pressed, size);
+
         return Render(size, designSize: 96, key is DockKey.Empty ? Brushes.Black
             : pressed ? PressedBackground : KeyBackground, context =>
         {
@@ -92,6 +95,18 @@ public static class DockImageRenderer
 
     private static void DrawGroup(DrawingContext context, ShortcutEntry group, Rect bounds)
     {
+        DrawGroupIcons(context, group, bounds);
+        DrawKeyLabel(context, GroupName(group));
+    }
+
+    private static string GroupName(ShortcutEntry group) =>
+        string.IsNullOrWhiteSpace(group.Name) ? Loc.T("Group_Actions") : group.Name;
+
+    /// <summary>
+    /// Mosaïque des icônes des enfants, aux emplacements de la tuile composée de DockPad.
+    /// </summary>
+    private static void DrawGroupIcons(DrawingContext context, ShortcutEntry group, Rect bounds)
+    {
         int capacity = TileGroupService.Capacity(group.Layout);
         double gap = bounds.Width / 24;
         double iconScale = group.Layout == TileLayout.TwoPlusFour
@@ -110,9 +125,6 @@ public static class DockImageRenderer
                 bounds.Y + cell.Y + (cell.Height - side) / 2, side, side);
             DrawTileIcon(context, child, iconBounds);
         }
-
-        string name = string.IsNullOrWhiteSpace(group.Name) ? Loc.T("Group_Actions") : group.Name;
-        DrawKeyLabel(context, name);
     }
 
     private static void DrawKeyLabel(DrawingContext context, string label) =>
@@ -147,22 +159,29 @@ public static class DockImageRenderer
 
     private static void DrawTileIcon(DrawingContext context, ShortcutEntry entry, Rect bounds)
     {
-        BitmapSource? icon;
-        try
-        {
-            icon = IconStoreService.LoadImage(
-                IconStoreService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath);
-        }
-        catch (Exception ex)
-        {
-            LogService.Warn(ex, "Impossible de charger une icône de tuile du Stream Dock.");
-            icon = null;
-        }
-
+        var icon = LoadTileIcon(entry, out _);
         if (icon == null)
             DrawInitial(context, entry.Name, bounds, InitialBackground(entry.Name), Brushes.White);
         else
             DrawImage(context, icon, bounds);
+    }
+
+    /// <summary>
+    /// Icône du profil, sinon celle de la tuile ; <paramref name="iconPath"/> est le chemin lu, clé du cache des teintes.
+    /// </summary>
+    private static BitmapSource? LoadTileIcon(ShortcutEntry entry, out string? iconPath)
+    {
+        iconPath = null;
+        try
+        {
+            iconPath = IconStoreService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath;
+            return IconStoreService.LoadImage(iconPath);
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Impossible de charger une icône de tuile du Stream Dock.");
+            return null;
+        }
     }
 
     private static BitmapSource? LoadIcon(string? iconRef)
@@ -182,13 +201,14 @@ public static class DockImageRenderer
         DrawText(context, initial, bounds, fontSize: bounds.Height * 0.58, fill: foreground);
     }
 
-    private static Brush InitialBackground(string name)
+    private static Brush InitialBackground(string name) => FrozenBrush(InitialColor(name));
+
+    private static Color InitialColor(string name)
     {
         uint hash = 2166136261;
         foreach (char character in name)
             hash = unchecked((hash ^ character) * 16777619);
-        return FrozenBrush(Color.FromRgb((byte)(55 + hash % 90),
-            (byte)(55 + (hash >> 8) % 90), (byte)(55 + (hash >> 16) % 90)));
+        return Color.FromRgb((byte)(55 + hash % 90), (byte)(55 + (hash >> 8) % 90), (byte)(55 + (hash >> 16) % 90));
     }
 
     private static void DrawImage(DrawingContext context, BitmapSource image, Rect bounds)

@@ -1874,6 +1874,57 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Settings_Tab_StreamDock" xml:space="preserve">
     <value>Stream Dock</value>
   </data>
+  <data name="Settings_StreamDock_KeyStyle" xml:space="preserve">
+    <value>Key style</value>
+  </data>
+  <data name="Settings_StreamDock_KeyStyle_Neon" xml:space="preserve">
+    <value>Neon</value>
+  </data>
+  <data name="Settings_StreamDock_KeyStyle_Flat" xml:space="preserve">
+    <value>Flat</value>
+  </data>
+  <data name="Settings_StreamDock_KeyStyle_Classic" xml:space="preserve">
+    <value>Classic</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage" xml:space="preserve">
+    <value>Startup image</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Hint" xml:space="preserve">
+    <value>Shown for about 2 seconds when the dock powers on. Required size: 854 × 480 px.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Preview" xml:space="preserve">
+    <value>Startup image preview</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Choose" xml:space="preserve">
+    <value>Choose an image…</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Default" xml:space="preserve">
+    <value>DockPad image</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Apply" xml:space="preserve">
+    <value>Apply to the dock</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Filter" xml:space="preserve">
+    <value>Images (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_WrongSize" xml:space="preserve">
+    <value>This image is {0} × {1} px; the dock needs exactly {2} × {3} px. It was not kept.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Unreadable" xml:space="preserve">
+    <value>This file can't be read as an image.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Sending" xml:space="preserve">
+    <value>Sending to the dock…</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Sent" xml:space="preserve">
+    <value>Image saved on the dock: it shows at the next power-on.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_NoDock" xml:space="preserve">
+    <value>No Stream Dock connected: enable it, save, then try again.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Failed" xml:space="preserve">
+    <value>The dock didn't confirm the image. Unplug it, plug it back in, then try again.</value>
+  </data>
   <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
     <value>Side display</value>
   </data>
