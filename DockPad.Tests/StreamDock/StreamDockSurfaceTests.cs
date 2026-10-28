@@ -9,6 +9,7 @@ namespace DockPad.Tests;
 /// <summary>
 /// Faux HID : démarrage, images atomiques, dernière demande gagnante, validation STP, maintien en vie et fermeture.
 /// Colonne : tranches modifiées, chevauchements, refus JPEG, annulation, effacement et déconnexion pendant l'envoi.
+/// Écran de démarrage : déconnexion « CLE DC », puis fermeture sans effacement ni mise en veille.
 /// Image de démarrage : « LOG », accusé reçu après l'écriture puis réveil et écran effacé, taille refusée, délai dépassé.
 /// </summary>
 public class StreamDockSurfaceTests
@@ -283,6 +284,21 @@ public class StreamDockSurfaceTests
 
         Assert.Equal(4, connection.Written.Count);
         await surface.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task EcranDeDemarrage_DeconnexionPuisFermetureSansVeille()
+    {
+        var (connection, _, surface) = await OpenAsync();
+
+        await surface.ShowBootScreenAsync(CancellationToken.None);
+        await surface.DisposeAsync();
+
+        var shutdown = connection.Written.Skip(4).ToList();
+        Assert.Equal(["CLE", "STP", "CLE"], shutdown.Select(CommandOf));
+        Assert.Equal(0xFF, shutdown[0][12]);
+        Assert.Equal("DC", Encoding.ASCII.GetString(shutdown[2], 11, 2));
+        Assert.True(connection.IsDisposed);
     }
 
     [Fact]

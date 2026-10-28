@@ -70,6 +70,11 @@ public interface IControlSurface : IAsyncDisposable
     /// et la colonne sont ensuite à renvoyer en entier.
     /// </summary>
     Task SetBootImageAsync(SurfaceImage image, CancellationToken ct);
+
+    /// <summary>
+    /// Rend l'écran à la surface, qui affiche son image de démarrage ; la fermeture qui suit la laisse allumée.
+    /// </summary>
+    Task ShowBootScreenAsync(CancellationToken ct);
 }
 
 public interface IControlSurfaceDriver

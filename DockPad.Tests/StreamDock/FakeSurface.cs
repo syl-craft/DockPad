@@ -92,6 +92,16 @@ internal sealed class FakeSurface : IControlSurface
     public ConcurrentQueue<SurfaceImage> BootImages { get; } = new();
     public Exception? BootImageFailure { get; set; }
 
+    public int BootScreens { get; private set; }
+
+    public Task ShowBootScreenAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (_disconnection != null) throw _disconnection;
+        BootScreens++;
+        return Task.CompletedTask;
+    }
+
     public Task SetBootImageAsync(SurfaceImage image, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();

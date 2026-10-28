@@ -422,7 +422,7 @@ public partial class App : Application
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
     {
         if (e.Mode == PowerModes.Suspend)
-            TurnOffStreamDock("veille");
+            TurnOffStreamDock("veille", showBootScreen: false);
         else if (e.Mode == PowerModes.Resume)
             TurnOnStreamDock(restart: true);
     }
@@ -432,7 +432,7 @@ public partial class App : Application
         if (e.Reason == SessionSwitchReason.SessionLock)
         {
             Dispatcher.Invoke(() => _isSessionLocked = true);
-            TurnOffStreamDock("verrouillage");
+            TurnOffStreamDock("verrouillage", showBootScreen: true);
         }
         else if (e.Reason == SessionSwitchReason.SessionUnlock)
         {
@@ -442,16 +442,22 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Éteint le dock et attend la fin de l'arrêt : Windows n'attend pas le dock avant de se mettre en veille.
+    /// Arrête le dock, éteint ou sur son image de démarrage, et attend la fin de l'arrêt : Windows n'attend pas le dock
+    /// avant de se mettre en veille.
     /// </summary>
-    private void TurnOffStreamDock(string cause)
+    private void TurnOffStreamDock(string cause, bool showBootScreen)
     {
         try
         {
+            var service = Dispatcher.Invoke(() => IsExiting ? null : _streamDock);
+            if (service == null) return;
+            if (showBootScreen)
+            {
+                try { service.ShowBootScreenAsync().Wait(TimeSpan.FromSeconds(1)); }
+                catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : image de démarrage non affichée."); }
+            }
             var stopping = Dispatcher.Invoke(() =>
-                IsExiting == false && _streamDock != null
-                    ? StopStreamDockAsync(applySettingsAfterStop: false)
-                    : Task.CompletedTask);
+                _streamDock == service ? StopStreamDockAsync(applySettingsAfterStop: false) : Task.CompletedTask);
             stopping.GetAwaiter().GetResult();
         }
         catch (Exception ex) { Services.LogService.Warn(ex, $"Stream Dock : extinction ({cause}) impossible."); }

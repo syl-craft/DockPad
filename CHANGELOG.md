@@ -9,7 +9,7 @@
 
 ### Corrections
 
-- **Stream Dock en veille** : le dock s'éteint quand l'ordinateur se met en veille ou que la session est verrouillée, et se rallume au réveil ou au déverrouillage.
+- **Stream Dock en veille** : le dock s'éteint quand l'ordinateur se met en veille et affiche son image de démarrage quand la session est verrouillée ; il revient au réveil ou au déverrouillage.
 
 ## [1.31.0] — 2026-10-27
 
