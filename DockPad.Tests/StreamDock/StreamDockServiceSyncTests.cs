@@ -9,8 +9,8 @@ namespace DockPad.Tests;
 /// <summary>
 /// Synchro bidirectionnelle sans boucle, reconnexion et maintien après modification de la grille.
 /// Activation à chaud, publication validée, quotas périodiques et annulation au changement de configuration ou à l'arrêt.
-/// Image de démarrage : envoyée au dock connecté puis connexion rouverte sur le même écran, refusée sans dock,
-/// échec remonté et connexion rouverte aussi.
+/// Image de démarrage : envoyée au dock connecté puis connexion rouverte sur le même écran après trois secondes
+/// d'aperçu, refusée sans dock, échec remonté et connexion rouverte aussi.
 /// </summary>
 public class StreamDockServiceSyncTests
 {
@@ -260,7 +260,11 @@ public class StreamDockServiceSyncTests
         keys = dock.Surface.Images.Count;
 
         Assert.True(await Bounded(dock.Service.ApplyBootImageAsync(image)));
-        await dock.Idle();
+        await Task.Delay(50);
+        dock.Time.Advance(TimeSpan.FromMilliseconds(2999));
+        await Task.Delay(50);
+        Assert.Equal(1, dock.Driver.Opens);
+        await dock.Advance(1);
 
         Assert.Same(image, Assert.Single(dock.Surface.BootImages));
         Assert.Equal(2, dock.Driver.Opens);
@@ -284,7 +288,7 @@ public class StreamDockServiceSyncTests
         var applying = dock.Service.ApplyBootImageAsync(new SurfaceImage(854, 480, new byte[854 * 480 * 4]));
         dock.Surface.Release(1);
         Assert.True(await Bounded(applying));
-        await dock.Idle();
+        await dock.PreviewBootImage();
         await dock.Click(1);
 
         Assert.Equal("Tile 0", Assert.Single(dock.Sources.Runs).Name);
@@ -313,7 +317,7 @@ public class StreamDockServiceSyncTests
 
         await Assert.ThrowsAsync<TimeoutException>(() =>
             Bounded(dock.Service.ApplyBootImageAsync(new SurfaceImage(854, 480, new byte[854 * 480 * 4]))));
-        await dock.Idle();
+        await dock.PreviewBootImage();
 
         Assert.Equal(keys + 15, dock.Surface.Images.Count);
         Assert.Equal(2, dock.Driver.Opens);
@@ -669,6 +673,15 @@ public class StreamDockServiceSyncTests
         }
 
         public Task Idle(bool includeUsages = true) => Bounded(Service.WhenIdleAsync(includeUsages));
+
+        /// <summary>
+        /// Les trois secondes pendant lesquelles le dock libéré montre son image de démarrage.
+        /// </summary>
+        public async Task PreviewBootImage()
+        {
+            await Task.Delay(50);
+            await Advance(3000);
+        }
 
         public async Task Click(int index, bool includeUsages = true)
         {

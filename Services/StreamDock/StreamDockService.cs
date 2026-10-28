@@ -19,6 +19,11 @@ public sealed class StreamDockService : IAsyncDisposable
     private static readonly TimeSpan RedrawInterval = TimeSpan.FromMilliseconds(30);
     private static readonly TimeSpan MaximumRedrawInterval = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan ShutdownBudget = TimeSpan.FromSeconds(1);
+
+    /// <summary>
+    /// Dock libéré après l'envoi de l'image de démarrage : il l'affiche le temps de la voir.
+    /// </summary>
+    private static readonly TimeSpan BootImagePreview = TimeSpan.FromSeconds(3);
     private readonly IControlSurfaceDriver _driver;
     private readonly IDockSources _sources;
     private readonly IDockRenderer _renderer;
@@ -184,9 +189,11 @@ public sealed class StreamDockService : IAsyncDisposable
         catch (Exception ex) { applied.TrySetException(ex); }
 
         // Après l'écriture, le dock garde l'image en fond : seule une nouvelle connexion le remet au propre.
+        // La file attend pendant l'aperçu : une reconnexion demandée entre-temps ne rouvrirait pas le même écran.
         if (IsCurrentSession(session) == false) return;
         var screen = _wantedScreen;
         ForgetSurface();
+        await Task.Delay(BootImagePreview, _time, _stopToken).ConfigureAwait(false);
         await ConnectAsync(keptScreen: screen).ConfigureAwait(false);
     }
 
