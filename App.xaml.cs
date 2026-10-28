@@ -31,6 +31,11 @@ public partial class App : Application
     private StaDockRenderer? _streamDockRenderer;
     private Task _streamDockStopping = Task.CompletedTask;
 
+    /// <summary>
+    /// Session verrouillée : le dock reste éteint jusqu'au déverrouillage.
+    /// </summary>
+    private bool _isSessionLocked;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -146,7 +151,11 @@ public partial class App : Application
 
         _mainWindow = new QuickAccessWindow();
         MainWindow = _mainWindow;
-        try { SystemEvents.PowerModeChanged += OnPowerModeChanged; }
+        try
+        {
+            SystemEvents.PowerModeChanged += OnPowerModeChanged;
+            SystemEvents.SessionSwitch += OnSessionSwitch;
+        }
         catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : surveillance de la veille indisponible."); }
         ApplyStreamDockSettings();
 
@@ -292,7 +301,7 @@ public partial class App : Application
     public void ApplyStreamDockSettings()
     {
         Dispatcher.VerifyAccess();
-        if (_mutex == null || _mainWindow == null || IsExiting) return;
+        if (_mutex == null || _mainWindow == null || IsExiting || _isSessionLocked) return;
 
         try
         {
@@ -404,36 +413,63 @@ public partial class App : Application
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
     {
         if (e.Mode == PowerModes.Suspend)
+            TurnOffStreamDock("veille");
+        else if (e.Mode == PowerModes.Resume)
+            TurnOnStreamDock(restart: true);
+    }
+
+    private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
+    {
+        if (e.Reason == SessionSwitchReason.SessionLock)
         {
-            // Windows n'attend pas la fin de la mise en veille : le dock est éteint avant de rendre la main.
-            try
-            {
-                var stopping = Dispatcher.Invoke(() =>
-                    IsExiting == false && _streamDock != null
-                        ? StopStreamDockAsync(applySettingsAfterStop: false)
-                        : Task.CompletedTask);
-                stopping.GetAwaiter().GetResult();
-            }
-            catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : extinction avant la veille impossible."); }
-            return;
+            Dispatcher.Invoke(() => _isSessionLocked = true);
+            TurnOffStreamDock("verrouillage");
         }
-        if (e.Mode != PowerModes.Resume) return;
+        else if (e.Reason == SessionSwitchReason.SessionUnlock)
+        {
+            Dispatcher.Invoke(() => _isSessionLocked = false);
+            TurnOnStreamDock(restart: false);
+        }
+    }
+
+    /// <summary>
+    /// Éteint le dock et attend la fin de l'arrêt : Windows n'attend pas le dock avant de se mettre en veille.
+    /// </summary>
+    private void TurnOffStreamDock(string cause)
+    {
+        try
+        {
+            var stopping = Dispatcher.Invoke(() =>
+                IsExiting == false && _streamDock != null
+                    ? StopStreamDockAsync(applySettingsAfterStop: false)
+                    : Task.CompletedTask);
+            stopping.GetAwaiter().GetResult();
+        }
+        catch (Exception ex) { Services.LogService.Warn(ex, $"Stream Dock : extinction ({cause}) impossible."); }
+    }
+
+    /// <summary>
+    /// Rallume le dock ; restart rouvre une connexion encore active, que la veille a pu rendre inutilisable.
+    /// </summary>
+    private void TurnOnStreamDock(bool restart)
+    {
         try
         {
             Dispatcher.BeginInvoke(() =>
             {
                 if (IsExiting) return;
-                if (_streamDock != null) _ = StopStreamDockAsync();
+                if (restart && _streamDock != null) _ = StopStreamDockAsync();
                 else ApplyStreamDockSettings();
             });
         }
-        catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : reprise après veille impossible."); }
+        catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : rallumage impossible."); }
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         IsExiting = true;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        SystemEvents.SessionSwitch -= OnSessionSwitch;
         StopStreamDockAsync().GetAwaiter().GetResult();
         Services.Updates.UpdateService.Stop();
         // Filet de sortie : un rendu encore dans le presse-papier en est retiré, à condition qu'il
