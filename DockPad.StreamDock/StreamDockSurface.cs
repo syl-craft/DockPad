@@ -50,11 +50,6 @@ internal sealed class StreamDockSurface : IControlSurface
     private bool _isWritingBootImage;
 
     /// <summary>
-    /// L'écran de démarrage est affiché : la fermeture n'envoie plus l'effacement ni la mise en veille.
-    /// </summary>
-    private bool _isShowingBootScreen;
-
-    /// <summary>
     /// Attente de l'accusé de l'image de démarrage, ouverte une fois son dernier bloc écrit : un accusé plus ancien
     /// ne la confirme pas.
     /// </summary>
@@ -519,23 +514,6 @@ internal sealed class StreamDockSurface : IControlSurface
         }
     }
 
-    /// <summary>
-    /// La déconnexion « CLE DC » fait réafficher l'image de démarrage par le firmware.
-    /// </summary>
-    public async Task ShowBootScreenAsync(CancellationToken ct)
-    {
-        lock (_gate)
-        {
-            ThrowIfUnusable();
-            ForgetStrip();
-        }
-        await SendCommandAsync(StreamDockProtocol.Clear(AllKeys), ct);
-        await SendCommandAsync(StreamDockProtocol.Commit(), ct);
-        await SendCommandAsync(StreamDockProtocol.Disconnect(), ct);
-        lock (_gate)
-            _isShowingBootScreen = true;
-    }
-
     private void ReceiveInput(ReadOnlySpan<byte> report)
     {
         var keyEvent = StreamDockProtocol.ParseInput(report);
@@ -584,7 +562,7 @@ internal sealed class StreamDockSurface : IControlSurface
         {
             _isDisposed = true;
             abandoned = CloseQueue();
-            sendsShutdown = _writeLoop != null && _disconnectionCause == null && _isShowingBootScreen == false;
+            sendsShutdown = _writeLoop != null && _disconnectionCause == null;
         }
         var disposedFailure = new ObjectDisposedException(nameof(StreamDockSurface));
         FailWrites(abandoned, disposedFailure);

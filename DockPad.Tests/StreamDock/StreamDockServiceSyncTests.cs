@@ -9,7 +9,6 @@ namespace DockPad.Tests;
 /// <summary>
 /// Synchro bidirectionnelle sans boucle, reconnexion et maintien après modification de la grille.
 /// Activation à chaud, publication validée, quotas périodiques et annulation au changement de configuration ou à l'arrêt.
-/// Écran de démarrage demandé à la surface connectée, sans effet avant le démarrage.
 /// Image de démarrage : envoyée au dock connecté puis touches et colonne renvoyées, refusée sans dock, échec remonté.
 /// </summary>
 public class StreamDockServiceSyncTests
@@ -281,18 +280,6 @@ public class StreamDockServiceSyncTests
         await dock.Click(1);
 
         Assert.Equal("Tile 0", Assert.Single(dock.Sources.Runs).Name);
-    }
-
-    [Fact]
-    public async Task EcranDeDemarrage_DemandeALaSurfaceConnectee()
-    {
-        await using var dock = new TestDock();
-        await dock.ShowBootScreenWithoutStart();
-
-        await dock.Start();
-        await Bounded(dock.Service.ShowBootScreenAsync());
-
-        Assert.Equal(1, dock.Surface.BootScreens);
     }
 
     [Fact]
@@ -674,12 +661,6 @@ public class StreamDockServiceSyncTests
         }
 
         public Task Idle(bool includeUsages = true) => Bounded(Service.WhenIdleAsync(includeUsages));
-
-        public async Task ShowBootScreenWithoutStart()
-        {
-            await Bounded(Service.ShowBootScreenAsync());
-            Assert.Equal(0, Surface.BootScreens);
-        }
 
         public async Task Click(int index, bool includeUsages = true)
         {

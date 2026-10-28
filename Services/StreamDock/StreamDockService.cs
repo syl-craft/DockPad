@@ -195,31 +195,6 @@ public sealed class StreamDockService : IAsyncDisposable
         await RedrawSideStripAsync().ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Laisse le dock sur son image de démarrage avant un arrêt ; sans effet sans dock connecté.
-    /// </summary>
-    public async Task ShowBootScreenAsync()
-    {
-        var shown = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        lock (_gate)
-        {
-            if (_started == false || _stopped) return;
-            Enqueue(async () =>
-            {
-                try
-                {
-                    var session = _session;
-                    if (session != null && IsCurrentSession(session))
-                        await InSessionAsync(session, session.Surface.ShowBootScreenAsync(session.Token)).ConfigureAwait(false);
-                    shown.TrySetResult();
-                }
-                catch (Exception ex) { shown.TrySetException(ex); }
-            });
-        }
-        if (await Task.WhenAny(shown.Task, _stopSignal.Task).ConfigureAwait(false) == shown.Task)
-            await shown.Task.ConfigureAwait(false);
-    }
-
     public void Start()
     {
         lock (_gate)
