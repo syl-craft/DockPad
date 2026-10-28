@@ -288,6 +288,15 @@ public partial class App : Application
     /// <summary>
     /// Affiche un style de touches sur le dock connecté sans l'enregistrer.
     /// </summary>
+    /// <summary>
+    /// Faux si le Stream Dock est désactivé ou débranché ; un échec d'écriture remonte.
+    /// </summary>
+    public Task<bool> ApplyStreamDockBootImageAsync(DockPad.Surfaces.SurfaceImage image)
+    {
+        Dispatcher.VerifyAccess();
+        return _streamDock?.ApplyBootImageAsync(image) ?? Task.FromResult(false);
+    }
+
     public void PreviewStreamDockKeyStyle(Models.DockKeyStyle style)
     {
         Dispatcher.VerifyAccess();

@@ -25,8 +25,11 @@ public sealed record SurfaceImage(int Width, int Height, byte[] Bgra32)
         : throw new ArgumentException($"{Bgra32.Length} octets pour une image {Width}x{Height} BGRA (attendu {(long)Width * Height * 4}).", nameof(Bgra32));
 }
 
+/// <summary>
+/// BootImage : taille de l'image affichée à la mise sous tension, null si la surface n'en a pas.
+/// </summary>
 public sealed record SurfaceDescription(string Model, int KeyRows, int KeyColumns, int KeyImageSize,
-    SurfaceSize? SideStrip);
+    SurfaceSize? SideStrip, SurfaceSize? BootImage = null);
 
 public sealed record SurfaceInfo(string DriverName, string DevicePath, string Model, string? SerialNumber);
 
@@ -60,6 +63,13 @@ public interface IControlSurface : IAsyncDisposable
     Task CommitAsync(CancellationToken ct);
 
     Task SleepAsync(CancellationToken ct);
+
+    /// <summary>
+    /// Écrit l'image de démarrage dans la mémoire permanente de la surface, jamais en boucle ; rend la main quand la
+    /// surface a confirmé l'écriture. Taille différente de BootImage : ArgumentException. Les touches et la colonne
+    /// sont ensuite à renvoyer en entier.
+    /// </summary>
+    Task SetBootImageAsync(SurfaceImage image, CancellationToken ct);
 }
 
 public interface IControlSurfaceDriver

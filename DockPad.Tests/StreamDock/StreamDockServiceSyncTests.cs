@@ -2,12 +2,14 @@ using System.Collections.Concurrent;
 using DockPad.Models;
 using DockPad.Services;
 using DockPad.Services.StreamDock;
+using DockPad.Surfaces;
 
 namespace DockPad.Tests;
 
 /// <summary>
 /// Synchro bidirectionnelle sans boucle, reconnexion et maintien après modification de la grille.
 /// Activation à chaud, publication validée, quotas périodiques et annulation au changement de configuration ou à l'arrêt.
+/// Image de démarrage : envoyée au dock connecté puis touches et colonne renvoyées, refusée sans dock, échec remonté.
 /// </summary>
 public class StreamDockServiceSyncTests
 {
@@ -239,6 +241,55 @@ public class StreamDockServiceSyncTests
         Assert.Equal(keys, dock.Surface.Images.Count);
         Assert.Equal(columns, dock.Surface.SideStrips.Count);
         Assert.Equal(commits, dock.Surface.Commits);
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_EnvoyeePuisTouchesEtColonneRenvoyees()
+    {
+        await using var dock = new TestDock();
+        dock.Surface.Description = dock.Surface.Description with { BootImage = new SurfaceSize(854, 480) };
+        dock.Sources.Usages = [Usage(10)];
+        await dock.Start();
+        int keys = dock.Surface.Images.Count;
+        int columns = dock.Surface.SideStrips.Count;
+        var image = new SurfaceImage(854, 480, new byte[854 * 480 * 4]);
+
+        Assert.True(await Bounded(dock.Service.ApplyBootImageAsync(image)));
+        await dock.Idle();
+
+        Assert.Same(image, Assert.Single(dock.Surface.BootImages));
+        Assert.Equal(keys + 15, dock.Surface.Images.Count);
+        Assert.Equal(columns + 1, dock.Surface.SideStrips.Count);
+        dock.AssertColumn();
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_SansDockOuSansImageDeDemarrage_Faux()
+    {
+        await using var dock = new TestDock();
+        var image = new SurfaceImage(854, 480, new byte[854 * 480 * 4]);
+        Assert.False(await Bounded(dock.Service.ApplyBootImageAsync(image)));
+
+        await dock.Start();
+        Assert.False(await Bounded(dock.Service.ApplyBootImageAsync(image)));
+        Assert.Empty(dock.Surface.BootImages);
+    }
+
+    [Fact]
+    public async Task ImageDeDemarrage_EchecDEcriture_RemonteEtDockRedessine()
+    {
+        await using var dock = new TestDock();
+        dock.Surface.Description = dock.Surface.Description with { BootImage = new SurfaceSize(854, 480) };
+        await dock.Start();
+        int keys = dock.Surface.Images.Count;
+        dock.Surface.BootImageFailure = new TimeoutException("No acknowledgement.");
+
+        await Assert.ThrowsAsync<TimeoutException>(() =>
+            Bounded(dock.Service.ApplyBootImageAsync(new SurfaceImage(854, 480, new byte[854 * 480 * 4]))));
+        await dock.Idle();
+
+        Assert.Equal(keys + 15, dock.Surface.Images.Count);
+        Assert.Equal(1, dock.Driver.Opens);
     }
 
     [Fact]
@@ -566,6 +617,7 @@ public class StreamDockServiceSyncTests
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private static Task Bounded(Task task) => task.WaitAsync(TimeSpan.FromSeconds(5));
+    private static Task<T> Bounded<T>(Task<T> task) => task.WaitAsync(TimeSpan.FromSeconds(5));
 
     private sealed class TestDock : IAsyncDisposable
     {

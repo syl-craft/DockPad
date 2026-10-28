@@ -46,7 +46,9 @@ La colonne latérale continue affiche les quotas des fournisseurs visibles du ba
 Sous **Style des touches**, **Néon** (par défaut) montre une grande icône sur fond gris anthracite avec un trait de sa couleur,
 **Aplat** remplit la touche de cette couleur et **Classique** garde les touches grises. Sous **Écran latéral**, quatre vignettes permettent de choisir **Colonnes** (par défaut), **Pile héro**, **Anneaux** ou **Réservoir**.
 L'IA choisie dans les onglets du bandeau Usage IA passe en tête de la colonne. Un clic sur une vignette affiche le rendu sur le dock ; Sauvegarder le garde, Annuler remet le précédent. Quand le bandeau Usage IA est désactivé,
-la colonne affiche toujours le processeur et la mémoire. Le dock fonctionne lorsque DockPad est masqué et se reconnecte après la sortie de veille de Windows.
+la colonne affiche toujours le processeur et la mémoire. Sous **Image de démarrage**, l'image de DockPad ou la vôtre, en 854 × 480 px,
+est écrite dans le dock par **Appliquer au dock** et s'affiche environ 2 s à la mise sous tension. Le dock fonctionne lorsque DockPad est masqué,
+s'éteint pendant la veille de Windows ou le verrouillage de la session, et se rallume au réveil ou au déverrouillage.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-dark-fr.gif">

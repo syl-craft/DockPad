@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- Source de Assets/StreamDockBoot.png, image de démarrage du Stream Dock : node render.mjs depuis ce dossier. -->
+<html><head><meta charset="utf-8"><style>
+html, body { margin: 0; width: 854px; height: 480px; overflow: hidden; background: #16171A; }
+#panel { position: relative; width: 854px; height: 480px;
+  background:
+    radial-gradient(420px 300px at 375px 240px, rgba(122,63,228,.30), rgba(122,63,228,0) 70%),
+    radial-gradient(360px 260px at 600px 300px, rgba(10,143,232,.18), rgba(10,143,232,0) 70%),
+    #16171A; }
+.key { position: absolute; width: 100px; height: 100px; display: grid; place-items: center; }
+.motif { width: 52px; height: 52px; opacity: .55; }
+.logo { width: 78px; height: 78px; filter: drop-shadow(0 0 10px rgba(164,123,255,.65)); }
+.strip { position: absolute; left: 761px; top: 35px; width: 87px; height: 413px; display: grid; place-items: center; }
+.word { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font: 700 46px/1 "Segoe UI", sans-serif; letter-spacing: -.5px;
+  background: linear-gradient(0deg, #A47BFF, #33D1F5); -webkit-background-clip: text; color: transparent; }
+</style></head><body><div id="panel"></div>
+<script>
+const LOGO = `<svg viewBox="0 0 256 256"><defs>
+  <linearGradient id="lp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A47BFF"/><stop offset="1" stop-color="#7A3FE4"/></linearGradient>
+  <linearGradient id="lb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#33D1F5"/><stop offset="1" stop-color="#0A8FE8"/></linearGradient></defs>
+  ${[20, 98, 176].map(y => `<rect x="14" y="${y}" width="66" height="62" rx="18" fill="url(#lp)"/><rect x="104" y="${y + 23}" width="138" height="16" rx="8" fill="url(#lb)"/>`).join('')}</svg>`;
+// Une tuile violette et sa barre bleue, le motif du logo, en sourdine sur les autres touches.
+const MOTIF = (i) => `<svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" rx="16" fill="#7A3FE4" opacity="${.35 + (i % 3) * .12}"/>
+  <rect x="16" y="28" width="32" height="8" rx="4" fill="#33D1F5" opacity=".8"/></svg>`;
+const panel = document.getElementById('panel');
+for (let r = 0; r < 3; r++)
+  for (let c = 0; c < 5; c++) {
+    const k = document.createElement('div');
+    k.className = 'key';
+    k.style.left = (25 + c * 150) + 'px';
+    k.style.top = (40 + r * 150) + 'px';
+    const center = r === 1 && c === 2;
+    k.innerHTML = center ? `<div class="logo">${LOGO}</div>` : `<div class="motif">${MOTIF(r * 5 + c)}</div>`;
+    panel.appendChild(k);
+  }
+const s = document.createElement('div');
+s.className = 'strip';
+s.innerHTML = '<div class="word">DockPad</div>';
+panel.appendChild(s);
+</script></body></html>

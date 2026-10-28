@@ -19,10 +19,16 @@ internal sealed class StreamDockSurface : IControlSurface
     private static readonly TimeSpan KeepAliveInterval = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan ShutdownBudget = TimeSpan.FromSeconds(1);
 
+    /// <summary>
+    /// Le dock confirme l'image de démarrage après l'avoir écrite en mémoire, environ 1,4 s après l'envoi.
+    /// </summary>
+    private static readonly TimeSpan BootImageAcknowledgeTimeout = TimeSpan.FromSeconds(10);
+
     private readonly IHidConnection _connection;
     private readonly TimeProvider _time;
     private readonly Func<SurfaceImage, CancellationToken, Task<byte[]?>> _encodeStrip;
     private readonly Func<SurfaceImage, int, CancellationToken, Task<byte[]>> _encodeImage;
+    private readonly Func<SurfaceImage, CancellationToken, Task<byte[]>> _encodeBootImage;
     private readonly Dictionary<byte, byte[]> _displayedStrip = [];
     private readonly Dictionary<byte, byte[]> _writtenStrip = [];
     private long _stripEpoch;
@@ -40,6 +46,14 @@ internal sealed class StreamDockSurface : IControlSurface
     private readonly List<Task> _notifications = [];
     private readonly Lazy<Task> _shutdown;
     private PendingWrite? _currentWrite;
+
+    private bool _isWritingBootImage;
+
+    /// <summary>
+    /// Attente de l'accusé de l'image de démarrage, ouverte une fois son dernier bloc écrit : un accusé plus ancien
+    /// ne la confirme pas.
+    /// </summary>
+    private TaskCompletionSource? _bootImageAcknowledged;
     private bool _isQueueClosed;
     private Exception? _disconnectionCause;
     private volatile bool _isDisposed;
@@ -55,17 +69,19 @@ internal sealed class StreamDockSurface : IControlSurface
 
     internal StreamDockSurface(IHidConnection connection, TimeProvider time,
         Func<SurfaceImage, CancellationToken, Task<byte[]?>> encodeStrip,
-        Func<SurfaceImage, int, CancellationToken, Task<byte[]>>? encodeImage = null)
+        Func<SurfaceImage, int, CancellationToken, Task<byte[]>>? encodeImage = null,
+        Func<SurfaceImage, CancellationToken, Task<byte[]>>? encodeBootImage = null)
     {
         _encodeStrip = encodeStrip;
         _encodeImage = encodeImage ?? JpegEncodingThread.EncodeAsync;
+        _encodeBootImage = encodeBootImage ?? JpegEncodingThread.EncodeBootImageAsync;
         _connection = connection;
         _time = time;
         _shutdown = new Lazy<Task>(ShutdownAsync);
     }
 
     public SurfaceDescription Description { get; } = new(ModelName, StreamDockModel.KeyRows, StreamDockModel.KeyColumns,
-        KeyImageSize, StreamDockModel.SideStrip);
+        KeyImageSize, StreamDockModel.SideStrip, StreamDockModel.BootImage);
 
     internal int DisplayedStripCount
     {
@@ -296,6 +312,50 @@ internal sealed class StreamDockSurface : IControlSurface
     public Task SleepAsync(CancellationToken ct) => SendCommandAsync(StreamDockProtocol.Sleep(), ct);
 
     /// <summary>
+    /// Une écriture à la fois ; l'image affichée ensuite par le dock est inconnue, la colonne est donc oubliée.
+    /// </summary>
+    public async Task SetBootImageAsync(SurfaceImage image, CancellationToken ct)
+    {
+        if (image.Width != StreamDockModel.BootImage.Width || image.Height != StreamDockModel.BootImage.Height)
+            throw new ArgumentException($"Boot image must be {StreamDockModel.BootImage.Width}x{StreamDockModel.BootImage.Height}, got {image.Width}x{image.Height}.", nameof(image));
+        lock (_gate)
+            ThrowIfUnusable();
+
+        var jpeg = await _encodeBootImage(image, ct);
+        var written = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var acknowledged = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (_gate)
+        {
+            ThrowIfUnusable();
+            ct.ThrowIfCancellationRequested();
+            if (_isWritingBootImage)
+                throw new InvalidOperationException("A boot image is already being written.");
+            _isWritingBootImage = true;
+            _queue.AddLast(new PendingWrite([.. StreamDockProtocol.BootImage(jpeg)], ImageTarget: null, written,
+                IsKeepAlive: false, OnWritten: () =>
+                {
+                    ForgetStrip();
+                    _bootImageAcknowledged = acknowledged;
+                }));
+        }
+        _queueSignal.Release();
+
+        try
+        {
+            await written.Task.WaitAsync(ct);
+            await acknowledged.Task.WaitAsync(BootImageAcknowledgeTimeout, _time, ct);
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                _isWritingBootImage = false;
+                _bootImageAcknowledged = null;
+            }
+        }
+    }
+
+    /// <summary>
     /// Arrêt best effort dans un budget d'une seconde, partagé par les appels concurrents ; ne lève jamais.
     /// La fermeture du handle est toujours lancée ; budget épuisé, elle s'achève en arrière-plan.
     /// </summary>
@@ -438,9 +498,7 @@ internal sealed class StreamDockSurface : IControlSurface
                 if (length == 0)
                     throw new IOException("HID read returned no data.");
 
-                var keyEvent = StreamDockProtocol.ParseInput(buffer.AsSpan(0, length));
-                if (keyEvent != null)
-                    RaiseKeyChanged(keyEvent.Value);
+                ReceiveInput(buffer.AsSpan(0, length));
             }
         }
         catch (OperationCanceledException) when (_stopping.IsCancellationRequested)
@@ -449,6 +507,21 @@ internal sealed class StreamDockSurface : IControlSurface
         catch (Exception ex)
         {
             ReportDisconnection(ex);
+        }
+    }
+
+    private void ReceiveInput(ReadOnlySpan<byte> report)
+    {
+        var keyEvent = StreamDockProtocol.ParseInput(report);
+        if (keyEvent != null)
+        {
+            RaiseKeyChanged(keyEvent.Value);
+            return;
+        }
+        if (StreamDockProtocol.IsWriteAcknowledgement(report))
+        {
+            lock (_gate)
+                _bootImageAcknowledged?.TrySetResult();
         }
     }
 

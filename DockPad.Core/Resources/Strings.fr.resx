@@ -1886,6 +1886,45 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Settings_StreamDock_KeyStyle_Classic" xml:space="preserve">
     <value>Classique</value>
   </data>
+  <data name="Settings_StreamDock_BootImage" xml:space="preserve">
+    <value>Image de démarrage</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Hint" xml:space="preserve">
+    <value>Affichée environ 2 s à la mise sous tension du dock. Taille requise : 854 × 480 px.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Preview" xml:space="preserve">
+    <value>Aperçu de l'image de démarrage</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Choose" xml:space="preserve">
+    <value>Choisir une image…</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Default" xml:space="preserve">
+    <value>Image DockPad</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Apply" xml:space="preserve">
+    <value>Appliquer au dock</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Filter" xml:space="preserve">
+    <value>Images (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_WrongSize" xml:space="preserve">
+    <value>Cette image fait {0} × {1} px ; le dock demande exactement {2} × {3} px. Elle n'est pas retenue.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Unreadable" xml:space="preserve">
+    <value>Ce fichier n'est pas une image lisible.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Sending" xml:space="preserve">
+    <value>Envoi au dock…</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Sent" xml:space="preserve">
+    <value>Image enregistrée sur le dock : elle s'affichera à la prochaine mise sous tension.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_NoDock" xml:space="preserve">
+    <value>Aucun Stream Dock connecté : activez-le, enregistrez, puis réessayez.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Failed" xml:space="preserve">
+    <value>Le dock n'a pas confirmé l'image. Débranchez-le, rebranchez-le, puis réessayez.</value>
+  </data>
   <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
     <value>Écran latéral</value>
   </data>

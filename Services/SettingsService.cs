@@ -133,6 +133,15 @@ public static class SettingsService
     public static void SaveStreamDockKeyStyle(DockKeyStyle style) =>
         AppSettingsService.Update(s => s.StreamDockKeyStyle = style);
 
+    public static string? LoadStreamDockBootImage()
+    {
+        var path = AppSettingsService.Current.StreamDockBootImage;
+        return string.IsNullOrWhiteSpace(path) ? null : path;
+    }
+
+    public static void SaveStreamDockBootImage(string? path) =>
+        AppSettingsService.Update(s => s.StreamDockBootImage = string.IsNullOrWhiteSpace(path) ? null : path);
+
     public static string LoadClaudeArgs() => AppSettingsService.Current.ClaudeArgs;
 
     public static void SaveClaudeArgs(string args) =>

@@ -152,6 +152,47 @@ public sealed class StreamDockService : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Écrit l'image de démarrage sur le dock connecté, puis renvoie les touches et la colonne qu'elle a pu masquer.
+    /// Faux sans dock connecté qui en accepte une ; un échec d'écriture remonte sans couper la connexion.
+    /// </summary>
+    public async Task<bool> ApplyBootImageAsync(SurfaceImage image)
+    {
+        var applied = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (_gate)
+        {
+            if (_started == false || _stopped) return false;
+            Enqueue(() => WriteBootImageAsync(image, applied));
+        }
+        var finished = await Task.WhenAny(applied.Task, _stopSignal.Task).ConfigureAwait(false);
+        return finished == applied.Task && await applied.Task.ConfigureAwait(false);
+    }
+
+    private async Task WriteBootImageAsync(SurfaceImage image, TaskCompletionSource<bool> applied)
+    {
+        var session = _session;
+        if (session == null || IsCurrentSession(session) == false || session.Surface.Description.BootImage == null)
+        {
+            applied.TrySetResult(false);
+            return;
+        }
+        try
+        {
+            await InSessionAsync(session, session.Surface.SetBootImageAsync(image, session.Token)).ConfigureAwait(false);
+            applied.TrySetResult(true);
+        }
+        catch (Exception ex) { applied.TrySetException(ex); }
+
+        if (IsCurrentSession(session) == false) return;
+        lock (_gate)
+        {
+            _displayed = null;
+            _publishedSideStrip = null;
+        }
+        await RedrawAsync().ConfigureAwait(false);
+        await RedrawSideStripAsync().ConfigureAwait(false);
+    }
+
     public void Start()
     {
         lock (_gate)

@@ -7,6 +7,7 @@ namespace DockPad.Tests.StreamDock;
 /// <summary>
 /// Réglages désactivés par défaut et persistance des options indépendantes.
 /// Rendu Colonnes par défaut, relecture des quatre rendus et repli des valeurs inconnues sans perdre les autres réglages.
+/// Image de démarrage : celle de DockPad par défaut, chemin choisi relu.
 /// </summary>
 public sealed class StreamDockSettingsTests : IDisposable
 {
@@ -93,6 +94,18 @@ public sealed class StreamDockSettingsTests : IDisposable
         var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
 
         Assert.Equal(style, settings.StreamDockKeyStyle);
+        Assert.Equal("fr", settings.Language);
+    }
+
+    [Fact]
+    public void ImageDeDemarrage_DockPadParDefautPuisCheminRelu()
+    {
+        Assert.Null(new AppSettings().StreamDockBootImage);
+
+        AppSettingsService.SaveTo(SettingsPath, new AppSettings { Language = "fr", StreamDockBootImage = @"C:\Images\dock.png" });
+        var settings = AppSettingsService.LoadFrom(SettingsPath, registry: _ => null);
+
+        Assert.Equal(@"C:\Images\dock.png", settings.StreamDockBootImage);
         Assert.Equal("fr", settings.Language);
     }
 

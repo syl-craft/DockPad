@@ -46,8 +46,9 @@ The continuous side column shows quotas from visible providers in the AI usage p
 Under **Key style**, **Neon** (default) shows a large icon on charcoal grey with a line in the icon's colour, **Flat** fills
 the whole key with that colour, and **Classic** keeps the grey keys. Under **Side display**, four thumbnails select **Columns** (default), **Hero stack**, **Rings** or **Reservoir**.
 The AI selected in the usage panel tabs leads the column. Clicking a thumbnail shows it on the dock; saving keeps it, cancelling restores the previous one. With the AI usage panel
-disabled, the column still shows CPU and memory load. The dock works while DockPad is hidden and reconnects after
-Windows resumes from sleep.
+disabled, the column still shows CPU and memory load. Under **Startup image**, DockPad's picture or your own 854 × 480 px
+image is written to the dock with **Apply to the dock** and shows for about 2 seconds at power-on. The dock works while
+DockPad is hidden, turns off while Windows sleeps or the session is locked, and comes back on resume or unlock.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-dark-en.gif">

@@ -30,6 +30,12 @@ internal static class StreamDockModel
     internal const byte FirstDisplayId = 16;
     public static readonly SurfaceSize SideStrip = new(75, 380);
     public const int StripWidth = 80, StripHeight = 420, StripStep = 150;
+    public static readonly SurfaceSize BootImage = new(854, 480);
+
+    /// <summary>
+    /// Tampon de décodage de l'image de démarrage dans le firmware (0x80020 octets), arrondi en dessous.
+    /// </summary>
+    public const int MaxBootJpegLength = 512 * 1024;
     public static IReadOnlyList<int> StripSliceHeights { get; } = Array.AsReadOnly(new[] { 152, 152, 120 });
 
     public static byte KeyId(SurfaceKey key)

@@ -89,6 +89,11 @@ public class AppSettings
     public DockKeyStyle StreamDockKeyStyle { get; set; } = DockKeyStyle.Neon;
 
     /// <summary>
+    /// Image de démarrage choisie pour le Stream Dock, null pour celle de DockPad.
+    /// </summary>
+    public string? StreamDockBootImage { get; set; }
+
+    /// <summary>
     /// Chemin de <c>bw.exe</c>, ou vide pour laisser DockPad le chercher.
     /// </summary>
     /// <remarks>

@@ -82,6 +82,7 @@ public partial class SettingsDialog : Window
         ChkStreamDockSyncPages.IsChecked = SettingsService.LoadStreamDockSyncPages();
         FillSideStripPreviews();
         FillKeyStylePreviews();
+        FillBootImage();
         TxtStreamDockDriverMissing.Visibility = File.Exists(Path.Combine(
             SurfaceDriverLoader.PluginsFolder, "StreamDock", "DockPad.StreamDock.dll"))
             ? Visibility.Collapsed : Visibility.Visible;
@@ -202,6 +203,83 @@ public partial class SettingsDialog : Window
     /// <summary>
     /// Redessinées aussi au changement de langue : « Accueil » est écrit dans l'image.
     /// </summary>
+    /// <summary>
+    /// Image choisie dans la fenêtre, null pour celle de DockPad ; enregistrée avec les autres réglages.
+    /// </summary>
+    private string? _bootImagePath;
+
+    private void FillBootImage()
+    {
+        _bootImagePath = SettingsService.LoadStreamDockBootImage();
+        ImgStreamDockBootImage.Source = DockBootImage.Load(_bootImagePath);
+    }
+
+    private void ChooseBootImage_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = Loc.T("Settings_StreamDock_BootImage_Filter"),
+            CheckFileExists = true,
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        var image = DockBootImage.Read(dialog.FileName);
+        if (image == null)
+        {
+            ShowBootImageStatus(Loc.T("Settings_StreamDock_BootImage_Unreadable"), isError: true);
+            return;
+        }
+        if (DockBootImage.HasBootSize(image) == false)
+        {
+            ShowBootImageStatus(Loc.F("Settings_StreamDock_BootImage_WrongSize", image.PixelWidth, image.PixelHeight,
+                DockBootImage.Size.Width, DockBootImage.Size.Height), isError: true);
+            return;
+        }
+        _bootImagePath = dialog.FileName;
+        ImgStreamDockBootImage.Source = image;
+        ShowBootImageStatus(null, isError: false);
+    }
+
+    private void DefaultBootImage_Click(object sender, RoutedEventArgs e)
+    {
+        _bootImagePath = null;
+        ImgStreamDockBootImage.Source = DockBootImage.Default();
+        ShowBootImageStatus(null, isError: false);
+    }
+
+    /// <summary>
+    /// Seul envoi de l'image de démarrage : le dock l'écrit dans sa mémoire permanente.
+    /// </summary>
+    private async void ApplyBootImage_Click(object sender, RoutedEventArgs e)
+    {
+        if (Application.Current is not App app) return;
+        var image = DockBootImage.ToSurfaceImage(DockBootImage.Load(_bootImagePath));
+        BtnStreamDockBootImageApply.IsEnabled = false;
+        ShowBootImageStatus(Loc.T("Settings_StreamDock_BootImage_Sending"), isError: false);
+        try
+        {
+            bool isSent = await app.ApplyStreamDockBootImageAsync(image);
+            ShowBootImageStatus(Loc.T(isSent ? "Settings_StreamDock_BootImage_Sent" : "Settings_StreamDock_BootImage_NoDock"),
+                isError: isSent == false);
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn(ex, "Stream Dock : envoi de l'image de démarrage échoué.");
+            ShowBootImageStatus(Loc.T("Settings_StreamDock_BootImage_Failed"), isError: true);
+        }
+        finally
+        {
+            BtnStreamDockBootImageApply.IsEnabled = true;
+        }
+    }
+
+    private void ShowBootImageStatus(string? message, bool isError)
+    {
+        TxtStreamDockBootImageStatus.Text = message ?? "";
+        TxtStreamDockBootImageStatus.Visibility = message == null ? Visibility.Collapsed : Visibility.Visible;
+        TxtStreamDockBootImageStatus.SetResourceReference(TextBlock.ForegroundProperty, isError ? "Brush.Danger" : "Brush.TextHint");
+    }
+
     private void DrawKeyStylePreviews()
     {
         var keys = PreviewKeys();
@@ -495,6 +573,7 @@ public partial class SettingsDialog : Window
         SettingsService.SaveStreamDockSyncPages(ChkStreamDockSyncPages.IsChecked == true);
         SettingsService.SaveStreamDockSideStrip(SelectedSideStripStyle);
         SettingsService.SaveStreamDockKeyStyle(SelectedKeyStyle);
+        SettingsService.SaveStreamDockBootImage(_bootImagePath);
         (Application.Current as App)?.ApplyStreamDockSettings();
 
         DialogResult = true;

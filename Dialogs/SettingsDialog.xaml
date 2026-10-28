@@ -302,6 +302,33 @@
                                 </StackPanel>
                             </ListBoxItem>
                         </ListBox>
+                        <TextBlock Text="{loc:T Settings_StreamDock_BootImage}" FontWeight="SemiBold"
+                                   FontSize="13" Margin="0,22,0,4"/>
+                        <TextBlock Text="{loc:T Settings_StreamDock_BootImage_Hint}" Margin="0,0,0,8"
+                                   Foreground="{DynamicResource Brush.TextHint}" FontSize="11" TextWrapping="Wrap"/>
+                        <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                                HorizontalAlignment="Left">
+                            <Image x:Name="ImgStreamDockBootImage" Width="256" Height="144" Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   AutomationProperties.Name="{loc:T Settings_StreamDock_BootImage_Preview}"/>
+                        </Border>
+                        <WrapPanel Margin="0,8,0,0">
+                            <Button Content="{loc:T Settings_StreamDock_BootImage_Choose}"
+                                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="ChooseBootImage_Click"/>
+                            <Button Content="{loc:T Settings_StreamDock_BootImage_Default}"
+                                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="DefaultBootImage_Click"/>
+                            <Button x:Name="BtnStreamDockBootImageApply"
+                                    Content="{loc:T Settings_StreamDock_BootImage_Apply}"
+                                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                                    BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                                    Click="ApplyBootImage_Click"/>
+                        </WrapPanel>
+                        <TextBlock x:Name="TxtStreamDockBootImageStatus" FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource Brush.TextHint}" Visibility="Collapsed"/>
                     </StackPanel>
                     <Border Grid.Column="1" Width="1" HorizontalAlignment="Center"
                             Background="{DynamicResource Brush.Border}"/>

@@ -1886,6 +1886,45 @@ F0rc3r l3ur 4rrêt ? L3 tr4v41l n0n 3nr3g15tré p3ut êtr3 p3rdu.</value></data>
   <data name="Settings_StreamDock_KeyStyle_Classic" xml:space="preserve">
     <value>Cl4551qu3</value>
   </data>
+  <data name="Settings_StreamDock_BootImage" xml:space="preserve">
+    <value>1m4g3 d3 dém4rr4g3</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Hint" xml:space="preserve">
+    <value>4ff1ché3 3nv1r0n 2 5 à l4 m153 50u5 t3n510n du d0ck. T41ll3 r3qu153 : 854 × 480 px.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Preview" xml:space="preserve">
+    <value>4p3rçu d3 l'1m4g3 d3 dém4rr4g3</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Choose" xml:space="preserve">
+    <value>Ch0151r un3 1m4g3…</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Default" xml:space="preserve">
+    <value>1m4g3 D0ckP4d</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Apply" xml:space="preserve">
+    <value>4ppl1qu3r 4u d0ck</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Filter" xml:space="preserve">
+    <value>1m4g35 (*.png;*.jpg;*.jp3g;*.bmp)|*.png;*.jpg;*.jp3g;*.bmp</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_WrongSize" xml:space="preserve">
+    <value>C3tt3 1m4g3 f41t {0} × {1} px ; l3 d0ck d3m4nd3 3x4ct3m3nt {2} × {3} px. 3ll3 n'35t p45 r3t3nu3.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Unreadable" xml:space="preserve">
+    <value>C3 f1ch13r n'35t p45 un3 1m4g3 l151bl3.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Sending" xml:space="preserve">
+    <value>3nv01 4u d0ck…</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Sent" xml:space="preserve">
+    <value>1m4g3 3nr3g15tré3 5ur l3 d0ck : 3ll3 5'4ff1ch3r4 à l4 pr0ch41n3 m153 50u5 t3n510n.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_NoDock" xml:space="preserve">
+    <value>4ucun 5tr34m D0ck c0nn3cté : 4ct1v3z-l3, 3nr3g15tr3z, pu15 ré3554y3z.</value>
+  </data>
+  <data name="Settings_StreamDock_BootImage_Failed" xml:space="preserve">
+    <value>L3 d0ck n'4 p45 c0nf1rmé l'1m4g3. Débr4nch3z-l3, r3br4nch3z-l3, pu15 ré3554y3z.</value>
+  </data>
   <data name="Settings_StreamDock_SideStrip" xml:space="preserve">
     <value>Écr4n l4tér4l</value>
   </data>
