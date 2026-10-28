@@ -2033,7 +2033,7 @@ recherche — le GIF d'en-tête du README), `02-browser-picker`, `03-usage`, `04
 `05-keyboard`, `06-composite`, `07-mcp`, `08-favorites`, `09-theme-language`, `10-updates`,
 `11-context-menu`, `12-explorer-drop`, `13-github-sync`, `14-terminals`. Chacun est rendu en **clair et en sombre**, en MP4 1080p60 et en GIF
 960×540. S'y ajoute `15-stream-dock`, vidéo de présentation de 30 s, en sombre seulement, en anglais et en français
-(`--lang en,fr`), en MP4 seul : au-delà de 10 s `render.mjs` ne fait pas de GIF. Son écran latéral vient du vrai
+(`--lang en,fr`) ; au-delà de 10 s, `render.mjs` réduit le GIF à 720 px et 10 i/s pour rester vers 5 Mo. Son écran latéral vient du vrai
 moteur, rendu en PNG par `tools/SideStripShot` dans `out/strip/` avant le rendu du clip. Le README choisit le thème du lecteur avec `<picture><source media="(prefers-color-scheme: dark)">`.
 
 > **Les rendus ne sont pas dans ce dépôt** : ils vivent dans

@@ -48,9 +48,12 @@ Sous **Style des touches**, **Néon** (par défaut) montre une grande icône sur
 L'IA choisie dans les onglets du bandeau Usage IA passe en tête de la colonne. Un clic sur une vignette affiche le rendu sur le dock ; Sauvegarder le garde, Annuler remet le précédent. Quand le bandeau Usage IA est désactivé,
 la colonne affiche toujours le processeur et la mémoire. Le dock fonctionne lorsque DockPad est masqué et se reconnecte après la sortie de veille de Windows.
 
-<a href="https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4"><img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-poster-fr.jpg" alt="Vidéo de démonstration : les pages DockPad sur les touches du Stream Dock, la synchro des pages dans les deux sens, le lancement d'une tuile, les quotas IA sur les écrans latéraux et les quatre rendus" width="960"></a>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-dark-fr.gif">
+  <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-dark-fr.gif" alt="Démonstration : les pages DockPad sur les touches du Stream Dock, la synchro des pages dans les deux sens, le lancement d'une tuile, les quotas IA sur les écrans latéraux et les quatre rendus" width="960">
+</picture>
 
-▶ [Voir la vidéo de 30 secondes](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4)
+▶ [Vidéo en pleine qualité (MP4, 30 s)](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4)
 
 Où l'acheter : [MiraBox Stream Dock 293S sur AliExpress](https://a.aliexpress.com/_Ev68jQE) (lien affilié).
 
