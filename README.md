@@ -55,7 +55,7 @@ DockPad is hidden, turns off while Windows sleeps or the session is locked, and 
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-dark-en.gif" alt="Demo: DockPad pages on the Stream Dock keys, two-way page sync, launching a tile, AI quotas on the side screens and the four styles" width="960">
 </picture>
 
-▶ [Full-quality video (MP4, 30 s)](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-en.mp4)
+▶ [Watch on YouTube](https://youtu.be/UfAX-8Tw-Ec) · [Full-quality video (MP4, 30 s)](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-en.mp4)
 
 Where to buy: [MiraBox Stream Dock 293S on AliExpress](https://a.aliexpress.com/_Ev68jQE) (affiliate link).
 

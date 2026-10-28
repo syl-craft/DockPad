@@ -55,7 +55,7 @@ s'éteint pendant la veille de Windows ou le verrouillage de la session, et se r
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/15-stream-dock-dark-fr.gif" alt="Démonstration : les pages DockPad sur les touches du Stream Dock, la synchro des pages dans les deux sens, le lancement d'une tuile, les quotas IA sur les écrans latéraux et les quatre rendus" width="960">
 </picture>
 
-▶ [Vidéo en pleine qualité (MP4, 30 s)](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4)
+▶ [Voir sur YouTube](https://youtu.be/n-IzZJrgjYE) · [Vidéo en pleine qualité (MP4, 30 s)](https://github.com/syl-craft/DockPad-media/blob/main/videos/15-stream-dock-dark-fr.mp4)
 
 Où l'acheter : [MiraBox Stream Dock 293S sur AliExpress](https://a.aliexpress.com/_Ev68jQE) (lien affilié).
 
