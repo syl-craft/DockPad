@@ -9,7 +9,7 @@ namespace DockPad.Tests;
 /// <summary>
 /// Faux HID : démarrage, images atomiques, dernière demande gagnante, validation STP, maintien en vie et fermeture.
 /// Colonne : tranches modifiées, chevauchements, refus JPEG, annulation, effacement et déconnexion pendant l'envoi.
-/// Image de démarrage : « LOG » puis attente de l'accusé reçu après l'écriture, taille refusée, délai dépassé.
+/// Image de démarrage : « LOG », accusé reçu après l'écriture puis écran effacé, taille refusée, délai dépassé.
 /// </summary>
 public class StreamDockSurfaceTests
 {
@@ -820,6 +820,9 @@ public class StreamDockSurfaceTests
         var (slot, jpeg) = ImageAt(written, header);
         Assert.Equal(1, slot);
         Assert.Equal(expectedJpeg, jpeg);
+        var clear = written[^1];
+        Assert.Equal("CLE", CommandOf(clear));
+        Assert.Equal(0xFF, clear[12]);
 
         // Indépendamment de l'encodeur : JPEG baseline, tourné d'un quart de tour antihoraire (la gauche rouge en bas).
         Assert.Contains(new byte[] { 0xFF, 0xC0 }, Pairs(jpeg));
