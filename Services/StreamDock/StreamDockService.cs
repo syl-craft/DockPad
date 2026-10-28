@@ -184,6 +184,8 @@ public sealed class StreamDockService : IAsyncDisposable
         catch (Exception ex) { applied.TrySetException(ex); }
 
         if (IsCurrentSession(session) == false) return;
+        // Sans écran affiché, un relâchement est ignoré : l'appui en cours bloquerait le clic suivant.
+        _presses.Clear();
         lock (_gate)
         {
             _displayed = null;

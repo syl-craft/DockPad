@@ -264,6 +264,25 @@ public class StreamDockServiceSyncTests
     }
 
     [Fact]
+    public async Task ImageDeDemarrage_RelachementPendantLeRedessin_ClicSuivantLance()
+    {
+        await using var dock = new TestDock();
+        dock.Surface.Description = dock.Surface.Description with { BootImage = new SurfaceSize(854, 480) };
+        await dock.Start();
+        await dock.Click(0);
+        dock.Surface.Press(1);
+        await dock.Idle();
+
+        var applying = dock.Service.ApplyBootImageAsync(new SurfaceImage(854, 480, new byte[854 * 480 * 4]));
+        dock.Surface.Release(1);
+        Assert.True(await Bounded(applying));
+        await dock.Idle();
+        await dock.Click(1);
+
+        Assert.Equal("Tile 0", Assert.Single(dock.Sources.Runs).Name);
+    }
+
+    [Fact]
     public async Task ImageDeDemarrage_SansDockOuSansImageDeDemarrage_Faux()
     {
         await using var dock = new TestDock();

@@ -820,6 +820,24 @@ public class StreamDockSurfaceTests
         var (slot, jpeg) = ImageAt(written, header);
         Assert.Equal(1, slot);
         Assert.Equal(expectedJpeg, jpeg);
+
+        // Indépendamment de l'encodeur : JPEG baseline, tourné d'un quart de tour antihoraire (la gauche rouge en bas).
+        Assert.Contains(new byte[] { 0xFF, 0xC0 }, Pairs(jpeg));
+        Assert.DoesNotContain(new byte[] { 0xFF, 0xC2 }, Pairs(jpeg));
+        var (width, height, top, bottom) = await OnStaThread(() =>
+        {
+            var frame = new System.Windows.Media.Imaging.JpegBitmapDecoder(new MemoryStream(jpeg),
+                System.Windows.Media.Imaging.BitmapCreateOptions.None, System.Windows.Media.Imaging.BitmapCacheOption.OnLoad).Frames[0];
+            var bgra = new System.Windows.Media.Imaging.FormatConvertedBitmap(frame, System.Windows.Media.PixelFormats.Bgra32, null, 0);
+            var pixels = new byte[bgra.PixelWidth * bgra.PixelHeight * 4];
+            bgra.CopyPixels(pixels, bgra.PixelWidth * 4, 0);
+            int Offset(int x, int y) => (y * bgra.PixelWidth + x) * 4;
+            return (bgra.PixelWidth, bgra.PixelHeight, pixels[Offset(240, 4)..(Offset(240, 4) + 3)],
+                pixels[Offset(240, 849)..(Offset(240, 849) + 3)]);
+        });
+        Assert.Equal((480, 854), (width, height));
+        Assert.True(top[0] > 200 && top[2] < 60, $"Haut attendu bleu : {string.Join(",", top)}.");
+        Assert.True(bottom[2] > 200 && bottom[0] < 60, $"Bas attendu rouge : {string.Join(",", bottom)}.");
         await surface.DisposeAsync();
     }
 
@@ -870,6 +888,8 @@ public class StreamDockSurfaceTests
         Assert.Equal(4, connection.Written.Count);
         await surface.DisposeAsync();
     }
+
+    private static IEnumerable<byte[]> Pairs(byte[] bytes) => bytes.Zip(bytes.Skip(1), (first, second) => new[] { first, second });
 
     private static byte[] WriteAcknowledgement()
     {

@@ -208,10 +208,29 @@ public partial class SettingsDialog : Window
     /// </summary>
     private string? _bootImagePath;
 
+    /// <summary>
+    /// Image vérifiée et affichée en aperçu : c'est elle qu'envoie « Appliquer au dock », sans relire le fichier.
+    /// </summary>
+    private BitmapSource _bootImage = null!;
+
+    /// <summary>
+    /// Dernier message, recalculé au changement de langue.
+    /// </summary>
+    private (Func<string> Message, bool IsError)? _bootImageStatus;
+
     private void FillBootImage()
     {
-        _bootImagePath = SettingsService.LoadStreamDockBootImage();
-        ImgStreamDockBootImage.Source = DockBootImage.Load(_bootImagePath);
+        var saved = SettingsService.LoadStreamDockBootImage();
+        var image = saved == null ? null : DockBootImage.Read(saved);
+        bool isUsable = image != null && DockBootImage.HasBootSize(image);
+        ShowBootImage(isUsable ? image! : DockBootImage.Default(), isUsable ? saved : null);
+    }
+
+    private void ShowBootImage(BitmapSource image, string? path)
+    {
+        _bootImage = image;
+        _bootImagePath = path;
+        ImgStreamDockBootImage.Source = image;
     }
 
     private void ChooseBootImage_Click(object sender, RoutedEventArgs e)
@@ -226,24 +245,22 @@ public partial class SettingsDialog : Window
         var image = DockBootImage.Read(dialog.FileName);
         if (image == null)
         {
-            ShowBootImageStatus(Loc.T("Settings_StreamDock_BootImage_Unreadable"), isError: true);
+            ShowBootImageStatus(() => Loc.T("Settings_StreamDock_BootImage_Unreadable"), isError: true);
             return;
         }
         if (DockBootImage.HasBootSize(image) == false)
         {
-            ShowBootImageStatus(Loc.F("Settings_StreamDock_BootImage_WrongSize", image.PixelWidth, image.PixelHeight,
+            ShowBootImageStatus(() => Loc.F("Settings_StreamDock_BootImage_WrongSize", image.PixelWidth, image.PixelHeight,
                 DockBootImage.Size.Width, DockBootImage.Size.Height), isError: true);
             return;
         }
-        _bootImagePath = dialog.FileName;
-        ImgStreamDockBootImage.Source = image;
+        ShowBootImage(image, dialog.FileName);
         ShowBootImageStatus(null, isError: false);
     }
 
     private void DefaultBootImage_Click(object sender, RoutedEventArgs e)
     {
-        _bootImagePath = null;
-        ImgStreamDockBootImage.Source = DockBootImage.Default();
+        ShowBootImage(DockBootImage.Default(), path: null);
         ShowBootImageStatus(null, isError: false);
     }
 
@@ -253,19 +270,20 @@ public partial class SettingsDialog : Window
     private async void ApplyBootImage_Click(object sender, RoutedEventArgs e)
     {
         if (Application.Current is not App app) return;
-        var image = DockBootImage.ToSurfaceImage(DockBootImage.Load(_bootImagePath));
+        var image = DockBootImage.ToSurfaceImage(_bootImage);
         BtnStreamDockBootImageApply.IsEnabled = false;
-        ShowBootImageStatus(Loc.T("Settings_StreamDock_BootImage_Sending"), isError: false);
+        ShowBootImageStatus(() => Loc.T("Settings_StreamDock_BootImage_Sending"), isError: false);
         try
         {
             bool isSent = await app.ApplyStreamDockBootImageAsync(image);
-            ShowBootImageStatus(Loc.T(isSent ? "Settings_StreamDock_BootImage_Sent" : "Settings_StreamDock_BootImage_NoDock"),
-                isError: isSent == false);
+            ShowBootImageStatus(isSent
+                ? () => Loc.T("Settings_StreamDock_BootImage_Sent")
+                : () => Loc.T("Settings_StreamDock_BootImage_NoDock"), isError: isSent == false);
         }
         catch (Exception ex)
         {
             LogService.Warn(ex, "Stream Dock : envoi de l'image de démarrage échoué.");
-            ShowBootImageStatus(Loc.T("Settings_StreamDock_BootImage_Failed"), isError: true);
+            ShowBootImageStatus(() => Loc.T("Settings_StreamDock_BootImage_Failed"), isError: true);
         }
         finally
         {
@@ -273,11 +291,19 @@ public partial class SettingsDialog : Window
         }
     }
 
-    private void ShowBootImageStatus(string? message, bool isError)
+    private void ShowBootImageStatus(Func<string>? message, bool isError)
     {
-        TxtStreamDockBootImageStatus.Text = message ?? "";
-        TxtStreamDockBootImageStatus.Visibility = message == null ? Visibility.Collapsed : Visibility.Visible;
-        TxtStreamDockBootImageStatus.SetResourceReference(TextBlock.ForegroundProperty, isError ? "Brush.Danger" : "Brush.TextHint");
+        _bootImageStatus = message == null ? null : (message, isError);
+        DrawBootImageStatus();
+    }
+
+    private void DrawBootImageStatus()
+    {
+        var status = _bootImageStatus;
+        TxtStreamDockBootImageStatus.Text = status == null ? "" : status.Value.Message();
+        TxtStreamDockBootImageStatus.Visibility = status == null ? Visibility.Collapsed : Visibility.Visible;
+        TxtStreamDockBootImageStatus.SetResourceReference(TextBlock.ForegroundProperty,
+            status?.IsError == true ? "Brush.Danger" : "Brush.TextHint");
     }
 
     private void DrawKeyStylePreviews()
@@ -336,6 +362,7 @@ public partial class SettingsDialog : Window
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         DrawKeyStylePreviews();
+        DrawBootImageStatus();
         FillLanguages();
         FillThemes();
         FillTerminals((CmbDefaultTerminal.SelectedItem as TerminalChoice)?.Tag ?? "");
