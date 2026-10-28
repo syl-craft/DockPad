@@ -391,12 +391,28 @@ public partial class App : Application
 
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
     {
+        if (e.Mode == PowerModes.Suspend)
+        {
+            // Windows n'attend pas la fin de la mise en veille : le dock est éteint avant de rendre la main.
+            try
+            {
+                var stopping = Dispatcher.Invoke(() =>
+                    IsExiting == false && _streamDock != null
+                        ? StopStreamDockAsync(applySettingsAfterStop: false)
+                        : Task.CompletedTask);
+                stopping.GetAwaiter().GetResult();
+            }
+            catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : extinction avant la veille impossible."); }
+            return;
+        }
         if (e.Mode != PowerModes.Resume) return;
         try
         {
             Dispatcher.BeginInvoke(() =>
             {
-                if (IsExiting == false && _streamDock != null) _ = StopStreamDockAsync();
+                if (IsExiting) return;
+                if (_streamDock != null) _ = StopStreamDockAsync();
+                else ApplyStreamDockSettings();
             });
         }
         catch (Exception ex) { Services.LogService.Warn(ex, "Stream Dock : reprise après veille impossible."); }

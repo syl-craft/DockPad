@@ -1,5 +1,11 @@
 # Changelog
 
+## [Non publié]
+
+### Corrections
+
+- **Stream Dock en veille** : le dock s'éteint quand l'ordinateur se met en veille et se rallume au réveil.
+
 ## [1.31.0] — 2026-10-27
 
 ### Nouveautés
