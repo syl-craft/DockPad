@@ -9,7 +9,8 @@ namespace DockPad.Tests;
 /// <summary>
 /// Synchro bidirectionnelle sans boucle, reconnexion et maintien après modification de la grille.
 /// Activation à chaud, publication validée, quotas périodiques et annulation au changement de configuration ou à l'arrêt.
-/// Image de démarrage : envoyée au dock connecté puis touches et colonne renvoyées, refusée sans dock, échec remonté.
+/// Image de démarrage : envoyée au dock connecté puis connexion rouverte sur le même écran, refusée sans dock,
+/// échec remonté et connexion rouverte aussi.
 /// </summary>
 public class StreamDockServiceSyncTests
 {
@@ -254,12 +255,19 @@ public class StreamDockServiceSyncTests
         int columns = dock.Surface.SideStrips.Count;
         var image = new SurfaceImage(854, 480, new byte[854 * 480 * 4]);
 
+        await dock.Click(1);
+        var screen = dock.Service.Screen;
+        keys = dock.Surface.Images.Count;
+
         Assert.True(await Bounded(dock.Service.ApplyBootImageAsync(image)));
         await dock.Idle();
 
         Assert.Same(image, Assert.Single(dock.Surface.BootImages));
+        Assert.Equal(2, dock.Driver.Opens);
+        Assert.Equal(1, dock.Surface.DisposeCalls);
+        Assert.Equal(screen, dock.Service.Screen);
         Assert.Equal(keys + 15, dock.Surface.Images.Count);
-        Assert.Equal(columns + 1, dock.Surface.SideStrips.Count);
+        Assert.True(dock.Surface.SideStrips.Count > columns);
         dock.AssertColumn();
     }
 
@@ -308,7 +316,7 @@ public class StreamDockServiceSyncTests
         await dock.Idle();
 
         Assert.Equal(keys + 15, dock.Surface.Images.Count);
-        Assert.Equal(1, dock.Driver.Opens);
+        Assert.Equal(2, dock.Driver.Opens);
     }
 
     [Fact]

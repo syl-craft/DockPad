@@ -183,16 +183,11 @@ public sealed class StreamDockService : IAsyncDisposable
         }
         catch (Exception ex) { applied.TrySetException(ex); }
 
+        // Après l'écriture, le dock garde l'image en fond : seule une nouvelle connexion le remet au propre.
         if (IsCurrentSession(session) == false) return;
-        // Sans écran affiché, un relâchement est ignoré : l'appui en cours bloquerait le clic suivant.
-        _presses.Clear();
-        lock (_gate)
-        {
-            _displayed = null;
-            _publishedSideStrip = null;
-        }
-        await RedrawAsync().ConfigureAwait(false);
-        await RedrawSideStripAsync().ConfigureAwait(false);
+        var screen = _wantedScreen;
+        ForgetSurface();
+        await ConnectAsync(keptScreen: screen).ConfigureAwait(false);
     }
 
     public void Start()
@@ -360,7 +355,12 @@ public sealed class StreamDockService : IAsyncDisposable
         catch (Exception ex) { ReportFailure(ex, "Stream Dock : boucle interrompue."); }
     }
 
-    private async Task ConnectAsync()
+    private Task ConnectAsync() => ConnectAsync(keptScreen: null);
+
+    /// <summary>
+    /// keptScreen : écran à rouvrir, sinon l'accueil ou la page de DockPad.
+    /// </summary>
+    private async Task ConnectAsync(DockScreen? keptScreen)
     {
         if (_session != null || _stopSignal.Task.IsCompleted) return;
         try
@@ -386,7 +386,7 @@ public sealed class StreamDockService : IAsyncDisposable
             var session = _session;
             if (session == null) return;
             _presses.Clear();
-            _wantedScreen = new DockScreen.Home(0);
+            _wantedScreen = keptScreen ?? new DockScreen.Home(0);
             lock (_gate)
             {
                 _sideStrip = new SideStripState([], new UsageConfig(), new SystemLoad(null, null), _sideStrip.Style,
@@ -394,7 +394,7 @@ public sealed class StreamDockService : IAsyncDisposable
                 ++_sideStripRevision;
                 _publishedSideStrip = null;
             }
-            if (SyncPages)
+            if (SyncPages && keptScreen == null)
             {
                 try
                 {
@@ -404,7 +404,7 @@ public sealed class StreamDockService : IAsyncDisposable
                 }
                 catch (Exception ex) { ReportFailure(ex, "Stream Dock : source Raccourcis illisible."); }
             }
-            await ShowScreenAsync(session, CurrentRevision()).ConfigureAwait(false);
+            await ShowScreenAsync(session, CurrentRevision(), keepScreen: keptScreen != null).ConfigureAwait(false);
             lock (_gate)
             {
                 if (_stopped || _session != session || session.Interrupted.Task.IsCompleted) return;

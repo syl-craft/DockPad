@@ -66,8 +66,8 @@ public interface IControlSurface : IAsyncDisposable
 
     /// <summary>
     /// Écrit l'image de démarrage dans la mémoire permanente de la surface, jamais en boucle ; rend la main quand la
-    /// surface a confirmé l'écriture et effacé l'écran. Taille différente de BootImage : ArgumentException. Les touches
-    /// et la colonne sont ensuite à renvoyer en entier.
+    /// surface a confirmé l'écriture. Taille différente de BootImage : ArgumentException. La surface garde ensuite
+    /// l'image en fond : elle est à fermer et rouvrir.
     /// </summary>
     Task SetBootImageAsync(SurfaceImage image, CancellationToken ct);
 }

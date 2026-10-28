@@ -312,8 +312,7 @@ internal sealed class StreamDockSurface : IControlSurface
     public Task SleepAsync(CancellationToken ct) => SendCommandAsync(StreamDockProtocol.Sleep(), ct);
 
     /// <summary>
-    /// Une écriture à la fois. Après l'accusé, le dock repasse sur l'écran de démarrage, qui reste en fond derrière les
-    /// touches et la colonne : il est réveillé et effacé comme à l'ouverture.
+    /// Une écriture à la fois ; l'image affichée ensuite par le dock est inconnue, la colonne est donc oubliée.
     /// </summary>
     public async Task SetBootImageAsync(SurfaceImage image, CancellationToken ct)
     {
@@ -345,9 +344,6 @@ internal sealed class StreamDockSurface : IControlSurface
         {
             await written.Task.WaitAsync(ct);
             await acknowledged.Task.WaitAsync(BootImageAcknowledgeTimeout, _time, ct);
-            await SendCommandAsync(StreamDockProtocol.Wake(), ct);
-            await SendCommandAsync(StreamDockProtocol.Brightness(StartupBrightness), ct);
-            await ClearAsync(ct);
         }
         finally
         {
