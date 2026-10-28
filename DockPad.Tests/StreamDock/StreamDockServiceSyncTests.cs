@@ -264,6 +264,7 @@ public class StreamDockServiceSyncTests
         dock.Time.Advance(TimeSpan.FromMilliseconds(2999));
         await Task.Delay(50);
         Assert.Equal(1, dock.Driver.Opens);
+        Assert.Equal(0, dock.Surface.DisposeCalls);
         await dock.Advance(1);
 
         Assert.Same(image, Assert.Single(dock.Surface.BootImages));
@@ -675,7 +676,7 @@ public class StreamDockServiceSyncTests
         public Task Idle(bool includeUsages = true) => Bounded(Service.WhenIdleAsync(includeUsages));
 
         /// <summary>
-        /// Les trois secondes pendant lesquelles le dock libéré montre son image de démarrage.
+        /// Les trois secondes pendant lesquelles le dock montre son image de démarrage, avant la reconnexion.
         /// </summary>
         public async Task PreviewBootImage()
         {
