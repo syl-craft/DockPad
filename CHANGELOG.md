@@ -1,11 +1,11 @@
 # Changelog
 
-## [Non publié]
+## [1.31.1] — 2026-10-28
 
 ### Nouveautés
 
 - **Stream Dock : styles des touches Néon et Aplat**, pensés pour le petit écran du dock. **Néon**, désormais par défaut : fond gris anthracite, icône en grand, nom blanc et un trait de la couleur de l'icône. **Aplat** : la couleur de l'icône en aplat sur toute la touche. Le style **Classique** reste disponible : **Options → Stream Dock → Style des touches**, trois vignettes dessinées avec vos premières tuiles ; un clic l'affiche aussitôt sur le dock, Enregistrer le garde, Annuler remet l'ancien.
-- **Stream Dock : image de démarrage** aux couleurs de DockPad, affichée environ 2 s à la mise sous tension du dock. **Options → Stream Dock → Image de démarrage** : aperçu, « Choisir une image… » pour la vôtre (exactement 854 × 480 px, une autre taille est refusée), « Image DockPad » pour revenir à celle de DockPad, et « Appliquer au dock », seul bouton qui l'écrit dans la mémoire du dock.
+- **Stream Dock : image de démarrage** aux couleurs de DockPad, affichée environ 2 s à la mise sous tension du dock. **Options → Stream Dock → Image de démarrage** : aperçu, « Choisir une image… » pour la vôtre (exactement 854 × 480 px, une autre taille est refusée), « Image DockPad » pour revenir à celle de DockPad, et « Appliquer au dock », seul bouton qui l'écrit dans la mémoire du dock ; le dock la montre alors 3 s, puis revient sur la page affichée.
 
 ### Corrections
 
