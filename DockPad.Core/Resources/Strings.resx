@@ -1973,4 +1973,25 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="UsageBar_Load_Tooltip" xml:space="preserve">
     <value>Processor {0} · Memory {1}</value>
   </data>
+  <data name="UsageBar_Accessible" xml:space="preserve">
+    <value>AI usage bar</value>
+  </data>
+  <data name="UsageBar_Loading" xml:space="preserve">
+    <value>Reading in progress…</value>
+  </data>
+  <data name="UsageBar_OpenPage" xml:space="preserve">
+    <value>Open the usage page</value>
+  </data>
+  <data name="UsageBar_Empty_Tooltip" xml:space="preserve">
+    <value>Open the AI usage settings</value>
+  </data>
+  <data name="UsageBar_AutoSuffix" xml:space="preserve">
+    <value> · {0}</value>
+  </data>
+  <data name="UsageBar_Reset" xml:space="preserve">
+    <value>↻ {0}</value>
+  </data>
+  <data name="UsageBar_Legend" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
 </root>

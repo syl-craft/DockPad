@@ -512,4 +512,74 @@ public class UsageBarViewModelTests
         Assert.False(bar.IsLoading);
         Assert.Equal(BarState.Full, bar.State);
     }
+
+    [Fact]
+    public async Task Colonnes_NombreSeul_ProduitParLeModele()
+    {
+        var rig = await BuildAsync(ConfigFor("claude", "codex"), Usage("claude"), Usage("codex", 27, null));
+
+        Assert.Equal(["62", "44", "27", "23", "61"], rig.Bar.Columns.Select(c => c.NumberText).ToList());
+        Assert.Equal(["", "", "", "Brush.Text", "Brush.Text"], rig.Bar.Columns.Select(c => c.NumberBrushKey).ToList());
+        Assert.Equal(["23", "61"], Some(rig.Bar.Reservoir).Dots.Skip(2).Select(d => d.NumberText).ToList());
+    }
+
+    [Fact]
+    public async Task Colonnes_ProcesseurInconnu_NombreEnTiret()
+    {
+        var rig = await BuildAsync(ConfigFor("claude"), new SystemLoad(null, 61), Usage("claude"));
+
+        Assert.Equal("—", rig.Bar.Columns[^2].NumberText);
+    }
+
+    [Fact]
+    public async Task Colonnes_LibelleDeTroisCaracteresAuPlus()
+    {
+        var rig = await BuildAsync(ConfigFor("claude"), Usage("claude", sessionLabel: "Claude · GPT"));
+
+        Assert.All(rig.Bar.Columns, column => Assert.True(column.Label.Length <= 3, column.Label));
+        Assert.Contains("Claude · GPT", rig.Bar.Columns[0].Tooltip);
+    }
+
+    [Fact]
+    public async Task Heros_LigneDUnAutreFournisseur_PorteLeNomDuFournisseur()
+    {
+        var antigravity = Usage("antigravity", 88, 18, name: "Antigravity", sessionLabel: "Claude");
+        var rig = await BuildAsync(ConfigFor("claude", "antigravity"), Usage("claude"), antigravity);
+
+        var row = rig.Bar.HeroRows.Single();
+        Assert.Equal("antigravity", row.ProviderId);
+        Assert.StartsWith("Antig", row.Label);
+        Assert.DoesNotContain("Claude", row.Label);
+        Assert.Contains("Claude", row.Tooltip);
+    }
+
+    [Fact]
+    public async Task Textes_SeparateursProduitsParLeModele()
+    {
+        var config = ConfigFor("claude");
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        var rig = await BuildAsync(config, Usage("claude", sessionResetsAt: Now.AddHours(2)));
+
+        Assert.Equal(" · AUTO", rig.Bar.AutoSuffix);
+        Assert.StartsWith("↻ ", Some(rig.Bar.HeroCard).ResetLabel);
+        Assert.Contains(" / ", Some(rig.Bar.Rings).Legend);
+        Assert.Equal("CPU / RAM", Some(rig.Bar.Load).Legend);
+    }
+
+    [Fact]
+    public async Task Charge_Mesure_GardeLesElementsDeQuotaDansLesCollectionsLiees()
+    {
+        var rig = await BuildAsync(ConfigFor("claude", "codex"), Usage("claude"), Usage("codex", 27, null));
+        var columns = rig.Bar.Columns;
+        var logos = rig.Bar.Logos;
+        var dots = Some(rig.Bar.Reservoir).Dots;
+
+        rig.Monitor.Value = new SystemLoad(40, 62);
+        rig.Time.Advance(TimeSpan.FromSeconds(5));
+        await rig.Feed.PendingSample.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Same(columns, rig.Bar.Columns);
+        Assert.Same(logos, rig.Bar.Logos);
+        Assert.Same(dots, Some(rig.Bar.Reservoir).Dots);
+    }
 }

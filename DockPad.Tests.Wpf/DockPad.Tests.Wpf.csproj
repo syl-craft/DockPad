@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Les tests qui construisent la vraie fenetre. Ils vivent dans leur propre assembly, donc leur propre processus de
+    test : une Application WPF ne peut pas etre detruite, et sa seule presence change le comportement de tout code qui
+    consulte Application.Current (McpLogService, ThemeService). DockPad.Tests n'en voit jamais une.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Platforms>x64</Platforms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DockPad.csproj" />
+    <ProjectReference Include="..\DockPad.StreamDock\DockPad.StreamDock.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\DockPad.Tests\StreamDock\ManualTimeProvider.cs" Link="Shared\ManualTimeProvider.cs" />
+    <Compile Include="..\DockPad.Tests\StreamDock\FakeSystemLoadMonitor.cs" Link="Shared\FakeSystemLoadMonitor.cs" />
+  </ItemGroup>
+
+</Project>

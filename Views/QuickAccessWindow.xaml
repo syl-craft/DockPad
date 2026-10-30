@@ -504,12 +504,14 @@
             </Grid>
         </Border>
 
-        <!-- Grille de raccourcis 4 × 6 -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <!-- Grille de raccourcis 4 × 6. La barre Usage IA à droite est posée dans la même cellule, par-dessus
+             et hors du défilement : le code la cale sur le bloc de tuiles (voir SyncUsageBarGeometry). -->
+        <Grid x:Name="TilesRow" Grid.Row="1">
+        <ScrollViewer x:Name="TilesScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <!-- Marge basse à 5 : ajoutée aux 5 px de marge d'une tuile, l'écart entre la dernière
                  rangée et le bandeau vaut 10 px, soit le pas entre deux tuiles. Avec une ligne Auto
                  il n'y a plus de mou, donc l'écart est déterminé sans avoir à ancrer la grille. -->
-            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,20,20,5">
+            <Grid x:Name="TilesBlock" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,20,20,5">
                 <!-- Les tuiles. Les cases ont une taille fixe : un UniformGrid 4 x 6 donne la meme
                      geometrie que les rangees et colonnes Auto d'avant, sans avoir a poser
                      Grid.Row et Grid.Column sur chaque enfant depuis le code. -->
@@ -536,6 +538,12 @@
                              IsHitTestVisible="False" Visibility="Collapsed"/>
             </Grid>
         </ScrollViewer>
+
+        <!-- Largeur et hauteur à zéro tant que la mise en page n'a pas mesuré une tuile : la barre ne pousse pas
+             la ligne. Visible dès que Usage IA est activé et la position à droite, données ou non. -->
+        <views:UsageBar x:Name="UsageBar" HorizontalAlignment="Left" VerticalAlignment="Top"
+                        Width="0" Height="0" Visibility="Collapsed"/>
+        </Grid>
 
         <!-- Bandeau Usage IA. Masqué, il ne prend aucune place (Collapsed, pas Hidden).
              Largeur alignée sur la grille de tuiles, posée une fois par le code au premier

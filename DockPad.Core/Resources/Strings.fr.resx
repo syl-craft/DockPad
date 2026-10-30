@@ -1973,4 +1973,25 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="UsageBar_Load_Tooltip" xml:space="preserve">
     <value>Processeur {0} · Mémoire {1}</value>
   </data>
+  <data name="UsageBar_Accessible" xml:space="preserve">
+    <value>Barre Usage IA</value>
+  </data>
+  <data name="UsageBar_Loading" xml:space="preserve">
+    <value>Lecture en cours…</value>
+  </data>
+  <data name="UsageBar_OpenPage" xml:space="preserve">
+    <value>Ouvrir la page de consommation</value>
+  </data>
+  <data name="UsageBar_Empty_Tooltip" xml:space="preserve">
+    <value>Ouvrir les réglages Usage IA</value>
+  </data>
+  <data name="UsageBar_AutoSuffix" xml:space="preserve">
+    <value> · {0}</value>
+  </data>
+  <data name="UsageBar_Reset" xml:space="preserve">
+    <value>↻ {0}</value>
+  </data>
+  <data name="UsageBar_Legend" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
 </root>

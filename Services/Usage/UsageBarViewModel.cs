@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using DockPad.Models;
 using DockPad.Services.StreamDock;
 
@@ -19,13 +21,16 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     private const int QuotaColumnCount = 3;
     private const int OtherRingCount = 2;
     private const int QuotaDotCount = 2;
-    private const int ColumnLabelMax = 4;
+    private const int ColumnLabelMax = 3;
     private const int RingLabelMax = 5;
-    private const int RowLabelMax = 6;
+    private const int RowLabelMax = 7;
     private const int CardLabelMax = 8;
     private const int CardNameMax = 10;
     private const int NoticeTitleMax = 16;
     private const string NoticeTitleSeparator = " — ";
+
+    /// <summary>Brosse du thème pour les nombres du processeur et de la mémoire : leurs couleurs pâlissent sur fond clair.</summary>
+    private const string NeutralNumberKey = "Brush.Text";
 
     private readonly UsageViewModel _usage;
     private readonly SystemLoadFeed _feed;
@@ -36,6 +41,14 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     /// </summary>
     private IReadOnlyList<BarColumn> _quotaColumns = [];
     private IReadOnlyList<BarRing> _quotaDots = [];
+
+    /// <summary>
+    /// Collections que la vue lie : leur instance ne change jamais, et un recalcul n'y remplace que les éléments qui
+    /// ont changé. Les conteneurs, infobulles et menus ouverts des autres éléments restent en place.
+    /// </summary>
+    private readonly ObservableCollection<BarLogo> _logos = [];
+    private readonly ObservableCollection<BarColumn> _columns = [];
+    private readonly ObservableCollection<BarRing> _dots = [];
 
     /// <summary>
     /// Un relevé de fenêtre tel que la barre le montre : l'instantané, la ligne du planificateur et la fenêtre elle-même.
@@ -54,7 +67,7 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     }
 
     public BarState State { get; private set; }
-    public IReadOnlyList<BarLogo> Logos { get; private set; } = [];
+    public IReadOnlyList<BarLogo> Logos => _logos;
 
     /// <summary>
     /// Au moins deux fournisseurs éligibles : la molette et Ctrl + Tab ont un autre fournisseur à atteindre.
@@ -67,11 +80,14 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     /// <summary>« AUTO » en mode Auto non suspendu, vide sinon.</summary>
     public string AutoLabel { get; private set; } = "";
 
+    /// <summary>« · AUTO », à la suite du nom court de la fenêtre mise en avant ; vide hors du mode Auto.</summary>
+    public string AutoSuffix { get; private set; } = "";
+
     /// <summary>Notice courte de l'état Empty, vide dans les autres.</summary>
     public string EmptyText { get; private set; } = "";
 
     public SideStripStyle Style { get; private set; }
-    public IReadOnlyList<BarColumn> Columns { get; private set; } = [];
+    public IReadOnlyList<BarColumn> Columns => _columns;
     public BarHeroCard? HeroCard { get; private set; }
     public IReadOnlyList<BarHeroRow> HeroRows { get; private set; } = [];
     public BarRings? Rings { get; private set; }
@@ -126,9 +142,12 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
 
         var load = BuildLoad();
         Load = load;
-        Columns = [.. _quotaColumns, CpuColumn(load), MemoryColumn(load)];
+        SyncList(_columns, [.. _quotaColumns, CpuColumn(load), MemoryColumn(load)]);
         if (Reservoir != null)
-            Reservoir = Reservoir with { Dots = [.. _quotaDots, CpuRing(load), MemoryRing(load)] };
+        {
+            SyncList(_dots, [.. _quotaDots, CpuRing(load), MemoryRing(load)]);
+            Reservoir = Reservoir with { Dots = _dots };
+        }
 
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Load)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Columns)));
@@ -166,16 +185,17 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         IsLoading = _usage.IsLoading;
         IsAuto = _usage.IsAutoActive;
         AutoLabel = IsAuto ? Loc.T("UsageBar_Auto") : "";
+        AutoSuffix = IsAuto ? Loc.F("UsageBar_AutoSuffix", AutoLabel) : "";
         EmptyText = State == BarState.Empty ? Loc.T("UsageBar_Empty") : "";
         CanCycle = eligible.Count >= 2;
         ShowCurve = Style == SideStripStyle.HeroStack && config.ShowSystemLoad && config.ShowLoadHistory;
 
-        Logos = focus == null
+        SyncList(_logos, focus == null
             ? []
-            : eligible.Select(usage => LogoOf(usage, focus, config.AlertThreshold)).ToList();
+            : eligible.Select(usage => LogoOf(usage, focus, config.AlertThreshold)).ToList());
         Load = loadItem;
         _quotaColumns = BuildQuotaColumns(focus, focusViews, views);
-        Columns = loadItem == null ? _quotaColumns : [.. _quotaColumns, CpuColumn(loadItem), MemoryColumn(loadItem)];
+        SyncList(_columns, loadItem == null ? _quotaColumns : [.. _quotaColumns, CpuColumn(loadItem), MemoryColumn(loadItem)]);
         HeroCard = focus == null ? null : BuildHeroCard(focus, focusViews);
         HeroRows = focus == null
             ? []
@@ -261,6 +281,24 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         return usage.QuotaNoticeNote.Length > 0 ? notice + "\n" + usage.QuotaNoticeNote : notice;
     }
 
+    /// <summary>
+    /// Met <paramref name="target"/> d'accord avec <paramref name="source"/> en ne touchant que ce qui diffère : un élément
+    /// égal garde sa place, donc son conteneur dans la vue.
+    /// </summary>
+    private static void SyncList<T>(ObservableCollection<T> target, IReadOnlyList<T> source)
+    {
+        for (var index = 0; index < source.Count && index < target.Count; index++)
+        {
+            if (EqualityComparer<T>.Default.Equals(target[index], source[index]) == false)
+                target[index] = source[index];
+        }
+
+        while (target.Count > source.Count)
+            target.RemoveAt(target.Count - 1);
+        for (var index = target.Count; index < source.Count; index++)
+            target.Add(source[index]);
+    }
+
     /// <summary>Texte réduit à <paramref name="max"/> caractères ; l'infobulle porte le texte complet.</summary>
     private static string Shorten(string text, int max) =>
         text.Length <= max ? text : text[..(max - 1)] + Ellipsis;
@@ -294,24 +332,37 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
             (current.CpuPct ?? 0) / 100d, (current.MemoryPct ?? 0) / 100d, CpuColor, MemoryColor,
             Loc.F("UsageBar_Load_Tooltip", cpuText, memoryText),
             _feed.History.Select(load => load.CpuPct).ToList(),
-            _feed.History.Select(load => load.MemoryPct).ToList());
+            _feed.History.Select(load => load.MemoryPct).ToList())
+        {
+            Legend = Loc.F("UsageBar_Legend", Loc.T("StreamDock_Cpu"), Loc.T("StreamDock_Memory")),
+            CpuNumber = NumberText(current.CpuPct),
+            MemoryNumber = NumberText(current.MemoryPct),
+        };
     }
 
     private static string LoadText(int? percent) => percent == null ? UsageViewModel.Unknown : PercentOf(percent.Value);
 
+    /// <summary>Le nombre seul, produit à partir de l'entier ; « — » quand la mesure manque.</summary>
+    private static string NumberText(int? percent) =>
+        percent == null ? UsageViewModel.Unknown : percent.Value.ToString(CultureInfo.CurrentCulture);
+
     private static BarColumn CpuColumn(BarLoad load) =>
-        new(Loc.T("StreamDock_Cpu"), load.CpuText, load.CpuFraction, CpuColor, Loc.F("UsageBar_Cpu_Tooltip", load.CpuText));
+        new(Loc.T("StreamDock_Cpu"), load.CpuText, load.CpuFraction, CpuColor, Loc.F("UsageBar_Cpu_Tooltip", load.CpuText))
+        { NumberText = load.CpuNumber, NumberBrushKey = NeutralNumberKey };
 
     private static BarColumn MemoryColumn(BarLoad load) =>
         new(Loc.T("StreamDock_Memory"), load.MemoryText, load.MemoryFraction, MemoryColor,
-            Loc.F("UsageBar_Memory_Tooltip", load.MemoryText));
+            Loc.F("UsageBar_Memory_Tooltip", load.MemoryText))
+        { NumberText = load.MemoryNumber, NumberBrushKey = NeutralNumberKey };
 
     private static BarRing CpuRing(BarLoad load) =>
-        new(Loc.T("StreamDock_Cpu"), load.CpuText, load.CpuFraction, CpuColor, Loc.F("UsageBar_Cpu_Tooltip", load.CpuText));
+        new(Loc.T("StreamDock_Cpu"), load.CpuText, load.CpuFraction, CpuColor, Loc.F("UsageBar_Cpu_Tooltip", load.CpuText))
+        { NumberText = load.CpuNumber, NumberBrushKey = NeutralNumberKey };
 
     private static BarRing MemoryRing(BarLoad load) =>
         new(Loc.T("StreamDock_Memory"), load.MemoryText, load.MemoryFraction, MemoryColor,
-            Loc.F("UsageBar_Memory_Tooltip", load.MemoryText));
+            Loc.F("UsageBar_Memory_Tooltip", load.MemoryText))
+        { NumberText = load.MemoryNumber, NumberBrushKey = NeutralNumberKey };
 
     // --- Colonnes
 
@@ -325,12 +376,13 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         if (focus != null && focusViews.Count == 0)
         {
             columns.Add(new BarColumn(NoticeTitleOf(focus), WarningGlyph, 0, UsageFormat.High, NoticeTooltipOf(focus),
-                focus.Glyph, IsWarning: true));
+                focus.Glyph, IsWarning: true, ProviderId: focus.ProviderId) { NumberText = WarningGlyph });
         }
 
         columns.AddRange(views.Take(QuotaColumnCount - columns.Count).Select(view =>
             new BarColumn(Shorten(ShortLabelOf(view), ColumnLabelMax), PercentOf(view.Window.UsedPct), FractionOf(view),
-                ColorOf(view), TooltipOf(view), view.Usage.Glyph)));
+                ColorOf(view), TooltipOf(view), view.Usage.Glyph, ProviderId: view.Usage.ProviderId)
+            { NumberText = NumberText(view.Window.UsedPct) }));
         return columns;
     }
 
@@ -349,7 +401,16 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         var second = focusViews.Count > 1 ? HeroRowOf(focusViews[1]) : null;
         return new BarHeroCard(focus.ProviderId, focus.Glyph, name, Shorten(ShortLabelOf(top), CardLabelMax),
             PercentOf(top.Window.UsedPct), FractionOf(top), ColorOf(top),
-            UsageFormat.Reset(top.Window.ResetsAt, _clock()), IsWarning: false, "", TooltipOf(top), second);
+            UsageFormat.Reset(top.Window.ResetsAt, _clock()), IsWarning: false, "", TooltipOf(top), second)
+        {
+            ResetLabel = ResetLabelOf(top.Window),
+        };
+    }
+
+    private string ResetLabelOf(UsageWindow window)
+    {
+        var reset = UsageFormat.Reset(window.ResetsAt, _clock());
+        return reset.Length == 0 ? "" : Loc.F("UsageBar_Reset", reset);
     }
 
     private BarHeroRow HeroRowOf(WindowView view) =>
@@ -361,10 +422,11 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     /// </summary>
     private BarHeroRow OtherRowOf(AiUsage usage, List<WindowView> views)
     {
+        var name = Shorten(usage.Name, RowLabelMax);
         var top = views.Where(view => view.Usage.ProviderId == usage.ProviderId).FirstOrDefault();
-        if (top != null) return HeroRowOf(top);
+        if (top != null) return HeroRowOf(top) with { Label = name };
 
-        return new BarHeroRow(usage.ProviderId, usage.Glyph, "", WarningGlyph, 0, UsageFormat.High,
+        return new BarHeroRow(usage.ProviderId, usage.Glyph, name, WarningGlyph, 0, UsageFormat.High,
             NoticeTooltipOf(usage), IsWarning: true);
     }
 
@@ -376,8 +438,8 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         if (focusViews.Count == 0)
         {
             var warning = new BarRing(NoticeTitleOf(focus), WarningGlyph, 0, UsageFormat.High, NoticeTooltipOf(focus), focus.ProviderId,
-                IsWarning: true);
-            return new BarRings(warning, null, WarningGlyph, others);
+                IsWarning: true) { NumberText = WarningGlyph };
+            return new BarRings(warning, null, WarningGlyph, others) { Legend = warning.Label };
         }
 
         // Emplacement fixe par type : la session dehors, la semaine dedans, quelle que soit la plus consommée.
@@ -387,13 +449,17 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         var inner = session == null ? null : week;
         var highest = focusViews.Max(view => view.Window.UsedPct);
 
-        return new BarRings(outer == null ? null : RingOf(outer), inner == null ? null : RingOf(inner),
-            PercentOf(highest), others);
+        var outerRing = outer == null ? null : RingOf(outer);
+        var innerRing = inner == null ? null : RingOf(inner);
+        var legend = innerRing == null
+            ? outerRing?.Label ?? ""
+            : Loc.F("UsageBar_Legend", outerRing?.Label ?? "", innerRing.Label);
+        return new BarRings(outerRing, innerRing, PercentOf(highest), others) { Legend = legend };
     }
 
     private BarRing RingOf(WindowView view) =>
         new(Shorten(ShortLabelOf(view), RingLabelMax), PercentOf(view.Window.UsedPct), FractionOf(view),
-            ColorOf(view), TooltipOf(view), view.Usage.ProviderId);
+            ColorOf(view), TooltipOf(view), view.Usage.ProviderId) { NumberText = NumberText(view.Window.UsedPct) };
 
     // --- Réservoir
 
@@ -417,7 +483,8 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     /// </summary>
     private BarReservoir BuildReservoir(AiUsage? focus, List<WindowView> focusViews, BarLoad? load)
     {
-        IReadOnlyList<BarRing> dots = load == null ? _quotaDots : [.. _quotaDots, CpuRing(load), MemoryRing(load)];
+        SyncList(_dots, load == null ? _quotaDots : [.. _quotaDots, CpuRing(load), MemoryRing(load)]);
+        IReadOnlyList<BarRing> dots = _dots;
 
         if (focus == null)
             return new BarReservoir(false, 0, "", "", StaleColor, "", dots);

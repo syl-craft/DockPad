@@ -8,6 +8,7 @@ using System.Windows.Media.Imaging;
 using DockPad;
 using DockPad.Models;
 using DockPad.Services;
+using DockPad.Services.StreamDock;
 using DockPad.Services.Usage;
 using DockPad.Views;
 
@@ -46,7 +47,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-codex|panel-codex-stale|panel-idle|panel-loading|panel-quota|window|window-off|window-unlocked|window-favorites|config> <cheminPng>");
+            Console.WriteLine("usage : UsageShot <panel|panel-tabs|panel-codex|panel-codex-stale|panel-idle|panel-loading|panel-quota|window|window-off|window-unlocked|window-favorites|window-bar-columns|window-bar-hero|window-bar-rings|window-bar-reservoir|config> <cheminPng>");
             return;
         }
 
@@ -65,11 +66,14 @@ internal static class Program
                                     idle: target is "panel-idle" or "panel-codex" or "panel-codex-stale");
         // « window-off » : bandeau désactivé, pour vérifier qu'il ne laisse aucune place derrière lui.
         if (target == "window-off") fixture.Enabled = false;
+        // « window-bar-<style> » : barre à droite, trois fournisseurs à quota. Les valeurs sont fixes.
+        var barStyle = BarStyleOf(target);
+        if (barStyle != null) fixture = BarFixtureConfig(barStyle.Value);
         UsageConfigService.Save(fixture);
 
         // La fenêtre entière se juge avec une grille remplie : vide, elle ne montre ni les icônes,
         // ni les bandes de couleur des types, ni la pagination.
-        if (target is "window" or "window-off" or "window-unlocked" or "window-favorites") WriteDemoGrid();
+        if (target is "window" or "window-off" or "window-unlocked" or "window-favorites" || barStyle != null) WriteDemoGrid();
         // La grille des favoris est un fichier à part : sans elle, « window-favorites » capturerait
         // une page vide, qui ne montre ni tuile, ni bande de couleur, ni pagination.
         if (target == "window-favorites") WriteDemoFavorites();
@@ -119,10 +123,10 @@ internal static class Program
             return;
         }
 
-        if (target is "window" or "window-off" or "window-unlocked" or "window-favorites")
+        if (target is "window" or "window-off" or "window-unlocked" or "window-favorites" || barStyle != null)
         {
             CaptureWindow(outPath, unlockTiles: target == "window-unlocked",
-                          favorites: target == "window-favorites");
+                          favorites: target == "window-favorites", barStyle: barStyle);
             return;
         }
 
@@ -135,7 +139,7 @@ internal static class Program
 
 
             default:
-                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | panel-quota | window | window-off | window-unlocked | window-favorites | config)");
+                throw new ArgumentException($"cible inconnue : {target} (panel | panel-tabs | panel-idle | panel-loading | panel-quota | window | window-off | window-unlocked | window-favorites | window-bar-columns | window-bar-hero | window-bar-rings | window-bar-reservoir | config)");
         }
 
         // Show + Dispatcher.Run : ShowDialog retourne immédiatement ici (Application jamais Run).
@@ -155,15 +159,19 @@ internal static class Program
     /// son contenu contourne l'instanciation de la fenêtre. Le ViewModel de production est remplacé
     /// par la fixture avant toute lecture : sinon la capture embarquerait la consommation réelle.
     /// </remarks>
-    private static void CaptureWindow(string outPath, bool unlockTiles = false, bool favorites = false)
+    private static void CaptureWindow(string outPath, bool unlockTiles = false, bool favorites = false,
+                                      SideStripStyle? barStyle = null)
     {
-        var quick = new QuickAccessWindow();
-
-        // Largeur lue sur la fenêtre ; la hauteur vient de la mesure, la fenêtre étant en
-        // SizeToContent (sa propriété Height vaut NaN).
-        double width = quick.Width;
-        quick.UsageBannerPanel.ViewModel = FixtureViewModel();
+        // Les relevés et la charge viennent de la fixture : ni les vrais fournisseurs ni le vrai processeur.
+        var usage = barStyle == null ? FixtureViewModel() : BarViewModel();
+        var quick = new QuickAccessWindow(usage, new FixedLoadMonitor(LoadCpu.Length - 1));
+        quick.UsageBannerPanel.ViewModel = usage;
         quick.UsageBannerPanel.Start();
+        // La fenêtre n'est pas affichée : sa charge ne démarrerait pas. La barre reçoit un flux déjà rempli.
+        if (barStyle != null) quick.UsageBarPanel.ViewModel = new UsageBarViewModel(usage, FilledLoadFeed(), () => BarNow);
+
+        // Largeur lue sur la fenêtre APRÈS la mise en page : passer à droite l'agrandit de la barre et de son écart.
+        double width = quick.Width;
 
         var root = (FrameworkElement)quick.Content;
 
@@ -183,8 +191,9 @@ internal static class Program
         // de pagination sort de l'image. La vraie fenêtre, elle, en SizeToContent, se réajuste
         // d'elle-même.
         double height = 0;
-        for (int pass = 0; pass < 2; pass++)
+        for (int pass = 0; pass < 4; pass++)
         {
+            width = quick.Width;
             root.Measure(new Size(width, double.PositiveInfinity));
             height = root.DesiredSize.Height;
             root.Arrange(new Rect(0, 0, width, height));
@@ -192,6 +201,119 @@ internal static class Program
         }
 
         Save(root, width, height, outPath, "window");
+    }
+
+    // --- Barre à droite : fixture à valeurs fixes (Claude 62 % et 44 %, Codex 27 %, Antigravity 88 % et 18 %)
+
+    /// <summary>Horloge de la fixture de la barre.</summary>
+    private static readonly DateTime BarNow = new(2026, 10, 30, 14, 0, 0);
+
+    /// <summary>Mesures du processeur et de la mémoire, la plus ancienne en premier ; la dernière est celle qu'on lit.</summary>
+    private static readonly int[] LoadCpu = [12, 18, 15, 30, 22, 19, 41, 35, 20, 17, 26, 23];
+    private static readonly int[] LoadMemory = [58, 58, 59, 60, 60, 59, 61, 62, 61, 60, 61, 61];
+
+    private static SideStripStyle? BarStyleOf(string target) => target switch
+    {
+        "window-bar-columns" => SideStripStyle.Columns,
+        "window-bar-hero" => SideStripStyle.HeroStack,
+        "window-bar-rings" => SideStripStyle.Rings,
+        "window-bar-reservoir" => SideStripStyle.Reservoir,
+        _ => null,
+    };
+
+    private static UsageConfig BarFixtureConfig(SideStripStyle style) => new()
+    {
+        Enabled = true,
+        AlertThreshold = 15,
+        DefaultProviderId = "claude",
+        Placement = UsagePlacement.Right,
+        BarStyle = style,
+        Providers =
+        {
+            new AiProviderEntry { Id = "claude", Name = "Claude", DetectedName = "Claude", Detected = true, Order = 0 },
+            new AiProviderEntry { Id = "codex", Name = "Codex", DetectedName = "Codex", Detected = true, Order = 1 },
+            new AiProviderEntry { Id = "antigravity", Name = "Antigravity", DetectedName = "Antigravity", Detected = true, Order = 2 },
+        },
+    };
+
+    private static UsageViewModel BarViewModel()
+    {
+        IUsageProvider[] providers =
+        [
+            new BarFixtureProvider("claude", "Claude", ProviderLogos.ClaudeAccent, "https://claude.ai/new#settings/usage",
+                new UsageWindow { UsedPct = 62, ResetsAt = BarNow.AddHours(5.5) },
+                new UsageWindow { UsedPct = 44, ResetsAt = BarNow.AddDays(3) }),
+            new BarFixtureProvider("codex", "Codex", "#10A37F", "https://chatgpt.com/codex/cloud/settings/analytics#usage",
+                null, new UsageWindow { UsedPct = 27, ResetsAt = BarNow.AddDays(3) }),
+            new BarFixtureProvider("antigravity", "Antigravity", ProviderLogos.AntigravityAccent, "",
+                new UsageWindow { UsedPct = 88, Label = "Claude · GPT", ResetsAt = BarNow.AddDays(1) },
+                new UsageWindow { UsedPct = 18, Label = "Gemini", ResetsAt = BarNow.AddDays(1) }),
+        ];
+        return new UsageViewModel(new UsageService(providers), UsageConfigService.Load, () => BarNow);
+    }
+
+    /// <summary>Un fournisseur qui n'est pas la démonstration, donc éligible, aux valeurs fixes.</summary>
+    private sealed class BarFixtureProvider(string id, string name, string accent, string url,
+                                            UsageWindow? session, UsageWindow? week) : IUsageProvider
+    {
+        public string Id => id;
+        public string Name => name;
+
+        public AiProbe Probe() => new() { Available = true, DisplayName = name, Glyph = name[..1], AccentColor = accent };
+
+        public Task<AiUsage?> ReadAsync(CancellationToken ct) => Task.FromResult<AiUsage?>(new AiUsage
+        {
+            ProviderId = id, Name = name, Glyph = name[..1], AccentColor = accent, UsageUrl = url,
+            Session = session, Week = week,
+        });
+    }
+
+    /// <summary>Un moniteur qui rend les mesures de la fixture dans l'ordre, puis la dernière.</summary>
+    private sealed class FixedLoadMonitor(int index) : ISystemLoadMonitor
+    {
+        private int _next;
+
+        public SystemLoad Sample()
+        {
+            var at = Math.Min(_next++, index);
+            return new SystemLoad(LoadCpu[at], LoadMemory[at]);
+        }
+
+        public void Reset() => _next = 0;
+    }
+
+    /// <summary>
+    /// Flux de charge déjà rempli de ses douze mesures : le minuteur est tiré à la main, une mesure après l'autre.
+    /// </summary>
+    private static SystemLoadFeed FilledLoadFeed()
+    {
+        var time = new StepTimeProvider();
+        var feed = new SystemLoadFeed(new FixedLoadMonitor(LoadCpu.Length - 1), time, null);
+        feed.Start();
+        for (var count = 1; count <= LoadCpu.Length; count++)
+        {
+            if (count > 1) time.Fire();
+            SpinWait.SpinUntil(() => feed.History.Count >= count, TimeSpan.FromSeconds(5));
+        }
+        return feed;
+    }
+
+    private sealed class StepTimeProvider : TimeProvider
+    {
+        private StepTimer? _timer;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
+            _timer = new StepTimer(callback, state);
+
+        public void Fire() => _timer?.Fire();
+
+        private sealed class StepTimer(TimerCallback callback, object? state) : ITimer
+        {
+            public void Fire() => callback(state);
+            public bool Change(TimeSpan dueTime, TimeSpan period) => true;
+            public void Dispose() { }
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
     }
 
     /// <summary>Rend le bandeau seul, sur le fond de la grille, sans passer par une fenêtre.</summary>

@@ -13,6 +13,8 @@ jobs:
           dotnet-version: 8.0.x
       - name: Test
         run: dotnet test DockPad.Tests/DockPad.Tests.csproj -c Release
+      - name: Test (fenetre WPF)
+        run: dotnet test DockPad.Tests.Wpf/DockPad.Tests.Wpf.csproj -c Release
       - name: Build adapted native tools
         shell: pwsh
         run: |

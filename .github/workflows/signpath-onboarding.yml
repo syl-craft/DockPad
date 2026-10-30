@@ -29,6 +29,8 @@ jobs:
           dotnet-version: 8.0.x
       - name: Test
         run: dotnet test DockPad.Tests/DockPad.Tests.csproj -c Release -p:UseSharedCompilation=false -m:1
+      - name: Test (fenetre WPF)
+        run: dotnet test DockPad.Tests.Wpf/DockPad.Tests.Wpf.csproj -c Release -p:UseSharedCompilation=false -m:1
       - name: Build versioned application
         id: build
         shell: pwsh
