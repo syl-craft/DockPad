@@ -1940,4 +1940,37 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
     <value>Reservoir</value>
   </data>
+  <data name="UsageBar_Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="UsageBar_Logo_Tooltip" xml:space="preserve">
+    <value>{0} — {1} %</value>
+  </data>
+  <data name="UsageBar_Logo_Notice" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="UsageBar_Logo_Accessible" xml:space="preserve">
+    <value>Highlight {0}</value>
+  </data>
+  <data name="UsageBar_Window_Tooltip" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="UsageBar_Window_Stale" xml:space="preserve">
+    <value>{0} % used, {1} % left — reading {2}</value>
+  </data>
+  <data name="UsageBar_Auto" xml:space="preserve">
+    <value>AUTO</value>
+  </data>
+  <data name="UsageBar_Empty" xml:space="preserve">
+    <value>No quota to show</value>
+  </data>
+  <data name="UsageBar_Cpu_Tooltip" xml:space="preserve">
+    <value>Processor: {0}</value>
+  </data>
+  <data name="UsageBar_Memory_Tooltip" xml:space="preserve">
+    <value>Memory: {0}</value>
+  </data>
+  <data name="UsageBar_Load_Tooltip" xml:space="preserve">
+    <value>Processor {0} · Memory {1}</value>
+  </data>
 </root>

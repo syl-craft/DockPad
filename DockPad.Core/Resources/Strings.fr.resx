@@ -1940,4 +1940,37 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
     <value>Réservoir</value>
   </data>
+  <data name="UsageBar_Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="UsageBar_Logo_Tooltip" xml:space="preserve">
+    <value>{0} — {1} %</value>
+  </data>
+  <data name="UsageBar_Logo_Notice" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="UsageBar_Logo_Accessible" xml:space="preserve">
+    <value>Mettre {0} en avant</value>
+  </data>
+  <data name="UsageBar_Window_Tooltip" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="UsageBar_Window_Stale" xml:space="preserve">
+    <value>{0} % utilisés, {1} % restants — relevé {2}</value>
+  </data>
+  <data name="UsageBar_Auto" xml:space="preserve">
+    <value>AUTO</value>
+  </data>
+  <data name="UsageBar_Empty" xml:space="preserve">
+    <value>Aucun quota à afficher</value>
+  </data>
+  <data name="UsageBar_Cpu_Tooltip" xml:space="preserve">
+    <value>Processeur : {0}</value>
+  </data>
+  <data name="UsageBar_Memory_Tooltip" xml:space="preserve">
+    <value>Mémoire : {0}</value>
+  </data>
+  <data name="UsageBar_Load_Tooltip" xml:space="preserve">
+    <value>Processeur {0} · Mémoire {1}</value>
+  </data>
 </root>

@@ -1940,4 +1940,37 @@ F0rc3r l3ur 4rrêt ? L3 tr4v41l n0n 3nr3g15tré p3ut êtr3 p3rdu.</value></data>
   <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
     <value>Ré53rv01r</value>
   </data>
+  <data name="UsageBar_Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="UsageBar_Logo_Tooltip" xml:space="preserve">
+    <value>{0} — {1} %</value>
+  </data>
+  <data name="UsageBar_Logo_Notice" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="UsageBar_Logo_Accessible" xml:space="preserve">
+    <value>M3ttr3 {0} 3n 4v4nt</value>
+  </data>
+  <data name="UsageBar_Window_Tooltip" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="UsageBar_Window_Stale" xml:space="preserve">
+    <value>{0} % ut1l15é5, {1} % r35t4nt5 — r3l3vé {2}</value>
+  </data>
+  <data name="UsageBar_Auto" xml:space="preserve">
+    <value>4UT0</value>
+  </data>
+  <data name="UsageBar_Empty" xml:space="preserve">
+    <value>4ucun qu0t4 à 4ff1ch3r</value>
+  </data>
+  <data name="UsageBar_Cpu_Tooltip" xml:space="preserve">
+    <value>Pr0c3553ur : {0}</value>
+  </data>
+  <data name="UsageBar_Memory_Tooltip" xml:space="preserve">
+    <value>Mém01r3 : {0}</value>
+  </data>
+  <data name="UsageBar_Load_Tooltip" xml:space="preserve">
+    <value>Pr0c3553ur {0} · Mém01r3 {1}</value>
+  </data>
 </root>
