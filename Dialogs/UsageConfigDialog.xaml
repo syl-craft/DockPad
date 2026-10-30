@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:DockPad.Views"
         xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
+        xmlns:models="clr-namespace:DockPad.Models;assembly=DockPad.Core"
+        xmlns:appmodels="clr-namespace:DockPad.Models"
         Title="{loc:T UsageCfg_Title}"
         Width="1000" Height="760"
         MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
@@ -10,6 +12,85 @@
         ResizeMode="CanResize" MinWidth="820" MinHeight="420"
         Background="{DynamicResource Brush.Surface}"
         FontFamily="Segoe UI">
+    <Window.Resources>
+        <!-- Une mosaïque de tuiles pour le mini-schéma des positions. -->
+        <DrawingBrush x:Key="SchemaTiles" TileMode="Tile" ViewportUnits="Absolute" Viewport="0,0,18,16"
+                      ViewboxUnits="Absolute" Viewbox="0,0,18,16">
+            <DrawingBrush.Drawing>
+                <GeometryDrawing Brush="{DynamicResource Brush.BorderSubtle}">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="1.5,1.5,15,13" RadiusX="2" RadiusY="2"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <!-- Un titre et son contrôle : inactifs ensemble, et pâlis ensemble. -->
+        <Style x:Key="DisableableGroup" TargetType="StackPanel">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ChoiceList" TargetType="ListBox" BasedOn="{StaticResource {x:Type ListBox}}">
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="-3,0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <!-- Un gabarit sans fond : celui de Windows peint un fond blanc dès que la liste est inactive. -->
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBox">
+                        <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Rows="1"/>
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ChoiceCard" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+            <Setter Property="Padding" Value="4,8"/>
+            <Setter Property="Margin" Value="3,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                    <Setter Property="Background" Value="{DynamicResource Brush.AccentSoft}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
     <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -41,6 +122,140 @@
                 <CheckBox x:Name="ChkEnabled" Content="{loc:T UsageCfg_ShowBanner}"
                           VerticalContentAlignment="Center" Margin="0,0,0,10"
                           Click="Setting_Changed"/>
+
+                <!-- Position : le bandeau sous la grille, ou la barre à sa droite. -->
+                <StackPanel x:Name="GrpPosition" Style="{StaticResource DisableableGroup}" Margin="0,0,0,14">
+                    <TextBlock Text="{loc:T UsageCfg_Position}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,6"/>
+                    <ListBox x:Name="LstPlacement" Style="{StaticResource ChoiceList}"
+                             ItemContainerStyle="{StaticResource ChoiceCard}"
+                             AutomationProperties.Name="{loc:T UsageCfg_Position}"
+                             SelectionChanged="Setting_Changed">
+                        <ListBoxItem Tag="{x:Static appmodels:UsagePlacement.Bottom}"
+                                     AutomationProperties.Name="{loc:T UsageCfg_Position_Bottom}">
+                            <StackPanel>
+                                <Border Width="124" Height="80" Padding="6" CornerRadius="4" HorizontalAlignment="Center"
+                                        Background="{DynamicResource Brush.SurfaceAlt}"
+                                        BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+                                    <StackPanel>
+                                        <Rectangle Width="108" Height="48" Fill="{StaticResource SchemaTiles}"/>
+                                        <Rectangle Width="108" Height="12" Margin="0,6,0,0" RadiusX="3" RadiusY="3"
+                                                   Fill="{DynamicResource Brush.Accent}"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{loc:T UsageCfg_Position_Bottom}" FontWeight="SemiBold"
+                                           TextAlignment="Center" Margin="0,8,0,0"/>
+                                <TextBlock Text="{loc:T UsageCfg_Position_Bottom_Sub}" FontSize="11" TextWrapping="Wrap"
+                                           TextAlignment="Center" Foreground="{DynamicResource Brush.TextHint}"/>
+                            </StackPanel>
+                        </ListBoxItem>
+                        <ListBoxItem Tag="{x:Static appmodels:UsagePlacement.Right}"
+                                     AutomationProperties.Name="{loc:T UsageCfg_Position_Right}">
+                            <StackPanel>
+                                <Border Width="124" Height="80" Padding="6" CornerRadius="4" HorizontalAlignment="Center"
+                                        Background="{DynamicResource Brush.SurfaceAlt}"
+                                        BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                                        <Rectangle Width="90" Height="64" Fill="{StaticResource SchemaTiles}"/>
+                                        <Rectangle Width="14" Height="64" Margin="4,0,0,0" RadiusX="3" RadiusY="3"
+                                                   Fill="{DynamicResource Brush.Accent}"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{loc:T UsageCfg_Position_Right}" FontWeight="SemiBold"
+                                           TextAlignment="Center" Margin="0,8,0,0"/>
+                                <TextBlock Text="{loc:T UsageCfg_Position_Right_Sub}" FontSize="11" TextWrapping="Wrap"
+                                           TextAlignment="Center" Foreground="{DynamicResource Brush.TextHint}"/>
+                            </StackPanel>
+                        </ListBoxItem>
+                    </ListBox>
+                </StackPanel>
+
+                <!-- Style de la barre : quatre vignettes, chacune une vraie barre d'exemple à valeurs fixes. -->
+                <StackPanel x:Name="GrpBarStyle" Style="{StaticResource DisableableGroup}" Margin="0,0,0,14">
+                    <TextBlock Text="{loc:T UsageCfg_BarStyle}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,6"/>
+                    <ListBox x:Name="LstBarStyle" Style="{StaticResource ChoiceList}"
+                             ItemContainerStyle="{StaticResource ChoiceCard}"
+                             AutomationProperties.Name="{loc:T UsageCfg_BarStyle}"
+                             SelectionChanged="Setting_Changed">
+                        <ListBoxItem Tag="{x:Static models:SideStripStyle.Columns}"
+                                     AutomationProperties.Name="{loc:T UsageCfg_Style_Columns}">
+                            <StackPanel>
+                                <Viewbox Height="184" Stretch="Uniform" HorizontalAlignment="Center">
+                                    <views:UsageBar x:Name="SampleColumns" Width="90" Height="390"
+                                                    IsHitTestVisible="False" IsTabStop="False"/>
+                                </Viewbox>
+                                <TextBlock Text="{loc:T UsageCfg_Style_Columns}" Margin="0,8,0,0"
+                                           TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </ListBoxItem>
+                        <ListBoxItem Tag="{x:Static models:SideStripStyle.HeroStack}"
+                                     AutomationProperties.Name="{loc:T UsageCfg_Style_Hero}">
+                            <StackPanel>
+                                <Viewbox Height="184" Stretch="Uniform" HorizontalAlignment="Center">
+                                    <views:UsageBar x:Name="SampleHero" Width="90" Height="390"
+                                                    IsHitTestVisible="False" IsTabStop="False"/>
+                                </Viewbox>
+                                <TextBlock Text="{loc:T UsageCfg_Style_Hero}" Margin="0,8,0,0"
+                                           TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </ListBoxItem>
+                        <ListBoxItem Tag="{x:Static models:SideStripStyle.Rings}"
+                                     AutomationProperties.Name="{loc:T UsageCfg_Style_Rings}">
+                            <StackPanel>
+                                <Viewbox Height="184" Stretch="Uniform" HorizontalAlignment="Center">
+                                    <views:UsageBar x:Name="SampleRings" Width="90" Height="390"
+                                                    IsHitTestVisible="False" IsTabStop="False"/>
+                                </Viewbox>
+                                <TextBlock Text="{loc:T UsageCfg_Style_Rings}" Margin="0,8,0,0"
+                                           TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </ListBoxItem>
+                        <ListBoxItem Tag="{x:Static models:SideStripStyle.Reservoir}"
+                                     AutomationProperties.Name="{loc:T UsageCfg_Style_Reservoir}">
+                            <StackPanel>
+                                <Viewbox Height="184" Stretch="Uniform" HorizontalAlignment="Center">
+                                    <views:UsageBar x:Name="SampleReservoir" Width="90" Height="390"
+                                                    IsHitTestVisible="False" IsTabStop="False"/>
+                                </Viewbox>
+                                <TextBlock Text="{loc:T UsageCfg_Style_Reservoir}" Margin="0,8,0,0"
+                                           TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </ListBoxItem>
+                    </ListBox>
+                </StackPanel>
+
+                <!-- IA mise en avant : manuel, ou la plus proche de sa limite. -->
+                <StackPanel x:Name="GrpFocus" Style="{StaticResource DisableableGroup}" Margin="0,0,0,14">
+                    <TextBlock Text="{loc:T UsageCfg_Focus}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,6"/>
+                    <RadioButton x:Name="RbFocusManual" GroupName="UsageFocus" Margin="0,0,0,8"
+                                 AutomationProperties.Name="{loc:T UsageCfg_Focus_Manual}"
+                                 Checked="Setting_Changed">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T UsageCfg_Focus_Manual}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T UsageCfg_Focus_Manual_Sub}" FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource Brush.TextHint}"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="RbFocusAuto" GroupName="UsageFocus"
+                                 AutomationProperties.Name="{loc:T UsageCfg_Focus_Auto}"
+                                 Checked="Setting_Changed" Click="Auto_Click">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T UsageCfg_Focus_Auto}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T UsageCfg_Focus_Auto_Sub}" FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource Brush.TextHint}"/>
+                        </StackPanel>
+                    </RadioButton>
+                </StackPanel>
+
+                <!-- Charge du PC : le processeur et la mémoire, et la courbe du style Héros. -->
+                <StackPanel x:Name="GrpSystemLoad" Style="{StaticResource DisableableGroup}" Margin="0,0,0,14">
+                    <TextBlock Text="{loc:T UsageCfg_SystemLoad}" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,6"/>
+                    <CheckBox x:Name="ChkShowSystemLoad" Content="{loc:T UsageCfg_ShowSystemLoad}"
+                              VerticalContentAlignment="Center" Margin="0,0,0,8"
+                              Click="Setting_Changed"/>
+                    <CheckBox x:Name="ChkShowLoadHistory" Content="{loc:T UsageCfg_ShowLoadHistory}"
+                              VerticalContentAlignment="Center"
+                              Click="Setting_Changed"/>
+                </StackPanel>
 
                 <CheckBox x:Name="ChkShowCost" Content="{loc:T UsageCfg_ShowCost}"
                           VerticalContentAlignment="Center" Margin="0,0,0,12"

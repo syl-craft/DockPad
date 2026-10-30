@@ -845,6 +845,61 @@ public class UsageViewModelTests
     }
 
     [Fact]
+    public async Task ChooseAuto_ConfigDejaAuto_ApresGeste_LeveLaSuspensionSansRelecture()
+    {
+        var a = Scripted("a", 10);
+        var b = Scripted("b", 90);
+        var vm = BuildScripted(AutoConfig("a", "b"), a, b);
+        await vm.RefreshAsync();
+        vm.Cycle(+1);
+        Assert.Equal("a", vm.SoloProviderId);
+        Assert.False(vm.IsAutoActive);
+
+        vm.ChooseAuto();
+
+        Assert.True(vm.IsAutoActive);
+        Assert.Equal("b", vm.SoloProviderId);   // la plus proche de sa limite, sur le dernier relevé
+        Assert.Equal(1, a.ReadCount);
+        Assert.Equal(1, b.ReadCount);
+    }
+
+    [Fact]
+    public async Task ChooseAuto_ReleveLanceAvantLeChoix_NeLeDefaitPas()
+    {
+        var a = Scripted("a", 10);
+        var b = Scripted("b", 90);
+        var vm = BuildScripted(AutoConfig("a", "b"), a, b);
+        await vm.RefreshAsync();
+        vm.SelectByGesture("a");
+
+        b.Usage = Quota("b", 95);
+        b.Gate = new TaskCompletionSource();
+        var refresh = vm.RefreshAsync();
+        vm.ChooseAuto();
+        b.Gate.SetResult();
+        await refresh;
+
+        Assert.True(vm.IsAutoActive);
+        Assert.Equal("b", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task ChooseAuto_GesteApres_SuspendDeNouveau()
+    {
+        var a = Scripted("a", 10);
+        var b = Scripted("b", 90);
+        var vm = BuildScripted(AutoConfig("a", "b"), a, b);
+        await vm.RefreshAsync();
+        vm.SelectByGesture("a");
+        vm.ChooseAuto();
+
+        vm.SelectByGesture("a");
+
+        Assert.False(vm.IsAutoActive);
+        Assert.Equal("a", vm.SoloProviderId);
+    }
+
+    [Fact]
     public async Task Auto_ReleveDepasse_NeChoisitPas()
     {
         // Un relevé supplanté qui ignore l'annulation rend quand même ses valeurs : la garde

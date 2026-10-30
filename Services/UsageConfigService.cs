@@ -12,6 +12,14 @@ public static class UsageConfigService
     public static readonly string FilePath = AppPaths.File("usage.json");
     public static event Action? Changed;
 
+    /// <summary>
+    /// Le choix explicite de « Auto » dans la fenêtre Usage IA, à chaque clic : la config seule ne le porte pas quand
+    /// elle dit déjà Auto.
+    /// </summary>
+    public static event Action? AutoChosen;
+
+    public static void NotifyAutoChosen() => Raise(AutoChosen);
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -62,7 +70,11 @@ public static class UsageConfigService
     {
         JsonConfigFile.Save(path, config, JsonOptions);
 
-        var subscribers = Changed;
+        Raise(Changed);
+    }
+
+    private static void Raise(Action? subscribers)
+    {
         if (subscribers == null) return;
         foreach (Action subscriber in subscribers.GetInvocationList())
         {

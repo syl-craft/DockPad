@@ -201,6 +201,16 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Le choix explicite de « Auto » dans la fenêtre Usage IA, y compris quand la config dit déjà Auto : lève la
+    /// suspension de la session et applique l'Auto sur le dernier relevé, sans interroger les fournisseurs.
+    /// </summary>
+    public void ChooseAuto()
+    {
+        _isAutoSuspended = false;
+        Rebuild();
+    }
+
+    /// <summary>
     /// Passe au fournisseur éligible suivant (direction positive) ou précédent, en boucle. Sans
     /// effet sous deux fournisseurs éligibles ; sinon c'est un geste, qui suspend l'Auto.
     /// </summary>

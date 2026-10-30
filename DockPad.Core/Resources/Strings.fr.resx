@@ -1994,4 +1994,58 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="UsageBar_Legend" xml:space="preserve">
     <value>{0} / {1}</value>
   </data>
+  <data name="UsageCfg_Position" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="UsageCfg_Position_Bottom" xml:space="preserve">
+    <value>En bas</value>
+  </data>
+  <data name="UsageCfg_Position_Bottom_Sub" xml:space="preserve">
+    <value>Le bandeau actuel, sous la grille</value>
+  </data>
+  <data name="UsageCfg_Position_Right" xml:space="preserve">
+    <value>À droite</value>
+  </data>
+  <data name="UsageCfg_Position_Right_Sub" xml:space="preserve">
+    <value>Une barre verticale à côté de la grille</value>
+  </data>
+  <data name="UsageCfg_BarStyle" xml:space="preserve">
+    <value>Style de la barre à droite</value>
+  </data>
+  <data name="UsageCfg_Style_Columns" xml:space="preserve">
+    <value>Colonnes</value>
+  </data>
+  <data name="UsageCfg_Style_Hero" xml:space="preserve">
+    <value>Héros</value>
+  </data>
+  <data name="UsageCfg_Style_Rings" xml:space="preserve">
+    <value>Anneaux</value>
+  </data>
+  <data name="UsageCfg_Style_Reservoir" xml:space="preserve">
+    <value>Réservoir</value>
+  </data>
+  <data name="UsageCfg_Focus" xml:space="preserve">
+    <value>IA mise en avant</value>
+  </data>
+  <data name="UsageCfg_Focus_Manual" xml:space="preserve">
+    <value>Choix manuel</value>
+  </data>
+  <data name="UsageCfg_Focus_Manual_Sub" xml:space="preserve">
+    <value>Logo, molette ou Ctrl + Tab</value>
+  </data>
+  <data name="UsageCfg_Focus_Auto" xml:space="preserve">
+    <value>Auto — la plus proche de sa limite</value>
+  </data>
+  <data name="UsageCfg_Focus_Auto_Sub" xml:space="preserve">
+    <value>Bascule seule sur l’IA la plus consommée</value>
+  </data>
+  <data name="UsageCfg_SystemLoad" xml:space="preserve">
+    <value>Charge du PC</value>
+  </data>
+  <data name="UsageCfg_ShowSystemLoad" xml:space="preserve">
+    <value>Afficher le processeur et la mémoire</value>
+  </data>
+  <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
+    <value>Courbe des 60 dernières secondes (style Héros)</value>
+  </data>
 </root>

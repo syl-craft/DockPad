@@ -16,7 +16,7 @@ public class UsageBarWindowTests
 {
     private static readonly DateTime Now = new(2026, 8, 20, 12, 0, 0);
 
-    private sealed class CountingProvider(string id) : IUsageProvider
+    private sealed class CountingProvider(string id, int session = 62) : IUsageProvider
     {
         private int _reads;
 
@@ -32,7 +32,7 @@ public class UsageBarWindowTests
             return Task.FromResult<AiUsage?>(new AiUsage
             {
                 ProviderId = id, Name = id, Glyph = "X", AccentColor = "#123456",
-                Session = new UsageWindow { UsedPct = 62 }, Week = new UsageWindow { UsedPct = 44 },
+                Session = new UsageWindow { UsedPct = session }, Week = new UsageWindow { UsedPct = 44 },
             });
         }
     }
@@ -239,5 +239,43 @@ public class UsageBarWindowTests
         var paginationCenter = pagination.TranslatePoint(new Point(pagination.ActualWidth / 2, 0), rig.Root).X;
 
         Assert.InRange(paginationCenter, (tilesLeft + tilesRight) / 2 - 1, (tilesLeft + tilesRight) / 2 + 1);
+    });
+
+    [Fact]
+    public Task Fenetre_AutoRechoisi_LeveLaSuspensionSansRelecture() => WpfTestHost.Run(() =>
+    {
+        var config = ConfigFor(UsagePlacement.Right);
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        var claude = new CountingProvider("claude", session: 10);
+        var codex = new CountingProvider("codex", session: 90);
+        using var rig = new Rig(config, claude, codex);
+        rig.Build();
+        WpfTestHost.PumpUntilCompleted(rig.Usage.RefreshAsync());
+        rig.Usage.Cycle(+1);
+        Assert.False(rig.Usage.IsAutoActive);
+
+        UsageConfigService.NotifyAutoChosen();
+        WpfTestHost.Flush();
+
+        Assert.True(rig.Usage.IsAutoActive);
+        Assert.Equal("codex", rig.Usage.SoloProviderId);
+        Assert.Equal(1, claude.Reads);   // le seul relevé du test : le choix n'en lance pas d'autre
+    });
+
+    [Fact]
+    public Task Fenetre_Fermee_NeSuitPlusLeChoixAuto() => WpfTestHost.Run(() =>
+    {
+        var config = ConfigFor(UsagePlacement.Right);
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        using var rig = new Rig(config, new CountingProvider("claude", session: 10), new CountingProvider("codex", session: 90));
+        rig.Build();
+        WpfTestHost.PumpUntilCompleted(rig.Usage.RefreshAsync());
+        rig.Usage.Cycle(+1);
+
+        rig.Window.DetachFromStatics();
+        UsageConfigService.NotifyAutoChosen();
+        WpfTestHost.Flush();
+
+        Assert.False(rig.Usage.IsAutoActive);
     });
 }

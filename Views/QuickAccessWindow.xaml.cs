@@ -186,6 +186,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         _usage.ApplyConfig();
         _usage.PropertyChanged += OnUsageChanged;
         UsageConfigService.Changed += OnUsageConfigChanged;
+        UsageConfigService.AutoChosen += OnUsageAutoChosen;
         LayoutUpdated += (_, _) => SyncUsageBarGeometry();
         ApplyUsagePlacement();
 
@@ -225,6 +226,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         ShortcutPage.Changed -= OnShortcutPageChanged;
         ThemeService.ThemeChanged -= OnThemeChanged;
         UsageConfigService.Changed -= OnUsageConfigChanged;
+        UsageConfigService.AutoChosen -= OnUsageAutoChosen;
         _usage.PropertyChanged -= OnUsageChanged;
         _usageBar.Dispose();
         _loadFeed.Stop();
@@ -239,6 +241,11 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         _usage.ApplyConfig();
         ApplyUsagePlacement();
     });
+
+    /// <summary>
+    /// Le choix explicite de « Auto » dans la fenêtre Usage IA : il lève la suspension même quand la config dit déjà Auto.
+    /// </summary>
+    private void OnUsageAutoChosen() => Dispatcher.BeginInvoke(() => _usage.ChooseAuto());
 
     /// <summary>
     /// Un relevé adopte la config du fichier : une modification faite hors de la fenêtre Usage IA est vue aussi.
