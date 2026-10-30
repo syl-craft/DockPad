@@ -85,7 +85,7 @@ public partial class UsagePanel : UserControl
     {
         if (sender is FrameworkElement { DataContext: UsageTabItem tab })
         {
-            _viewModel?.Select(tab.ProviderId);
+            _viewModel?.SelectByGesture(tab.ProviderId);
         }
     }
 }

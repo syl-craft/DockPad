@@ -629,4 +629,477 @@ public class UsageViewModelTests
         vm.Select("demo");
         Assert.True(vm.IsDemo);
     }
+
+    // --- IA mise en avant : gestes, éligibilité et mode Auto
+
+    /// <summary>
+    /// Fournisseur dont le relevé se change entre deux lectures, qui compte ses appels et peut
+    /// retenir sa réponse sur une porte. Le relevé rendu est celui du moment de l'appel.
+    /// </summary>
+    private sealed class ScriptedProvider(AiUsage usage) : IUsageProvider
+    {
+        public AiUsage Usage { get; set; } = usage;
+        public TaskCompletionSource? Gate { get; set; }
+        public int ReadCount { get; private set; }
+        public string Id => usage.ProviderId;
+        public string Name => Id;
+        public AiProbe Probe() => new() { Available = true, DisplayName = Id };
+
+        public async Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            ReadCount++;
+            var snapshot = Usage;
+            var gate = Gate;
+            if (gate != null) await gate.Task;
+            return snapshot;
+        }
+    }
+
+    private static ScriptedProvider Scripted(string id, int? session, int? week = null, string notice = "") =>
+        new(Quota(id, session, week, notice));
+
+    private static AiUsage Quota(string id, int? session, int? week = null, string notice = "") =>
+        Usage(id, sessionUsed: session, weekUsed: week, quotaNotice: notice);
+
+    private static UsageViewModel BuildScripted(UsageConfig config, params ScriptedProvider[] providers)
+    {
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("fr"));
+        return new UsageViewModel(new UsageService(providers), () => config, () => new DateTime(2026, 8, 20, 12, 0, 0));
+    }
+
+    private static UsageConfig AutoConfig(params string[] ids)
+    {
+        var config = ConfigFor(ids.Select(id => (id, false)).ToArray());
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        return config;
+    }
+
+    [Fact]
+    public async Task Cycle_SuivantPrecedent_EnBoucle()
+    {
+        // « g » n'a pas de quota : le cycle le saute.
+        var vm = Build(ConfigFor(("a", false), ("g", false), ("b", false), ("c", false)),
+                       Quota("a", 10), Quota("g", null), Quota("b", 20), Quota("c", 30));
+        await vm.RefreshAsync();
+
+        Assert.Equal<string>(["a", "b", "c"], vm.EligibleIds);
+
+        vm.Cycle(+1);
+        Assert.Equal("b", vm.SoloProviderId);
+        vm.Cycle(+1);
+        Assert.Equal("c", vm.SoloProviderId);
+        vm.Cycle(+1);
+        Assert.Equal("a", vm.SoloProviderId);
+        vm.Cycle(-1);
+        Assert.Equal("c", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task Cycle_UnSeulEligible_RienNeChange()
+    {
+        var config = ConfigFor(("a", false), ("g", false));
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        var vm = Build(config, Quota("a", 10), Quota("g", null));
+        await vm.RefreshAsync();
+
+        vm.Cycle(+1);
+        vm.Cycle(-1);
+
+        Assert.Equal("a", vm.SoloProviderId);
+        Assert.True(vm.IsAutoActive);   // sans effet, le cycle ne suspend rien
+    }
+
+    [Fact]
+    public async Task Geste_NEcritPasLaConfig()
+    {
+        var config = AutoConfig("a", "b");
+        config.DefaultProviderId = "a";
+        var loads = 0;
+        var vm = new UsageViewModel(new UsageService([new StubProvider(Quota("a", 10)), new StubProvider(Quota("b", 90))]),
+                                    () => { loads++; return config; },
+                                    () => new DateTime(2026, 8, 20, 12, 0, 0));
+        await vm.RefreshAsync();
+        var before = System.Text.Json.JsonSerializer.Serialize(config);
+
+        vm.SelectByGesture("a");
+        vm.Cycle(+1);
+        vm.Cycle(-1);
+
+        Assert.Equal(before, System.Text.Json.JsonSerializer.Serialize(config));
+        Assert.Equal(UsageFocusMode.AutoClosestToLimit, config.FocusMode);
+        Assert.Equal(1, loads);   // un geste ne relit pas non plus la config
+    }
+
+    [Fact]
+    public async Task Auto_ChoisitLaPlusProcheDeSaLimite()
+    {
+        var vm = Build(AutoConfig("a", "b", "c"), Quota("a", 30, 40), Quota("b", 20, 85), Quota("c", null, 70));
+        await vm.RefreshAsync();
+
+        Assert.Equal("b", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task Auto_EgaliteOrdreDuBandeau()
+    {
+        var config = AutoConfig("b", "a");
+        config.DefaultProviderId = "a";
+        var vm = Build(config, Quota("a", 60), Quota("b", 10, 60));
+        await vm.RefreshAsync();
+
+        Assert.Equal("b", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task Auto_ReleveAncienIgnore()
+    {
+        var stale = new AiUsage
+        {
+            ProviderId = "a", Name = "a", Glyph = "X", AccentColor = "#123456",
+            Session = new UsageWindow { UsedPct = 95, ObservedAt = new DateTime(2026, 8, 20, 9, 0, 0) },
+            Week = new UsageWindow { UsedPct = 10 },
+        };
+        var vm = Build(AutoConfig("a", "b"), stale, Quota("b", 50));
+        await vm.RefreshAsync();
+
+        Assert.Equal("b", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task Auto_AucuneFenetre_SelectionInchangee()
+    {
+        var config = AutoConfig("codex", "g");
+        config.DefaultProviderId = "g";
+        var vm = Build(config, Quota("codex", null, notice: "Quota indisponible"), Quota("g", null));
+        await vm.RefreshAsync();
+
+        Assert.Equal("g", vm.SoloProviderId);
+        Assert.True(vm.IsAutoActive);
+    }
+
+    [Theory]
+    [InlineData("onglet")]
+    [InlineData("logo")]
+    [InlineData("molette")]
+    [InlineData("cycle-arriere")]
+    public async Task Auto_SuspenduParGeste_OngletLogoMoletteCycle(string gesture)
+    {
+        var a = Scripted("a", 10);
+        var b = Scripted("b", 90);
+        var vm = BuildScripted(AutoConfig("a", "b"), a, b);
+        await vm.RefreshAsync();
+        Assert.Equal("b", vm.SoloProviderId);
+
+        // Onglet du bandeau et logo de la barre passent par le même geste ; molette et Ctrl + Tab par le cycle.
+        switch (gesture)
+        {
+            case "onglet":
+            case "logo": vm.SelectByGesture("a"); break;
+            case "molette": vm.Cycle(+1); break;
+            case "cycle-arriere": vm.Cycle(-1); break;
+        }
+
+        b.Usage = Quota("b", 99);
+        await vm.RefreshAsync();
+
+        Assert.Equal("a", vm.SoloProviderId);
+        Assert.False(vm.IsAutoActive);
+    }
+
+    [Fact]
+    public async Task Auto_GesteSurLaSelectionCourante_Suspend()
+    {
+        var a = Scripted("a", 10);
+        var b = Scripted("b", 90);
+        var vm = BuildScripted(AutoConfig("a", "b"), a, b);
+        await vm.RefreshAsync();
+
+        vm.SelectByGesture("b");
+        a.Usage = Quota("a", 99);
+        await vm.RefreshAsync();
+
+        Assert.Equal("b", vm.SoloProviderId);
+        Assert.False(vm.IsAutoActive);
+    }
+
+    [Fact]
+    public async Task Auto_ReleveTermineApresGeste_NeRetablitPas()
+    {
+        // Le relevé part avant le geste et finit après : il doit trouver la suspension posée.
+        var a = Scripted("a", 90);
+        var b = Scripted("b", 10);
+        var vm = BuildScripted(AutoConfig("a", "b"), a, b);
+        await vm.RefreshAsync();
+        Assert.Equal("a", vm.SoloProviderId);
+
+        b.Usage = Quota("b", 95);
+        b.Gate = new TaskCompletionSource();
+        var refresh = vm.RefreshAsync();
+
+        vm.SelectByGesture("a");
+        b.Gate.SetResult();
+        await refresh;
+
+        Assert.Equal("a", vm.SoloProviderId);
+        Assert.False(vm.IsAutoActive);
+    }
+
+    [Fact]
+    public async Task Auto_ReleveDepasse_NeChoisitPas()
+    {
+        // Un relevé supplanté qui ignore l'annulation rend quand même ses valeurs : la garde
+        // de la lecture courante doit les écarter, Auto compris.
+        var a = Scripted("a", 95);
+        var b = Scripted("b", 10);
+        var gate = new TaskCompletionSource();
+        a.Gate = gate;
+        var vm = BuildScripted(AutoConfig("a", "b"), a, b);
+        var stale = vm.RefreshAsync();
+
+        a.Gate = null;
+        a.Usage = Quota("a", 10);
+        b.Usage = Quota("b", 80);
+        await vm.RefreshAsync();
+        Assert.Equal("b", vm.SoloProviderId);
+
+        gate.SetResult();
+        await stale;
+
+        Assert.Equal("b", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task ApplyConfig_RepasseEnAuto_LeveLaSuspension()
+    {
+        var a = Scripted("a", 10);
+        var b = Scripted("b", 90);
+        var config = AutoConfig("a", "b");
+        var vm = BuildScripted(config, a, b);
+        await vm.RefreshAsync();
+        vm.SelectByGesture("a");
+
+        config.FocusMode = UsageFocusMode.Manual;
+        vm.ApplyConfig();
+        Assert.Equal("a", vm.SoloProviderId);   // le choix manuel garde la sélection courante
+        Assert.False(vm.IsAutoActive);
+
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        vm.ApplyConfig();
+
+        Assert.True(vm.IsAutoActive);
+        Assert.Equal("b", vm.SoloProviderId);   // appliqué tout de suite, sur le dernier relevé
+        Assert.Equal(1, a.ReadCount);
+    }
+
+    [Fact]
+    public async Task ApplyConfig_SansRelecture()
+    {
+        var a = Scripted("a", 10);
+        var b = Scripted("b", 90);
+        var config = ConfigFor(("a", false), ("b", false));
+        var vm = BuildScripted(config, a, b);
+        vm.Start();
+        await vm.RefreshAsync();
+        var reads = (a.ReadCount, b.ReadCount);
+
+        config.Placement = UsagePlacement.Right;
+        vm.ApplyConfig();
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        config.BarStyle = SideStripStyle.HeroStack;
+        config.ShowSystemLoad = false;
+        vm.ApplyConfig();
+        config.Placement = UsagePlacement.Bottom;
+        vm.ApplyConfig();
+        vm.Stop();
+
+        Assert.Equal(reads, (a.ReadCount, b.ReadCount));
+        Assert.Equal("b", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public void ApplyConfig_Reactivation_UneLecture()
+    {
+        var a = Scripted("a", 10);
+        var config = ConfigFor(("a", false));
+        config.Enabled = false;
+        var vm = BuildScripted(config, a);
+        vm.Start();
+        Assert.Equal(0, a.ReadCount);
+
+        config.Enabled = true;
+        vm.ApplyConfig();
+
+        Assert.Equal(1, a.ReadCount);
+        Assert.True(vm.IsVisible);
+
+        // Fenêtre rangée : la réactivation attend le prochain affichage.
+        vm.Stop();
+        config.Enabled = false;
+        vm.ApplyConfig();
+        config.Enabled = true;
+        vm.ApplyConfig();
+
+        Assert.Equal(1, a.ReadCount);
+    }
+
+    [Fact]
+    public async Task ADroite_SelectionNonEligible_PremierEligible()
+    {
+        var config = ConfigFor(("g", false), ("a", false), ("b", false));
+        var vm = Build(config, Quota("g", null), Quota("a", 10), Quota("b", 90));
+        await vm.RefreshAsync();
+        vm.SelectByGesture("g");
+        Assert.Equal("g", vm.SoloProviderId);
+
+        config.Placement = UsagePlacement.Right;
+        vm.ApplyConfig();
+
+        Assert.Equal("a", vm.SoloProviderId);
+        Assert.Equal(UsagePlacement.Right, config.Placement);
+
+        config.Placement = UsagePlacement.Bottom;
+        vm.ApplyConfig();
+        Assert.Equal("a", vm.SoloProviderId);   // le retour en bas garde la sélection courante
+    }
+
+    [Fact]
+    public async Task ADroite_AucunEligible_SelectionInchangee()
+    {
+        var config = ConfigFor(("g", false), ("c", false));
+        config.Placement = UsagePlacement.Right;
+        config.DefaultProviderId = "c";
+        var vm = Build(config, Quota("g", null), Quota("c", null));
+        await vm.RefreshAsync();
+
+        Assert.Equal("c", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task EnBas_SelectionNonEligible_Conservee()
+    {
+        var config = ConfigFor(("g", false), ("a", false));
+        config.DefaultProviderId = "g";
+        var vm = Build(config, Quota("g", null), Quota("a", 10));
+        await vm.RefreshAsync();
+
+        Assert.Equal("g", vm.SoloProviderId);
+
+        vm.SelectByGesture("g");
+        await vm.RefreshAsync();
+        Assert.Equal("g", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task Demarrage_AutoEnregistre_Actif()
+    {
+        var config = AutoConfig("a", "b");
+        config.DefaultProviderId = "a";
+        var vm = Build(config, Quota("a", 10), Quota("b", 70));
+        await vm.RefreshAsync();
+
+        Assert.True(vm.IsAutoActive);
+        Assert.Equal("b", vm.SoloProviderId);
+        Assert.Equal(2, vm.Snapshots.Count);
+        Assert.Same(config, vm.Config);
+    }
+
+    /// <summary>
+    /// Config enregistrée du moment : chaque enregistrement est une instance distincte, comme une
+    /// relecture de usage.json.
+    /// </summary>
+    private sealed class SavedConfig(UsageConfig initial)
+    {
+        public UsageConfig Current { get; set; } = initial;
+    }
+
+    private static UsageViewModel BuildSaved(SavedConfig saved, params ScriptedProvider[] providers)
+    {
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("fr"));
+        return new UsageViewModel(new UsageService(providers), () => saved.Current, () => new DateTime(2026, 8, 20, 12, 0, 0));
+    }
+
+    [Fact]
+    public async Task Auto_ReleveAvecConfigAutoTermineApresGeste_NeLevePasLaSuspension()
+    {
+        // Le relevé adopté était en Manuel ; le suivant lit une config Auto, puis un geste arrive
+        // pendant sa lecture. Le passage à l'Auto qu'il rapporte est antérieur au geste.
+        var a = Scripted("a", 90);
+        var b = Scripted("b", 10);
+        var saved = new SavedConfig(ConfigFor(("a", false), ("b", false)));
+        var vm = BuildSaved(saved, a, b);
+        await vm.RefreshAsync();
+        Assert.Equal("a", vm.SoloProviderId);
+
+        saved.Current = AutoConfig("a", "b");
+        b.Usage = Quota("b", 95);
+        b.Gate = new TaskCompletionSource();
+        var refresh = vm.RefreshAsync();
+
+        vm.SelectByGesture("a");
+        b.Gate.SetResult();
+        await refresh;
+
+        Assert.Equal("a", vm.SoloProviderId);
+        Assert.False(vm.IsAutoActive);
+
+        // Un choix d'Auto postérieur au geste, lui, lève la suspension.
+        saved.Current = ConfigFor(("a", false), ("b", false));
+        vm.ApplyConfig();
+        saved.Current = AutoConfig("a", "b");
+        vm.ApplyConfig();
+
+        Assert.True(vm.IsAutoActive);
+        Assert.Equal("b", vm.SoloProviderId);
+    }
+
+    [Fact]
+    public async Task ApplyConfig_Masquage_SelectionReplieeSansLecture()
+    {
+        var a = Scripted("a", 90);
+        var b = Scripted("b", 10);
+        var c = Scripted("c", 20);
+        var saved = new SavedConfig(ConfigFor(("a", false), ("b", false), ("c", false)));
+        var vm = BuildSaved(saved, a, b, c);
+        await vm.RefreshAsync();
+        vm.SelectByGesture("a");
+
+        saved.Current = ConfigFor(("a", true), ("b", false), ("c", false));
+        vm.ApplyConfig();
+
+        Assert.Equal("b", vm.SoloProviderId);
+        Assert.Equal<string>(["b", "c"], vm.EligibleIds);
+        Assert.DoesNotContain(vm.Snapshots, s => s.ProviderId == "a");
+        vm.Cycle(+1);
+        Assert.Equal("c", vm.SoloProviderId);
+        vm.Cycle(+1);
+        Assert.Equal("b", vm.SoloProviderId);
+
+        // L'Auto ne choisit pas non plus le fournisseur masqué, pourtant le plus consommé.
+        saved.Current = AutoConfig("b", "c");
+        saved.Current.Providers.Insert(0, new AiProviderEntry { Id = "a", Name = "a", Hidden = true, Order = -1 });
+        vm.ApplyConfig();
+        Assert.Equal("c", vm.SoloProviderId);
+
+        Assert.Equal((1, 1, 1), (a.ReadCount, b.ReadCount, c.ReadCount));
+    }
+
+    [Fact]
+    public async Task ReleveEnVol_PuisMasquage_FournisseurMasqueNonPublie()
+    {
+        var a = Scripted("a", 90);
+        var b = Scripted("b", 10);
+        b.Gate = new TaskCompletionSource();
+        var saved = new SavedConfig(ConfigFor(("a", false), ("b", false)));
+        var vm = BuildSaved(saved, a, b);
+        var refresh = vm.RefreshAsync();
+
+        saved.Current = ConfigFor(("a", true), ("b", false));
+        vm.ApplyConfig();
+        b.Gate.SetResult();
+        await refresh;
+
+        Assert.DoesNotContain(vm.Snapshots, s => s.ProviderId == "a");
+        Assert.Equal("b", vm.SoloProviderId);
+        Assert.Equal<string>(["b"], vm.EligibleIds);
+    }
 }

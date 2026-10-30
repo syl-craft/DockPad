@@ -29,6 +29,28 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     private CancellationTokenSource? _inFlight;
 
     private UsageConfig _config = new();
+
+    /// <summary>
+    /// Incrémenté par <see cref="ApplyConfig"/> : une lecture partie avant garde la config appliquée.
+    /// </summary>
+    private int _configGeneration;
+
+    /// <summary>
+    /// Un geste a repris la main sur l'Auto. État de session, jamais écrit.
+    /// </summary>
+    private bool _isAutoSuspended;
+
+    /// <summary>
+    /// Nombre de gestes de la session : un relevé parti avant le dernier ne lève pas la suspension.
+    /// </summary>
+    private int _gestureCount;
+
+    /// <summary>
+    /// Mode et activation de la dernière config adoptée, copiés : l'instance rendue par le chargeur
+    /// peut être modifiée en place avant le prochain <see cref="ApplyConfig"/>.
+    /// </summary>
+    private UsageFocusMode _adoptedFocusMode;
+    private bool _adoptedEnabled = true;
     private bool _isLoading;
     private List<AiUsage> _snapshots = [];
     private string _selectedId = "";
@@ -141,6 +163,79 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         IsLoading = false;
     }
 
+    /// <summary>
+    /// Instantanés du dernier relevé gagnant, dans l'ordre du bandeau.
+    /// </summary>
+    public IReadOnlyList<AiUsage> Snapshots => _snapshots;
+
+    /// <summary>
+    /// Config appliquée : celle du dernier relevé, ou d'un <see cref="ApplyConfig"/> plus récent.
+    /// </summary>
+    public UsageConfig Config => _config;
+
+    /// <summary>
+    /// Fournisseurs que la barre peut mettre en avant, dans l'ordre du bandeau.
+    /// </summary>
+    public IReadOnlyList<string> EligibleIds =>
+        _snapshots.Where(UsageEligibility.IsEligible).Select(s => s.ProviderId).ToList();
+
+    /// <summary>
+    /// Le réglage demande l'Auto et aucun geste ne l'a suspendu pendant la session.
+    /// </summary>
+    public bool IsAutoActive => _config.FocusMode == UsageFocusMode.AutoClosestToLimit && _isAutoSuspended == false;
+
+    /// <summary>
+    /// Sélection choisie par l'utilisateur : suspend l'Auto pour la session, même sur le fournisseur
+    /// déjà sélectionné. N'écrit rien dans la config.
+    /// </summary>
+    /// <remarks>
+    /// La suspension est posée avant la publication : un relevé en vol la trouve à sa fin.
+    /// </remarks>
+    public void SelectByGesture(string providerId)
+    {
+        if (_snapshots.All(s => s.ProviderId != providerId)) return;
+
+        _isAutoSuspended = true;
+        _gestureCount++;
+        Select(providerId);
+    }
+
+    /// <summary>
+    /// Passe au fournisseur éligible suivant (direction positive) ou précédent, en boucle. Sans
+    /// effet sous deux fournisseurs éligibles ; sinon c'est un geste, qui suspend l'Auto.
+    /// </summary>
+    public void Cycle(int direction)
+    {
+        var eligibleIds = EligibleIds;
+        if (eligibleIds.Count < 2 || direction == 0) return;
+
+        var step = Math.Sign(direction);
+        var currentIndex = eligibleIds.ToList().IndexOf(SoloProviderId);
+        var nextIndex = currentIndex < 0
+            ? (step > 0 ? 0 : eligibleIds.Count - 1)
+            : (currentIndex + step + eligibleIds.Count) % eligibleIds.Count;
+
+        SelectByGesture(eligibleIds[nextIndex]);
+    }
+
+    /// <summary>
+    /// Relit la config et republie l'état sur le dernier relevé, sans interroger les fournisseurs.
+    /// Seule une réactivation, fenêtre affichée, relance une lecture.
+    /// </summary>
+    public void ApplyConfig()
+    {
+        var wasEnabled = _adoptedEnabled;
+        var config = _loadConfig();
+
+        _configGeneration++;
+        AdoptConfig(config, mayLiftSuspension: true);
+        _snapshots = UsageService.KeepVisible(_snapshots, config);
+        SyncTimer(config);
+        Rebuild();
+
+        if (wasEnabled == false && config.Enabled && _running) _ = RefreshAsync();
+    }
+
     /// <summary>Change le fournisseur affiché. Sélection de session : n'écrit rien dans la config.</summary>
     public void Select(string providerId)
     {
@@ -167,6 +262,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         IsLoading = true;
 
         var config = _config;
+        var configGeneration = _configGeneration;
+        var gestureCount = _gestureCount;
         List<AiUsage> snapshots;
 
         try
@@ -190,10 +287,30 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
         if (!ReferenceEquals(_inFlight, cts)) return;
 
-        _config = config;
-        _snapshots = snapshots;
+        if (configGeneration == _configGeneration)
+        {
+            AdoptConfig(config, mayLiftSuspension: gestureCount == _gestureCount);
+        }
+
+        // Filtré par la config adoptée : un masquage appliqué pendant la lecture s'impose à elle.
+        _snapshots = UsageService.KeepVisible(snapshots, _config);
         IsLoading = false;
         Rebuild();
+    }
+
+    /// <summary>
+    /// Pose la config ; passer au mode Auto annule une suspension de session, si ce choix est
+    /// postérieur au dernier geste.
+    /// </summary>
+    private void AdoptConfig(UsageConfig next, bool mayLiftSuspension)
+    {
+        var autoChosen = next.FocusMode == UsageFocusMode.AutoClosestToLimit
+                         && _adoptedFocusMode != UsageFocusMode.AutoClosestToLimit;
+        if (autoChosen && mayLiftSuspension) _isAutoSuspended = false;
+
+        _config = next;
+        _adoptedFocusMode = next.FocusMode;
+        _adoptedEnabled = next.Enabled;
     }
 
     /// <summary>
@@ -259,6 +376,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     private void Rebuild()
     {
         var selected = Resolve();
+        selected = FollowAuto(selected);
+        selected = FallBackToEligible(selected);
 
         IsVisible = _config.Enabled && selected is not null;
         ShowTabs = _snapshots.Count > 1;
@@ -292,6 +411,37 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         return _snapshots.FirstOrDefault(s => s.ProviderId == _selectedId)
             ?? _snapshots.FirstOrDefault(s => s.ProviderId == _config.DefaultProviderId)
             ?? _snapshots[0];
+    }
+
+    /// <summary>
+    /// Auto actif : la sélection passe au plus proche de sa limite, s'il y en a un. Sur un même
+    /// relevé le choix ne change pas, donc seuls un relevé neuf ou la config le déplacent.
+    /// </summary>
+    private AiUsage? FollowAuto(AiUsage? selected)
+    {
+        if (IsAutoActive == false) return selected;
+
+        var closestId = UsageEligibility.ClosestToLimit(_snapshots);
+        if (closestId == null) return selected;
+
+        _selectedId = closestId;
+        return _snapshots.Where(s => s.ProviderId == closestId).First();
+    }
+
+    /// <summary>
+    /// À droite, une sélection non éligible passe au premier éligible. Changement de session : ni la
+    /// config ni l'Auto ne sont touchés.
+    /// </summary>
+    private AiUsage? FallBackToEligible(AiUsage? selected)
+    {
+        if (_config.Placement != UsagePlacement.Right) return selected;
+        if (selected == null || UsageEligibility.IsEligible(selected)) return selected;
+
+        var firstEligible = _snapshots.Where(UsageEligibility.IsEligible).FirstOrDefault();
+        if (firstEligible == null) return selected;
+
+        _selectedId = firstEligible.ProviderId;
+        return firstEligible;
     }
 
     private void BuildTabs(AiUsage? selected)
@@ -396,6 +546,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                      nameof(UsageUrl), nameof(HasUsageUrl),
                      nameof(QuotaNotice), nameof(QuotaNoticeTooltip), nameof(HasQuotaNotice),
                      nameof(UsageUrlTooltip),
+                     nameof(Snapshots), nameof(Config), nameof(EligibleIds), nameof(IsAutoActive),
                  })
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
