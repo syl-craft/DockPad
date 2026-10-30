@@ -225,4 +225,172 @@ public class UsageConfigServiceTests : IDisposable
             if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
         }
     }
+
+    [Fact]
+    public void Reglages_Absents_Defauts()
+    {
+        File.WriteAllText(_path, "{\"alertThreshold\":30}");
+
+        var cfg = UsageConfigService.Load(_path);
+
+        Assert.Equal(UsagePlacement.Bottom, cfg.Placement);
+        Assert.Equal(SideStripStyle.Columns, cfg.BarStyle);
+        Assert.Equal(UsageFocusMode.Manual, cfg.FocusMode);
+        Assert.True(cfg.ShowSystemLoad);
+        Assert.True(cfg.ShowLoadHistory);
+    }
+
+    [Fact]
+    public void Reglages_RelusApresSauvegarde()
+    {
+        UsageConfigService.Save(new UsageConfig
+        {
+            Placement = UsagePlacement.Right,
+            BarStyle = SideStripStyle.Rings,
+            FocusMode = UsageFocusMode.AutoClosestToLimit,
+            ShowSystemLoad = false,
+            ShowLoadHistory = false,
+        }, _path);
+
+        var cfg = UsageConfigService.Load(_path);
+
+        Assert.Equal(UsagePlacement.Right, cfg.Placement);
+        Assert.Equal(SideStripStyle.Rings, cfg.BarStyle);
+        Assert.Equal(UsageFocusMode.AutoClosestToLimit, cfg.FocusMode);
+        Assert.False(cfg.ShowSystemLoad);
+        Assert.False(cfg.ShowLoadHistory);
+    }
+
+    [Fact]
+    public void Placement_ChaineEcriteEnTexte()
+    {
+        UsageConfigService.Save(new UsageConfig { Placement = UsagePlacement.Right }, _path);
+
+        Assert.Contains("\"placement\": \"Right\"", File.ReadAllText(_path));
+    }
+
+    private const string Neighbours =
+        "\"alertThreshold\":30,\"placement\":\"Right\",\"barStyle\":\"Rings\",\"focusMode\":\"AutoClosestToLimit\"," +
+        "\"showSystemLoad\":false,\"showLoadHistory\":false,\"providers\":[{\"id\":\"claude\"}]";
+
+    /// <summary>
+    /// Écrit un fichier dont tous les champs valent autre chose que le défaut, sauf <paramref name="field"/>.
+    /// </summary>
+    private UsageConfig LoadWithInvalid(string field, string invalidJson)
+    {
+        var others = string.Join(",", Neighbours.Split(",\"")
+            .Select(part => part.TrimStart('"'))
+            .Where(part => part.StartsWith(field + "\"") == false)
+            .Select(part => "\"" + part));
+        File.WriteAllText(_path, $"{{{others},\"{field}\":{invalidJson}}}");
+        return UsageConfigService.Load(_path);
+    }
+
+    private static void AssertOthersKept(UsageConfig cfg, string field)
+    {
+        Assert.Equal(30, cfg.AlertThreshold);
+        Assert.Equal("claude", Assert.Single(cfg.Providers).Id);
+        if (field != "placement") Assert.Equal(UsagePlacement.Right, cfg.Placement);
+        if (field != "barStyle") Assert.Equal(SideStripStyle.Rings, cfg.BarStyle);
+        if (field != "focusMode") Assert.Equal(UsageFocusMode.AutoClosestToLimit, cfg.FocusMode);
+        if (field != "showSystemLoad") Assert.False(cfg.ShowSystemLoad);
+        if (field != "showLoadHistory") Assert.False(cfg.ShowLoadHistory);
+    }
+
+    public static TheoryData<string> InvalidEnumForms => new()
+    {
+        "null", "true", "\"gauche\"", "7", "\"7\"", "{\"a\":1}", "[1]", "\"\"",
+        "\"Bottom, Right\"", "\"Manual, AutoClosestToLimit\"", "\"Columns, Rings\"",
+    };
+
+    public static TheoryData<string> InvalidBoolForms => new()
+    {
+        "null", "\"oui\"", "\"true\"", "0", "7", "{\"a\":1}", "[true]",
+    };
+
+    [Theory]
+    [MemberData(nameof(InvalidEnumForms))]
+    public void Placement_FormesInvalides_EnBas(string json)
+    {
+        var cfg = LoadWithInvalid("placement", json);
+
+        Assert.Equal(UsagePlacement.Bottom, cfg.Placement);
+        AssertOthersKept(cfg, "placement");
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidEnumForms))]
+    public void FocusMode_FormesInvalides_Manuel(string json)
+    {
+        var cfg = LoadWithInvalid("focusMode", json);
+
+        Assert.Equal(UsageFocusMode.Manual, cfg.FocusMode);
+        AssertOthersKept(cfg, "focusMode");
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidEnumForms))]
+    public void BarStyle_FormesInvalides_Colonnes(string json)
+    {
+        var cfg = LoadWithInvalid("barStyle", json);
+
+        Assert.Equal(SideStripStyle.Columns, cfg.BarStyle);
+        AssertOthersKept(cfg, "barStyle");
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidBoolForms))]
+    public void ShowSystemLoad_FormesInvalides_Vrai(string json)
+    {
+        var cfg = LoadWithInvalid("showSystemLoad", json);
+
+        Assert.True(cfg.ShowSystemLoad);
+        AssertOthersKept(cfg, "showSystemLoad");
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidBoolForms))]
+    public void ShowLoadHistory_FormesInvalides_Vrai(string json)
+    {
+        var cfg = LoadWithInvalid("showLoadHistory", json);
+
+        Assert.True(cfg.ShowLoadHistory);
+        AssertOthersKept(cfg, "showLoadHistory");
+    }
+
+    [Fact]
+    public void ChampInvalide_SauvegardeEcritUneValeurValide()
+    {
+        File.WriteAllText(_path, """
+            {"alertThreshold":30,"placement":"Bottom, Right","barStyle":"Columns, Rings","focusMode":"gauche",
+             "showSystemLoad":"oui","showLoadHistory":7,"providers":[{"id":"claude"}]}
+            """);
+
+        UsageConfigService.Save(UsageConfigService.Load(_path), _path);
+
+        var written = File.ReadAllText(_path);
+        Assert.Contains("\"placement\": \"Bottom\"", written);
+        Assert.Contains("\"focusMode\": \"Manual\"", written);
+        Assert.Contains("\"showSystemLoad\": true", written);
+        Assert.Contains("\"showLoadHistory\": true", written);
+        var reloaded = UsageConfigService.Load(_path);
+        Assert.Equal(UsagePlacement.Bottom, reloaded.Placement);
+        Assert.Equal(SideStripStyle.Columns, reloaded.BarStyle);
+        Assert.Equal(UsageFocusMode.Manual, reloaded.FocusMode);
+        Assert.True(reloaded.ShowSystemLoad);
+        Assert.True(reloaded.ShowLoadHistory);
+        Assert.Equal(30, reloaded.AlertThreshold);
+        Assert.Equal("claude", Assert.Single(reloaded.Providers).Id);
+    }
+
+    [Theory]
+    [InlineData("\"Columns, Rings\"")]
+    [InlineData("\"2\"")]
+    public void StreamDockSideStrip_NomCompositeOuNumeriqueEnChaine_Colonnes(string json)
+    {
+        var settings = System.Text.Json.JsonSerializer.Deserialize<AppSettings>($"{{\"streamDockSideStrip\":{json}}}",
+            new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+
+        Assert.Equal(SideStripStyle.Columns, settings?.StreamDockSideStrip);
+    }
 }

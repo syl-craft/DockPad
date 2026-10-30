@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using DockPad.Services;
+
 namespace DockPad.Models;
 
 /// <summary>Contenu de %APPDATA%\DockPad\usage.json.</summary>
@@ -27,6 +30,36 @@ public class UsageConfig
 
     /// <summary>Modèle Ollama passé par <c>--model</c> (ex. <c>ministral-3:3b</c>).</summary>
     public string OllamaModel { get; set; } = "";
+
+    /// <summary>
+    /// Bandeau sous la grille, ou barre verticale à sa droite.
+    /// </summary>
+    [JsonConverter(typeof(UsagePlacementJsonConverter))]
+    public UsagePlacement Placement { get; set; } = UsagePlacement.Bottom;
+
+    /// <summary>
+    /// Rendu de la barre à droite, indépendant de celui du Stream Dock.
+    /// </summary>
+    [JsonConverter(typeof(SideStripStyleJsonConverter))]
+    public SideStripStyle BarStyle { get; set; } = SideStripStyle.Columns;
+
+    /// <summary>
+    /// Choix manuel du fournisseur mis en avant, ou le plus proche de sa limite.
+    /// </summary>
+    [JsonConverter(typeof(UsageFocusModeJsonConverter))]
+    public UsageFocusMode FocusMode { get; set; } = UsageFocusMode.Manual;
+
+    /// <summary>
+    /// Affiche la charge du PC dans la barre à droite.
+    /// </summary>
+    [JsonConverter(typeof(TrueByDefaultBoolJsonConverter))]
+    public bool ShowSystemLoad { get; set; } = true;
+
+    /// <summary>
+    /// Affiche la courbe des dernières mesures de charge (style Héros).
+    /// </summary>
+    [JsonConverter(typeof(TrueByDefaultBoolJsonConverter))]
+    public bool ShowLoadHistory { get; set; } = true;
 
     public List<AiProviderEntry> Providers { get; set; } = new();
 }
