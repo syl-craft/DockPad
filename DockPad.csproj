@@ -60,6 +60,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="DockPad.Tests" />
     <InternalsVisibleTo Include="DockPad.Tests.Wpf" />
+    <InternalsVisibleTo Include="UsageShot" />
   </ItemGroup>
 
   <ItemGroup>

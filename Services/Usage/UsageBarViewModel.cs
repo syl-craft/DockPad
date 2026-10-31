@@ -439,7 +439,7 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         {
             var warning = new BarRing(NoticeTitleOf(focus), WarningGlyph, 0, UsageFormat.High, NoticeTooltipOf(focus), focus.ProviderId,
                 IsWarning: true) { NumberText = WarningGlyph };
-            return new BarRings(warning, null, WarningGlyph, others) { Legend = warning.Label };
+            return new BarRings(warning, null, WarningGlyph, others) { Legend = warning.Label, LegendTooltip = warning.Tooltip };
         }
 
         // Emplacement fixe par type : la session dehors, la semaine dedans, quelle que soit la plus consommée.
@@ -454,7 +454,10 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         var legend = innerRing == null
             ? outerRing?.Label ?? ""
             : Loc.F("UsageBar_Legend", outerRing?.Label ?? "", innerRing.Label);
-        return new BarRings(outerRing, innerRing, PercentOf(highest), others) { Legend = legend };
+        var legendTooltip = innerRing == null
+            ? outerRing?.Tooltip ?? ""
+            : outerRing?.Tooltip + Environment.NewLine + Environment.NewLine + innerRing.Tooltip;
+        return new BarRings(outerRing, innerRing, PercentOf(highest), others) { Legend = legend, LegendTooltip = legendTooltip };
     }
 
     private BarRing RingOf(WindowView view) =>

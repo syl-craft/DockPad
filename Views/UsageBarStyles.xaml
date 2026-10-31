@@ -370,9 +370,11 @@
                                FontWeight="Bold" VerticalAlignment="Center" TextTrimming="None" IsHitTestVisible="False"
                                Foreground="{Binding Rings.Outer.Color, Converter={StaticResource BarBrush}}"/>
                 </Grid>
+                <!-- Le nom et la légende sont réduits : le nom a pour infobulle celle de la carte, la légende celles des deux anneaux. -->
                 <TextBlock Style="{StaticResource BarText}" Text="{Binding HeroCard.Name}" FontSize="11"
-                           FontWeight="SemiBold" Margin="0,3,0,0"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                           FontWeight="SemiBold" Margin="0,3,0,0" ToolTip="{Binding HeroCard.Tooltip}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Background="Transparent"
+                            ToolTip="{Binding Rings.LegendTooltip}">
                     <TextBlock Style="{StaticResource BarSubtleOrNothing}" Text="{Binding Rings.Legend}"/>
                     <TextBlock Style="{StaticResource BarSubtleOrNothing}" Text="{Binding AutoSuffix}"/>
                 </StackPanel>

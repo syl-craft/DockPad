@@ -236,6 +236,27 @@ public class UsageBarViewModelTests
     }
 
     [Fact]
+    public async Task Anneaux_LegendeDeuxFenetres_InfobulleDesDeuxNomsComplets()
+    {
+        var rig = await BuildAsync(ConfigFor("antigravity"),
+            Usage("antigravity", 38, 75, sessionLabel: "Gemini", weekLabel: "Claude · GPT"));
+
+        var rings = Some(rig.Bar.Rings);
+        Assert.Contains("…", rings.Legend);
+        Assert.Contains("Gemini", rings.LegendTooltip);
+        Assert.Contains("Claude · GPT", rings.LegendTooltip);
+    }
+
+    [Fact]
+    public async Task Anneaux_LegendeUneFenetre_InfobulleDeCetteFenetre()
+    {
+        var rig = await BuildAsync(ConfigFor("codex"), Usage("codex", null, 55, weekLabel: "Hebdomadaire de l'équipe"));
+
+        var rings = Some(rig.Bar.Rings);
+        Assert.Equal(Some(rings.Outer).Tooltip, rings.LegendTooltip);
+    }
+
+    [Fact]
     public async Task Anneaux_UneSeuleFenetre_AnneauSimple()
     {
         var rig = await BuildAsync(ConfigFor("codex"), Usage("codex", null, 55));

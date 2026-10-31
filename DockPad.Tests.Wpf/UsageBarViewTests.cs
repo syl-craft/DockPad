@@ -19,18 +19,20 @@ public class UsageBarViewTests
 {
     private static readonly DateTime Now = new(2026, 8, 20, 12, 0, 0);
 
-    private sealed class FixedProvider(string id, int? session, int? week) : IUsageProvider
+    private sealed class FixedProvider(string id, int? session, int? week, string? name = null, string notice = "",
+        string sessionLabel = "", string weekLabel = "")
+        : IUsageProvider
     {
         public string Id => id;
-        public string Name => id;
+        public string Name => name ?? id;
 
         public AiProbe Probe() => new() { Available = true, DisplayName = id };
 
         public Task<AiUsage?> ReadAsync(CancellationToken ct) => Task.FromResult<AiUsage?>(new AiUsage
         {
-            ProviderId = id, Name = id, Glyph = "X", AccentColor = "#123456",
-            Session = session == null ? null : new UsageWindow { UsedPct = session.Value },
-            Week = week == null ? null : new UsageWindow { UsedPct = week.Value },
+            ProviderId = id, Name = name ?? id, Glyph = "X", AccentColor = "#123456", QuotaNotice = notice,
+            Session = session == null ? null : new UsageWindow { UsedPct = session.Value, Label = sessionLabel },
+            Week = week == null ? null : new UsageWindow { UsedPct = week.Value, Label = weekLabel },
         });
     }
 
@@ -63,12 +65,12 @@ public class UsageBarViewTests
         }
     }
 
-    private static Rig Build(SideStripStyle style)
+    private static Rig Build(SideStripStyle style, FixedProvider? claude = null)
     {
         var config = new UsageConfig { Placement = UsagePlacement.Right, BarStyle = style };
         config.Providers.Add(new AiProviderEntry { Id = "claude", Name = "claude", Order = 0 });
         config.Providers.Add(new AiProviderEntry { Id = "codex", Name = "codex", Order = 1 });
-        var service = new UsageService([new FixedProvider("claude", 62, 44), new FixedProvider("codex", null, 27)]);
+        var service = new UsageService([claude ?? new FixedProvider("claude", 62, 44), new FixedProvider("codex", null, 27)]);
         var usage = new UsageViewModel(service, () => config, () => Now);
         WpfTestHost.PumpUntilCompleted(usage.RefreshAsync());
 
@@ -159,5 +161,67 @@ public class UsageBarViewTests
         Assert.NotNull(rig.Model.HeroCard?.SecondWindow);
         Assert.DoesNotContain(rowButtons, row => row.ProviderId == focusId);
         Assert.Contains(rowButtons, row => row.ProviderId == "codex");
+    });
+
+    /// <summary>
+    /// L'infobulle de l'élément ou, à défaut, celle du premier ancêtre qui en porte une dans la barre.
+    /// </summary>
+    private static string TooltipOf(FrameworkElement element, UsageBar bar)
+    {
+        for (DependencyObject? current = element; current != null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (current is FrameworkElement { ToolTip: { } tip }) return tip.ToString() ?? "";
+            if (ReferenceEquals(current, bar)) break;
+        }
+        return "";
+    }
+
+    [Theory]
+    [InlineData(SideStripStyle.HeroStack)]
+    [InlineData(SideStripStyle.Rings)]
+    [InlineData(SideStripStyle.Reservoir)]
+    public Task NomRaccourci_PorteUneInfobulleAvecLeNomComplet(SideStripStyle style) => WpfTestHost.Run(() =>
+    {
+        const string fullName = "Assistant de programmation internationale";
+        var rig = Build(style, new FixedProvider("claude", 62, 44, name: fullName));
+
+        var shortened = rig.Model.HeroCard?.Name ?? throw new InvalidOperationException("No hero card.");
+        var texts = Descendants<TextBlock>(rig.Control).Where(text => text.Text == shortened).ToList();
+
+        Assert.NotEmpty(texts);
+        Assert.All(texts, text => Assert.Contains(fullName, TooltipOf(text, rig.Control)));
+    });
+
+    [Theory]
+    [InlineData(SideStripStyle.HeroStack)]
+    [InlineData(SideStripStyle.Rings)]
+    [InlineData(SideStripStyle.Reservoir)]
+    public Task TitreDeNoticeRaccourci_PorteUneInfobulleAvecLaNoticeComplete(SideStripStyle style) => WpfTestHost.Run(() =>
+    {
+        const string notice = "Quota indisponible pour ce fournisseur parce que le service ne répond plus — réessai dans 4 min";
+        var rig = Build(style, new FixedProvider("claude", null, null, notice: notice));
+
+        var title = rig.Model.HeroCard?.NoticeTitle ?? throw new InvalidOperationException("No hero card.");
+        var texts = Descendants<TextBlock>(rig.Control).Where(text => text.Text == title).ToList();
+
+        Assert.NotEmpty(texts);
+        Assert.All(texts, text => Assert.Contains(notice, TooltipOf(text, rig.Control)));
+    });
+
+    [Fact]
+    public Task AnneauxLegende_DeuxFenetresNommees_PorteLesDeuxNomsComplets() => WpfTestHost.Run(() =>
+    {
+        var rig = Build(SideStripStyle.Rings, new FixedProvider("claude", 38, 75, sessionLabel: "Gemini", weekLabel: "Claude · GPT"));
+
+        var legend = rig.Model.Rings?.Legend ?? throw new InvalidOperationException("No rings.");
+        var texts = Descendants<TextBlock>(rig.Control).Where(text => text.Text == legend).ToList();
+
+        Assert.NotEmpty(texts);
+        Assert.All(texts, text =>
+        {
+            var tooltip = TooltipOf(text, rig.Control);
+            Assert.Contains("Gemini", tooltip);
+            Assert.Contains("Claude · GPT", tooltip);
+        });
     });
 }

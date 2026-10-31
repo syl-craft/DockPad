@@ -59,6 +59,9 @@ public sealed record BarRings(BarRing? Outer, BarRing? Inner, string CenterText,
 {
     /// <summary>« 5h / 7j » : les noms courts des deux anneaux, ou celui de l'anneau simple.</summary>
     public string Legend { get; init; } = "";
+
+    /// <summary>Le texte complet de la légende : l'infobulle de chacun des deux anneaux, l'une sous l'autre.</summary>
+    public string LegendTooltip { get; init; } = "";
 }
 
 /// <summary>
