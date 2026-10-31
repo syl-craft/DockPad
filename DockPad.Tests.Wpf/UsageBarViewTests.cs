@@ -47,8 +47,8 @@ public class UsageBarViewTests
 
         public void Layout()
         {
-            Control.Measure(new Size(90, 390));
-            Control.Arrange(new Rect(0, 0, 90, 390));
+            Control.Measure(new Size(108, 390));
+            Control.Arrange(new Rect(0, 0, 108, 390));
             Control.UpdateLayout();
         }
 

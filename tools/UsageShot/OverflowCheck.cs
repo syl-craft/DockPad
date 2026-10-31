@@ -19,9 +19,9 @@ namespace UsageShot;
 internal static class OverflowCheck
 {
     /// <summary>
-    /// Largeur de la barre.
+    /// Largeur de la barre : celle d'une tuile de la grille.
     /// </summary>
-    public const double BarWidth = 90;
+    public const double BarWidth = 108;
 
     private const double Tolerance = 0.5;
     private const string Ellipsis = "…";

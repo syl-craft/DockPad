@@ -306,7 +306,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         if (ShortcutsGrid.ActualWidth <= 0 || TileAt(0) is not { } tile || tile.ActualHeight <= 0) return;
 
         var gap = tile.Margin.Left + tile.Margin.Right;
-        var barWidth = tile.ActualHeight;
+        var barWidth = tile.ActualWidth;
         if (_barAddedWidth == null)
         {
             _barAddedWidth = UsageBarLayout.AddedWidth(barWidth, gap);
