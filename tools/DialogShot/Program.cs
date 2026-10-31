@@ -54,8 +54,8 @@ internal static class Program
         Environment.SetEnvironmentVariable(AppPaths.OverrideVariable, fixture);
         WriteTerminalFixture(fixture);
 
-        var app = new App();
-        app.InitializeComponent();
+        // Les ressources d'App.xaml, jamais le vrai démarrage (voir ShotApp).
+        var app = DockPad.Tools.ShotApp.Create();
         // L'outil EST l'assembly d'entree, mais il montre les fenetres de DockPad : sans
         // cette pose, le pied de fenetre porterait la version de l'outil (v1.0.0).
         DockPad.Services.AppInfo.Initialize(typeof(App).Assembly);

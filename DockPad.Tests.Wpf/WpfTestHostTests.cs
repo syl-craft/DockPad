@@ -1,6 +1,7 @@
 using System.IO;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Threading;
 using DockPad.Services;
 
 namespace DockPad.Tests;
@@ -25,6 +26,17 @@ public class WpfTestHostTests
         Assert.Null(AppField("_mutex"));
         Assert.Null(AppField("_trayIcon"));
         Assert.Null(AppField("_mainWindow"));
+    });
+
+    [Fact]
+    public Task Hote_LaisseTournerLesOperationsPosteesApresLaConstruction() => WpfTestHost.Run(() =>
+    {
+        var ran = false;
+        Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Send, () => ran = true);
+
+        WpfTestHost.Flush();
+
+        Assert.True(ran);
     });
 
     [Fact]

@@ -33,6 +33,7 @@
   <ItemGroup>
     <Compile Include="..\DockPad.Tests\StreamDock\ManualTimeProvider.cs" Link="Shared\ManualTimeProvider.cs" />
     <Compile Include="..\DockPad.Tests\StreamDock\FakeSystemLoadMonitor.cs" Link="Shared\FakeSystemLoadMonitor.cs" />
+    <Compile Include="..\tools\Shared\ShotApp.cs" Link="Shared\ShotApp.cs" />
   </ItemGroup>
 
 </Project>

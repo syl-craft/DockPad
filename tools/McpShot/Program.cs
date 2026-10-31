@@ -22,10 +22,15 @@ internal static class Program
         int tab = int.Parse(args[0]);
         string outPath = Path.GetFullPath(args[1]);
 
-        // Application.Current + ressources App.xaml, sans Run() (OnStartup — mutex,
-        // systray, fenêtres — ne doit jamais s'exécuter ici).
-        var app = new App();
-        app.InitializeComponent();
+        // Doit précéder toute utilisation des services : AppPaths ne lit la variable qu'une seule
+        // fois. Sans elle, la fenêtre lirait le vrai mcp.json du profil.
+        var fixtureDir = Path.Combine(Path.GetTempPath(), "dockpad-mcpshot");
+        Directory.CreateDirectory(fixtureDir);
+        Environment.SetEnvironmentVariable(AppPaths.OverrideVariable, fixtureDir);
+
+        // Application.Current + ressources App.xaml. Show() + Dispatcher.Run() exécuteraient
+        // OnStartup (mutex, systray, fenêtres) : ShotApp l'annule.
+        var app = DockPad.Tools.ShotApp.Create();
         // L'outil EST l'assembly d'entree, mais il montre les fenetres de DockPad : sans
         // cette pose, le pied de fenetre porterait la version de l'outil (v1.0.0).
         DockPad.Services.AppInfo.Initialize(typeof(App).Assembly);

@@ -24,16 +24,10 @@ internal static class WpfTestHost
                 .GetField("_resourceAssembly", BindingFlags.NonPublic | BindingFlags.Static)?
                 .SetValue(null, typeof(App).Assembly);
 
-            // Le constructeur d'Application poste une opération qui lance OnStartup : celui de DockPad ouvrirait le
-            // systray, les tubes et le journal du profil réel, puis arrêterait l'application. On l'annule.
-            var isConstructing = true;
-            Dispatcher.CurrentDispatcher.Hooks.OperationPosted += (_, e) =>
-            {
-                if (isConstructing) e.Operation.Abort();
-            };
-            var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-            isConstructing = false;
-            app.InitializeComponent();
+            // Le vrai OnStartup ouvrirait le systray, les tubes et le journal du profil réel, puis arrêterait
+            // l'application : la garde des outils de capture l'annule.
+            var app = DockPad.Tools.ShotApp.Create();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
             ready.SetResult(Dispatcher.CurrentDispatcher);
             Dispatcher.Run();

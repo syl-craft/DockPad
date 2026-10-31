@@ -10,5 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\DockPad.csproj" />
+    <Compile Include="..\Shared\ShotApp.cs" Link="ShotApp.cs" />
   </ItemGroup>
 </Project>

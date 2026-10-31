@@ -33,7 +33,7 @@ namespace UsageShot;
 /// <para>
 /// <b>Le vrai démarrage ne tourne jamais.</b> Le constructeur d'<c>Application</c> poste une opération qui lance
 /// <c>OnStartup</c> dès qu'un dispatcher tourne. Aucune cible ne le fait tourner (rendu hors écran) et l'opération est
-/// annulée à la construction, comme dans <c>DockPad.Tests.Wpf</c>.
+/// annulée à la construction par <c>ShotApp</c>, comme dans <c>DockPad.Tests.Wpf</c>.
 /// </para>
 /// <para>
 /// <b>Barre à droite.</b> <c>bar-matrix</c> rend tous les cas et y passe <see cref="OverflowCheck"/>, <c>bar-geometry</c>
@@ -83,15 +83,8 @@ internal static partial class Program
         // une page vide, qui ne montre ni tuile, ni bande de couleur, ni pagination.
         if (target == "window-favorites") WriteDemoFavorites();
 
-        // Le constructeur d'Application poste l'opération qui lancerait le vrai OnStartup : on l'annule.
-        var isConstructing = true;
-        System.Windows.Threading.Dispatcher.CurrentDispatcher.Hooks.OperationPosted += (_, e) =>
-        {
-            if (isConstructing) e.Operation.Abort();
-        };
-        var app = new App();
-        isConstructing = false;
-        app.InitializeComponent();
+        // Les ressources d'App.xaml, jamais le vrai démarrage (voir ShotApp).
+        var app = DockPad.Tools.ShotApp.Create();
         // L'outil EST l'assembly d'entree, mais il montre les fenetres de DockPad : sans
         // cette pose, le pied de fenetre porterait la version de l'outil (v1.0.0).
         DockPad.Services.AppInfo.Initialize(typeof(App).Assembly);

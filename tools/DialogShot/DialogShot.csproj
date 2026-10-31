@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\DockPad.csproj" />
+    <Compile Include="..\Shared\ShotApp.cs" Link="ShotApp.cs" />
   </ItemGroup>
 
   <!-- QuickAccessWindow référence app.ico par pack URI, qui se résout dans l'assembly HÔTE :
