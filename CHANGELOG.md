@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.32.0] — 2026-11-01
+
+### Nouveautés
+
+- **Usage IA : barre verticale à droite de la grille**, comme la colonne latérale du Stream Dock. Dans **☰ → Paramètres → 📊 Usage IA**, la nouvelle option **Position** choisit entre **En bas**, le bandeau habituel, et **À droite** : une barre de la largeur d'une tuile, qui s'arrête au bas de la grille. La fenêtre s'élargit juste assez pour la loger.
+  - Quatre styles au choix par vignettes : **Colonnes** (par défaut), **Héros**, **Anneaux** et **Réservoir**. Les logos des IA restent en haut de la barre.
+  - **IA mise en avant** : en **choix manuel**, un clic sur un logo, la molette ou Ctrl + Tab change d'IA ; en **Auto**, la barre bascule seule sur l'IA la plus proche de sa limite.
+  - **Charge du PC** : le processeur et la mémoire s'affichent dans la barre, avec en option la courbe des 60 dernières secondes dans le style Héros.
+  - Un texte raccourci dans la barre donne son texte complet en infobulle.
+
 ## [1.31.1] — 2026-10-28
 
 ### Nouveautés
