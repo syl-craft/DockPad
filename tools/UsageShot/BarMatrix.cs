@@ -377,12 +377,16 @@ internal static partial class Program
 
         var bottomTiles = TileRects(bottom);
         var bottomPagination = Bounds((FrameworkElement)bottom.Quick.FindName("PaginationBar"), bottom.Root);
-        Measure("décalage horizontal de la première tuile (droite - bas)", first.Left - bottomTiles[0].Left, 0);
+        // À droite, chaque marge extérieure vaut la moitié de la marge visible En bas.
+        var outerMargin = bottomTiles[0].Left;
+        Measure("marge gauche = moitié de la marge En bas", first.Left, outerMargin / 2);
+        Measure("marge droite = moitié de la marge En bas", right.Width - barRect.Right, outerMargin / 2);
         Measure("pagination : position relative aux tuiles, droite - bas",
             (pagination.Left - first.Left) - (bottomPagination.Left - bottomTiles[0].Left), 0);
 
         Console.WriteLine($"Fenêtre : en bas {bottom.Width:0.##} × {bottom.Height:0.##}, à droite {right.Width:0.##} × {right.Height:0.##}");
-        Measure("largeur gagnée = barre + écart", right.Width - bottom.Width, OverflowCheck.BarWidth + tileGap);
+        Measure("largeur gagnée = barre + écart - marge", right.Width - bottom.Width,
+            OverflowCheck.BarWidth + tileGap - outerMargin);
 
         // La fenêtre à droite a perdu le bandeau et sa marge, lus sur le rendu En bas.
         var banner = bottom.Quick.UsageBannerPanel;

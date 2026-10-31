@@ -8,9 +8,11 @@ namespace DockPad.Views;
 public static class UsageBarLayout
 {
     /// <summary>
-    /// Largeur que la fenêtre gagne quand la barre apparaît : la barre et l'écart qui la sépare de la grille.
+    /// Largeur que la fenêtre gagne quand la barre apparaît : la barre et l'écart qui la sépare de la grille, moins une
+    /// marge extérieure. La grille et la barre restant centrées ensemble, chacune des deux marges extérieures perd
+    /// ainsi la moitié de sa largeur.
     /// </summary>
-    public static double AddedWidth(double barWidth, double gap) => barWidth + gap;
+    public static double AddedWidth(double barWidth, double gap, double outerMargin) => barWidth + gap - outerMargin;
 
     /// <summary>
     /// Largeur et largeur minimale de la fenêtre après un changement de position. Le retour en bas retire exactement

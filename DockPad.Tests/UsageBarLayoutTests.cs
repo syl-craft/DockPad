@@ -11,12 +11,18 @@ public class UsageBarLayoutTests
 {
     private const double BarWidth = 90;
     private const double TileGap = 10;
-    private static readonly double Added = UsageBarLayout.AddedWidth(BarWidth, TileGap);
+    private static readonly double Added = UsageBarLayout.AddedWidth(BarWidth, TileGap, outerMargin: 0);
 
     [Fact]
     public void LargeurAjoutee_EstLaBarrePlusLEcartEntreTuiles()
     {
         Assert.Equal(100, Added);
+    }
+
+    [Fact]
+    public void LargeurAjoutee_RetireUneMargeExterieure()
+    {
+        Assert.Equal(126 - 76, UsageBarLayout.AddedWidth(108, 18, outerMargin: 76));
     }
 
     [Fact]

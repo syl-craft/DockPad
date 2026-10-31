@@ -173,8 +173,8 @@ public class UsageBarWindowTests
         var startMinWidth = rig.Window.MinWidth;
 
         rig.ChangePlacement(UsagePlacement.Right);
-        Assert.Equal(startWidth + 118, rig.Window.Width);
-        Assert.Equal(startMinWidth + 118, rig.Window.MinWidth);
+        Assert.Equal(startWidth + 42, rig.Window.Width);
+        Assert.Equal(startMinWidth + 42, rig.Window.MinWidth);
 
         rig.ChangePlacement(UsagePlacement.Bottom);
         Assert.Equal(startWidth, rig.Window.Width);
@@ -191,7 +191,7 @@ public class UsageBarWindowTests
         rig.Window.Width = 1000;
         rig.ChangePlacement(UsagePlacement.Bottom);
 
-        Assert.Equal(882, rig.Window.Width);
+        Assert.Equal(958, rig.Window.Width);
         Assert.Equal(850, rig.Window.MinWidth);
     });
 
@@ -201,8 +201,8 @@ public class UsageBarWindowTests
         using var rig = new Rig(ConfigFor(UsagePlacement.Right), new CountingProvider("claude"));
         rig.Build();
 
-        Assert.Equal(968, rig.Window.Width);
-        Assert.Equal(968, rig.Window.MinWidth);
+        Assert.Equal(892, rig.Window.Width);
+        Assert.Equal(892, rig.Window.MinWidth);
     });
 
     [Fact]
@@ -223,6 +223,25 @@ public class UsageBarWindowTests
         Assert.InRange(barOrigin.Y, firstOrigin.Y - 1, firstOrigin.Y + 1);
         Assert.InRange(barOrigin.Y + rig.Bar.ActualHeight, lastBottom.Y - 1, lastBottom.Y + 1);
         Assert.InRange(barOrigin.X, rowRightEdge + 9, rowRightEdge + 11);
+    });
+
+    [Fact]
+    public Task Fenetre_ADroite_MargesExterieuresDeMoitie() => WpfTestHost.Run(() =>
+    {
+        double bottomMargin;
+        using (var bottom = new Rig(ConfigFor(UsagePlacement.Bottom), new CountingProvider("claude")))
+        {
+            bottom.Build();
+            bottomMargin = Tile(bottom, 0).TranslatePoint(new Point(0, 0), bottom.Root).X;
+        }
+
+        using var rig = new Rig(ConfigFor(UsagePlacement.Right), new CountingProvider("claude"));
+        rig.Build();
+        var leftMargin = Tile(rig, 0).TranslatePoint(new Point(0, 0), rig.Root).X;
+        var rightMargin = rig.Root.ActualWidth - rig.Bar.TranslatePoint(new Point(rig.Bar.ActualWidth, 0), rig.Root).X;
+
+        Assert.InRange(leftMargin, bottomMargin / 2 - 1, bottomMargin / 2 + 1);
+        Assert.InRange(rightMargin, bottomMargin / 2 - 1, bottomMargin / 2 + 1);
     });
 
     [Fact]

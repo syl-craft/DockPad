@@ -95,9 +95,15 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private UsagePlacement _widthPlacement = UsagePlacement.Bottom;
 
     /// <summary>
-    /// Largeur que la barre ajoute (la barre et l'écart entre tuiles), connue à la première mise en page.
+    /// Largeur que la fenêtre gagne à droite (la barre et l'écart entre tuiles, moins une marge extérieure), connue à la
+    /// première mise en page.
     /// </summary>
     private double? _barAddedWidth;
+
+    /// <summary>
+    /// Place de la barre et de son écart à droite de la grille.
+    /// </summary>
+    private double _barReservedWidth;
 
     private bool _isLoadFeedRunning;
 
@@ -274,8 +280,8 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     }
 
     /// <summary>
-    /// La fenêtre gagne la barre et son écart en passant à droite, et les perd en revenant en bas. La grille garde sa
-    /// place : elle est centrée sur la largeur moins la barre, et la pagination reçoit la même marge.
+    /// La fenêtre gagne la barre et son écart, moins une marge extérieure, en passant à droite, et les perd en revenant en
+    /// bas. La grille est centrée sur la largeur moins la barre, et la pagination reçoit la même marge.
     /// </summary>
     private void ApplyBarWidth(UsagePlacement placement)
     {
@@ -287,7 +293,8 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         Width = width;
         _widthPlacement = placement;
 
-        var addedRight = placement == UsagePlacement.Right ? added : 0;
+        // La grille garde à sa droite la place entière de la barre et de son écart, même quand la fenêtre en gagne moins.
+        var addedRight = placement == UsagePlacement.Right ? _barReservedWidth : 0;
         TilesBlock.Margin = new Thickness(_tilesBlockMargin.Left, _tilesBlockMargin.Top,
             _tilesBlockMargin.Right + addedRight, _tilesBlockMargin.Bottom);
         PaginationBar.Margin = new Thickness(0, 0, addedRight, 0);
@@ -307,14 +314,17 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
         var gap = tile.Margin.Left + tile.Margin.Right;
         var barWidth = tile.ActualWidth;
+        var origin = ShortcutsGrid.TranslatePoint(new Point(0, 0), TilesRow);
         if (_barAddedWidth == null)
         {
-            _barAddedWidth = UsageBarLayout.AddedWidth(barWidth, gap);
+            // Mesurée avant le premier placement : c'est la marge extérieure visible de la position En bas.
+            var outerMargin = origin.X + tile.Margin.Left;
+            _barReservedWidth = barWidth + gap;
+            _barAddedWidth = UsageBarLayout.AddedWidth(barWidth, gap, outerMargin);
             ApplyUsagePlacement();
         }
         if (UsageBar.Visibility != Visibility.Visible) return;
 
-        var origin = ShortcutsGrid.TranslatePoint(new Point(0, 0), TilesRow);
         var top = Math.Max(origin.Y + tile.Margin.Top, 0);
         var bottom = Math.Min(origin.Y + ShortcutsGrid.ActualHeight - tile.Margin.Bottom, TilesRow.ActualHeight);
         var left = origin.X + ShortcutsGrid.ActualWidth - tile.Margin.Right + gap;
