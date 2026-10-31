@@ -7,6 +7,7 @@ using Application = System.Windows.Application;
 using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using System.Windows.Media.Imaging;
 using DockPad;
+using DockPad.Models;
 using DockPad.Services;
 using DockPad.Services.Localization;
 
@@ -39,7 +40,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|settings-streamdock|ctxmenu|presets|mcp|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en> <chemin.png> [onglet]");
+            Console.WriteLine("usage : DialogShot <settings|settings-streamdock|ctxmenu|presets|mcp|usage-bottom|usage-right|usage-off|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en> <chemin.png> [onglet]");
             return;
         }
 
@@ -129,6 +130,10 @@ internal static class Program
             "ctxmenu" => new ContextMenuManagerWindow(),
             "presets" => new PresetsDialog(),
             "mcp" => new McpConfigDialog(),
+            // Fenetre Usage IA : la config est ecrite dans le profil de fixture AVANT la fenetre, qui la relit.
+            "usage-bottom" => UsageConfigWindow(UsagePlacement.Bottom),
+            "usage-right" => UsageConfigWindow(UsagePlacement.Right, SideStripStyle.HeroStack),
+            "usage-off" => UsageConfigWindow(UsagePlacement.Right, enabled: false),
             "terminals" => TerminalsWindow(),
             // Trois fenetres n'avaient aucune couverture de capture : celles d'ajout/modification
             // d'une tuile et d'une entree de registre. Un defaut de couleur y serait passe inapercu.
@@ -161,6 +166,28 @@ internal static class Program
             SelectTab(tabbed, tabIndex);
 
         Render(window, outPath, target, lang);
+    }
+
+    /// <summary>
+    /// La fenetre Usage IA sur une config donnee, ecrite dans le profil de fixture et jamais dans celui de l'utilisateur.
+    /// </summary>
+    private static Window UsageConfigWindow(UsagePlacement placement, SideStripStyle style = SideStripStyle.Columns,
+                                            bool enabled = true)
+    {
+        var config = new UsageConfig
+        {
+            Enabled = enabled,
+            Placement = placement,
+            BarStyle = style,
+            Providers =
+            {
+                new AiProviderEntry { Id = "claude", Name = "Claude", DetectedName = "Claude", Detected = true, Order = 0 },
+                new AiProviderEntry { Id = "codex", Name = "Codex", DetectedName = "Codex", Detected = true, Order = 1 },
+                new AiProviderEntry { Id = "antigravity", Name = "Antigravity", DetectedName = "Antigravity", Detected = true, Order = 2 },
+            },
+        };
+        UsageConfigService.Save(config);
+        return new UsageConfigDialog();
     }
 
     /// <summary>Selectionne un onglet avant le rendu, s'il y a un TabControl dans la fenetre.</summary>

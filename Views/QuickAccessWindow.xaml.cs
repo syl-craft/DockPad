@@ -8,8 +8,10 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using DockPad.Models;
 using DockPad.Services;
+using DockPad.Services.StreamDock;
 using DockPad.Services.Usage;
 using DockPad.Views;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
@@ -82,7 +84,38 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private ModifierKeys _triggerFirst  = ModifierKeys.Control;
     private ModifierKeys _triggerSecond = ModifierKeys.Shift;
 
-    public QuickAccessWindow()
+    private readonly UsageViewModel _usage;
+    private readonly SystemLoadFeed _loadFeed;
+    private readonly UsageBarViewModel _usageBar;
+    private readonly Thickness _tilesBlockMargin;
+
+    /// <summary>
+    /// Position dont la largeur de la fenêtre porte la trace : le point de départ du prochain calcul de largeur.
+    /// </summary>
+    private UsagePlacement _widthPlacement = UsagePlacement.Bottom;
+
+    /// <summary>
+    /// Largeur que la fenêtre gagne à droite (la barre et l'écart entre tuiles, moins une marge extérieure), connue à la
+    /// première mise en page.
+    /// </summary>
+    private double? _barAddedWidth;
+
+    /// <summary>
+    /// Place de la barre et de son écart à droite de la grille.
+    /// </summary>
+    private double _barReservedWidth;
+
+    private bool _isLoadFeedRunning;
+
+    public QuickAccessWindow() : this(new UsageViewModel(), new SystemLoadMonitor())
+    {
+    }
+
+    /// <summary>
+    /// Les relevés et la mesure de charge sont fournis par l'appelant : les tests et l'outil de capture n'interrogent
+    /// ni les vrais fournisseurs ni le vrai processeur.
+    /// </summary>
+    public QuickAccessWindow(UsageViewModel usage, ISystemLoadMonitor loadMonitor, TimeProvider? time = null)
     {
         ShortcutPage = new ShortcutPageState(Dispatcher);
         InitializeComponent();
@@ -120,17 +153,19 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         ThemeService.ThemeChanged += OnThemeChanged;
         // ThemeService est statique : sans désabonnement, il garderait une référence sur la fenêtre
         // pour toute la vie du processus.
-        Closed += (_, _) =>
-        {
-            Loc.LanguageChanged -= OnLanguageChanged;
-            ShortcutPage.Changed -= OnShortcutPageChanged;
-            ThemeService.ThemeChanged -= OnThemeChanged;
-        };
+        Closed += (_, _) => DetachFromStatics();
 
         var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
 
-        UsageBanner.ViewModel = new UsageViewModel();
+        _usage = usage;
+        _tilesBlockMargin = TilesBlock.Margin;
+        UsageBanner.ViewModel = usage;
+        // Les mesures sont publiées sur le thread de la fenêtre, comme les relevés.
+        _loadFeed = new SystemLoadFeed(loadMonitor, time ?? TimeProvider.System, new DispatcherSynchronizationContext(Dispatcher));
+        _usageBar = new UsageBarViewModel(usage, _loadFeed);
+        UsageBar.ViewModel = _usageBar;
+        UsageBar.SettingsRequested += (_, _) => ShowUsageConfig();
         // LayoutUpdated et non Loaded : la mise en page a lieu même quand la fenêtre n'est pas
         // affichée (l'outil de capture mesure et arrange son contenu hors écran), et Loaded ne
         // se déclenche jamais dans ce cas.
@@ -152,6 +187,14 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             LayoutUpdated -= align;   // se désabonner évite la boucle : poser la taille relance un passage
         };
         LayoutUpdated += align;
+
+        // La config adoptée par le modèle est celle du démarrage : sans elle la barre attendrait le premier relevé.
+        _usage.ApplyConfig();
+        _usage.PropertyChanged += OnUsageChanged;
+        UsageConfigService.Changed += OnUsageConfigChanged;
+        UsageConfigService.AutoChosen += OnUsageAutoChosen;
+        LayoutUpdated += (_, _) => SyncUsageBarGeometry();
+        ApplyUsagePlacement();
 
         // Un glissement de la poignée est diagonal : WPF repasse SizeToContent en Manual et la
         // hauteur reste figée à ce que l'utilisateur a lâché — éventuellement sous la taille du
@@ -175,6 +218,141 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     public UsagePanel UsageBannerPanel => UsageBanner;
 
     /// <summary>
+    /// La barre à droite, exposée pour la même raison : l'outil de capture lui donne un flux de charge déjà rempli.
+    /// </summary>
+    public UsageBar UsageBarPanel => UsageBar;
+
+    /// <summary>
+    /// Rend les abonnements aux événements statiques et arrête les mesures de charge : sans cela ces événements
+    /// garderaient la fenêtre vivante, et lui parleraient depuis un autre thread.
+    /// </summary>
+    internal void DetachFromStatics()
+    {
+        Loc.LanguageChanged -= OnLanguageChanged;
+        ShortcutPage.Changed -= OnShortcutPageChanged;
+        ThemeService.ThemeChanged -= OnThemeChanged;
+        UsageConfigService.Changed -= OnUsageConfigChanged;
+        UsageConfigService.AutoChosen -= OnUsageAutoChosen;
+        _usage.PropertyChanged -= OnUsageChanged;
+        _usageBar.Dispose();
+        _loadFeed.Stop();
+    }
+
+    /// <summary>
+    /// Le suivi de la config Usage IA, qui peut changer pendant que la fenêtre Usage IA reste ouverte : la fenêtre
+    /// relit sans lire les fournisseurs, puis applique la position.
+    /// </summary>
+    private void OnUsageConfigChanged() => Dispatcher.BeginInvoke(() =>
+    {
+        _usage.ApplyConfig();
+        ApplyUsagePlacement();
+    });
+
+    /// <summary>
+    /// Le choix explicite de « Auto » dans la fenêtre Usage IA : il lève la suspension même quand la config dit déjà Auto.
+    /// </summary>
+    private void OnUsageAutoChosen() => Dispatcher.BeginInvoke(() => _usage.ChooseAuto());
+
+    /// <summary>
+    /// Un relevé adopte la config du fichier : une modification faite hors de la fenêtre Usage IA est vue aussi.
+    /// </summary>
+    private void OnUsageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(UsageViewModel.Snapshots)) ApplyUsagePlacement();
+    }
+
+    /// <summary>
+    /// Met la fenêtre d'accord avec la config adoptée : bandeau ou barre, largeur, pagination, mesures de charge.
+    /// </summary>
+    /// <remarks>
+    /// La barre est visible dès que Usage IA est activé et la position à droite, quelles que soient les données.
+    /// Idempotent : un relevé comme un changement de config peuvent l'appeler.
+    /// </remarks>
+    private void ApplyUsagePlacement()
+    {
+        var config = _usage.Config;
+        var isBarShown = config.Enabled && config.Placement == UsagePlacement.Right;
+
+        UsageBar.Visibility = isBarShown ? Visibility.Visible : Visibility.Collapsed;
+        UsageBanner.IsFolded = config.Placement == UsagePlacement.Right;
+        ApplyBarWidth(isBarShown ? UsagePlacement.Right : UsagePlacement.Bottom);
+        SyncLoadFeed();
+    }
+
+    /// <summary>
+    /// La fenêtre gagne la barre et son écart, moins une marge extérieure, en passant à droite, et les perd en revenant en
+    /// bas. La grille est centrée sur la largeur moins la barre, et la pagination reçoit la même marge.
+    /// </summary>
+    private void ApplyBarWidth(UsagePlacement placement)
+    {
+        if (_barAddedWidth == null || placement == _widthPlacement) return;
+
+        var added = _barAddedWidth.Value;
+        var (width, minWidth) = UsageBarLayout.Apply(_widthPlacement, placement, Width, MinWidth, added);
+        MinWidth = minWidth;
+        Width = width;
+        _widthPlacement = placement;
+
+        // La grille garde à sa droite la place entière de la barre et de son écart, même quand la fenêtre en gagne moins.
+        var addedRight = placement == UsagePlacement.Right ? _barReservedWidth : 0;
+        TilesBlock.Margin = new Thickness(_tilesBlockMargin.Left, _tilesBlockMargin.Top,
+            _tilesBlockMargin.Right + addedRight, _tilesBlockMargin.Bottom);
+        PaginationBar.Margin = new Thickness(0, 0, addedRight, 0);
+    }
+
+    /// <summary>
+    /// Cale la barre sur le bloc de tuiles, à chaque mise en page : haut et bas sur les bords visibles de la première
+    /// et de la dernière rangée, à l'écart d'une tuile de la grille. Le bandeau du mode déplacement n'y entre pas, et un
+    /// défilement de la grille ne l'entraîne pas.
+    /// </summary>
+    /// <remarks>
+    /// Les valeurs ne sont posées que si elles changent : les poser relance un passage de mise en page.
+    /// </remarks>
+    private void SyncUsageBarGeometry()
+    {
+        if (ShortcutsGrid.ActualWidth <= 0 || TileAt(0) is not { } tile || tile.ActualHeight <= 0) return;
+
+        var gap = tile.Margin.Left + tile.Margin.Right;
+        var barWidth = tile.ActualWidth;
+        var origin = ShortcutsGrid.TranslatePoint(new Point(0, 0), TilesRow);
+        if (_barAddedWidth == null)
+        {
+            // Mesurée avant le premier placement : c'est la marge extérieure visible de la position En bas.
+            var outerMargin = origin.X + tile.Margin.Left;
+            _barReservedWidth = barWidth + gap;
+            _barAddedWidth = UsageBarLayout.AddedWidth(barWidth, gap, outerMargin);
+            ApplyUsagePlacement();
+        }
+        if (UsageBar.Visibility != Visibility.Visible) return;
+
+        var top = Math.Max(origin.Y + tile.Margin.Top, 0);
+        var bottom = Math.Min(origin.Y + ShortcutsGrid.ActualHeight - tile.Margin.Bottom, TilesRow.ActualHeight);
+        var left = origin.X + ShortcutsGrid.ActualWidth - tile.Margin.Right + gap;
+        var height = Math.Max(bottom - top, 0);
+
+        if (Math.Abs(UsageBar.Width - barWidth) > 0.5) UsageBar.Width = barWidth;
+        if (Math.Abs(UsageBar.Height - height) > 0.5) UsageBar.Height = height;
+        if (Math.Abs(UsageBar.Margin.Left - left) > 0.5 || Math.Abs(UsageBar.Margin.Top - top) > 0.5)
+            UsageBar.Margin = new Thickness(left, top, 0, 0);
+    }
+
+    /// <summary>
+    /// Démarre ou arrête les mesures de charge selon <see cref="UsageBarLayout.ShouldSampleLoad"/>.
+    /// </summary>
+    private void SyncLoadFeed()
+    {
+        var config = _usage.Config;
+        var isWindowActive = IsVisible && WindowState != WindowState.Minimized;
+        var shouldRun = UsageBarLayout.ShouldSampleLoad(isWindowActive, config.Enabled, config.Placement,
+            config.ShowSystemLoad);
+        if (shouldRun == _isLoadFeedRunning) return;
+
+        _isLoadFeedRunning = shouldRun;
+        if (shouldRun) _loadFeed.Start();
+        else _loadFeed.Stop();
+    }
+
+    /// <summary>
     /// La fenêtre est-elle sous les yeux de l'utilisateur ? Le bandeau se met à jour ou se met au
     /// repos, et le verrou des tuiles se repose quand la fenêtre est rangée.
     /// </summary>
@@ -188,11 +366,13 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         if (IsVisible && WindowState != WindowState.Minimized)
         {
             UsageBanner.Start();
+            SyncLoadFeed();
             return;
         }
 
         CancelMove();
         UsageBanner.Stop();
+        SyncLoadFeed();
         // Ranger la fenêtre repose le verrou : on ne peut pas oublier de le refermer.
         _tileLock.Lock();
         ApplyTileLock();
@@ -420,6 +600,18 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
+
+        // Avant l'overlay : Ctrl seul l'a peut-être ouvert, et Ctrl + Tab ne doit pas laisser la touche à un focus.
+        var step = UsageBarShortcut.Handles(e.Key, Keyboard.Modifiers, _usage.Config.Enabled, _usage.Config.Placement,
+            _usage.EligibleIds.Count, SearchBox.Text.Length == 0, _moveSource is not null, _dragSource is not null);
+        if (step != null)
+        {
+            if (_hintIsCtrl != null) { _hintIsCtrl = null; HideHintOverlay(); }
+            _usageBar.Cycle(step.Value);
+            e.Handled = true;
+            return;
+        }
+
         if (_moveSource is not null)
         {
             if (e.Key == Key.Escape) { CancelMove(); PopulateGrid(); e.Handled = true; return; }
@@ -1464,11 +1656,14 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     private void HideHintOverlay() => _hintOverlay.Hide();
 
     /// <summary>Premiere tuile reellement rendue, pour aligner le bandeau sur sa geometrie.</summary>
-    private FrameworkElement? FirstTile()
-    {
-        if (ShortcutsGrid.Items.Count == 0) return null;
+    private FrameworkElement? FirstTile() => TileAt(0);
 
-        return ShortcutsGrid.ItemContainerGenerator.ContainerFromIndex(0) is ContentPresenter presenter
+    /// <summary>Tuile réellement rendue à cette case de la grille, ou null si elle n'existe pas encore.</summary>
+    internal FrameworkElement? TileAt(int index)
+    {
+        if (ShortcutsGrid.Items.Count <= index) return null;
+
+        return ShortcutsGrid.ItemContainerGenerator.ContainerFromIndex(index) is ContentPresenter presenter
                && VisualTreeHelper.GetChildrenCount(presenter) > 0
             ? VisualTreeHelper.GetChild(presenter, 0) as FrameworkElement
             : null;

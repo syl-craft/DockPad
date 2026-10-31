@@ -1,7 +1,9 @@
 using System.Windows;
+using System.Windows.Controls;
 using DockPad.Models;
 using DockPad.Services;
 using DockPad.Services.Usage;
+using DockPad.Views;
 
 namespace DockPad;
 
@@ -41,10 +43,15 @@ public partial class UsageConfigDialog : Window
     private UsageConfig _config = new();
     private bool _loading;
 
+    /// <summary>Barres d'exemple des quatre vignettes de style, libérées à la fermeture.</summary>
+    private readonly List<UsageBarViewModel> _samples = [];
+
     public UsageConfigDialog()
     {
         InitializeComponent();
         TxtVersion.Text = AppInfo.VersionText;
+        FillStyleSamples();
+        Closed += (_, _) => _samples.ForEach(sample => sample.Dispose());
 
         foreach (var threshold in Thresholds)
         {
@@ -52,6 +59,28 @@ public partial class UsageConfigDialog : Window
         }
 
         Load();
+    }
+
+    /// <summary>
+    /// Chaque vignette montre une vraie barre, nourrie de valeurs fixes : aucun fournisseur n'est lu et aucune charge
+    /// n'est mesurée pour les dessiner.
+    /// </summary>
+    private void FillStyleSamples()
+    {
+        (UsageBar Bar, SideStripStyle Style)[] samples =
+        [
+            (SampleColumns, SideStripStyle.Columns),
+            (SampleHero, SideStripStyle.HeroStack),
+            (SampleRings, SideStripStyle.Rings),
+            (SampleReservoir, SideStripStyle.Reservoir),
+        ];
+
+        foreach (var (bar, style) in samples)
+        {
+            var sample = UsageBarSample.Create(style);
+            _samples.Add(sample);
+            bar.ViewModel = sample;
+        }
     }
 
     private void Load(string? selectId = null)
@@ -63,6 +92,14 @@ public partial class UsageConfigDialog : Window
 
             ChkEnabled.IsChecked = _config.Enabled;
             ChkShowCost.IsChecked = _config.ShowCost;
+
+            SelectByTag(LstPlacement, _config.Placement);
+            SelectByTag(LstBarStyle, _config.BarStyle);
+            RbFocusManual.IsChecked = _config.FocusMode == UsageFocusMode.Manual;
+            RbFocusAuto.IsChecked = _config.FocusMode == UsageFocusMode.AutoClosestToLimit;
+            ChkShowSystemLoad.IsChecked = _config.ShowSystemLoad;
+            ChkShowLoadHistory.IsChecked = _config.ShowLoadHistory;
+            ApplyState();
 
             var index = Array.IndexOf(Thresholds, _config.AlertThreshold);
             CmbThreshold.SelectedIndex = index >= 0 ? index : Array.IndexOf(Thresholds, 15);
@@ -78,6 +115,26 @@ public partial class UsageConfigDialog : Window
         {
             _loading = false;
         }
+    }
+
+    private static void SelectByTag<T>(ListBox list, T tag) where T : struct =>
+        list.SelectedItem = list.Items.OfType<ListBoxItem>().Where(item => Equals(item.Tag, tag)).FirstOrDefault();
+
+    private static T? SelectedTag<T>(ListBox list) where T : struct =>
+        (list.SelectedItem as ListBoxItem)?.Tag is T tag ? tag : null;
+
+    /// <summary>
+    /// Grise ce que la configuration enregistrée rend sans effet : le style et la charge n'existent qu'à droite.
+    /// </summary>
+    private void ApplyState()
+    {
+        var state = UsageSettingsState.From(_config);
+
+        GrpPosition.IsEnabled = state.CanChoosePosition;
+        GrpBarStyle.IsEnabled = state.CanChooseBarStyle;
+        GrpFocus.IsEnabled = state.CanChooseFocus;
+        GrpSystemLoad.IsEnabled = state.CanShowSystemLoad;
+        ChkShowLoadHistory.IsEnabled = state.CanShowLoadHistory;
     }
 
     private void BuildProviderRows(string? selectId)
@@ -187,6 +244,16 @@ public partial class UsageConfigDialog : Window
         Save();
     }
 
+    /// <summary>
+    /// Chaque clic sur « Auto » est un choix, même sur un bouton déjà coché : la fenêtre principale lève alors la
+    /// suspension de la session. L'enregistrement, lui, passe par <c>Checked</c>, qui ne se lève pas sur un bouton coché.
+    /// </summary>
+    private void Auto_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        UsageConfigService.NotifyAutoChosen();
+    }
+
     private void VisibleCheck_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { DataContext: ProviderRow row }) return;
@@ -247,9 +314,16 @@ public partial class UsageConfigDialog : Window
             config.ShowCost = ChkShowCost.IsChecked == true;
             config.AlertThreshold = threshold;
             config.DefaultProviderId = defaultId;
+            config.Placement = SelectedTag<UsagePlacement>(LstPlacement) ?? config.Placement;
+            config.BarStyle = SelectedTag<SideStripStyle>(LstBarStyle) ?? config.BarStyle;
+            config.FocusMode = RbFocusAuto.IsChecked == true ? UsageFocusMode.AutoClosestToLimit : UsageFocusMode.Manual;
+            config.ShowSystemLoad = ChkShowSystemLoad.IsChecked == true;
+            config.ShowLoadHistory = ChkShowLoadHistory.IsChecked == true;
             UsageConfigService.Save(config);
             _config = config;
         }
+
+        ApplyState();
     }
 
     /// <summary>

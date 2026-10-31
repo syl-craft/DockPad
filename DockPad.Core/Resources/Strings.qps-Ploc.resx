@@ -1940,4 +1940,112 @@ F0rc3r l3ur 4rrêt ? L3 tr4v41l n0n 3nr3g15tré p3ut êtr3 p3rdu.</value></data>
   <data name="Settings_StreamDock_Style_Reservoir" xml:space="preserve">
     <value>Ré53rv01r</value>
   </data>
+  <data name="UsageBar_Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="UsageBar_Logo_Tooltip" xml:space="preserve">
+    <value>{0} — {1} %</value>
+  </data>
+  <data name="UsageBar_Logo_Notice" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="UsageBar_Logo_Accessible" xml:space="preserve">
+    <value>M3ttr3 {0} 3n 4v4nt</value>
+  </data>
+  <data name="UsageBar_Window_Tooltip" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="UsageBar_Window_Stale" xml:space="preserve">
+    <value>{0} % ut1l15é5, {1} % r35t4nt5 — r3l3vé {2}</value>
+  </data>
+  <data name="UsageBar_Auto" xml:space="preserve">
+    <value>4UT0</value>
+  </data>
+  <data name="UsageBar_Empty" xml:space="preserve">
+    <value>4ucun qu0t4 à 4ff1ch3r</value>
+  </data>
+  <data name="UsageBar_Cpu_Tooltip" xml:space="preserve">
+    <value>Pr0c3553ur : {0}</value>
+  </data>
+  <data name="UsageBar_Memory_Tooltip" xml:space="preserve">
+    <value>Mém01r3 : {0}</value>
+  </data>
+  <data name="UsageBar_Load_Tooltip" xml:space="preserve">
+    <value>Pr0c3553ur {0} · Mém01r3 {1}</value>
+  </data>
+  <data name="UsageBar_Accessible" xml:space="preserve">
+    <value>B4rr3 U54g3 14</value>
+  </data>
+  <data name="UsageBar_Loading" xml:space="preserve">
+    <value>L3ctur3 3n c0ur5…</value>
+  </data>
+  <data name="UsageBar_OpenPage" xml:space="preserve">
+    <value>0uvr1r l4 p4g3 d3 c0n50mm4t10n</value>
+  </data>
+  <data name="UsageBar_Empty_Tooltip" xml:space="preserve">
+    <value>0uvr1r l35 régl4g35 U54g3 14</value>
+  </data>
+  <data name="UsageBar_AutoSuffix" xml:space="preserve">
+    <value> · {0}</value>
+  </data>
+  <data name="UsageBar_Reset" xml:space="preserve">
+    <value>↻ {0}</value>
+  </data>
+  <data name="UsageBar_Legend" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="UsageCfg_Position" xml:space="preserve">
+    <value>P051t10n</value>
+  </data>
+  <data name="UsageCfg_Position_Bottom" xml:space="preserve">
+    <value>3n b45</value>
+  </data>
+  <data name="UsageCfg_Position_Bottom_Sub" xml:space="preserve">
+    <value>L3 b4nd34u 4ctu3l, 50u5 l4 gr1ll3</value>
+  </data>
+  <data name="UsageCfg_Position_Right" xml:space="preserve">
+    <value>À dr01t3</value>
+  </data>
+  <data name="UsageCfg_Position_Right_Sub" xml:space="preserve">
+    <value>Un3 b4rr3 v3rt1c4l3 à côté d3 l4 gr1ll3</value>
+  </data>
+  <data name="UsageCfg_BarStyle" xml:space="preserve">
+    <value>5tyl3 d3 l4 b4rr3 à dr01t3</value>
+  </data>
+  <data name="UsageCfg_Style_Columns" xml:space="preserve">
+    <value>C0l0nn35</value>
+  </data>
+  <data name="UsageCfg_Style_Hero" xml:space="preserve">
+    <value>Hér05</value>
+  </data>
+  <data name="UsageCfg_Style_Rings" xml:space="preserve">
+    <value>4nn34ux</value>
+  </data>
+  <data name="UsageCfg_Style_Reservoir" xml:space="preserve">
+    <value>Ré53rv01r</value>
+  </data>
+  <data name="UsageCfg_Focus" xml:space="preserve">
+    <value>14 m153 3n 4v4nt</value>
+  </data>
+  <data name="UsageCfg_Focus_Manual" xml:space="preserve">
+    <value>Ch01x m4nu3l</value>
+  </data>
+  <data name="UsageCfg_Focus_Manual_Sub" xml:space="preserve">
+    <value>L0g0, m0l3tt3 0u Ctrl + T4b</value>
+  </data>
+  <data name="UsageCfg_Focus_Auto" xml:space="preserve">
+    <value>4ut0 — l4 plu5 pr0ch3 d3 54 l1m1t3</value>
+  </data>
+  <data name="UsageCfg_Focus_Auto_Sub" xml:space="preserve">
+    <value>B45cul3 53ul3 5ur l’14 l4 plu5 c0n50mmé3</value>
+  </data>
+  <data name="UsageCfg_SystemLoad" xml:space="preserve">
+    <value>Ch4rg3 du PC</value>
+  </data>
+  <data name="UsageCfg_ShowSystemLoad" xml:space="preserve">
+    <value>4ff1ch3r l3 pr0c3553ur 3t l4 mém01r3</value>
+  </data>
+  <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
+    <value>C0urb3 d35 60 d3rn1èr35 53c0nd35 (5tyl3 Hér05)</value>
+  </data>
 </root>

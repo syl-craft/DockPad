@@ -15,10 +15,15 @@ public sealed class SideStripStyleJsonConverter : JsonConverter<SideStripStyle>
             && Enum.IsDefined((SideStripStyle)number))
             return (SideStripStyle)number;
 
-        if (reader.TokenType == JsonTokenType.String
-            && Enum.TryParse<SideStripStyle>(reader.GetString(), ignoreCase: true, out var style)
-            && Enum.IsDefined(style))
-            return style;
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var text = reader.GetString()?.Trim();
+            var name = Enum.GetNames<SideStripStyle>()
+                .Where(candidate => string.Equals(candidate, text, StringComparison.OrdinalIgnoreCase))
+                .FirstOrDefault();
+            if (name != null)
+                return Enum.Parse<SideStripStyle>(name);
+        }
 
         reader.Skip();
         return SideStripStyle.Columns;

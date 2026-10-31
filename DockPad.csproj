@@ -41,9 +41,9 @@
     <!-- DockPad.Tests et tools\McpShot sont des projets frères situés dans des sous-dossiers du
          répertoire de DockPad.csproj : sans ces exclusions, le glob par défaut du SDK (**/*.cs)
          compile aussi leurs sources dans l'app. -->
-    <Compile Remove="DockPad.Tests\**;DockPad.Tests.FakeDriver\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
-    <EmbeddedResource Remove="DockPad.Tests\**;DockPad.Tests.FakeDriver\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
-    <None Remove="DockPad.Tests\**;DockPad.Tests.FakeDriver\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
+    <Compile Remove="DockPad.Tests\**;DockPad.Tests.Wpf\**;DockPad.Tests.FakeDriver\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
+    <EmbeddedResource Remove="DockPad.Tests\**;DockPad.Tests.Wpf\**;DockPad.Tests.FakeDriver\**;tools\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
+    <None Remove="DockPad.Tests\**;DockPad.Tests.Wpf\**;DockPad.Tests.FakeDriver\**;DockPad.Core\**;DockPad.Surfaces\**;DockPad.StreamDock\**;DockPadTerminal\**" />
     <!-- Page et Resource aussi : le glob **/*.xaml du SDK WPF compilait les dictionnaires de
          la bibliotheque une SECONDE fois dans l'application (verifie dans obj/). Quatre BAML
          morts embarques, une double compilation de balisage a chaque edition de theme. Et le
@@ -59,6 +59,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="DockPad.Tests" />
+    <InternalsVisibleTo Include="DockPad.Tests.Wpf" />
+    <InternalsVisibleTo Include="UsageShot" />
   </ItemGroup>
 
   <ItemGroup>
