@@ -2101,4 +2101,16 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="UsageBar_CpuMemory" xml:space="preserve">
     <value>CPU 3t m3m01r3</value>
   </data>
+  <data name="Shortcut_BandColor" xml:space="preserve">
+    <value>C0ul3ur d3 l4 b4nd3</value>
+  </data>
+  <data name="Shortcut_BandColor_Type" xml:space="preserve">
+    <value>C0ul3ur du typ3</value>
+  </data>
+  <data name="Shortcut_BandColor_Hint" xml:space="preserve">
+    <value>#RRGGBB. L35 n0uv3ll35 tu1l35 d3 d05513r r3pr3nn3nt l4 c0ul3ur d3 l3ur 0ngl3t t3rm1n4l.</value>
+  </data>
+  <data name="Shortcut_Err_BandColor" xml:space="preserve">
+    <value>C0ul3ur d3 b4nd3 1nv4l1d3 : f0rm4t #RRGGBB 4tt3ndu, 0u v4l3ur v1d3 p0ur l4 c0ul3ur du typ3.</value>
+  </data>
 </root>

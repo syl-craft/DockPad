@@ -77,7 +77,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="TxtCommand" Grid.Column="0"/>
+                        <TextBox x:Name="TxtCommand" Grid.Column="0" TextChanged="BandFolder_Changed"/>
                         <Button x:Name="BtnBrowse" Grid.Column="1" Content="..." Width="36" Margin="6,0,0,0"
                                 Style="{StaticResource SecondaryButton}"
                                 Click="BrowseCommand_Click"/>
@@ -182,6 +182,23 @@
                     </StackPanel>
 
                 </StackPanel>
+
+                <!-- Couleur de la bande uniquement -->
+                <Label Content="{loc:T Shortcut_BandColor}" Target="{Binding ElementName=TxtBandColor}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <Border x:Name="BdBandColor" Width="26" Height="26" CornerRadius="4" Margin="0,0,8,0"
+                            BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                            SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                    <TextBox x:Name="TxtBandColor" Width="110" FontFamily="Consolas"
+                             AutomationProperties.Name="{loc:T Shortcut_BandColor}"
+                             TextChanged="BandColor_Changed"/>
+                    <Button x:Name="BtnTypeColor" Content="{loc:T Shortcut_BandColor_Type}" Margin="8,0,0,0"
+                            Style="{StaticResource SecondaryButton}" Click="BandColorType_Click"
+                            BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"/>
+                </StackPanel>
+                <WrapPanel x:Name="PnlBandColors" Margin="0,0,0,4"/>
+                <TextBlock Text="{loc:T Shortcut_BandColor_Hint}" Margin="0,0,0,16" TextWrapping="Wrap"
+                           Foreground="{DynamicResource Brush.TextHint}" FontSize="11"/>
 
                 <!-- Icône -->
                 <Label Content="{loc:T Shortcut_Icon}"/>

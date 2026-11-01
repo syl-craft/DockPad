@@ -2101,4 +2101,16 @@ Cette action est irréversible.</value>
   <data name="UsageBar_CpuMemory" xml:space="preserve">
     <value>CPU et mémoire</value>
   </data>
+  <data name="Shortcut_BandColor" xml:space="preserve">
+    <value>Couleur de la bande</value>
+  </data>
+  <data name="Shortcut_BandColor_Type" xml:space="preserve">
+    <value>Couleur du type</value>
+  </data>
+  <data name="Shortcut_BandColor_Hint" xml:space="preserve">
+    <value>#RRGGBB. Les nouvelles tuiles de dossier reprennent la couleur de leur onglet terminal.</value>
+  </data>
+  <data name="Shortcut_Err_BandColor" xml:space="preserve">
+    <value>Couleur de bande invalide : format #RRGGBB attendu, ou valeur vide pour la couleur du type.</value>
+  </data>
 </root>

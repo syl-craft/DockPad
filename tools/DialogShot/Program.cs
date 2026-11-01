@@ -143,6 +143,7 @@ internal static class Program
             // Trois fenetres n'avaient aucune couverture de capture : celles d'ajout/modification
             // d'une tuile et d'une entree de registre. Un defaut de couleur y serait passe inapercu.
             "shortcut" => new ShortcutDialog(row: 0, col: 0),
+            "shortcut-folder" => FolderShortcutWindow(),
             // Tuile Terminal : le terminal n'est plus choisi ici, il vient des Options.
             "shortcut-terminal" => new ShortcutDialog(new DockPad.Models.ShortcutEntry
             {
@@ -460,6 +461,17 @@ internal static class Program
 
     /// <summary>Basculer le theme APRES construction, comme le fait l'utilisateur.</summary>
     private static bool _switchAfterBuild;
+
+    private static ShortcutDialog FolderShortcutWindow()
+    {
+        var dialog = new ShortcutDialog();
+        ((System.Windows.Controls.TextBox)dialog.FindName("TxtName")).Text = "DockPad";
+        var types = (System.Windows.Controls.ComboBox)dialog.FindName("CmbType");
+        types.SelectedItem = types.Items.OfType<System.Windows.Controls.ComboBoxItem>()
+            .Where(item => Equals(item.Tag, nameof(ShortcutType.OpenFolder))).Single();
+        ((System.Windows.Controls.TextBox)dialog.FindName("TxtCommand")).Text = @"C:\dev\DockPad";
+        return dialog;
+    }
 
     private static void Render(Window window, string outPath, string target, string lang)
     {

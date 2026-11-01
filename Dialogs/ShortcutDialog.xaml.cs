@@ -12,12 +12,16 @@ public partial class ShortcutDialog : Window
 {
     public ShortcutEntry Entry { get; private set; }
 
+    private bool _bandColorReady;
+    private bool _bandColorChosen;
+    private bool _updatingBandColor;
+
     /// <summary>
     /// Terminal des Options, lancé par toutes les tuiles Terminal ; <c>null</c> si aucun n'est installé.
     /// </summary>
     private readonly TerminalInfo? _terminal = TerminalDetectionService.ResolveDefault();
 
-    public ShortcutDialog(ShortcutEntry? existing = null, int row = 0, int col = 0)
+    public ShortcutDialog(ShortcutEntry? existing = null, int row = 0, int col = 0, bool isNew = false)
     {
         InitializeComponent();
 
@@ -27,6 +31,7 @@ public partial class ShortcutDialog : Window
                 Row = existing.Row, Col = existing.Col,
                 Name = existing.Name, Type = existing.Type,
                 Command = existing.Command,
+                Color = existing.Color,
                 IconPath        = existing.IconPath,
                 IconProfilePath = existing.IconProfilePath,
                 Terminal = existing.Terminal == null ? null : new TerminalConfig
@@ -66,6 +71,12 @@ public partial class ShortcutDialog : Window
         SetTypeCombo(Entry.Type);
         TxtIconPath.TextChanged += (_, _) => RefreshIconPreview();
         RefreshIconPreview();
+        FillBandColorSwatches();
+        // Une entrée proposée par un dépôt reste une création, même si ses champs sont préremplis.
+        _bandColorChosen = existing != null && !isNew;
+        TxtBandColor.Text = Entry.Color ?? "";
+        _bandColorReady = true;
+        RefreshAutomaticBandColor();
     }
 
     // ── Type ─────────────────────────────────────────────────────────────────
@@ -124,6 +135,54 @@ public partial class ShortcutDialog : Window
                 CmbPsSearchMode.SelectedIndex = 0;
             }
         }
+        RefreshAutomaticBandColor();
+    }
+
+    // Une nouvelle tuile suit le dossier jusqu'au premier choix manuel, y compris « couleur du type ».
+    private void RefreshAutomaticBandColor()
+    {
+        if (!_bandColorReady) return;
+        if (!_bandColorChosen)
+        {
+            var type = Enum.TryParse((CmbType.SelectedItem as ComboBoxItem)?.Tag?.ToString(), out ShortcutType selected)
+                ? selected : ShortcutType.RunCommand;
+            _updatingBandColor = true;
+            TxtBandColor.Text = ShortcutColor.ForNewShortcut(type, TxtCommand.Text) ?? "";
+            _updatingBandColor = false;
+        }
+        RefreshBandColorPreview();
+    }
+
+    private void BandFolder_Changed(object sender, TextChangedEventArgs e) => RefreshAutomaticBandColor();
+
+    private void BandColor_Changed(object sender, TextChangedEventArgs e)
+    {
+        if (!_bandColorReady) return;
+        if (!_updatingBandColor) _bandColorChosen = true;
+        RefreshBandColorPreview();
+    }
+
+    private void RefreshBandColorPreview()
+    {
+        if (TileGroupService.IsValidColor(TxtBandColor.Text))
+            BdBandColor.Background = ColorBrush(TxtBandColor.Text);
+        else
+        {
+            var type = Enum.TryParse((CmbType.SelectedItem as ComboBoxItem)?.Tag?.ToString(), out ShortcutType selected)
+                ? selected : ShortcutType.RunCommand;
+            BdBandColor.Background = QuickAccessWindow.TypeBandBrush(type);
+        }
+    }
+
+    private void BandColorType_Click(object sender, RoutedEventArgs e)
+    {
+        _bandColorChosen = true;
+        TxtBandColor.Text = "";
+    }
+
+    private void FillBandColorSwatches()
+    {
+        FillColorSwatches(PnlBandColors, color => { _bandColorChosen = true; TxtBandColor.Text = color; });
     }
 
     private void RestoreTerminalFields(TerminalConfig cfg)
@@ -136,7 +195,9 @@ public partial class ShortcutDialog : Window
     /// <summary>
     /// Une pastille par teinte de la palette : un clic la reporte dans le champ.
     /// </summary>
-    private void FillTabColorSwatches()
+    private void FillTabColorSwatches() => FillColorSwatches(PnlTabColors, color => TxtTabColor.Text = color);
+
+    private static void FillColorSwatches(WrapPanel panel, Action<string> chooseColor)
     {
         foreach (string color in TerminalDetectionService.TabColors)
         {
@@ -147,8 +208,8 @@ public partial class ShortcutDialog : Window
                 Cursor = System.Windows.Input.Cursors.Hand,
             };
             System.Windows.Automation.AutomationProperties.SetName(swatch, color);
-            swatch.Click += (_, _) => TxtTabColor.Text = color;
-            PnlTabColors.Children.Add(swatch);
+            swatch.Click += (_, _) => chooseColor(color);
+            panel.Children.Add(swatch);
         }
     }
 
@@ -350,6 +411,13 @@ public partial class ShortcutDialog : Window
             return;
         }
 
+        if (TxtBandColor.Text.Length > 0 && !TileGroupService.IsValidColor(TxtBandColor.Text))
+        {
+            AppDialog.Warning(Loc.T("Shortcut_Err_BandColor"), owner: this);
+            TxtBandColor.Focus();
+            return;
+        }
+
         ShortcutType type = ShortcutType.RunCommand;
         if (CmbType.SelectedItem is ComboBoxItem item)
             Enum.TryParse(item.Tag?.ToString(), out type);
@@ -421,6 +489,8 @@ public partial class ShortcutDialog : Window
             Entry.IconPath        = TxtIconPath.Text.Trim();
             Entry.IconProfilePath = IconStoreService.CopyToProfile(Entry.IconPath);
         }
+
+        Entry.Color = TxtBandColor.Text.ToUpperInvariant();
 
         if (string.IsNullOrEmpty(Entry.IconPath) && string.IsNullOrEmpty(Entry.IconProfilePath))
             TryAutoFillIcon();

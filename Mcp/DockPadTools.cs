@@ -33,7 +33,8 @@ public static class DockPadTools
     // ───── Grille ─────
 
     [McpServerTool(Name = "dockpad_grid_get")]
-    [Description("État de la grille DockPad : pages, tuiles (nom, type, commande, icônes) et cases " +
+    [Description("État de la grille DockPad : pages, tuiles (nom, type, commande, icônes, color : " +
+                 "couleur de bande #RRGGBB, null/absente = couleur du type) et cases " +
                  "libres. iconProfilePath est relatif à %APPDATA%\\DockPad\\ ; iconPath est le chemin " +
                  "source d'origine. Une tuile groupée a un layout Quad (4) ou TwoPlusFour (6), un " +
                  "groupColor, des children (children[i] = sous-case i, null = libre) et ses freeSlots. " + PosDoc)]
@@ -49,6 +50,8 @@ public static class DockPadTools
         [Description("Tuiles à créer. Champs par item : name (requis), command (requis), type " +
                      "(RunCommand|OpenFolder|OpenUrl|OpenTerminal|SwitchToProcess, défaut RunCommand), " +
                      "page/row/col (optionnels), iconPath (optionnel — sinon icône de l'exe), " +
+                     "color (#RRGGBB optionnelle ; omise sur OpenFolder = couleur d'onglet du terminal " +
+                     "dérivée du dernier segment du dossier ; chaîne vide = couleur du type), " +
                      "terminal (pour OpenTerminal : startingDirectory, runCommand, tabColor #RRGGBB optionnelle ; " +
                      "le terminal lancé est celui des Options de DockPad, exePath est ignoré), processSwitch (pour SwitchToProcess), slot (pour poser " +
                      "la tuile dans une sous-case libre du groupe situé en page/row/col, qui deviennent " +
@@ -61,7 +64,9 @@ public static class DockPadTools
     [Description("Modifie une tuile identifiée par (page, row, col[, slot]). Seuls les champs fournis " +
                  "changent. Le nom, la disposition et la couleur d'un groupe passent par dockpad_group_set. " + PosDoc)]
     public static string ShortcutUpdate(int page, int row, int col,
-        [Description("Champs à modifier : name, type, command, iconPath, terminal, processSwitch.")]
+        [Description("Champs à modifier : name, type, command, iconPath, terminal, processSwitch, color. " +
+                     "color : #RRGGBB, omise = inchangée, chaîne vide = couleur du type. " +
+                     "Changer le dossier ne recalcule pas la couleur d'une tuile existante.")]
         ShortcutUpdate changes,
         [Description(TargetDoc)] string? target = null,
         [Description(SlotDoc)] int? slot = null)
