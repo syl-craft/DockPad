@@ -2091,4 +2091,14 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Update_ForceRisk" xml:space="preserve"><value>F0rc3r l’4rr3t c0up3 c35 pr0gr4mm35 54n5 l3ur l41553r f1n1r c3 qu’1l5 f0nt. D35 m0d1f1c4t10n5 n0n 3nr3g15tr335 p3uv3nt 3tr3 p3rdu35 3t un 4pp3l d’0ut1l 3n c0ur5 p3ut 3ch0u3r.</value></data>
   <data name="Update_ForceInstall" xml:space="preserve"><value>F0rc3r l’4rr3t 3t 1n5t4ll3r</value></data>
   <data name="Update_ExpandGroup" xml:space="preserve"><value>D3pl13r 0u r3pl13r c3 gr0up3</value></data>
+  <data name="UsageBar_Enlarge_Tooltip" xml:space="preserve">
+    <value>4ff1ch3r 3n gr4nd
+{0}</value>
+  </data>
+  <data name="UsageBar_Enlarge" xml:space="preserve">
+    <value>4ff1ch3r 3n gr4nd</value>
+  </data>
+  <data name="UsageBar_CpuMemory" xml:space="preserve">
+    <value>CPU 3t m3m01r3</value>
+  </data>
 </root>

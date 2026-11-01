@@ -177,7 +177,19 @@ internal static partial class Program
         quick.UsageBannerPanel.ViewModel = usage;
         quick.UsageBannerPanel.Start();
         // La fenêtre n'est pas affichée : sa charge ne démarrerait pas. La barre reçoit un flux déjà rempli.
-        if (barStyle != null) quick.UsageBarPanel.ViewModel = new UsageBarViewModel(usage, FilledLoadFeed(DefaultLoad), () => BarNow);
+        if (barStyle != null)
+        {
+            var bar = new UsageBarViewModel(usage, FilledLoadFeed(DefaultLoad), () => BarNow);
+            quick.UsageBarPanel.ViewModel = bar;
+            // Ex. cpu, memory, codex:week : une sélection de démonstration, sans config ni fournisseur réel.
+            var gauge = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_GAUGE");
+            if (gauge is "cpu" or "memory")
+                bar.PickGauge(new BarGauge("", gauge == "cpu" ? BarGaugeKind.Cpu : BarGaugeKind.Memory));
+            else if (gauge?.Split(':') is [var providerId, var kind]
+                     && Enum.TryParse<BarGaugeKind>(kind, ignoreCase: true, out var parsedKind)
+                     && parsedKind is BarGaugeKind.Session or BarGaugeKind.Week)
+                bar.PickGauge(new BarGauge(providerId, parsedKind));
+        }
 
         // Largeur lue sur la fenêtre APRÈS la mise en page : passer à droite l'agrandit de la barre et de son écart.
         double width = quick.Width;

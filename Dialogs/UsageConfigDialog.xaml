@@ -181,7 +181,7 @@
                             <StackPanel>
                                 <Viewbox Height="184" Stretch="Uniform" HorizontalAlignment="Center">
                                     <views:UsageBar x:Name="SampleColumns" Width="90" Height="390"
-                                                    IsHitTestVisible="False" IsTabStop="False"/>
+                                                    IsHitTestVisible="False" IsTabStop="False" KeyboardNavigation.TabNavigation="None"/>
                                 </Viewbox>
                                 <TextBlock Text="{loc:T UsageCfg_Style_Columns}" Margin="0,8,0,0"
                                            TextAlignment="Center" TextWrapping="Wrap"/>
@@ -192,7 +192,7 @@
                             <StackPanel>
                                 <Viewbox Height="184" Stretch="Uniform" HorizontalAlignment="Center">
                                     <views:UsageBar x:Name="SampleHero" Width="90" Height="390"
-                                                    IsHitTestVisible="False" IsTabStop="False"/>
+                                                    IsHitTestVisible="False" IsTabStop="False" KeyboardNavigation.TabNavigation="None"/>
                                 </Viewbox>
                                 <TextBlock Text="{loc:T UsageCfg_Style_Hero}" Margin="0,8,0,0"
                                            TextAlignment="Center" TextWrapping="Wrap"/>
@@ -203,7 +203,7 @@
                             <StackPanel>
                                 <Viewbox Height="184" Stretch="Uniform" HorizontalAlignment="Center">
                                     <views:UsageBar x:Name="SampleRings" Width="90" Height="390"
-                                                    IsHitTestVisible="False" IsTabStop="False"/>
+                                                    IsHitTestVisible="False" IsTabStop="False" KeyboardNavigation.TabNavigation="None"/>
                                 </Viewbox>
                                 <TextBlock Text="{loc:T UsageCfg_Style_Rings}" Margin="0,8,0,0"
                                            TextAlignment="Center" TextWrapping="Wrap"/>
@@ -214,7 +214,7 @@
                             <StackPanel>
                                 <Viewbox Height="184" Stretch="Uniform" HorizontalAlignment="Center">
                                     <views:UsageBar x:Name="SampleReservoir" Width="90" Height="390"
-                                                    IsHitTestVisible="False" IsTabStop="False"/>
+                                                    IsHitTestVisible="False" IsTabStop="False" KeyboardNavigation.TabNavigation="None"/>
                                 </Viewbox>
                                 <TextBlock Text="{loc:T UsageCfg_Style_Reservoir}" Margin="0,8,0,0"
                                            TextAlignment="Center" TextWrapping="Wrap"/>

@@ -18,10 +18,16 @@ public class UsageBarViewModelTests
 
     private sealed class StubProvider(AiUsage usage) : IUsageProvider
     {
-        public string Id => usage.ProviderId;
+        public AiUsage Snapshot { get; set; } = usage;
+        public Task? PendingRead { get; set; }
+        public string Id => Snapshot.ProviderId;
         public string Name => Id;
         public AiProbe Probe() => new() { Available = true, DisplayName = Id };
-        public Task<AiUsage?> ReadAsync(CancellationToken ct) => Task.FromResult<AiUsage?>(usage);
+        public async Task<AiUsage?> ReadAsync(CancellationToken ct)
+        {
+            if (PendingRead != null) await PendingRead;
+            return Snapshot;
+        }
     }
 
     private sealed class Rig
@@ -44,7 +50,7 @@ public class UsageBarViewModelTests
 
     private static AiUsage Usage(string id, int? session = 62, int? week = 44, string name = "", string notice = "",
                                  bool staleSession = false, bool demo = false, string sessionLabel = "",
-                                 string weekLabel = "", DateTime? sessionResetsAt = null) => new()
+                                 string weekLabel = "", DateTime? sessionResetsAt = null, string usageUrl = "") => new()
     {
         ProviderId = id,
         Name = name.Length > 0 ? name : id,
@@ -61,6 +67,7 @@ public class UsageBarViewModelTests
             },
         Week = week is null ? null : new UsageWindow { UsedPct = week.Value, Label = weekLabel },
         IsDemo = demo,
+        UsageUrl = usageUrl,
     };
 
     private static UsageConfig ConfigFor(params string[] ids)
@@ -95,6 +102,297 @@ public class UsageBarViewModelTests
 
     private static Task<Rig> BuildAsync(UsageConfig config, params AiUsage[] usages) =>
         BuildAsync(config, (SystemLoad?)null, usages);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Anneaux_DoubleCharge_CycleCpuRamPuisQuotaLePlusConsomme(bool singleProvider)
+    {
+        var config = singleProvider ? ConfigFor("claude") : ConfigFor("claude", "codex");
+        config.BarStyle = SideStripStyle.Rings;
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        var rig = await BuildAsync(config, singleProvider
+            ? [Usage("claude", 30, 85)]
+            : [Usage("claude", 30, 85), Usage("codex", 20, 10)]);
+        rig.Bar.PickGauge(new BarGauge("claude", BarGaugeKind.Session));
+
+        rig.Bar.CycleLoadGauge();
+        Assert.Equal(BarGaugeKind.Cpu, Some(Some(rig.Bar.FeaturedGauge).Ring.Selection).Kind);
+        Assert.Equal("CPU", Some(rig.Bar.FeaturedGauge).Name);
+        Assert.Equal("", Some(rig.Bar.Rings).Legend);
+        Assert.Equal(singleProvider, rig.Bar.IsAuto);
+        Assert.NotNull(rig.Bar.Load);
+
+        await rig.Usage.RefreshAsync();
+        rig.Bar.CycleLoadGauge();
+        Assert.Equal(BarGaugeKind.Memory, Some(Some(rig.Bar.FeaturedGauge).Ring.Selection).Kind);
+        Assert.Equal("RAM", Some(rig.Bar.FeaturedGauge).Name);
+        Assert.Equal("", Some(rig.Bar.Rings).Legend);
+        Assert.NotNull(rig.Bar.Load);
+
+        rig.Bar.CycleLoadGauge();
+        Assert.Equal(new BarGauge("claude", BarGaugeKind.Week), Some(rig.Bar.FeaturedGauge).Ring.Selection);
+        Assert.Equal("85%", Some(rig.Bar.Rings).CenterText);
+        Assert.NotNull(Some(rig.Bar.Rings).Inner);
+        Assert.Equal(singleProvider, rig.Bar.IsAuto);
+    }
+
+    [Fact]
+    public async Task Anneaux_DoubleCharge_Masquee_NeChangePasLaSelection()
+    {
+        var config = ConfigFor("claude");
+        config.ShowSystemLoad = false;
+        var rig = await BuildAsync(config, Usage("claude"));
+        var featured = rig.Bar.FeaturedGauge;
+
+        rig.Bar.CycleLoadGauge();
+
+        Assert.Equal(featured, rig.Bar.FeaturedGauge);
+    }
+
+    [Theory]
+    [InlineData(SideStripStyle.Reservoir)]
+    [InlineData(SideStripStyle.Rings)]
+    public async Task Jauge_ChoisitLaFenetreCliquee_EtConserveLeChoixAuReleve(SideStripStyle style)
+    {
+        var config = ConfigFor("claude", "codex");
+        config.BarStyle = style;
+        var rig = await BuildAsync(config, Usage("claude"), Usage("codex", 80, 27));
+        var chosen = new BarGauge("codex", BarGaugeKind.Week);
+
+        rig.Bar.PickGauge(chosen);
+
+        Assert.Equal("codex", rig.Usage.SoloProviderId);
+        var featured = Some(rig.Bar.FeaturedGauge);
+        var reservoir = Some(rig.Bar.Reservoir);
+        var rings = Some(rig.Bar.Rings);
+        Assert.Equal(chosen, featured.Ring.Selection);
+        Assert.Equal("27%", featured.Ring.Text);
+        Assert.Equal(0.27, reservoir.Level);
+        Assert.Equal("27%", rings.CenterText);
+        Assert.Null(rings.Inner);
+        Assert.Contains(reservoir.Dots, dot => dot.Selection == new BarGauge("claude", BarGaugeKind.Session));
+        Assert.Contains(rings.Others, ring => ring.Selection == new BarGauge("claude", BarGaugeKind.Session));
+
+        await rig.Usage.RefreshAsync();
+        Assert.Equal(chosen, Some(rig.Bar.FeaturedGauge).Ring.Selection);
+
+        rig.Bar.Cycle(1);
+        Assert.Equal("62%", Some(rig.Bar.FeaturedGauge).Ring.Text);
+        rig.Bar.Pick("codex");
+        Assert.Equal("80%", Some(rig.Bar.FeaturedGauge).Ring.Text);
+    }
+
+    [Theory]
+    [InlineData(BarGaugeKind.Cpu, "CPU", "23%", UsageBarViewModel.CpuColor)]
+    [InlineData(BarGaugeKind.Memory, "RAM", "61%", UsageBarViewModel.MemoryColor)]
+    public async Task Jauge_Charge_GrandFormat_SuspendAuto_EtSuitLesMesures(BarGaugeKind kind, string label,
+        string text, string color)
+    {
+        var config = ConfigFor("claude", "codex");
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        var rig = await BuildAsync(config, Usage("claude"), Usage("codex", 80, 27));
+        var chosen = new BarGauge("", kind);
+
+        rig.Bar.PickGauge(chosen);
+
+        Assert.False(rig.Bar.IsAuto);
+        Assert.Equal("codex", rig.Usage.SoloProviderId);
+        var featured = Some(rig.Bar.FeaturedGauge);
+        Assert.Equal(label, featured.Name);
+        Assert.Equal(text, featured.Ring.Text);
+        Assert.Equal(color, featured.Ring.Color);
+        Assert.False(featured.CanOpenUsagePage);
+        Assert.DoesNotContain(Some(rig.Bar.Reservoir).Dots, dot => dot.Selection == chosen);
+        Assert.DoesNotContain(rig.Bar.LoadRings, ring => ring.Selection == chosen);
+        Assert.Contains(Some(rig.Bar.Rings).Others, ring => ring.Text == "80%");
+
+        var featuredBeforeMeasure = featured;
+        rig.Monitor.Value = new SystemLoad(40, 62);
+        rig.Time.Advance(TimeSpan.FromSeconds(5));
+        await rig.Feed.PendingSample.WaitAsync(TimeSpan.FromSeconds(10));
+        featured = Some(rig.Bar.FeaturedGauge);
+        Assert.Same(featuredBeforeMeasure, featured);
+        Assert.Same(featuredBeforeMeasure.Ring, featured.Ring);
+        Assert.Equal(kind == BarGaugeKind.Cpu ? "40%" : "62%", featured.Ring.Text);
+        Assert.Equal(featured.Ring.Fraction, Some(rig.Bar.Reservoir).Level);
+        Assert.Equal(featured.Ring.Text, Some(rig.Bar.Rings).CenterText);
+
+        rig.Usage.ChooseAuto();
+        Assert.True(rig.Bar.IsAuto);
+        // La même IA reste mise en avant : la jauge choisie reste en grand.
+        Assert.Equal(chosen, Some(rig.Bar.FeaturedGauge).Ring.Selection);
+        rig.Bar.Cycle(1);
+        Assert.Equal("62%", Some(rig.Bar.FeaturedGauge).Ring.Text);
+    }
+
+    [Fact]
+    public async Task Jauge_Quota_UnSeulFournisseur_NeSuspendPasAuto()
+    {
+        var config = ConfigFor("claude");
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        var rig = await BuildAsync(config, Usage("claude"));
+
+        rig.Bar.PickGauge(new BarGauge("claude", BarGaugeKind.Week));
+
+        Assert.True(rig.Bar.IsAuto);
+        Assert.Equal("44%", Some(rig.Bar.FeaturedGauge).Ring.Text);
+    }
+
+    [Theory]
+    [InlineData(BarGaugeKind.Cpu)]
+    [InlineData(BarGaugeKind.Memory)]
+    public async Task Jauge_Charge_UnSeulFournisseur_NeSuspendPasAuto(BarGaugeKind kind)
+    {
+        var config = ConfigFor("claude");
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        var rig = await BuildAsync(config, Usage("claude"));
+
+        rig.Bar.PickGauge(new BarGauge("", kind));
+
+        Assert.True(rig.Bar.IsAuto);
+        Assert.Equal(kind, Some(Some(rig.Bar.FeaturedGauge).Ring.Selection).Kind);
+    }
+
+    [Theory]
+    [InlineData(BarGaugeKind.Cpu)]
+    [InlineData(BarGaugeKind.Memory)]
+    public async Task Jauge_ChargeDecochee_RetourPropreALaPlusConsommee(BarGaugeKind kind)
+    {
+        var config = ConfigFor("claude");
+        var rig = await BuildAsync(config, Usage("claude"));
+        rig.Bar.PickGauge(new BarGauge("", kind));
+
+        config.ShowSystemLoad = false;
+        rig.Usage.ApplyConfig();
+
+        Assert.Null(rig.Bar.Load);
+        Assert.Empty(rig.Bar.LoadRings);
+        Assert.Equal(new BarGauge("claude", BarGaugeKind.Session), Some(rig.Bar.FeaturedGauge).Ring.Selection);
+        Assert.Equal("62%", Some(rig.Bar.Reservoir).LevelText);
+        Assert.Equal("62%", Some(rig.Bar.Rings).CenterText);
+        Assert.NotNull(Some(rig.Bar.Rings).Inner);
+        Assert.Contains(Some(rig.Bar.Reservoir).Dots, dot => dot.Selection == new BarGauge("claude", BarGaugeKind.Week));
+    }
+
+    [Fact]
+    public async Task Jauge_FenetreDisparueDuReleve_OublieLeChoixEtRevientALaPlusConsommee()
+    {
+        var config = ConfigFor("claude");
+        var provider = new StubProvider(Usage("claude"));
+        var usage = new UsageViewModel(new UsageService([provider]), () => config, () => Now);
+        await usage.RefreshAsync();
+        var feed = new SystemLoadFeed(new FakeSystemLoadMonitor(), new ManualTimeProvider(), publishOn: null);
+        using var bar = new UsageBarViewModel(usage, feed, () => Now);
+        bar.PickGauge(new BarGauge("claude", BarGaugeKind.Week));
+
+        provider.Snapshot = Usage("claude", 70, null);
+        await usage.RefreshAsync();
+
+        Assert.Equal("70%", Some(bar.FeaturedGauge).Ring.Text);
+        Assert.Equal("70%", Some(bar.Reservoir).LevelText);
+        Assert.DoesNotContain(Some(bar.Reservoir).Dots, dot => dot.Selection == new BarGauge("claude", BarGaugeKind.Session));
+        provider.Snapshot = Usage("claude", 70, 20);
+        await usage.RefreshAsync();
+        Assert.Equal("70%", Some(bar.FeaturedGauge).Ring.Text);
+        Assert.Contains(Some(bar.Reservoir).Dots, dot => dot.Selection == new BarGauge("claude", BarGaugeKind.Week));
+    }
+
+    [Fact]
+    public async Task Charge_Mesure_GardeLesInstancesDesAnneaux()
+    {
+        var rig = await BuildAsync(ConfigFor("claude"), Usage("claude"));
+        var cpu = rig.Bar.LoadRings[0];
+        var memory = rig.Bar.LoadRings[1];
+
+        rig.Monitor.Value = new SystemLoad(40, 62);
+        rig.Time.Advance(TimeSpan.FromSeconds(5));
+        await rig.Feed.PendingSample.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Same(cpu, rig.Bar.LoadRings[0]);
+        Assert.Same(memory, rig.Bar.LoadRings[1]);
+        Assert.Contains(cpu, Some(rig.Bar.Reservoir).Dots);
+        Assert.Equal("40", cpu.NumberText);
+        Assert.Equal("62", memory.NumberText);
+    }
+
+    [Theory]
+    [InlineData("https://example.test/usage", true)]
+    [InlineData("http://example.test/usage", true)]
+    [InlineData("", false)]
+    [InlineData("file:///C:/test", false)]
+    [InlineData("not a url", false)]
+    public async Task GrandLogo_CliquableSeulementAvecAdresseWeb(string url, bool canOpen)
+    {
+        var snapshot = Usage("claude", usageUrl: url);
+        var rig = await BuildAsync(ConfigFor("claude"), snapshot);
+
+        var featured = Some(rig.Bar.FeaturedGauge);
+        Assert.Equal(canOpen, featured.CanOpenUsagePage);
+        Assert.Equal(url, featured.UsageUrl);
+    }
+
+    [Fact]
+    public async Task Jauge_ChargeSeule_EtSelectionInvalide()
+    {
+        var rig = await BuildAsync(ConfigFor("gemini"), Usage("gemini", null, null));
+        rig.Bar.PickGauge(new BarGauge("", BarGaugeKind.Cpu));
+        Assert.Equal("CPU", Some(rig.Bar.FeaturedGauge).Name);
+        rig.Bar.PickGauge(new BarGauge("absent", BarGaugeKind.Week));
+        Assert.Equal("CPU", Some(rig.Bar.FeaturedGauge).Name);
+    }
+
+    [Fact]
+    public async Task Jauge_AncienneGrande_ResteParmiLesPetitesMalgreLesAutresQuotas()
+    {
+        var rig = await BuildAsync(ConfigFor("claude", "codex", "autre"),
+            Usage("claude", 20, 10), Usage("codex", 80, 70), Usage("autre", 95, 90));
+
+        rig.Bar.PickGauge(new BarGauge("codex", BarGaugeKind.Week));
+
+        var previous = new BarGauge("claude", BarGaugeKind.Session);
+        Assert.Contains(Some(rig.Bar.Reservoir).Dots, ring => ring.Selection == previous);
+        Assert.Contains(Some(rig.Bar.Rings).Others, ring => ring.Selection == previous);
+    }
+
+    [Fact]
+    public async Task Jauge_BasculeAutoChangeLIa_RetourALaPlusConsommee()
+    {
+        var config = ConfigFor("claude", "codex");
+        var rig = await BuildAsync(config, Usage("claude"), Usage("codex", 90, 27));
+        rig.Bar.PickGauge(new BarGauge("claude", BarGaugeKind.Week));
+
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        rig.Usage.ApplyConfig();
+
+        Assert.Equal("codex", rig.Usage.SoloProviderId);
+        Assert.Equal("90%", Some(rig.Bar.FeaturedGauge).Ring.Text);
+    }
+
+    [Theory]
+    [InlineData(BarGaugeKind.Cpu)]
+    [InlineData(BarGaugeKind.Week)]
+    public async Task Jauge_GestePendantUnReleve_EmpecheLaReactivationAuto(BarGaugeKind kind)
+    {
+        var config = ConfigFor("claude", "codex");
+        var provider = new StubProvider(Usage("claude"));
+        var usage = new UsageViewModel(new UsageService([provider, new StubProvider(Usage("codex"))]), () => config, () => Now);
+        await usage.RefreshAsync();
+        var feed = new SystemLoadFeed(new FakeSystemLoadMonitor(), new ManualTimeProvider(), publishOn: null);
+        using var bar = new UsageBarViewModel(usage, feed, () => Now);
+        var gate = new TaskCompletionSource();
+        provider.PendingRead = gate.Task;
+        config.FocusMode = UsageFocusMode.AutoClosestToLimit;
+        var refresh = usage.RefreshAsync();
+
+        var chosen = new BarGauge(kind == BarGaugeKind.Cpu ? "" : "claude", kind);
+        bar.PickGauge(chosen);
+        gate.SetResult();
+        await refresh;
+
+        Assert.False(bar.IsAuto);
+        Assert.Equal(chosen, Some(bar.FeaturedGauge).Ring.Selection);
+    }
 
     [Fact]
     public async Task Etat_Full_LoadOnly_Empty()

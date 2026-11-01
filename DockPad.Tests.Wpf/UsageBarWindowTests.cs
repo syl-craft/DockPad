@@ -1,5 +1,8 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using DockPad.Models;
 using DockPad.Services;
 using DockPad.Services.Usage;
@@ -16,7 +19,76 @@ public class UsageBarWindowTests
 {
     private static readonly DateTime Now = new(2026, 8, 20, 12, 0, 0);
 
-    private sealed class CountingProvider(string id, int session = 62) : IUsageProvider
+    private static IEnumerable<Button> Buttons(DependencyObject root)
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var child = VisualTreeHelper.GetChild(root, index);
+            if (child is Button button) yield return button;
+            foreach (var descendant in Buttons(child)) yield return descendant;
+        }
+    }
+
+    [Theory]
+    [InlineData(SideStripStyle.Rings, false, false)]
+    [InlineData(SideStripStyle.Rings, true, false)]
+    [InlineData(SideStripStyle.Reservoir, false, false)]
+    [InlineData(SideStripStyle.Reservoir, true, false)]
+    [InlineData(SideStripStyle.Rings, false, true)]
+    public Task Fenetre_ClicSourisSurJaugeOuGrandLogo_GardeLeClavierDansLaRecherche(SideStripStyle style,
+        bool featured, bool doubleLoad) => WpfTestHost.Run(() =>
+    {
+        var config = ConfigFor(UsagePlacement.Right);
+        config.BarStyle = style;
+        using var rig = new Rig(config, new CountingProvider("claude", usageUrl: "https://example.test/usage"),
+            new CountingProvider("codex"));
+        rig.Build();
+        WpfTestHost.PumpUntilCompleted(rig.Usage.RefreshAsync());
+        // Un hôte de présentation donne un vrai clavier aux contrôles de QuickAccessWindow sans afficher la fenêtre
+        // du lanceur (donc sans enregistrer de raccourci global ni démarrer son cycle de rafraîchissement).
+        var search = (TextBox)rig.Window.FindName("SearchBox");
+        var root = rig.Root;
+        rig.Window.Content = null;
+        using var host = new WindowHost(root);
+        Assert.True(search.Focus());
+        var button = Buttons(rig.Bar).Where(candidate => featured
+            ? candidate.DataContext is BarFeaturedGauge
+            : doubleLoad ? candidate.DataContext is BarLoad
+            : candidate.DataContext is BarRing { CanEnlarge: true }).First();
+        Assert.True(button.IsEnabled);
+
+        button.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+            { RoutedEvent = UIElement.MouseLeftButtonDownEvent });
+
+        Assert.Same(search, Keyboard.FocusedElement);
+        Assert.True(button.Focusable);
+        Assert.True(button.IsTabStop);
+        Assert.True(button.Focus());
+        Assert.Same(button, Keyboard.FocusedElement);
+        if (featured == false)
+        {
+            Assert.True(search.Focus());
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            WpfTestHost.Flush();
+            Assert.Same(search, Keyboard.FocusedElement);
+        }
+    });
+
+    private sealed class WindowHost : IDisposable
+    {
+        private readonly Window _host;
+        public WindowHost(FrameworkElement content)
+        {
+            _host = new Window { Content = content, Width = 950, Height = 600, ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None, Left = -10000, Top = -10000 };
+            _host.Show();
+            _host.Activate();
+            WpfTestHost.Flush();
+        }
+        public void Dispose() => _host.Close();
+    }
+
+    private sealed class CountingProvider(string id, int session = 62, string usageUrl = "") : IUsageProvider
     {
         private int _reads;
 
@@ -32,6 +104,7 @@ public class UsageBarWindowTests
             return Task.FromResult<AiUsage?>(new AiUsage
             {
                 ProviderId = id, Name = id, Glyph = "X", AccentColor = "#123456",
+                UsageUrl = usageUrl,
                 Session = new UsageWindow { UsedPct = session }, Week = new UsageWindow { UsedPct = 44 },
             });
         }

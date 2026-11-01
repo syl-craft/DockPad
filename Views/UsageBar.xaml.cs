@@ -54,6 +54,15 @@ public partial class UsageBar : UserControl
             case BarHeroRow row:
                 ViewModel?.Pick(row.ProviderId);
                 break;
+            case BarRing { CanEnlarge: true, Selection: { } selection }:
+                ViewModel?.PickGauge(selection);
+                break;
+            case BarFeaturedGauge { CanOpenUsagePage: true } featured:
+                UsagePageLink.Open(featured.UsageUrl);
+                break;
+            case BarLoad:
+                ViewModel?.CycleLoadGauge();
+                break;
             case UsageBarViewModel:
                 SettingsRequested?.Invoke(this, EventArgs.Empty);
                 break;

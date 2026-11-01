@@ -2091,4 +2091,14 @@ This cannot be undone.</value>
   <data name="Update_ForceRisk" xml:space="preserve"><value>Forcing a stop interrupts these programs without letting them finish their work. Unsaved changes may be lost and a tool call in progress may fail.</value></data>
   <data name="Update_ForceInstall" xml:space="preserve"><value>Force stop and install</value></data>
   <data name="Update_ExpandGroup" xml:space="preserve"><value>Expand or collapse this group</value></data>
+  <data name="UsageBar_Enlarge_Tooltip" xml:space="preserve">
+    <value>Show enlarged
+{0}</value>
+  </data>
+  <data name="UsageBar_Enlarge" xml:space="preserve">
+    <value>Enlarge</value>
+  </data>
+  <data name="UsageBar_CpuMemory" xml:space="preserve">
+    <value>CPU and memory</value>
+  </data>
 </root>

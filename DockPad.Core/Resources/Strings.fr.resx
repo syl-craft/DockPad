@@ -2091,4 +2091,14 @@ Cette action est irréversible.</value>
   <data name="Update_ForceRisk" xml:space="preserve"><value>Forcer l’arrêt coupe ces programmes sans leur laisser finir ce qu’ils font. Des modifications non enregistrées peuvent être perdues et un appel d’outil en cours peut échouer.</value></data>
   <data name="Update_ForceInstall" xml:space="preserve"><value>Forcer l’arrêt et installer</value></data>
   <data name="Update_ExpandGroup" xml:space="preserve"><value>Déplier ou replier ce groupe</value></data>
+  <data name="UsageBar_Enlarge_Tooltip" xml:space="preserve">
+    <value>Afficher en grand
+{0}</value>
+  </data>
+  <data name="UsageBar_Enlarge" xml:space="preserve">
+    <value>Afficher en grand</value>
+  </data>
+  <data name="UsageBar_CpuMemory" xml:space="preserve">
+    <value>CPU et mémoire</value>
+  </data>
 </root>

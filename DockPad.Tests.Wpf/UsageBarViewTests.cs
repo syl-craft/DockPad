@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using DockPad.Services.Localization;
 using DockPad.Models;
 using DockPad.Services;
 using DockPad.Services.StreamDock;
@@ -20,7 +21,7 @@ public class UsageBarViewTests
     private static readonly DateTime Now = new(2026, 8, 20, 12, 0, 0);
 
     private sealed class FixedProvider(string id, int? session, int? week, string? name = null, string notice = "",
-        string sessionLabel = "", string weekLabel = "")
+        string sessionLabel = "", string weekLabel = "", string usageUrl = "")
         : IUsageProvider
     {
         public string Id => id;
@@ -31,6 +32,7 @@ public class UsageBarViewTests
         public Task<AiUsage?> ReadAsync(CancellationToken ct) => Task.FromResult<AiUsage?>(new AiUsage
         {
             ProviderId = id, Name = name ?? id, Glyph = "X", AccentColor = "#123456", QuotaNotice = notice,
+            UsageUrl = usageUrl,
             Session = session == null ? null : new UsageWindow { UsedPct = session.Value, Label = sessionLabel },
             Week = week == null ? null : new UsageWindow { UsedPct = week.Value, Label = weekLabel },
         });
@@ -104,6 +106,127 @@ public class UsageBarViewTests
     private static ItemsControl ItemsOf(UsageBar bar, object source) =>
         Descendants<ItemsControl>(bar).Where(items => ReferenceEquals(items.ItemsSource, source)).First();
 
+    [Theory]
+    [InlineData(SideStripStyle.Reservoir)]
+    [InlineData(SideStripStyle.Rings)]
+    public Task PetiteJauge_BoutonAccessible_ChoisitLaFenetre(SideStripStyle style) => WpfTestHost.Run(() =>
+    {
+        var rig = Build(style);
+        var button = Descendants<Button>(rig.Control)
+            .Where(candidate => candidate.DataContext is BarRing { ProviderId: "codex" }).First();
+
+        Assert.True(button.Focusable);
+        Assert.True(button.IsTabStop);
+        Assert.Equal(System.Windows.Input.Cursors.Hand, button.Cursor);
+        Assert.False(string.IsNullOrEmpty(System.Windows.Automation.AutomationProperties.GetName(button)));
+        Assert.Equal(Loc.F("UsageBar_Enlarge_Tooltip", ((BarRing)button.DataContext).Tooltip), button.ToolTip);
+        button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        rig.Layout();
+
+        Assert.Equal("codex", rig.Usage.SoloProviderId);
+        Assert.Equal("27%", rig.Model.Reservoir?.LevelText);
+        Assert.Equal("27%", rig.Model.Rings?.CenterText);
+    });
+
+    [Theory]
+    [InlineData(SideStripStyle.Reservoir, BarGaugeKind.Cpu, "CPU")]
+    [InlineData(SideStripStyle.Reservoir, BarGaugeKind.Memory, "RAM")]
+    public Task PetiteJaugeCharge_ClicMetLaChargeEnGrand(SideStripStyle style, BarGaugeKind kind, string label) => WpfTestHost.Run(() =>
+    {
+        var rig = Build(style);
+        var button = Descendants<Button>(rig.Control)
+            .Where(candidate => candidate.DataContext is BarRing ring && ring.Selection?.Kind == kind).First();
+        button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        rig.Layout();
+
+        Assert.Equal(label, rig.Model.FeaturedGauge?.Name);
+        var logo = Descendants<Button>(rig.Control)
+            .Where(candidate => candidate.DataContext is BarFeaturedGauge).Single();
+        Assert.False(logo.IsEnabled);
+        Assert.Equal(System.Windows.Input.Cursors.Arrow, logo.Cursor);
+        Assert.Equal(label, System.Windows.Automation.AutomationProperties.GetName(logo));
+    });
+
+    [Theory]
+    [InlineData(SideStripStyle.Reservoir)]
+    public Task Charge_Mesure_GardeLesBoutonsEtActualiseLeurInfobulle(SideStripStyle style) => WpfTestHost.Run(() =>
+    {
+        var rig = Build(style);
+        var before = Descendants<Button>(rig.Control).Where(button => button.DataContext is BarRing
+            { Selection.Kind: BarGaugeKind.Cpu or BarGaugeKind.Memory }).ToArray();
+        var tooltip = before[0].ToolTip;
+
+        rig.Measure(new SystemLoad(40, 62));
+
+        var after = Descendants<Button>(rig.Control).Where(button => button.DataContext is BarRing
+            { Selection.Kind: BarGaugeKind.Cpu or BarGaugeKind.Memory }).ToArray();
+        Assert.Equal(2, after.Length);
+        Assert.Same(before[0], after[0]);
+        Assert.Same(before[1], after[1]);
+        Assert.NotEqual(tooltip, after[0].ToolTip);
+        Assert.Contains("40", after[0].ToolTip.ToString());
+    });
+
+    [Fact]
+    public Task Anneaux_DoubleCharge_Accessible_CycleEtResteAffiche() => WpfTestHost.Run(() =>
+    {
+        var rig = Build(SideStripStyle.Rings);
+        var button = Descendants<Button>(rig.Control).Where(candidate => candidate.DataContext is BarLoad).Single();
+        Assert.Equal("CPU et mémoire", System.Windows.Automation.AutomationProperties.GetName(button));
+        Assert.Equal("Afficher en grand", button.ToolTip);
+        Assert.True(button.Focusable);
+        Assert.True(button.IsTabStop);
+        Assert.Equal(System.Windows.Input.Cursors.Hand, button.Cursor);
+        Assert.DoesNotContain(Descendants<Button>(rig.Control), candidate => candidate.DataContext is BarRing
+            { Selection.Kind: BarGaugeKind.Cpu or BarGaugeKind.Memory });
+        Assert.DoesNotContain(Descendants<ProviderIcon>(rig.Control), icon => icon.DataContext is BarFeaturedGauge);
+        foreach (var label in new[] { "CPU", "RAM", "claude" })
+        {
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            rig.Layout();
+            Assert.Equal(label, rig.Model.FeaturedGauge?.Name);
+            Assert.Same(button, Descendants<Button>(rig.Control).Where(candidate => candidate.DataContext is BarLoad).Single());
+            Assert.Equal(Visibility.Visible, button.Visibility);
+            Assert.Single(Descendants<TextBlock>(rig.Control), text => text.Text == label);
+            if (label != "claude") Assert.Equal("", rig.Model.Rings?.Legend);
+        }
+
+        rig.Measure(new SystemLoad(40, 62));
+        Assert.Same(button, Descendants<Button>(rig.Control).Where(candidate => candidate.DataContext is BarLoad).Single());
+        Assert.Contains(Descendants<TextBlock>(button), text => text.Text == "40%");
+        Assert.Equal("CPU / RAM", rig.Model.Load?.Legend);
+    });
+
+    [Fact]
+    public Task PastilleVide_SansActionNiNomAction() => WpfTestHost.Run(() =>
+    {
+        var rig = Build(SideStripStyle.Reservoir, new FixedProvider("claude", 62, null));
+        var empty = Descendants<Button>(rig.Control)
+            .Where(button => button.DataContext is BarRing { IsEmpty: true }).Single();
+
+        Assert.False(empty.Focusable);
+        Assert.False(empty.IsTabStop);
+        Assert.Null(empty.ToolTip);
+        Assert.Equal("", System.Windows.Automation.AutomationProperties.GetName(empty));
+    });
+
+    [Theory]
+    [InlineData(SideStripStyle.Reservoir, "https://example.test/usage", true)]
+    [InlineData(SideStripStyle.Rings, "https://example.test/usage", true)]
+    [InlineData(SideStripStyle.Reservoir, "file:///C:/test", false)]
+    [InlineData(SideStripStyle.Rings, "", false)]
+    public Task GrandLogo_UrlValideSeulement(SideStripStyle style, string url, bool enabled) => WpfTestHost.Run(() =>
+    {
+        var rig = Build(style, new FixedProvider("claude", 62, 44, usageUrl: url));
+        var button = Descendants<Button>(rig.Control)
+            .Where(candidate => candidate.DataContext is BarFeaturedGauge).Single();
+        Assert.Equal(enabled, button.IsEnabled);
+        Assert.Equal(enabled ? System.Windows.Input.Cursors.Hand : System.Windows.Input.Cursors.Arrow, button.Cursor);
+        Assert.True(button.Focusable);
+        Assert.True(button.IsTabStop);
+        Assert.False(string.IsNullOrEmpty(System.Windows.Automation.AutomationProperties.GetName(button)));
+    });
+
     [Fact]
     public Task Colonnes_Mesure_GardeLeConteneurDesColonnesDeQuota() => WpfTestHost.Run(() =>
     {
@@ -129,6 +252,19 @@ public class UsageBarViewTests
         rig.Measure(new SystemLoad(40, 62));
 
         Assert.Same(quotaDotBefore, dots.ItemContainerGenerator.ContainerFromIndex(0));
+    });
+
+    [Fact]
+    public Task Reservoir_ReleveIdentique_GardeLesInstancesDeQuota() => WpfTestHost.Run(() =>
+    {
+        var rig = Build(SideStripStyle.Reservoir);
+        var before = rig.Model.Reservoir?.Dots[0];
+        Assert.NotNull(before);
+
+        WpfTestHost.PumpUntilCompleted(rig.Usage.RefreshAsync());
+        rig.Layout();
+
+        Assert.Same(before, rig.Model.Reservoir?.Dots[0]);
     });
 
     [Fact]
