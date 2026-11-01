@@ -61,4 +61,7 @@
     <SolidColorBrush x:Key="Brush.DangerPressed" Color="#B32E26"/>   <!-- bouton de suppression enfonce -->
     <SolidColorBrush x:Key="Brush.SurfacePressed" Color="#4A4A4A"/>   <!-- bouton secondaire enfonce -->
     <SolidColorBrush x:Key="Brush.OnAccentMuted" Color="#B3D9F7"/>   <!-- texte attenue POSE SUR l'accent : pale dans les deux themes -->
+    <SolidColorBrush x:Key="Brush.DangerSurface" Color="#3A1F1D"/>   <!-- fond d'erreur doux -->
+    <SolidColorBrush x:Key="Brush.DangerBorder" Color="#6B2B26"/>   <!-- bordure d'erreur douce -->
+    <SolidColorBrush x:Key="Brush.AccentText" Color="#6CB8F6"/>   <!-- texte d'accent sur fond doux -->
 </ResourceDictionary>

@@ -466,10 +466,6 @@
 
                 <!-- Boutons droite -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button Content="↻" Style="{StaticResource SecondaryButton}" Padding="10,6" Margin="0,0,8,0" MinWidth="40"
-                            AutomationProperties.Name="{loc:T Update_Title}" ToolTip="{Binding Updates.Status}"
-                            Visibility="{Binding Updates.HasRelease, Converter={StaticResource BoolToVisibilityConverter}}"
-                            Command="{Binding Commands.OpenUpdates}"/>
                     <!-- Verrou du déplacement des tuiles. Le clic sur une tuile lance son action, et
                          le même geste manqué de quelques pixels la déplaçait : la réorganisation
                          devient un mode qu'on demande. Glyphe, infobulle et style sont posés par
@@ -557,8 +553,45 @@
                 BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0">
             <Grid>
                 <StackPanel x:Name="PaginationBar" Orientation="Horizontal" HorizontalAlignment="Center"/>
-                <TextBlock x:Name="TxtVersion" HorizontalAlignment="Left" VerticalAlignment="Center"
-                           FontFamily="Consolas" FontSize="11" Foreground="{DynamicResource Brush.TextDisabled}"/>
+                <Button x:Name="TxtVersion" HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Content="{Binding Updates.VersionIndicator}" ToolTip="{Binding Updates.Status}"
+                        Command="{Binding Commands.OpenUpdates}" FontFamily="Consolas" FontSize="11">
+                    <Button.Style><Style TargetType="Button">
+                        <Setter Property="Foreground" Value="{DynamicResource Brush.TextDisabled}"/>
+                        <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource Brush.SurfaceCard}"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template"><Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Badge" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="13" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <MultiDataTrigger><MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Updates.HasRelease}" Value="True"/>
+                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                    </MultiDataTrigger.Conditions><Setter TargetName="Badge" Property="Background" Value="{DynamicResource Brush.AccentTintStrong}"/></MultiDataTrigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Badge" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/></Trigger>
+                                    <MultiDataTrigger><MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Updates.HasRelease}" Value="True"/>
+                                        <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                    </MultiDataTrigger.Conditions><Setter TargetName="Badge" Property="Background" Value="{DynamicResource Brush.AccentSelected}"/></MultiDataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value></Setter>
+                        <Style.Triggers><DataTrigger Binding="{Binding Updates.HasRelease}" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.AccentText}"/>
+                            <Setter Property="Background" Value="{DynamicResource Brush.AccentTint}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.AccentBorderSoft}"/>
+                            <Setter Property="Padding" Value="10,3"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Margin" Value="0,0,8,0"/>
+                        </DataTrigger></Style.Triggers>
+                    </Style></Button.Style>
+                </Button>
                 <Border HorizontalAlignment="Right" VerticalAlignment="Center"
                         Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
                         CornerRadius="4" Padding="8,3"

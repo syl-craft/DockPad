@@ -25,8 +25,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// gestes qu'une fenêtre est seule à pouvoir faire — voir <see cref="QuickAccessCommands"/>.
     /// </summary>
     public QuickAccessCommands Commands { get; }
-    public Services.Updates.UpdateService Updates => Services.Updates.UpdateService.Current;
-    public void ShowUpdates() => new UpdatesDialog { Owner = this }.ShowDialog();
+    private readonly Services.Updates.UpdateService? _updates;
+    public Services.Updates.UpdateService Updates => _updates ?? Services.Updates.UpdateService.Current;
+    public void ShowUpdates() => new UpdatesDialog(Updates) { Owner = this }.ShowDialog();
 
     /// <summary>
     /// Laquelle des deux grilles est affichée. Voir <see cref="TileModeState"/> : le mode Favoris
@@ -115,8 +116,10 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// Les relevés et la mesure de charge sont fournis par l'appelant : les tests et l'outil de capture n'interrogent
     /// ni les vrais fournisseurs ni le vrai processeur.
     /// </summary>
-    public QuickAccessWindow(UsageViewModel usage, ISystemLoadMonitor loadMonitor, TimeProvider? time = null)
+    public QuickAccessWindow(UsageViewModel usage, ISystemLoadMonitor loadMonitor, TimeProvider? time = null,
+        Services.Updates.UpdateService? updates = null)
     {
+        _updates = updates;
         ShortcutPage = new ShortcutPageState(Dispatcher);
         InitializeComponent();
         _hintOverlay = new TileHintOverlay(HintOverlay);
@@ -154,9 +157,6 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         // ThemeService est statique : sans désabonnement, il garderait une référence sur la fenêtre
         // pour toute la vie du processus.
         Closed += (_, _) => DetachFromStatics();
-
-        var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        TxtVersion.Text = v != null ? $"v{v.Major}.{v.Minor}.{v.Build}" : "";
 
         _usage = usage;
         _tilesBlockMargin = TilesBlock.Margin;

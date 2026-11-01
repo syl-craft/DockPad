@@ -140,6 +140,18 @@ public class ThemeTests
         Assert.True(Luminance(ColorOf("Dark.xaml", "Brush.Text")) > 0.7);
     }
 
+    [Theory]
+    [InlineData("Light.xaml")]
+    [InlineData("Dark.xaml")]
+    public void UpdateBrushesDocumentTheirRole(string file)
+    {
+        foreach (var key in new[] { "Brush.DangerSurface", "Brush.DangerBorder", "Brush.AccentText" })
+        {
+            var brush = Brushes(file).Where(b => b.Attribute(X + "Key")?.Value == key).Single();
+            Assert.False(string.IsNullOrWhiteSpace(Assert.IsType<XComment>(brush.NextNode).Value));
+        }
+    }
+
     // ---------------------------------------------------------------- lecture des fichiers
 
     private static readonly XNamespace X = "http://schemas.microsoft.com/winfx/2006/xaml";

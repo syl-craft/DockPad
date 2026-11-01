@@ -1505,26 +1505,18 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Update_Checking" xml:space="preserve"><value>R3ch3rch3 d3 m1535 4 j0ur…</value></data>
   <data name="Update_Available" xml:space="preserve"><value>L4 v3r510n {0} 35t d15p0n1bl3.</value></data>
   <data name="Update_Downloading" xml:space="preserve"><value>T3l3ch4rg3m3nt… {0} %</value></data>
-  <data name="Update_Ready" xml:space="preserve"><value>M153 4 j0ur t3l3ch4rg33. Pr3t3 p0ur l3 r3d3m4rr4g3.</value></data>
   <data name="Update_Preparing" xml:space="preserve"><value>Pr3p4r4t10n d3 l4 m153 4 j0ur…</value></data>
-  <data name="Update_SelectAll" xml:space="preserve"><value>T0ut 53l3ct10nn3r</value></data>
   <data name="Update_Installing" xml:space="preserve"><value>F3rm3tur3 d3 D0ckP4d p0ur 1n5t4ll3r l4 m153 4 j0ur…</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>L4 m153 4 j0ur n’4 p45 pu 4b0ut1r. V3r1f13z l4 c0nn3x10n 3t r33554y3z. D0ckP4d r35t3 ut1l154bl3.</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>V0u5 d15p053z d3 l4 d3rn13r3 v3r510n.</value></data>
   <data name="Update_NotChecked" xml:space="preserve"><value>V3r1f13z 51 un3 n0uv3ll3 v3r510n 35t d15p0n1bl3.</value></data>
   <data name="Update_Progress" xml:space="preserve"><value>Pr0gr35510n du t3l3ch4rg3m3nt</value></data>
-  <data name="Update_Automatic" xml:space="preserve"><value>R3ch3rch3r 4ut0m4t1qu3m3nt l35 m1535 4 j0ur</value></data>
+  <data name="Update_Automatic" xml:space="preserve"><value>R3ch3rch3r 4ut0m4t1qu3m3nt</value></data>
   <data name="Update_Check" xml:space="preserve"><value>R3ch3rch3r</value></data>
-  <data name="Update_Install" xml:space="preserve"><value>M3ttr3 4 j0ur 3t r3d3m4rr3r</value></data>
-  <data name="Update_BlockedTitle" xml:space="preserve"><value>F3rm3r l35 4ppl1c4t10n5 bl0qu4nt35</value></data>
-  <data name="Update_BlockedHelp" xml:space="preserve"><value>C35 pr0c355u5 ut1l153nt d35 f1ch13r5 d3 D0ckP4d. 53l3ct10nn3z c3ux 4 f3rm3r. Un3 535510n MCP 0u 14 p3ut 4v01r du tr4v41l 3n c0ur5 qu1 53r4 1nt3rr0mpu.</value></data>
+  <data name="Update_BlockedTitle" xml:space="preserve"><value>Pr0gr4mm35 bl0qu4nt5</value></data>
+  <data name="Update_BlockedHelp" xml:space="preserve"><value>C35 pr0gr4mm35 ut1l153nt d35 f1ch13r5 d3 D0ckP4d. Ch0151553z c3ux 4 f3rm3r p0ur 1n5t4ll3r l4 m153 4 j0ur.</value></data>
   <data name="Update_Retry" xml:space="preserve"><value>R33554y3r</value></data>
-  <data name="Update_CloseSelected" xml:space="preserve"><value>F3rm3r l4 53l3ct10n 3t c0nt1nu3r</value></data>
   <data name="Update_Postpone" xml:space="preserve"><value>R3p0rt3r</value></data>
-  <data name="Update_ForcePrompt" xml:space="preserve"><value>C35 pr0c355u5 n3 53 50nt p45 f3rm35 :
-{0}
-
-F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="Update_LockError" xml:space="preserve"><value>D35 f1ch13r5 r35t3nt ut1l1535 0u l3ur 4cc35 35t r3fu53. F3rm3z l35 4ppl1c4t10n5 c0nc3rn335, pu15 r33554y3z. V0u5 p0uv3z 4u551 r3p0rt3r l4 m153 4 j0ur.</value></data>
   <data name="Update_ProfileInside" xml:space="preserve"><value>V0tr3 pr0f1l 53 tr0uv3 d4n5 l3 d05513r d3 l’4ppl1c4t10n. D3pl4c3z-l3 h0r5 d3 c3 d05513r 3t 4d4pt3z D0CKP4D_PR0F1L3_D1R 4v4nt l4 m153 4 j0ur.</value></data>
   <data name="Update_CloseDialogs" xml:space="preserve"><value>T3rm1n3z v0tr3 tr4v41l 3t f3rm3z l35 4utr35 f3n3tr35 d3 d14l0gu3 d3 D0ckP4d 4v4nt l4 m153 4 j0ur.</value></data>
@@ -2048,4 +2040,55 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
     <value>C0urb3 d35 60 d3rn13r35 53c0nd35 (5tyl3 H3r05)</value>
   </data>
+  <data name="Update_TitleUnavailable" xml:space="preserve"><value>1n5t4ll3r l4 d3rn13r3 v3r510n d3 D0ckP4d</value></data>
+  <data name="Update_TitleCurrent" xml:space="preserve"><value>D0ckP4d 35t 4 j0ur</value></data>
+  <data name="Update_TitleChecking" xml:space="preserve"><value>R3ch3rch3 d3 m1535 4 j0ur</value></data>
+  <data name="Update_TitleAvailable" xml:space="preserve"><value>L4 v3r510n {0} 35t d15p0n1bl3</value></data>
+  <data name="Update_TitleDownloading" xml:space="preserve"><value>T3l3ch4rg3m3nt d3 l4 {0}</value></data>
+  <data name="Update_TitleReady" xml:space="preserve"><value>N0uv3ll3 v3r510n pr3t3</value></data>
+  <data name="Update_TitlePreparing" xml:space="preserve"><value>Pr3p4r4t10n d3 l’1n5t4ll4t10n</value></data>
+  <data name="Update_TitleInstalling" xml:space="preserve"><value>1n5t4ll4t10n d3 l4 m153 4 j0ur</value></data>
+  <data name="Update_TitleFailed" xml:space="preserve"><value>L4 m153 4 j0ur n’4 p45 4b0ut1</value></data>
+  <data name="Update_StateUnavailable" xml:space="preserve"><value>1n5t4ll4t10n m4nu3ll3</value></data>
+  <data name="Update_StateIdle" xml:space="preserve"><value>M1535 4 j0ur</value></data>
+  <data name="Update_StateCurrent" xml:space="preserve"><value>4 j0ur</value></data>
+  <data name="Update_StateChecking" xml:space="preserve"><value>R3ch3rch3 3n c0ur5</value></data>
+  <data name="Update_StateAvailable" xml:space="preserve"><value>D15p0n1bl3</value></data>
+  <data name="Update_StateDownloading" xml:space="preserve"><value>T3l3ch4rg3m3nt</value></data>
+  <data name="Update_StateReady" xml:space="preserve"><value>Pr3t3 4 1n5t4ll3r</value></data>
+  <data name="Update_StatePreparing" xml:space="preserve"><value>Pr3p4r4t10n</value></data>
+  <data name="Update_StateInstalling" xml:space="preserve"><value>1n5t4ll4t10n</value></data>
+  <data name="Update_StateFailed" xml:space="preserve"><value>3ch3c</value></data>
+  <data name="Update_Later" xml:space="preserve"><value>Plu5 t4rd</value></data>
+  <data name="Update_Stop" xml:space="preserve"><value>4rr3t3r</value></data>
+  <data name="Update_DownloadInstall" xml:space="preserve"><value>T3l3ch4rg3r 3t 1n5t4ll3r</value></data>
+  <data name="Update_RestartInstall" xml:space="preserve"><value>R3d3m4rr3r 3t 1n5t4ll3r</value></data>
+  <data name="Update_ReadyHelp" xml:space="preserve"><value>T3l3ch4rg33. D0ckP4d 53 f3rm3 qu3lqu35 53c0nd35 p0ur l’1n5t4ll3r, pu15 53 r0uvr3.</value></data>
+  <data name="Update_Published" xml:space="preserve"><value>Publ133 l3 {0}</value></data>
+  <data name="Update_Size" xml:space="preserve"><value>{0:N1} M0</value></data>
+  <data name="Update_DownloadSize" xml:space="preserve"><value>{0:N1} M0 5ur {1:N1} M0</value></data>
+  <data name="Update_GitHub" xml:space="preserve"><value>V01r 5ur G1tHub ↗</value></data>
+  <data name="Update_Notes" xml:space="preserve"><value>N0uv34ut35</value></data>
+  <data name="Update_NeverChecked" xml:space="preserve"><value>P45 3nc0r3 v3r1f13</value></data>
+  <data name="Update_CheckedNow" xml:space="preserve"><value>V3r1f13 4 l’1n5t4nt</value></data>
+  <data name="Update_CheckedMinutes" xml:space="preserve"><value>V3r1f13 1l y 4 {0} m1n</value></data>
+  <data name="Update_CheckedHours" xml:space="preserve"><value>V3r1f13 1l y 4 {0} h</value></data>
+  <data name="Update_CheckedDays" xml:space="preserve"><value>V3r1f13 1l y 4 {0} {0:plural:jour|jours}</value></data>
+  <data name="Update_VersionOnly" xml:space="preserve"><value>v{0}</value></data>
+  <data name="Update_VersionTransition" xml:space="preserve"><value>v{0} → {1}</value></data>
+  <data name="Update_McpGroup" xml:space="preserve"><value>R3l415 MCP d35 535510n5 Cl4ud3</value></data>
+  <data name="Update_McpHelp" xml:space="preserve"><value>L35 535510n5 r35t3nt 0uv3rt35. 3ll35 p3rd3nt l’4cc35 4ux 0ut1l5 D0ckP4d ju5qu’4 l3ur r3c0nn3x10n (/mcp).</value></data>
+  <data name="Update_ProgramHelp" xml:space="preserve"><value>F3rm3r c3 pr0gr4mm3 f3rm3 535 f3n3tr35. M13ux v4ut l3 f3rm3r v0u5-m3m3, pu15 R33554y3r.</value></data>
+  <data name="Update_UnknownProgram" xml:space="preserve"><value>Pr0gr4mm3 1nc0nnu</value></data>
+  <data name="Update_ProcessDetail" xml:space="preserve"><value>d3pu15 {0} · P1D {1}</value></data>
+  <data name="Update_ProcessYesterday" xml:space="preserve"><value>h13r {0}</value></data>
+  <data name="Update_ProcessPid" xml:space="preserve"><value>P1D {0}</value></data>
+  <data name="Update_CloseCount" xml:space="preserve"><value>F3rm3r {0} {0:plural:programme|programmes} 3t 1n5t4ll3r</value></data>
+  <data name="Update_IncompleteState" xml:space="preserve"><value>F3rm3tur3 1nc0mpl3t3</value></data>
+  <data name="Update_IncompleteTitle" xml:space="preserve"><value>{0} {0:plural:programme ne s’est pas fermé|programmes ne se sont pas fermés}</value></data>
+  <data name="Update_IncompleteHelp" xml:space="preserve"><value>C35 pr0gr4mm35 ut1l153nt 3nc0r3 d35 f1ch13r5 d3 D0ckP4d. F3rm3z-l35 v0u5-m3m3 0u f0rc3z l3ur 4rr3t p0ur c0nt1nu3r.</value></data>
+  <data name="Update_OtherPrograms" xml:space="preserve"><value>3NC0R3 0UV3RT5, N0N C0CH35</value></data>
+  <data name="Update_ForceRisk" xml:space="preserve"><value>F0rc3r l’4rr3t c0up3 c35 pr0gr4mm35 54n5 l3ur l41553r f1n1r c3 qu’1l5 f0nt. D35 m0d1f1c4t10n5 n0n 3nr3g15tr335 p3uv3nt 3tr3 p3rdu35 3t un 4pp3l d’0ut1l 3n c0ur5 p3ut 3ch0u3r.</value></data>
+  <data name="Update_ForceInstall" xml:space="preserve"><value>F0rc3r l’4rr3t 3t 1n5t4ll3r</value></data>
+  <data name="Update_ExpandGroup" xml:space="preserve"><value>D3pl13r 0u r3pl13r c3 gr0up3</value></data>
 </root>

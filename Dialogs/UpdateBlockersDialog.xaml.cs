@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 using DockPad.Services;
 using DockPad.Services.Updates;
@@ -7,52 +8,84 @@ namespace DockPad;
 
 public partial class UpdateBlockersDialog : Window
 {
-    private readonly string _directory;
+    private readonly Func<Task<IReadOnlyList<UpdateBlocker>>> _refresh;
+    private readonly Func<UpdateBlocker, bool, Task<bool>> _close;
     private bool _working;
-    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    private bool _incomplete;
+    private readonly HashSet<(int Pid, long Started)> _remaining = [];
+    private IReadOnlyList<UpdateBlocker> _blockers = [];
+
+    // Les captures injectent aussi les opérations : aucun clic de fixture ne consulte les vrais processus.
+    public UpdateBlockersDialog(string directory, IReadOnlyList<UpdateBlocker> blockers,
+        Func<Task<IReadOnlyList<UpdateBlocker>>>? refresh = null,
+        Func<UpdateBlocker, bool, Task<bool>>? close = null, bool incomplete = false)
+    {
+        InitializeComponent();
+        _refresh = refresh ?? (() => Task.Run(() => UpdateBlockers.Find(directory)));
+        _close = close ?? UpdateBlockers.CloseAsync;
+        if (incomplete)
+            foreach (var blocker in blockers.Where(b => b.Selected)) _remaining.Add((blocker.Pid, blocker.Started));
+        ShowBlockers(blockers);
+        Loc.LanguageChanged += LanguageChanged;
+        Closed += (_, _) =>
+        {
+            Loc.LanguageChanged -= LanguageChanged;
+            foreach (var blocker in _blockers) blocker.PropertyChanged -= Blocker_PropertyChanged;
+        };
+    }
+    protected override void OnClosing(CancelEventArgs e)
     {
         if (_working) e.Cancel = true;
         base.OnClosing(e);
     }
-    public UpdateBlockersDialog(string directory, IReadOnlyList<UpdateBlocker> blockers)
-    {
-        InitializeComponent(); _directory = directory; ShowBlockers(blockers);
-    }
-    private IReadOnlyList<UpdateBlocker> _blockers = [];
+    private void LanguageChanged(object? sender, EventArgs e) => ShowBlockers(_blockers);
     private void ShowBlockers(IReadOnlyList<UpdateBlocker> blockers)
     {
         foreach (var blocker in _blockers) blocker.PropertyChanged -= Blocker_PropertyChanged;
         _blockers = blockers;
         foreach (var blocker in _blockers) blocker.PropertyChanged += Blocker_PropertyChanged;
-        Processes.ItemsSource = blockers;
-        SelectAll.IsChecked = UpdateBlockers.SelectionState(_blockers);
+        _remaining.IntersectWith(blockers.Select(b => (b.Pid, b.Started)));
+        _incomplete = _remaining.Count > 0;
+        Processes.ItemsSource = UpdateBlockerGroups.Group(blockers.Where(b => !_remaining.Contains((b.Pid, b.Started))).ToArray());
+        RemainingProcesses.ItemsSource = blockers.Where(b => _remaining.Contains((b.Pid, b.Started))).ToArray();
+        UpdateLabels();
     }
-    private void Blocker_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
-        SelectAll.IsChecked = UpdateBlockers.SelectionState(_blockers);
-    private void SelectAll_Click(object sender, RoutedEventArgs e)
+    private void Blocker_PropertyChanged(object? sender, PropertyChangedEventArgs e) => UpdateLabels();
+    private void UpdateLabels()
     {
-        UpdateBlockers.ToggleAll(_blockers);
-        SelectAll.IsChecked = UpdateBlockers.SelectionState(_blockers);
+        StateLabel.Text = Loc.T(_incomplete ? "Update_IncompleteState" : "Update_StatePreparing").ToUpper(Loc.Formatting);
+        Heading.Text = _incomplete ? Loc.F("Update_IncompleteTitle", _remaining.Count) : Loc.T("Update_BlockedTitle");
+        HelpText.Text = Loc.T(_incomplete ? "Update_IncompleteHelp" : "Update_BlockedHelp");
+        ForceWarning.Visibility = _incomplete ? Visibility.Visible : Visibility.Collapsed;
+        RemainingCard.Visibility = _incomplete ? Visibility.Visible : Visibility.Collapsed;
+        // Les programmes encore ouverts sans qu'on ait tenté de les fermer passent sous les restants, avec leur titre.
+        OtherHeading.Visibility = _incomplete && Processes.HasItems ? Visibility.Visible : Visibility.Collapsed;
+        Processes.Visibility = Visibility.Visible;
+        CloseButton.Content = _incomplete ? Loc.T("Update_ForceInstall") : Loc.F("Update_CloseCount", _blockers.Where(b => b.Selected).Count());
+        CloseButton.SetResourceReference(StyleProperty, _incomplete ? "DangerButton" : "PrimaryButton");
+        CloseButton.IsEnabled = !_working && (_incomplete || _blockers.Where(b => b.Selected).Any());
+        StateLabel.SetResourceReference(TextBlock.ForegroundProperty, _incomplete ? "Brush.Danger" : "Brush.TextLabel");
     }
     private async Task RefreshAsync()
     {
-        var blockers = await Task.Run(() => UpdateBlockers.Find(_directory));
-        if (blockers.Count == 0) { _working = false; DialogResult = true; return; }
+        var blockers = await _refresh();
+        if (blockers.Count == 0) { ShowBlockers([]); _working = false; DialogResult = true; return; }
+        // Une actualisation préserve le choix pour une même identité, pas pour un PID réutilisé.
+        var choices = _blockers.ToDictionary(b => (b.Pid, b.Started), b => b.Selected);
+        foreach (var blocker in blockers)
+            if (choices.TryGetValue((blocker.Pid, blocker.Started), out var selected)) blocker.Selected = selected;
         ShowBlockers(blockers);
     }
     private async void Retry_Click(object sender, RoutedEventArgs e) => await RunAsync(RefreshAsync);
     private async void CloseSelected_Click(object sender, RoutedEventArgs e)
     {
-        var selected = Processes.Items.Cast<UpdateBlocker>().Where(p => p.Selected).ToArray();
+        var selected = _blockers.Where(b => _incomplete ? _remaining.Contains((b.Pid, b.Started)) : b.Selected).ToArray();
         if (selected.Length == 0) return;
         await RunAsync(async () =>
         {
-            var remaining = new List<UpdateBlocker>();
-            foreach (var item in selected)
-                if (!await UpdateBlockers.CloseAsync(item, force: false)) remaining.Add(item);
-            if (remaining.Count > 0 && AppDialog.Confirm(Loc.F("Update_ForcePrompt",
-                    string.Join(Environment.NewLine, remaining.Select(p => p.Label))), Loc.T("Update_BlockedTitle"), this))
-                foreach (var item in remaining) await UpdateBlockers.CloseAsync(item, force: true);
+            // Le contrôle d'identité est refait par CloseAsync pour CHAQUE arrêt, y compris forcé.
+            await Task.WhenAll(selected.Select(item => _close(item, _incomplete)));
+            foreach (var blocker in selected) _remaining.Add((blocker.Pid, blocker.Started));
             await RefreshAsync();
         });
     }
@@ -60,9 +93,15 @@ public partial class UpdateBlockersDialog : Window
     {
         if (_working) return;
         _working = true;
-        RetryButton.IsEnabled = CloseButton.IsEnabled = SelectAll.IsEnabled = false; ErrorText.Text = "";
+        RetryButton.IsEnabled = CloseButton.IsEnabled = PostponeButton.IsEnabled = Processes.IsEnabled = false;
+        ErrorText.Text = "";
         try { await work(); }
         catch (Exception ex) { LogService.Warn(ex, "Cannot resolve update locks"); ErrorText.Text = Loc.T("Update_LockError"); }
-        finally { _working = false; RetryButton.IsEnabled = CloseButton.IsEnabled = SelectAll.IsEnabled = true; }
+        finally
+        {
+            _working = false;
+            RetryButton.IsEnabled = PostponeButton.IsEnabled = Processes.IsEnabled = true;
+            UpdateLabels();
+        }
     }
 }

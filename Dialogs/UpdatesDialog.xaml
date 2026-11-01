@@ -2,31 +2,98 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:DockPad.Services.Localization;assembly=DockPad.Core"
-        Title="{loc:T Update_Title}" Width="580" Height="440" MinWidth="480" MinHeight="360"
+        Title="{loc:T Update_Title}" Width="580" MinWidth="580"
+        MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
         WindowStartupLocation="CenterOwner" Background="{DynamicResource Brush.Surface}" FontFamily="Segoe UI">
+    <Window.Style><Style TargetType="Window">
+        <Setter Property="Height" Value="540"/>
+        <Setter Property="MinHeight" Value="430"/>
+        <Style.Triggers><DataTrigger Binding="{Binding HasRelease}" Value="False">
+            <Setter Property="Height" Value="350"/>
+            <Setter Property="MinHeight" Value="330"/>
+        </DataTrigger></Style.Triggers>
+    </Style></Window.Style>
     <Grid TextElement.Foreground="{DynamicResource Brush.Text}">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <StackPanel Margin="20,18,20,12">
-            <TextBlock Text="{loc:T Update_Title}" FontSize="16" FontWeight="SemiBold"/>
-            <TextBlock Text="{Binding CurrentVersion}" Foreground="{DynamicResource Brush.TextMuted}" Margin="0,6,0,12"/>
-            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
-            <ProgressBar Height="5" Minimum="0" Maximum="100" Value="{Binding Progress, Mode=OneWay}" Margin="0,12,0,12"
-                         IsIndeterminate="{Binding IsIndeterminate, Mode=OneWay}"
-                         Visibility="{Binding ShowsProgress, Converter={StaticResource BoolToVisibilityConverter}}"
-                         AutomationProperties.Name="{loc:T Update_Progress}"/>
-            <CheckBox x:Name="Automatic" Content="{loc:T Update_Automatic}" Click="Automatic_Click" Margin="0,8,0,0"/>
-            <Button Content="{loc:T Update_DownloadLatest}" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left" Margin="0,12,0,0"
-                    Visibility="{Binding IsUnavailable, Converter={StaticResource BoolToVisibilityConverter}}" Click="DownloadLatest_Click"/>
+        <StackPanel Margin="20,18,20,14">
+            <TextBlock Text="{Binding StateLabel}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6">
+                <TextBlock.Style><Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource Brush.TextLabel}"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding State}" Value="Failed">
+                        <Setter Property="Foreground" Value="{DynamicResource Brush.Danger}"/>
+                    </DataTrigger></Style.Triggers>
+                </Style></TextBlock.Style>
+            </TextBlock>
+            <TextBlock Text="{Binding Heading}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            <DockPanel Margin="0,10,0,0" LastChildFill="False">
+                <Button DockPanel.Dock="Right" Content="{loc:T Update_GitHub}" Click="GitHub_Click" FontSize="12" Padding="0,3" Margin="12,0,0,0">
+                    <Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                        <Setter Property="Foreground" Value="{DynamicResource Brush.AccentText}"/>
+                        <Setter Property="Background" Value="{DynamicResource Brush.Surface}"/>
+                    </Style></Button.Style>
+                </Button>
+                <WrapPanel VerticalAlignment="Center">
+                    <Border Background="{DynamicResource Brush.SurfaceMuted}" CornerRadius="10" Padding="8,2">
+                        <TextBlock Text="{Binding CurrentVersion}" FontFamily="Consolas" Foreground="{DynamicResource Brush.TextLabel}"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding HasRelease, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="→" Margin="8,0" VerticalAlignment="Center" Foreground="{DynamicResource Brush.TextDetail}"/>
+                        <Border Background="{DynamicResource Brush.AccentSelected}" CornerRadius="10" Padding="8,2">
+                            <TextBlock Text="{Binding NewVersion}" FontFamily="Consolas" FontWeight="SemiBold" Foreground="{DynamicResource Brush.AccentText}"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="{Binding ReleaseMetadata}" Margin="8,2,0,0" Foreground="{DynamicResource Brush.TextSubtle}" TextWrapping="Wrap"/>
+                </WrapPanel>
+            </DockPanel>
+            <Border x:Name="StatusBanner" Margin="0,14,0,0" Padding="12,10" CornerRadius="6" BorderThickness="1"
+                    AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{Binding Status}">
+                <Border.Style><Style TargetType="Border">
+                    <Setter Property="Background" Value="{DynamicResource Brush.SurfaceCard}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding State}" Value="Ready">
+                            <Setter Property="Background" Value="{DynamicResource Brush.AccentTint}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.AccentBorderSoft}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding State}" Value="Failed">
+                            <Setter Property="Background" Value="{DynamicResource Brush.DangerSurface}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.DangerBorder}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style></Border.Style>
+                <TextBlock Text="{Binding Status}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+            </Border>
+            <StackPanel Visibility="{Binding ShowsProgress, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,12,0,0">
+                <ProgressBar Height="6" Minimum="0" Maximum="100" Value="{Binding Progress, Mode=OneWay}"
+                             Foreground="{DynamicResource Brush.Accent}" Background="{DynamicResource Brush.Border}"
+                             IsIndeterminate="{Binding IsIndeterminate, Mode=OneWay}" AutomationProperties.Name="{loc:T Update_Progress}"/>
+                <TextBlock Text="{Binding DownloadSize}" Margin="0,5,0,0" FontSize="12" Foreground="{DynamicResource Brush.TextLabel}"/>
+            </StackPanel>
         </StackPanel>
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="20,0,20,16">
-            <TextBlock Text="{Binding Notes}" TextWrapping="Wrap"/>
-        </ScrollViewer>
-        <Border Grid.Row="2" Style="{StaticResource DialogFooter}">
-            <WrapPanel HorizontalAlignment="Right">
-                <Button Content="{loc:T Update_Check}" Style="{StaticResource SecondaryButton}" IsEnabled="{Binding CanCheck}" Click="Check_Click" Margin="0,0,8,6"/>
-                <Button x:Name="InstallButton" Content="{loc:T Update_Install}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanInstall}" Click="Install_Click" Margin="0,0,8,6"/>
-                <Button Content="{loc:T Common_Cancel}" Style="{StaticResource SecondaryButton}" Click="Cancel_Click" Margin="0,0,0,6"/>
-            </WrapPanel>
+        <Border Grid.Row="1" Margin="20,0,20,16" Padding="16,12" CornerRadius="6"
+                Background="{DynamicResource Brush.SurfaceCard}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                Visibility="{Binding HasRelease, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <TextBlock Text="{loc:T Update_Notes}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextLabel}" Margin="0,0,0,8"/>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="NotesBlocks"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource DialogFooter}" Padding="20,12">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                    <CheckBox x:Name="Automatic" Content="{loc:T Update_Automatic}" Click="Automatic_Click" FontSize="12"/>
+                    <TextBlock x:Name="LastChecked" Text="{Binding LastChecked}" FontSize="11" Foreground="{DynamicResource Brush.TextSubtle}" Margin="22,3,0,0"/>
+                </StackPanel>
+                <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                    <Button Content="{Binding SecondaryLabel}" Style="{StaticResource SecondaryButton}" IsEnabled="{Binding SecondaryEnabled}" Click="Secondary_Click" Margin="0,0,8,0"/>
+                    <Button x:Name="InstallButton" Content="{Binding PrimaryLabel}" Style="{StaticResource PrimaryButton}"
+                            IsEnabled="{Binding PrimaryEnabled}" Click="Primary_Click"/>
+                </WrapPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>

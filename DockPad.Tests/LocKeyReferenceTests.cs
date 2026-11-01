@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using DockPad.Services.Localization;
+using DockPad.Services.Updates;
 
 namespace DockPad.Tests;
 
@@ -98,6 +99,14 @@ public class LocKeyReferenceTests
     /// </summary>
     private static IEnumerable<(string File, string Key)> Cited()
     {
+        // Les décisions d'affichage portent leurs clés jusqu'au rendu, au lieu d'appeler Loc directement.
+        foreach (var state in Enum.GetValues<UpdateState>())
+        foreach (var hasChecked in new[] { false, true })
+        {
+            var presentation = UpdatePresentation.For(state, hasChecked);
+            foreach (var key in new[] { presentation.TitleKey, presentation.LabelKey, presentation.SecondaryKey, presentation.PrimaryKey })
+                yield return (nameof(UpdatePresentation), key);
+        }
         foreach (var (file, text) in Sources())
         {
             foreach (Match call in CallStart.Matches(text))

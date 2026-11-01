@@ -19,7 +19,7 @@ public interface IUpdateBackend
     void Apply(UpdateRelease release);
 }
 
-public sealed record UpdateRelease(string Version, string Notes, object Package);
+public sealed record UpdateRelease(string Version, string Notes, object Package, long? Size = null);
 
 public sealed class VelopackBackend : IUpdateBackend
 {
@@ -33,7 +33,7 @@ public sealed class VelopackBackend : IUpdateBackend
     {
         var result = await _manager.CheckForUpdatesAsync().ConfigureAwait(false);
         return result is null ? null : new(result.TargetFullRelease.Version.ToString(),
-            result.TargetFullRelease.NotesMarkdown ?? "", result);
+            result.TargetFullRelease.NotesMarkdown ?? "", result, result.TargetFullRelease.Size);
     }
     public Task DownloadAsync(UpdateRelease release, Action<int> progress, CancellationToken token) =>
         _manager.DownloadUpdatesAsync((UpdateInfo)release.Package, progress, token);
@@ -46,8 +46,10 @@ public sealed class VelopackBackend : IUpdateBackend
 public sealed class UpdateService : INotifyPropertyChanged, IDisposable
 {
     private static UpdateService? _current;
-    public static UpdateService Current => _current ??= new(new VelopackBackend());
+    public static UpdateService Current => _current ??= new(new VelopackBackend(),
+        recordCheck: now => AppSettingsService.Update(s => s.LastUpdateCheck = now));
     private readonly IUpdateBackend _backend;
+    private readonly Action<DateTimeOffset>? _recordCheck;
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _download;
     private Task? _polling;
@@ -69,22 +71,52 @@ public sealed class UpdateService : INotifyPropertyChanged, IDisposable
     public bool IsUnavailable => State == UpdateState.Unavailable;
     public string Notes => Release?.Notes ?? "";
     public string CurrentVersion => _backend.CurrentVersion;
+    public string VersionIndicator => HasRelease
+        ? Loc.F("Update_VersionTransition", CurrentVersion.TrimStart('v'), Release?.Version)
+        : Loc.F("Update_VersionOnly", CurrentVersion.TrimStart('v'));
+    public UpdatePresentation Presentation => UpdatePresentation.For(State, _checked);
+    public string Heading => Loc.F(Presentation.TitleKey, Release?.Version);
+    public string StateLabel => Loc.T(Presentation.LabelKey).ToUpper(Loc.Formatting);
+    public string SecondaryLabel => Loc.T(Presentation.SecondaryKey);
+    public string PrimaryLabel => Loc.T(Presentation.PrimaryKey);
+    public bool SecondaryEnabled => Presentation.Secondary != UpdateAction.None;
+    public bool PrimaryEnabled => Presentation.PrimaryEnabled;
+    public bool PrimaryAccent => Presentation.PrimaryAccent;
+    public string NewVersion => Release?.Version ?? "";
+    public UpdateNotes ParsedNotes { get; private set; } = UpdateNotes.Parse("");
+    public string ReleaseMetadata => string.Join(" · ", new[] {
+        ParsedNotes.Date is { } date ? Loc.F("Update_Published", date.ToString("d", Loc.Formatting)) : null,
+        Release?.Size is > 0 ? Loc.F("Update_Size", Release.Size.Value / 1_000_000d) : null,
+    }.Where(value => value != null));
+    public string DownloadSize => Release?.Size is > 0 && IsDownloading
+        ? Loc.F("Update_DownloadSize", Release.Size.Value * (Progress / 100d) / 1_000_000d, Release.Size.Value / 1_000_000d) : "";
+    public string LastChecked => FormatLastChecked(AppSettingsService.Current.LastUpdateCheck, DateTimeOffset.UtcNow);
+    public static string FormatLastChecked(DateTimeOffset lastCheck, DateTimeOffset now)
+    {
+        if (lastCheck == default) return Loc.T("Update_NeverChecked");
+        var age = now - lastCheck;
+        if (age.TotalMinutes < 1) return Loc.T("Update_CheckedNow");
+        if (age.TotalHours < 1) return Loc.F("Update_CheckedMinutes", (int)age.TotalMinutes);
+        if (age.TotalDays < 1) return Loc.F("Update_CheckedHours", (int)age.TotalHours);
+        return Loc.F("Update_CheckedDays", (int)age.TotalDays);
+    }
     public string ContentDirectory => _backend.ContentDirectory;
     public string Status => State switch
     {
         UpdateState.Unavailable => Loc.T("Update_Unavailable"),
         UpdateState.Checking => Loc.T("Update_Checking"),
-        UpdateState.Available => Loc.F("Update_Available", Release!.Version),
+        UpdateState.Available => Loc.F("Update_Available", Release?.Version),
         UpdateState.Downloading => Loc.F("Update_Downloading", Progress),
-        UpdateState.Ready => Loc.T("Update_Ready"),
+        UpdateState.Ready => Loc.T("Update_ReadyHelp"),
         UpdateState.Preparing => Loc.T("Update_Preparing"),
         UpdateState.Installing => Loc.T("Update_Installing"),
         UpdateState.Failed => Loc.T("Update_Failed"),
         _ => Loc.T(_checked ? "Update_UpToDate" : "Update_NotChecked"),
     };
-    public UpdateService(IUpdateBackend backend)
+    public UpdateService(IUpdateBackend backend, Action<DateTimeOffset>? recordCheck = null)
     {
         _backend = backend;
+        _recordCheck = recordCheck;
         State = backend.IsInstalled ? UpdateState.Idle : UpdateState.Unavailable;
         Loc.LanguageChanged += LanguageChanged;
     }
@@ -96,7 +128,9 @@ public sealed class UpdateService : INotifyPropertyChanged, IDisposable
         State = UpdateState.Checking; Notify();
         try
         {
+            _recordCheck?.Invoke(DateTimeOffset.UtcNow);
             Release = await Task.Run(_backend.CheckAsync);
+            ParsedNotes = UpdateNotes.Parse(Release?.Notes ?? "");
             _checked = true;
             State = Release is null ? UpdateState.Idle : UpdateState.Available;
         }
@@ -106,13 +140,20 @@ public sealed class UpdateService : INotifyPropertyChanged, IDisposable
     public async Task<bool> DownloadAsync()
     {
         if (State == UpdateState.Ready) return true;
-        if (!CanInstall) return false;
+        var release = Release;
+        if (!CanInstall || release == null) return false;
         using var download = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         _download = download; State = UpdateState.Downloading; Progress = 0; Notify();
-        var progress = new Progress<int>(p => { Progress = Math.Clamp(p, 0, 100); Notify(); });
+        var progress = new Progress<int>(p =>
+        {
+            if (State != UpdateState.Downloading || _download != download) return;
+            Progress = Math.Clamp(p, 0, 100); Notify();
+        });
         try
         {
-            await Task.Run(() => _backend.DownloadAsync(Release!, ((IProgress<int>)progress).Report, download.Token));
+            await Task.Run(() => _backend.DownloadAsync(release, ((IProgress<int>)progress).Report, download.Token));
+            download.Token.ThrowIfCancellationRequested();
+            Progress = 100;
             State = UpdateState.Ready;
         }
         catch (OperationCanceledException) { State = UpdateState.Available; }
@@ -161,7 +202,6 @@ public sealed class UpdateService : INotifyPropertyChanged, IDisposable
                     var now = DateTimeOffset.UtcNow;
                     if (now - AppSettingsService.Current.LastUpdateCheck >= TimeSpan.FromHours(6))
                     {
-                        AppSettingsService.Update(s => s.LastUpdateCheck = now);
                         await CheckAsync();
                     }
                 }

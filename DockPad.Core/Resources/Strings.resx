@@ -1505,9 +1505,7 @@ This cannot be undone.</value>
   <data name="Update_Checking" xml:space="preserve"><value>Checking for updates…</value></data>
   <data name="Update_Available" xml:space="preserve"><value>Version {0} is available.</value></data>
   <data name="Update_Downloading" xml:space="preserve"><value>Downloading… {0}%</value></data>
-  <data name="Update_Ready" xml:space="preserve"><value>Update downloaded. Ready to restart.</value></data>
   <data name="Update_Preparing" xml:space="preserve"><value>Preparing the update…</value></data>
-  <data name="Update_SelectAll" xml:space="preserve"><value>Select all</value></data>
   <data name="Update_Installing" xml:space="preserve"><value>Closing DockPad to install the update…</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>The update could not be completed. Check your connection and try again. DockPad remains usable.</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>You have the latest version.</value></data>
@@ -1515,16 +1513,10 @@ This cannot be undone.</value>
   <data name="Update_Progress" xml:space="preserve"><value>Update download progress</value></data>
   <data name="Update_Automatic" xml:space="preserve"><value>Check for updates automatically</value></data>
   <data name="Update_Check" xml:space="preserve"><value>Check for updates</value></data>
-  <data name="Update_Install" xml:space="preserve"><value>Update and restart</value></data>
   <data name="Update_BlockedTitle" xml:space="preserve"><value>Close apps to continue</value></data>
   <data name="Update_BlockedHelp" xml:space="preserve"><value>These processes are using DockPad files. Select those you want to close. Closing an MCP or AI session may interrupt work in progress.</value></data>
   <data name="Update_Retry" xml:space="preserve"><value>Retry</value></data>
-  <data name="Update_CloseSelected" xml:space="preserve"><value>Close selected and continue</value></data>
   <data name="Update_Postpone" xml:space="preserve"><value>Postpone</value></data>
-  <data name="Update_ForcePrompt" xml:space="preserve"><value>These processes did not close:
-{0}
-
-Force them to stop? Unsaved work may be lost.</value></data>
   <data name="Update_LockError" xml:space="preserve"><value>Some files are still in use or access was denied. Close the listed apps yourself, then retry. You can also postpone the update.</value></data>
   <data name="Update_ProfileInside" xml:space="preserve"><value>Your profile is inside the application folder. Move it outside that folder and update DOCKPAD_PROFILE_DIR before updating.</value></data>
   <data name="Update_CloseDialogs" xml:space="preserve"><value>Finish your work and close the other DockPad dialogs before updating.</value></data>
@@ -2048,4 +2040,55 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
     <value>Curve of the last 60 seconds (Hero style)</value>
   </data>
+  <data name="Update_TitleUnavailable" xml:space="preserve"><value>Install the latest DockPad</value></data>
+  <data name="Update_TitleCurrent" xml:space="preserve"><value>DockPad is up to date</value></data>
+  <data name="Update_TitleChecking" xml:space="preserve"><value>Checking for updates</value></data>
+  <data name="Update_TitleAvailable" xml:space="preserve"><value>Version {0} is available</value></data>
+  <data name="Update_TitleDownloading" xml:space="preserve"><value>Downloading {0}</value></data>
+  <data name="Update_TitleReady" xml:space="preserve"><value>New version ready</value></data>
+  <data name="Update_TitlePreparing" xml:space="preserve"><value>Preparing the installation</value></data>
+  <data name="Update_TitleInstalling" xml:space="preserve"><value>Installing the update</value></data>
+  <data name="Update_TitleFailed" xml:space="preserve"><value>The update did not complete</value></data>
+  <data name="Update_StateUnavailable" xml:space="preserve"><value>Manual installation</value></data>
+  <data name="Update_StateIdle" xml:space="preserve"><value>Updates</value></data>
+  <data name="Update_StateCurrent" xml:space="preserve"><value>Up to date</value></data>
+  <data name="Update_StateChecking" xml:space="preserve"><value>Checking</value></data>
+  <data name="Update_StateAvailable" xml:space="preserve"><value>Available</value></data>
+  <data name="Update_StateDownloading" xml:space="preserve"><value>Downloading</value></data>
+  <data name="Update_StateReady" xml:space="preserve"><value>Ready to install</value></data>
+  <data name="Update_StatePreparing" xml:space="preserve"><value>Preparing</value></data>
+  <data name="Update_StateInstalling" xml:space="preserve"><value>Installing</value></data>
+  <data name="Update_StateFailed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Update_Later" xml:space="preserve"><value>Later</value></data>
+  <data name="Update_Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Update_DownloadInstall" xml:space="preserve"><value>Download and install</value></data>
+  <data name="Update_RestartInstall" xml:space="preserve"><value>Restart and install</value></data>
+  <data name="Update_ReadyHelp" xml:space="preserve"><value>Downloaded. DockPad will close briefly to install it, then reopen.</value></data>
+  <data name="Update_Published" xml:space="preserve"><value>Released on {0}</value></data>
+  <data name="Update_Size" xml:space="preserve"><value>{0:N1} MB</value></data>
+  <data name="Update_DownloadSize" xml:space="preserve"><value>{0:N1} MB of {1:N1} MB</value></data>
+  <data name="Update_GitHub" xml:space="preserve"><value>View on GitHub ↗</value></data>
+  <data name="Update_Notes" xml:space="preserve"><value>What’s new</value></data>
+  <data name="Update_NeverChecked" xml:space="preserve"><value>Not checked yet</value></data>
+  <data name="Update_CheckedNow" xml:space="preserve"><value>Checked just now</value></data>
+  <data name="Update_CheckedMinutes" xml:space="preserve"><value>Checked {0} min ago</value></data>
+  <data name="Update_CheckedHours" xml:space="preserve"><value>Checked {0} h ago</value></data>
+  <data name="Update_CheckedDays" xml:space="preserve"><value>Checked {0} {0:plural:day|days} ago</value></data>
+  <data name="Update_VersionOnly" xml:space="preserve"><value>v{0}</value></data>
+  <data name="Update_VersionTransition" xml:space="preserve"><value>v{0} → {1}</value></data>
+  <data name="Update_McpGroup" xml:space="preserve"><value>MCP relays for Claude sessions</value></data>
+  <data name="Update_McpHelp" xml:space="preserve"><value>Sessions stay open. They lose access to DockPad tools until they reconnect (/mcp).</value></data>
+  <data name="Update_ProgramHelp" xml:space="preserve"><value>Closing this program closes its windows. It is better to close it yourself, then Retry.</value></data>
+  <data name="Update_UnknownProgram" xml:space="preserve"><value>Unknown program</value></data>
+  <data name="Update_ProcessDetail" xml:space="preserve"><value>since {0} · PID {1}</value></data>
+  <data name="Update_ProcessYesterday" xml:space="preserve"><value>yesterday {0}</value></data>
+  <data name="Update_ProcessPid" xml:space="preserve"><value>PID {0}</value></data>
+  <data name="Update_CloseCount" xml:space="preserve"><value>Close {0} {0:plural:program|programs} and install</value></data>
+  <data name="Update_IncompleteState" xml:space="preserve"><value>Incomplete closure</value></data>
+  <data name="Update_IncompleteTitle" xml:space="preserve"><value>{0} {0:plural:program did|programs did} not close</value></data>
+  <data name="Update_IncompleteHelp" xml:space="preserve"><value>These programs still use DockPad files. Close them yourself or force them to stop to continue.</value></data>
+  <data name="Update_OtherPrograms" xml:space="preserve"><value>STILL OPEN, NOT SELECTED</value></data>
+  <data name="Update_ForceRisk" xml:space="preserve"><value>Forcing a stop interrupts these programs without letting them finish their work. Unsaved changes may be lost and a tool call in progress may fail.</value></data>
+  <data name="Update_ForceInstall" xml:space="preserve"><value>Force stop and install</value></data>
+  <data name="Update_ExpandGroup" xml:space="preserve"><value>Expand or collapse this group</value></data>
 </root>
