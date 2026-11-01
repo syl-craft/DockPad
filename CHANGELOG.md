@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.33.0] — 2026-11-01
+
+### Nouveautés
+
+- **Mises à jour : fenêtre refaite.** Le titre, le bandeau et les boutons suivent l'état (à jour, nouvelle version, téléchargement, prête, échec). Les pastilles « version installée → nouvelle version » mènent à la release GitHub, et les notes s'affichent mises en forme, sans `#` ni `**`. Le pied de fenêtre donne l'heure de la dernière recherche automatique.
+- **Nouvelle version en bas de la fenêtre principale** : quand une mise à jour est détectée, le numéro de version en bas à gauche devient un bouton « v1.32.0 → 1.33.0 » qui ouvre la fenêtre Mises à jour. Le bouton ↻ du haut disparaît.
+- **Programmes qui bloquent la mise à jour** : regroupés par programme, avec le nom du programme qui a lancé chaque relais MCP de DockPad (Claude Code, Claude Desktop…). Les relais, cochés par défaut, s'arrêtent sans fenêtre à fermer. Si un programme refuse de se fermer, la même fenêtre propose « Forcer l'arrêt et installer », sans seconde boîte de dialogue.
+- **Barre Usage IA, styles Réservoir et Anneaux : jauges cliquables.** Un clic sur une petite jauge l'affiche en grand : une fenêtre de quota, le processeur ou la mémoire. Le choix tient jusqu'au prochain changement d'IA mise en avant et suspend le mode Auto. Dans le style Anneaux, un clic sur le double anneau du bas affiche le processeur, puis la mémoire, puis revient à la fenêtre la plus consommée. Un clic sur le logo de la grande jauge ouvre la page de consommation de l'IA, quand elle en a une (Claude, Codex).
+- **Couleur de bande des tuiles.** Une nouvelle tuile dossier prend automatiquement la couleur de l'onglet de son terminal, tirée du nom du dossier : le même dossier a la même couleur sur sa tuile et dans son onglet Windows Terminal. La fenêtre de la tuile permet de choisir une autre couleur ou de revenir à celle du type. Les outils MCP `dockpad_shortcut_add` et `dockpad_shortcut_update` acceptent `color` (`#RRGGBB`), et `dockpad_grid_get` la renvoie.
+
 ## [1.32.0] — 2026-11-01
 
 ### Nouveautés
