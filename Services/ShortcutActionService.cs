@@ -289,6 +289,7 @@ public static class ShortcutActionService
             .OrderBy(s => s.Page).ThenBy(s => s.Row).ThenBy(s => s.Col)
             .Select(s => new { page = s.Page, row = s.Row, col = s.Col, name = s.Name,
                                type = s.Type.ToString(), command = s.Command,
+                               color = s.Color,
                                iconPath = s.IconPath,
                                iconProfilePath = s.IconProfilePath, layout = s.Layout.ToString(),
                                groupColor = s.IsGroup ? s.GroupColor : null,
@@ -329,6 +330,8 @@ public static class ShortcutActionService
 
             if (string.IsNullOrWhiteSpace(it.Name)) { errors.Add($"{id} : nom requis."); continue; }
             if (string.IsNullOrWhiteSpace(it.Command)) { errors.Add($"{id} : commande requise."); continue; }
+            if (it.Color is { Length: > 0 } && !TileGroupService.IsValidColor(it.Color))
+            { errors.Add($"{id} : {Loc.T("Shortcut_Err_BandColor")}"); continue; }
             if (it.Row.HasValue != it.Col.HasValue) { errors.Add($"{id} : row et col vont ensemble."); continue; }
 
             int page = it.Page ?? 0;
@@ -391,6 +394,7 @@ public static class ShortcutActionService
     {
         Page = page, Row = row, Col = col, Slot = slot,
         Name = it.Name, Type = it.Type, Command = it.Command,
+        Color = ShortcutColor.ForNewShortcut(it.Type, it.Command, it.Color),
         IconPath = it.IconPath ?? "",
         Terminal = it.Terminal, ProcessSwitch = it.ProcessSwitch,
     };
@@ -424,6 +428,9 @@ public static class ShortcutActionService
 
         if (s.IsGroup) return ActionResult.Fail(Loc.T("Group_EditChild"));
 
+        if (changes.Color is { Length: > 0 } && !TileGroupService.IsValidColor(changes.Color))
+            return ActionResult.Fail(Loc.T("Shortcut_Err_BandColor"));
+
         if (changes.Name is { } n)
         {
             if (string.IsNullOrWhiteSpace(n)) return ActionResult.Fail("Le nom ne peut pas être vide.");
@@ -437,6 +444,7 @@ public static class ShortcutActionService
         }
         if (changes.Terminal is { } term) s.Terminal = term;
         if (changes.ProcessSwitch is { } ps) s.ProcessSwitch = ps;
+        if (changes.Color != null) s.Color = changes.Color.ToUpperInvariant();
         // IconPath appliqué par l'enveloppe (copie profil)
 
         return ActionResult.Success(new { s.Name, page = s.Page, row = s.Row, col = s.Col });

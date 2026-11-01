@@ -7,6 +7,8 @@ public class ShortcutUpdate
     public ShortcutType? Type { get; set; }
     public string? Command { get; set; }
     public string? IconPath { get; set; }
+    /// <summary>#RRGGBB ; null = inchangée, vide = couleur du type.</summary>
+    public string? Color { get; set; }
     public TerminalConfig? Terminal { get; set; }
     public ProcessSwitchConfig? ProcessSwitch { get; set; }
 }

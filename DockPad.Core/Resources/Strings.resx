@@ -2048,4 +2048,16 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
     <value>Curve of the last 60 seconds (Hero style)</value>
   </data>
+  <data name="Shortcut_BandColor" xml:space="preserve">
+    <value>Tile band color</value>
+  </data>
+  <data name="Shortcut_BandColor_Type" xml:space="preserve">
+    <value>Type color</value>
+  </data>
+  <data name="Shortcut_BandColor_Hint" xml:space="preserve">
+    <value>#RRGGBB. New folder tiles use the same color as their terminal tab.</value>
+  </data>
+  <data name="Shortcut_Err_BandColor" xml:space="preserve">
+    <value>Invalid band color: use #RRGGBB or an empty value for the type color.</value>
+  </data>
 </root>

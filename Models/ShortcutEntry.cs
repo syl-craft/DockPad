@@ -34,6 +34,16 @@ public class ShortcutEntry
     public string Name { get; set; } = "";
     public ShortcutType Type { get; set; } = ShortcutType.RunCommand;
     public string Command { get; set; } = "";
+    private string? _color;
+
+    /// <summary>Couleur de bande ; absente ou vide, la tuile garde celle de son type.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Color
+    {
+        get => _color;
+        set => _color = string.IsNullOrEmpty(value) ? null : value;
+    }
+
     public string IconPath { get; set; } = "";
 
     /// <summary>Chemin dans le dossier de profil (%APPDATA%\DockPad\icons\). Prioritaire pour l'affichage.</summary>

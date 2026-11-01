@@ -12,6 +12,8 @@ public class ShortcutAddItem
     /// <summary>Sous-case d'une tuile groupée déjà présente en (page, row, col). null = la case entière.</summary>
     public int? Slot { get; set; }
     public string? IconPath { get; set; }
+    /// <summary>#RRGGBB ; null = automatique pour OpenFolder, vide = couleur du type.</summary>
+    public string? Color { get; set; }
     public TerminalConfig? Terminal { get; set; }
     public ProcessSwitchConfig? ProcessSwitch { get; set; }
 }

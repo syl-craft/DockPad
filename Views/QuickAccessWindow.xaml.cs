@@ -849,7 +849,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         Icon = IconStoreService.LoadImage(
             IconStoreService.ResolveProfilePath(entry.IconProfilePath) ?? entry.IconPath),
         Tooltip = $"[{TypeLabel(entry.Type)}] {entry.Command}",
-        Band = TypeBandBrush(entry.Type),
+        Band = EntryBandBrush(entry),
     };
 
     /// <summary>Cellule portée par un contrôle du gabarit, ou <c>null</c> si l'objet n'en vient pas.</summary>
@@ -1084,6 +1084,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         {
             Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
             Page = CurrentPage, Row = dlg.Entry.Row, Col = dlg.Entry.Col,
+            Color = dlg.Entry.Color ?? "",
             IconPath = string.IsNullOrEmpty(dlg.Entry.IconPath) ? null : dlg.Entry.IconPath,
             Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
         };
@@ -1104,6 +1105,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         {
             Name = dlg.Entry.Name, Type = dlg.Entry.Type, Command = dlg.Entry.Command,
             IconPath = dlg.Entry.IconPath, Terminal = dlg.Entry.Terminal, ProcessSwitch = dlg.Entry.ProcessSwitch,
+            Color = dlg.Entry.Color ?? "",
         }, Files, entry.Slot);
         if (!r.Ok) { AppDialog.Error(r.Error!, owner: this); return; }
         PopulateGrid();
@@ -1322,7 +1324,9 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     private void TileHover_Enter(object sender, MouseEventArgs e)
     {
-        if (sender is not Button { Tag: SolidColorBrush band } btn) return;
+        if (sender is not Button { DataContext: TileCell { Entry: { } entry } } btn) return;
+        // Le choix de bande ne recolore ni le fond de survol ni le contour.
+        var band = TypeBandBrush(entry.Type);
         btn.Background   = HoverBrushes.TryGetValue(band, out var hover) ? hover : btn.Background;
         btn.BorderBrush  = band;
     }
@@ -1364,7 +1368,12 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             .ToDictionary(b => b, b => Frozen(Color.FromArgb(60, b.Color.R, b.Color.G, b.Color.B)));
 
 
-    private static SolidColorBrush TypeBandBrush(ShortcutType t) => t switch
+    private static SolidColorBrush EntryBandBrush(ShortcutEntry entry) =>
+        entry.Color is { } color && TileGroupService.IsValidColor(color)
+            ? Frozen((Color)ColorConverter.ConvertFromString(color))
+            : TypeBandBrush(entry.Type);
+
+    internal static SolidColorBrush TypeBandBrush(ShortcutType t) => t switch
     {
         ShortcutType.OpenFolder      => BandOpenFolder,
         ShortcutType.OpenUrl         => BandOpenUrl,
@@ -1514,6 +1523,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
             Name            = DroppedShortcut.FolderName(folderPath),
             Type            = ShortcutType.OpenFolder,
             Command         = folderPath,
+            Color           = ShortcutColor.ForNewShortcut(ShortcutType.OpenFolder, folderPath),
             IconProfilePath = IconStoreService.StoreDefaultFolderIcon(),
         };
 
@@ -1545,7 +1555,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         if (existing?.IsGroup == true) { AppDialog.Info(Loc.T("Group_EditChild"), owner: this); return; }
         if (existing is not null)
         {
-            var dlg = new ShortcutDialog(entry) { Owner = this };
+            var dlg = new ShortcutDialog(entry, isNew: true) { Owner = this };
             if (dlg.ShowDialog() != true) return;
             entry = dlg.Entry;
         }
