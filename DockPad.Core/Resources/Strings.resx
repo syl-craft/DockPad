@@ -1982,6 +1982,10 @@ Force them to stop? Unsaved work may be lost.</value></data>
   <data name="UsageBar_OpenPage" xml:space="preserve">
     <value>Open the usage page</value>
   </data>
+  <data name="UsageBar_Enlarge_Tooltip" xml:space="preserve">
+    <value>Show enlarged
+{0}</value>
+  </data>
   <data name="UsageBar_Empty_Tooltip" xml:space="preserve">
     <value>Open the AI usage settings</value>
   </data>
@@ -2047,5 +2051,11 @@ Force them to stop? Unsaved work may be lost.</value></data>
   </data>
   <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
     <value>Curve of the last 60 seconds (Hero style)</value>
+  </data>
+  <data name="UsageBar_Enlarge" xml:space="preserve">
+    <value>Enlarge</value>
+  </data>
+  <data name="UsageBar_CpuMemory" xml:space="preserve">
+    <value>CPU and memory</value>
   </data>
 </root>

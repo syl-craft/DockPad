@@ -1,9 +1,21 @@
+using System.ComponentModel;
+
 namespace DockPad.Services.Usage;
 
 /// <summary>
 /// Ce que la barre peut montrer : logos et style complets, charge du PC seule, ou une notice.
 /// </summary>
 public enum BarState { Full, LoadOnly, Empty }
+
+/// <summary>Identité stable d'une jauge, indépendante du libellé et des relevés.</summary>
+public enum BarGaugeKind { Session, Week, Cpu, Memory }
+public sealed record BarGauge(string ProviderId, BarGaugeKind Kind);
+
+/// <summary>La jauge en grand et l'identité affichée au-dessus ; la charge n'a pas de page fournisseur.</summary>
+public sealed record BarFeaturedGauge(BarRing Ring, string Glyph, string Name, string WindowLabel, string UsageUrl)
+{
+    public bool CanOpenUsagePage => Ring.ProviderId.Length > 0 && UsagePageLink.IsWebUrl(UsageUrl, out _);
+}
 
 /// <summary>
 /// Un logo de la tête de barre. Le point d'alerte n'est allumé que sur un fournisseur non mis en avant.
@@ -28,10 +40,42 @@ public sealed record BarColumn(string Label, string Text, double Fraction, strin
 /// NumberBrushKey : voir <see cref="BarColumn"/>.
 /// </summary>
 public sealed record BarRing(string Label, string Text, double Fraction, string Color, string Tooltip,
-    string ProviderId = "", bool IsEmpty = false, bool IsWarning = false)
+    string ProviderId = "", bool IsEmpty = false, bool IsWarning = false) : INotifyPropertyChanged
 {
-    public string NumberText { get; init; } = "";
+    public string Text { get; private set; } = Text;
+    public double Fraction { get; private set; } = Fraction;
+    public string Tooltip { get; private set; } = Tooltip;
+    private string _numberText = "";
+    public string NumberText { get => _numberText; init => _numberText = value; }
     public string NumberBrushKey { get; init; } = "";
+    public BarGauge? Selection { get; init; }
+    public bool CanEnlarge => Selection != null && IsEmpty == false && IsWarning == false;
+    public string EnlargeTooltip => Loc.F("UsageBar_Enlarge_Tooltip", Tooltip);
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    // Les abonnements WPF ne font pas partie de la valeur : un relevé identique conserve les éléments liés.
+    public bool Equals(BarRing? other) => other is { }
+        && Label == other.Label && Text == other.Text && Fraction == other.Fraction && Color == other.Color
+        && Tooltip == other.Tooltip && ProviderId == other.ProviderId && IsEmpty == other.IsEmpty
+        && IsWarning == other.IsWarning && NumberText == other.NumberText
+        && NumberBrushKey == other.NumberBrushKey && Selection == other.Selection;
+
+    public override int GetHashCode() => HashCode.Combine(
+        HashCode.Combine(Label, Text, Fraction, Color, Tooltip, ProviderId, IsEmpty, IsWarning),
+        NumberText, NumberBrushKey, Selection);
+
+    /// <summary>Une mesure ne remplace pas l'anneau lié à un bouton, son focus et son infobulle.</summary>
+    internal void UpdateLoad(string text, double fraction, string tooltip, string numberText)
+    {
+        if (Text == text && Fraction == fraction && Tooltip == tooltip && NumberText == numberText) return;
+
+        Text = text;
+        Fraction = fraction;
+        Tooltip = tooltip;
+        _numberText = numberText;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+    }
 }
 
 /// <summary>
@@ -52,8 +96,8 @@ public sealed record BarHeroCard(string ProviderId, string Glyph, string Name, s
 }
 
 /// <summary>
-/// Anneau extérieur (Session) et intérieur (Week) de l'IA mise en avant, puis les autres en petits anneaux.
-/// Inner est null quand il n'y a qu'une fenêtre.
+/// Anneaux de l'IA mise en avant, puis les autres en petits anneaux. Après un choix manuel, Outer porte seulement
+/// la jauge choisie (quota ou charge) et Inner est null.
 /// </summary>
 public sealed record BarRings(BarRing? Outer, BarRing? Inner, string CenterText, IReadOnlyList<BarRing> Others)
 {
@@ -65,7 +109,7 @@ public sealed record BarRings(BarRing? Outer, BarRing? Inner, string CenterText,
 }
 
 /// <summary>
-/// Niveau de la fenêtre la plus consommée et quatre pastilles ; HasLevel est faux sans IA mise en avant.
+/// Niveau de la jauge choisie, sinon de la fenêtre la plus consommée, et petites pastilles.
 /// Label porte le titre court de la notice quand l'IA mise en avant est en panne de quota.
 /// </summary>
 public sealed record BarReservoir(bool HasLevel, double Level, string LevelText, string Label, string Color,

@@ -1982,6 +1982,10 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="UsageBar_OpenPage" xml:space="preserve">
     <value>Ouvrir la page de consommation</value>
   </data>
+  <data name="UsageBar_Enlarge_Tooltip" xml:space="preserve">
+    <value>Afficher en grand
+{0}</value>
+  </data>
   <data name="UsageBar_Empty_Tooltip" xml:space="preserve">
     <value>Ouvrir les réglages Usage IA</value>
   </data>
@@ -2047,5 +2051,11 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   </data>
   <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
     <value>Courbe des 60 dernières secondes (style Héros)</value>
+  </data>
+  <data name="UsageBar_Enlarge" xml:space="preserve">
+    <value>Afficher en grand</value>
+  </data>
+  <data name="UsageBar_CpuMemory" xml:space="preserve">
+    <value>CPU et mémoire</value>
   </data>
 </root>

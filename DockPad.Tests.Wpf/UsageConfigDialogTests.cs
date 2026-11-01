@@ -60,6 +60,8 @@ public class UsageConfigDialogTests
         Assert.All(samples, sample =>
         {
             Assert.False(sample.IsHitTestVisible);
+            Assert.Equal(System.Windows.Input.KeyboardNavigationMode.None,
+                System.Windows.Input.KeyboardNavigation.GetTabNavigation(sample));
             Assert.NotNull(sample.ViewModel);
         });
     });

@@ -1982,6 +1982,10 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   <data name="UsageBar_OpenPage" xml:space="preserve">
     <value>0uvr1r l4 p4g3 d3 c0n50mm4t10n</value>
   </data>
+  <data name="UsageBar_Enlarge_Tooltip" xml:space="preserve">
+    <value>4ff1ch3r 3n gr4nd
+{0}</value>
+  </data>
   <data name="UsageBar_Empty_Tooltip" xml:space="preserve">
     <value>0uvr1r l35 r3gl4g35 U54g3 14</value>
   </data>
@@ -2047,5 +2051,11 @@ F0rc3r l3ur 4rr3t ? L3 tr4v41l n0n 3nr3g15tr3 p3ut 3tr3 p3rdu.</value></data>
   </data>
   <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
     <value>C0urb3 d35 60 d3rn13r35 53c0nd35 (5tyl3 H3r05)</value>
+  </data>
+  <data name="UsageBar_Enlarge" xml:space="preserve">
+    <value>4ff1ch3r 3n gr4nd</value>
+  </data>
+  <data name="UsageBar_CpuMemory" xml:space="preserve">
+    <value>CPU 3t m3m01r3</value>
   </data>
 </root>

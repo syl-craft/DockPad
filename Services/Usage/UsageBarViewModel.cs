@@ -49,6 +49,10 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     private readonly ObservableCollection<BarLogo> _logos = [];
     private readonly ObservableCollection<BarColumn> _columns = [];
     private readonly ObservableCollection<BarRing> _dots = [];
+    private readonly ObservableCollection<BarRing> _loadRings = [];
+    private string _focusProviderId = "";
+    private BarGauge? _chosenGauge;
+    private BarGauge? _previousGauge;
 
     /// <summary>
     /// Un relevé de fenêtre tel que la barre le montre : l'instantané, la ligne du planificateur et la fenêtre elle-même.
@@ -92,6 +96,8 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     public IReadOnlyList<BarHeroRow> HeroRows { get; private set; } = [];
     public BarRings? Rings { get; private set; }
     public BarReservoir? Reservoir { get; private set; }
+    public BarFeaturedGauge? FeaturedGauge { get; private set; }
+    public IReadOnlyList<BarRing> LoadRings => _loadRings;
 
     /// <summary>La charge du PC, ou null quand la case est décochée.</summary>
     public BarLoad? Load { get; private set; }
@@ -110,6 +116,48 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         if (CanCycle == false) return;
 
         _usage.SelectByGesture(providerId);
+    }
+
+    /// <summary>Met cette fenêtre ou cette mesure en grand, sans écrire la sélection dans la configuration.</summary>
+    public void PickGauge(BarGauge gauge)
+    {
+        var previous = FeaturedGauge?.Ring.Selection;
+        var isLoad = gauge.Kind is BarGaugeKind.Cpu or BarGaugeKind.Memory;
+        if (isLoad)
+        {
+            if (Load == null) return;
+            if (CanCycle) _usage.SelectByGesture(_focusProviderId);
+        }
+        else
+        {
+            var usage = _usage.Snapshots
+                .Where(snapshot => snapshot.ProviderId == gauge.ProviderId && UsageEligibility.IsEligible(snapshot))
+                .FirstOrDefault();
+            var window = gauge.Kind == BarGaugeKind.Session ? usage?.Session : usage?.Week;
+            if (window == null) return;
+            if (CanCycle) _usage.SelectByGesture(gauge.ProviderId);
+        }
+
+        // SelectByGesture publie le nouveau fournisseur et réinitialise son ancienne sélection avant ce choix précis.
+        _chosenGauge = gauge;
+        _previousGauge = previous;
+        Rebuild();
+    }
+
+    /// <summary>Le double anneau du PC : CPU, mémoire, puis retour au quota le plus consommé.</summary>
+    public void CycleLoadGauge()
+    {
+        if (Load == null) return;
+        if (_chosenGauge?.Kind != BarGaugeKind.Memory)
+        {
+            PickGauge(new BarGauge("", _chosenGauge?.Kind == BarGaugeKind.Cpu ? BarGaugeKind.Memory : BarGaugeKind.Cpu));
+            return;
+        }
+
+        if (CanCycle) _usage.SelectByGesture(_focusProviderId);
+        _chosenGauge = null;
+        _previousGauge = null;
+        Rebuild();
     }
 
     /// <summary>La molette et Ctrl + Tab : fournisseur suivant (direction positive) ou précédent.</summary>
@@ -143,15 +191,29 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         var load = BuildLoad();
         Load = load;
         SyncList(_columns, [.. _quotaColumns, CpuColumn(load), MemoryColumn(load)]);
+        foreach (var ring in _loadRings) UpdateLoadRing(ring, load);
         if (Reservoir != null)
         {
-            SyncList(_dots, [.. _quotaDots, CpuRing(load), MemoryRing(load)]);
+            SyncList(_dots, [.. _quotaDots, .. _loadRings]);
             Reservoir = Reservoir with { Dots = _dots };
+        }
+
+        if (_chosenGauge?.Kind is BarGaugeKind.Cpu or BarGaugeKind.Memory && FeaturedGauge != null)
+        {
+            var ring = FeaturedGauge.Ring;
+            UpdateLoadRing(ring, load);
+            if (Reservoir != null)
+                Reservoir = Reservoir with { Level = ring.Fraction, LevelText = ring.Text, Color = ring.Color, Tooltip = ring.Tooltip };
+            if (Rings != null)
+                Rings = Rings with { Outer = ring, CenterText = ring.Text, LegendTooltip = ring.Tooltip };
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FeaturedGauge)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Rings)));
         }
 
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Load)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Columns)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Reservoir)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LoadRings)));
     }
 
     private void SyncLoading()
@@ -167,6 +229,12 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
             ? _usage.Snapshots.Where(UsageEligibility.IsEligible).ToList()
             : [];
         var focus = FindFocus(eligible);
+        if (_focusProviderId != (focus?.ProviderId ?? ""))
+        {
+            _chosenGauge = null;
+            _previousGauge = null;
+        }
+        _focusProviderId = focus?.ProviderId ?? "";
         var load = _feed.Current;
 
         var plan = SideStripPlanner.Plan(eligible, config, load, _clock(), focus?.ProviderId);
@@ -179,6 +247,14 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
             .ToList();
 
         var loadItem = config.ShowSystemLoad ? BuildLoad() : null;
+        var chosenIsAvailable = _chosenGauge?.Kind is BarGaugeKind.Cpu or BarGaugeKind.Memory
+            ? loadItem != null
+            : focusViews.Any(view => SelectionOf(view) == _chosenGauge);
+        if (chosenIsAvailable == false)
+        {
+            _chosenGauge = null;
+            _previousGauge = null;
+        }
 
         State = eligible.Count > 0 ? BarState.Full : config.ShowSystemLoad ? BarState.LoadOnly : BarState.Empty;
         Style = config.BarStyle;
@@ -194,6 +270,8 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
             ? []
             : eligible.Select(usage => LogoOf(usage, focus, config.AlertThreshold)).ToList());
         Load = loadItem;
+        FeaturedGauge = BuildFeatured(focus, focusViews, loadItem);
+        SyncList(_loadRings, SmallLoadRings(loadItem));
         _quotaColumns = BuildQuotaColumns(focus, focusViews, views);
         SyncList(_columns, loadItem == null ? _quotaColumns : [.. _quotaColumns, CpuColumn(loadItem), MemoryColumn(loadItem)]);
         HeroCard = focus == null ? null : BuildHeroCard(focus, focusViews);
@@ -203,9 +281,14 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
                 .Where(usage => usage.ProviderId != focus.ProviderId)
                 .Select(usage => OtherRowOf(usage, views))
                 .ToList();
-        Rings = focus == null ? null : BuildRings(focus, focusViews, otherViews);
-        _quotaDots = BuildQuotaDots(focus, focusViews, views);
-        Reservoir = State == BarState.Empty ? null : BuildReservoir(focus, focusViews, loadItem);
+        Rings = _chosenGauge != null && FeaturedGauge != null
+            ? new BarRings(FeaturedGauge.Ring, null, FeaturedGauge.Ring.Text,
+                SmallQuotaRings(views, OtherRingCount, FeaturedGauge.Ring.Selection))
+                { Legend = _chosenGauge.Kind is BarGaugeKind.Cpu or BarGaugeKind.Memory ? "" : FeaturedGauge.Ring.Label,
+                    LegendTooltip = FeaturedGauge.Ring.Tooltip }
+            : focus == null ? null : BuildRings(focus, focusViews, otherViews);
+        _quotaDots = BuildQuotaDots(focus, views, FeaturedGauge?.Ring.Selection);
+        Reservoir = State == BarState.Empty ? null : BuildReservoir();
 
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
     }
@@ -357,12 +440,47 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
 
     private static BarRing CpuRing(BarLoad load) =>
         new(Loc.T("StreamDock_Cpu"), load.CpuText, load.CpuFraction, CpuColor, Loc.F("UsageBar_Cpu_Tooltip", load.CpuText))
-        { NumberText = load.CpuNumber, NumberBrushKey = NeutralNumberKey };
+        { NumberText = load.CpuNumber, NumberBrushKey = NeutralNumberKey, Selection = new BarGauge("", BarGaugeKind.Cpu) };
 
     private static BarRing MemoryRing(BarLoad load) =>
         new(Loc.T("StreamDock_Memory"), load.MemoryText, load.MemoryFraction, MemoryColor,
             Loc.F("UsageBar_Memory_Tooltip", load.MemoryText))
-        { NumberText = load.MemoryNumber, NumberBrushKey = NeutralNumberKey };
+        { NumberText = load.MemoryNumber, NumberBrushKey = NeutralNumberKey, Selection = new BarGauge("", BarGaugeKind.Memory) };
+
+    private static void UpdateLoadRing(BarRing ring, BarLoad load)
+    {
+        if (ring.Selection?.Kind == BarGaugeKind.Cpu)
+            ring.UpdateLoad(load.CpuText, load.CpuFraction, Loc.F("UsageBar_Cpu_Tooltip", load.CpuText), load.CpuNumber);
+        else if (ring.Selection?.Kind == BarGaugeKind.Memory)
+            ring.UpdateLoad(load.MemoryText, load.MemoryFraction, Loc.F("UsageBar_Memory_Tooltip", load.MemoryText), load.MemoryNumber);
+    }
+
+    private IReadOnlyList<BarRing> SmallLoadRings(BarLoad? load) => load == null
+        ? []
+        : new[] { CpuRing(load), MemoryRing(load) }.Where(ring => ring.Selection != _chosenGauge).ToList();
+
+    private static BarFeaturedGauge LoadFeatured(BarLoad load, BarGaugeKind kind)
+    {
+        var ring = kind == BarGaugeKind.Cpu ? CpuRing(load) : MemoryRing(load);
+        return new BarFeaturedGauge(ring, "", ring.Label, "", "");
+    }
+
+    private BarFeaturedGauge? BuildFeatured(AiUsage? focus, List<WindowView> focusViews, BarLoad? load)
+    {
+        if (_chosenGauge?.Kind is BarGaugeKind.Cpu or BarGaugeKind.Memory && load != null)
+            return LoadFeatured(load, _chosenGauge.Kind);
+
+        var selected = focusViews.Where(view => SelectionOf(view) == _chosenGauge).FirstOrDefault();
+        var top = selected ?? focusViews.FirstOrDefault();
+        if (top != null)
+            return new BarFeaturedGauge(RingOf(top), top.Usage.Glyph, Shorten(top.Usage.Name, CardNameMax),
+                Shorten(ShortLabelOf(top), CardLabelMax), top.Usage.UsageUrl);
+        if (focus == null) return null;
+
+        var warning = new BarRing(NoticeTitleOf(focus), WarningGlyph, 0, UsageFormat.High,
+            NoticeTooltipOf(focus), focus.ProviderId, IsWarning: true) { NumberText = WarningGlyph };
+        return new BarFeaturedGauge(warning, focus.Glyph, Shorten(focus.Name, CardNameMax), "", focus.UsageUrl);
+    }
 
     // --- Colonnes
 
@@ -462,42 +580,44 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
 
     private BarRing RingOf(WindowView view) =>
         new(Shorten(ShortLabelOf(view), RingLabelMax), PercentOf(view.Window.UsedPct), FractionOf(view),
-            ColorOf(view), TooltipOf(view), view.Usage.ProviderId) { NumberText = NumberText(view.Window.UsedPct) };
+            ColorOf(view), TooltipOf(view), view.Usage.ProviderId)
+            { NumberText = NumberText(view.Window.UsedPct), Selection = SelectionOf(view) };
+
+    private static BarGauge SelectionOf(WindowView view) => new(view.Usage.ProviderId,
+        view.Gauge.WindowKind == UsageWindowKind.Session ? BarGaugeKind.Session : BarGaugeKind.Week);
 
     // --- Réservoir
 
     /// <summary>
-    /// Les deux fenêtres suivantes du planificateur, vides si elles manquent. Sans IA mise en avant il n'y en a pas.
+    /// Fenêtres autres que la grande jauge, avec priorité à celle qui vient de redescendre.
     /// </summary>
-    private IReadOnlyList<BarRing> BuildQuotaDots(AiUsage? focus, List<WindowView> focusViews, List<WindowView> views)
+    private List<BarRing> SmallQuotaRings(List<WindowView> views, int count, BarGauge? featuredSelection) => views.Select(RingOf)
+        .Where(ring => ring.Selection != featuredSelection)
+        .OrderByDescending(ring => ring.Selection == _previousGauge)
+        .Take(count).ToList();
+
+    private IReadOnlyList<BarRing> BuildQuotaDots(AiUsage? focus, List<WindowView> views, BarGauge? featuredSelection)
     {
         if (focus == null) return [];
 
-        var skipped = focusViews.Count > 0 ? 1 : 0;
-        var dots = views.Skip(skipped).Take(QuotaDotCount).Select(RingOf).ToList();
+        var dots = SmallQuotaRings(views, QuotaDotCount, featuredSelection);
         while (dots.Count < QuotaDotCount)
             dots.Add(new BarRing("", "", 0, StaleColor, "", IsEmpty: true));
         return dots;
     }
 
     /// <summary>
-    /// Le niveau de la fenêtre la plus consommée, puis quatre pastilles : les deux fenêtres suivantes du planificateur,
-    /// le processeur et la mémoire.
+    /// Niveau de la jauge mise en grand, puis pastilles de quota et de charge restantes, sans dupliquer la grande jauge.
     /// </summary>
-    private BarReservoir BuildReservoir(AiUsage? focus, List<WindowView> focusViews, BarLoad? load)
+    private BarReservoir BuildReservoir()
     {
-        SyncList(_dots, load == null ? _quotaDots : [.. _quotaDots, CpuRing(load), MemoryRing(load)]);
+        SyncList(_dots, [.. _quotaDots, .. _loadRings]);
         IReadOnlyList<BarRing> dots = _dots;
 
-        if (focus == null)
+        if (FeaturedGauge == null)
             return new BarReservoir(false, 0, "", "", StaleColor, "", dots);
-        if (focusViews.Count == 0)
-        {
-            return new BarReservoir(false, 0, WarningGlyph, NoticeTitleOf(focus), UsageFormat.High,
-                NoticeTooltipOf(focus), dots);
-        }
-
-        var top = focusViews[0];
-        return new BarReservoir(true, FractionOf(top), PercentOf(top.Window.UsedPct), "", ColorOf(top), TooltipOf(top), dots);
+        var ring = FeaturedGauge.Ring;
+        return new BarReservoir(ring.IsWarning == false, ring.Fraction, ring.Text,
+            ring.IsWarning ? ring.Label : "", ring.Color, ring.Tooltip, dots);
     }
 }
