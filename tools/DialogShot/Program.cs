@@ -40,7 +40,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|settings-streamdock|ctxmenu|presets|mcp|usage-bottom|usage-right|usage-off|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en> <chemin.png> [onglet]");
+            Console.WriteLine("usage : DialogShot <settings|settings-streamdock|updates|updates-idle|updates-unavailable|updates-checking|updates-available|updates-downloading|updates-ready|updates-preparing|updates-installing|updates-failed|update-blockers|update-blockers-partial|update-indicator|ctxmenu|presets|mcp|usage-bottom|usage-right|usage-off|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en|qps-Ploc> <chemin.png> [onglet]");
             return;
         }
 
@@ -120,13 +120,18 @@ internal static class Program
             "settings" => new SettingsDialog(),
             "settings-streamdock" => new SettingsDialog(SettingsTab.StreamDock),
             "updates" => UpdateShots.Create(),
-            "updates-preparing" => UpdateShots.Create(preparing: true),
-            "update-blockers" => new UpdateBlockersDialog(Path.GetTempPath(), [
-                new DockPad.Services.Updates.UpdateBlocker { Pid = 4128, Name = "DockPad — MCP", File = @"C:\Users\Demo\AppData\Local\DockPad\current\DockPad.exe" },
-                new DockPad.Services.Updates.UpdateBlocker { Pid = 9360, Name = "Éditeur de texte" }]),
-            "update-blockers-partial" => new UpdateBlockersDialog(Path.GetTempPath(), [
-                new DockPad.Services.Updates.UpdateBlocker { Pid = 4128, Name = "DockPad — MCP", File = @"C:\Users\Demo\AppData\Local\DockPad\current\DockPad.exe", Selected = true },
-                new DockPad.Services.Updates.UpdateBlocker { Pid = 9360, Name = "Éditeur de texte" }]),
+            "updates-idle" => UpdateShots.Create(DockPad.Services.Updates.UpdateState.Idle),
+            "updates-unavailable" => UpdateShots.Create(DockPad.Services.Updates.UpdateState.Unavailable),
+            "updates-checking" => UpdateShots.Create(DockPad.Services.Updates.UpdateState.Checking),
+            "updates-available" => UpdateShots.Create(),
+            "updates-downloading" => UpdateShots.Create(DockPad.Services.Updates.UpdateState.Downloading),
+            "updates-ready" => UpdateShots.Create(DockPad.Services.Updates.UpdateState.Ready),
+            "updates-preparing" => UpdateShots.Create(DockPad.Services.Updates.UpdateState.Preparing),
+            "updates-installing" => UpdateShots.Create(DockPad.Services.Updates.UpdateState.Installing),
+            "updates-failed" => UpdateShots.Create(DockPad.Services.Updates.UpdateState.Failed),
+            "update-blockers" => UpdateShots.Blockers(),
+            "update-blockers-partial" => UpdateShots.Blockers(incomplete: true),
+            "update-indicator" => UpdateShots.Indicator(),
             "ctxmenu" => new ContextMenuManagerWindow(),
             "presets" => new PresetsDialog(),
             "mcp" => new McpConfigDialog(),
@@ -458,9 +463,13 @@ internal static class Program
 
     private static void Render(Window window, string outPath, string target, string lang)
     {
+        // Résout aussi les déclencheurs de style de Window (hauteur selon l'état) avant la mesure.
+        // ShotApp a déjà annulé OnStartup : ce passage ne démarre jamais l'application réelle.
+        window.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.DataBind, new Action(() => { }));
         // La largeur vient de la fenêtre ; la hauteur de la mesure, ces fenêtres étant en
         // SizeToContent (leur propriété Height vaut NaN).
         var width = double.IsNaN(window.Width) ? 900 : window.Width;
+        var availableHeight = double.IsNaN(window.Height) ? double.PositiveInfinity : window.Height;
         var root = (FrameworkElement)window.Content;
 
         // Deux passages : certaines géométries se posent au premier LayoutUpdated, donc après la
@@ -468,8 +477,8 @@ internal static class Program
         double height = 0;
         for (var pass = 0; pass < 2; pass++)
         {
-            root.Measure(new System.Windows.Size(width, double.PositiveInfinity));
-            height = root.DesiredSize.Height;
+            root.Measure(new System.Windows.Size(width, availableHeight));
+            height = double.IsPositiveInfinity(availableHeight) ? root.DesiredSize.Height : availableHeight;
             root.Arrange(new Rect(0, 0, width, height));
             root.UpdateLayout();
         }
@@ -483,8 +492,8 @@ internal static class Program
             Console.WriteLine($"  apres : Brush.Text = {(res["Brush.Text"] as SolidColorBrush)?.Color}");
             foreach (var d in res.MergedDictionaries)
                 Console.WriteLine($"     - {d.Source}");
-            root.Measure(new System.Windows.Size(width, double.PositiveInfinity));
-            height = root.DesiredSize.Height;
+            root.Measure(new System.Windows.Size(width, availableHeight));
+            height = double.IsPositiveInfinity(availableHeight) ? root.DesiredSize.Height : availableHeight;
             root.Arrange(new Rect(0, 0, width, height));
             root.UpdateLayout();
         }

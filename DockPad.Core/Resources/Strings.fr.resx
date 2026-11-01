@@ -1505,26 +1505,18 @@ Cette action est irréversible.</value>
   <data name="Update_Checking" xml:space="preserve"><value>Recherche de mises à jour…</value></data>
   <data name="Update_Available" xml:space="preserve"><value>La version {0} est disponible.</value></data>
   <data name="Update_Downloading" xml:space="preserve"><value>Téléchargement… {0} %</value></data>
-  <data name="Update_Ready" xml:space="preserve"><value>Mise à jour téléchargée. Prête pour le redémarrage.</value></data>
   <data name="Update_Preparing" xml:space="preserve"><value>Préparation de la mise à jour…</value></data>
-  <data name="Update_SelectAll" xml:space="preserve"><value>Tout sélectionner</value></data>
   <data name="Update_Installing" xml:space="preserve"><value>Fermeture de DockPad pour installer la mise à jour…</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>La mise à jour n’a pas pu aboutir. Vérifiez la connexion et réessayez. DockPad reste utilisable.</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>Vous disposez de la dernière version.</value></data>
   <data name="Update_NotChecked" xml:space="preserve"><value>Vérifiez si une nouvelle version est disponible.</value></data>
   <data name="Update_Progress" xml:space="preserve"><value>Progression du téléchargement</value></data>
-  <data name="Update_Automatic" xml:space="preserve"><value>Rechercher automatiquement les mises à jour</value></data>
+  <data name="Update_Automatic" xml:space="preserve"><value>Rechercher automatiquement</value></data>
   <data name="Update_Check" xml:space="preserve"><value>Rechercher</value></data>
-  <data name="Update_Install" xml:space="preserve"><value>Mettre à jour et redémarrer</value></data>
-  <data name="Update_BlockedTitle" xml:space="preserve"><value>Fermer les applications bloquantes</value></data>
-  <data name="Update_BlockedHelp" xml:space="preserve"><value>Ces processus utilisent des fichiers de DockPad. Sélectionnez ceux à fermer. Une session MCP ou IA peut avoir du travail en cours qui sera interrompu.</value></data>
+  <data name="Update_BlockedTitle" xml:space="preserve"><value>Programmes bloquants</value></data>
+  <data name="Update_BlockedHelp" xml:space="preserve"><value>Ces programmes utilisent des fichiers de DockPad. Choisissez ceux à fermer pour installer la mise à jour.</value></data>
   <data name="Update_Retry" xml:space="preserve"><value>Réessayer</value></data>
-  <data name="Update_CloseSelected" xml:space="preserve"><value>Fermer la sélection et continuer</value></data>
   <data name="Update_Postpone" xml:space="preserve"><value>Reporter</value></data>
-  <data name="Update_ForcePrompt" xml:space="preserve"><value>Ces processus ne se sont pas fermés :
-{0}
-
-Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="Update_LockError" xml:space="preserve"><value>Des fichiers restent utilisés ou leur accès est refusé. Fermez les applications concernées, puis réessayez. Vous pouvez aussi reporter la mise à jour.</value></data>
   <data name="Update_ProfileInside" xml:space="preserve"><value>Votre profil se trouve dans le dossier de l’application. Déplacez-le hors de ce dossier et adaptez DOCKPAD_PROFILE_DIR avant la mise à jour.</value></data>
   <data name="Update_CloseDialogs" xml:space="preserve"><value>Terminez votre travail et fermez les autres fenêtres de dialogue de DockPad avant la mise à jour.</value></data>
@@ -2048,4 +2040,55 @@ Forcer leur arrêt ? Le travail non enregistré peut être perdu.</value></data>
   <data name="UsageCfg_ShowLoadHistory" xml:space="preserve">
     <value>Courbe des 60 dernières secondes (style Héros)</value>
   </data>
+  <data name="Update_TitleUnavailable" xml:space="preserve"><value>Installer la dernière version de DockPad</value></data>
+  <data name="Update_TitleCurrent" xml:space="preserve"><value>DockPad est à jour</value></data>
+  <data name="Update_TitleChecking" xml:space="preserve"><value>Recherche de mises à jour</value></data>
+  <data name="Update_TitleAvailable" xml:space="preserve"><value>La version {0} est disponible</value></data>
+  <data name="Update_TitleDownloading" xml:space="preserve"><value>Téléchargement de la {0}</value></data>
+  <data name="Update_TitleReady" xml:space="preserve"><value>Nouvelle version prête</value></data>
+  <data name="Update_TitlePreparing" xml:space="preserve"><value>Préparation de l’installation</value></data>
+  <data name="Update_TitleInstalling" xml:space="preserve"><value>Installation de la mise à jour</value></data>
+  <data name="Update_TitleFailed" xml:space="preserve"><value>La mise à jour n’a pas abouti</value></data>
+  <data name="Update_StateUnavailable" xml:space="preserve"><value>Installation manuelle</value></data>
+  <data name="Update_StateIdle" xml:space="preserve"><value>Mises à jour</value></data>
+  <data name="Update_StateCurrent" xml:space="preserve"><value>À jour</value></data>
+  <data name="Update_StateChecking" xml:space="preserve"><value>Recherche en cours</value></data>
+  <data name="Update_StateAvailable" xml:space="preserve"><value>Disponible</value></data>
+  <data name="Update_StateDownloading" xml:space="preserve"><value>Téléchargement</value></data>
+  <data name="Update_StateReady" xml:space="preserve"><value>Prête à installer</value></data>
+  <data name="Update_StatePreparing" xml:space="preserve"><value>Préparation</value></data>
+  <data name="Update_StateInstalling" xml:space="preserve"><value>Installation</value></data>
+  <data name="Update_StateFailed" xml:space="preserve"><value>Échec</value></data>
+  <data name="Update_Later" xml:space="preserve"><value>Plus tard</value></data>
+  <data name="Update_Stop" xml:space="preserve"><value>Arrêter</value></data>
+  <data name="Update_DownloadInstall" xml:space="preserve"><value>Télécharger et installer</value></data>
+  <data name="Update_RestartInstall" xml:space="preserve"><value>Redémarrer et installer</value></data>
+  <data name="Update_ReadyHelp" xml:space="preserve"><value>Téléchargée. DockPad se ferme quelques secondes pour l’installer, puis se rouvre.</value></data>
+  <data name="Update_Published" xml:space="preserve"><value>Publiée le {0}</value></data>
+  <data name="Update_Size" xml:space="preserve"><value>{0:N1} Mo</value></data>
+  <data name="Update_DownloadSize" xml:space="preserve"><value>{0:N1} Mo sur {1:N1} Mo</value></data>
+  <data name="Update_GitHub" xml:space="preserve"><value>Voir sur GitHub ↗</value></data>
+  <data name="Update_Notes" xml:space="preserve"><value>Nouveautés</value></data>
+  <data name="Update_NeverChecked" xml:space="preserve"><value>Pas encore vérifié</value></data>
+  <data name="Update_CheckedNow" xml:space="preserve"><value>Vérifié à l’instant</value></data>
+  <data name="Update_CheckedMinutes" xml:space="preserve"><value>Vérifié il y a {0} min</value></data>
+  <data name="Update_CheckedHours" xml:space="preserve"><value>Vérifié il y a {0} h</value></data>
+  <data name="Update_CheckedDays" xml:space="preserve"><value>Vérifié il y a {0} {0:plural:jour|jours}</value></data>
+  <data name="Update_VersionOnly" xml:space="preserve"><value>v{0}</value></data>
+  <data name="Update_VersionTransition" xml:space="preserve"><value>v{0} → {1}</value></data>
+  <data name="Update_McpGroup" xml:space="preserve"><value>Relais MCP des sessions Claude</value></data>
+  <data name="Update_McpHelp" xml:space="preserve"><value>Les sessions restent ouvertes. Elles perdent l’accès aux outils DockPad jusqu’à leur reconnexion (/mcp).</value></data>
+  <data name="Update_ProgramHelp" xml:space="preserve"><value>Fermer ce programme ferme ses fenêtres. Mieux vaut le fermer vous-même, puis Réessayer.</value></data>
+  <data name="Update_UnknownProgram" xml:space="preserve"><value>Programme inconnu</value></data>
+  <data name="Update_ProcessDetail" xml:space="preserve"><value>depuis {0} · PID {1}</value></data>
+  <data name="Update_ProcessYesterday" xml:space="preserve"><value>hier {0}</value></data>
+  <data name="Update_ProcessPid" xml:space="preserve"><value>PID {0}</value></data>
+  <data name="Update_CloseCount" xml:space="preserve"><value>Fermer {0} {0:plural:programme|programmes} et installer</value></data>
+  <data name="Update_IncompleteState" xml:space="preserve"><value>Fermeture incomplète</value></data>
+  <data name="Update_IncompleteTitle" xml:space="preserve"><value>{0} {0:plural:programme ne s’est pas fermé|programmes ne se sont pas fermés}</value></data>
+  <data name="Update_IncompleteHelp" xml:space="preserve"><value>Ces programmes utilisent encore des fichiers de DockPad. Fermez-les vous-même ou forcez leur arrêt pour continuer.</value></data>
+  <data name="Update_OtherPrograms" xml:space="preserve"><value>ENCORE OUVERTS, NON COCHÉS</value></data>
+  <data name="Update_ForceRisk" xml:space="preserve"><value>Forcer l’arrêt coupe ces programmes sans leur laisser finir ce qu’ils font. Des modifications non enregistrées peuvent être perdues et un appel d’outil en cours peut échouer.</value></data>
+  <data name="Update_ForceInstall" xml:space="preserve"><value>Forcer l’arrêt et installer</value></data>
+  <data name="Update_ExpandGroup" xml:space="preserve"><value>Déplier ou replier ce groupe</value></data>
 </root>

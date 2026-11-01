@@ -1,49 +1,100 @@
 using DockPad;
+using DockPad.Services;
 using DockPad.Services.Updates;
+using DockPad.Models;
+using DockPad.Services.StreamDock;
+using DockPad.Services.Usage;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace DialogShot;
 internal static class UpdateShots
 {
-    /// <summary>
-    /// preparing : version téléchargée puis préparation commencée, l'état qui suit le clic sur
-    /// « Mettre à jour et redémarrer ».
-    /// </summary>
-    public static UpdatesDialog Create(bool preparing = false)
+    public static UpdatesDialog Create(UpdateState state = UpdateState.Available)
     {
-        var service = new UpdateService(new Fixture());
+        var service = CreateService(state);
+        var window = new UpdatesDialog(service);
+        window.Closed += (_, _) => service.Dispose();
+        return window;
+    }
+
+    private static UpdateService CreateService(UpdateState state)
+    {
+        var service = new UpdateService(new Fixture(state));
         var previous = SynchronizationContext.Current;
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
-            service.CheckAsync().GetAwaiter().GetResult();
-            if (preparing)
-            {
+            if (state is not (UpdateState.Unavailable or UpdateState.Checking)) service.CheckAsync().GetAwaiter().GetResult();
+            if (state is UpdateState.Ready or UpdateState.Preparing or UpdateState.Installing)
                 service.DownloadAsync().GetAwaiter().GetResult();
-                service.BeginPreparation();
-            }
+            // Les états transitoires sont figés pour la capture, sans tâche ni installateur actif.
+            typeof(UpdateService).GetProperty(nameof(UpdateService.State))?.SetValue(service, state);
+            if (state == UpdateState.Downloading)
+                typeof(UpdateService).GetProperty(nameof(UpdateService.Progress))?.SetValue(service, 62);
+            AppSettingsService.Update(s => s.LastUpdateCheck = DateTimeOffset.UtcNow.AddMinutes(-12));
         }
         finally { SynchronizationContext.SetSynchronizationContext(previous); }
-        return new UpdatesDialog(service);
+        return service;
     }
-    private sealed class Fixture : IUpdateBackend
+
+    public static QuickAccessWindow Indicator()
     {
-        public bool IsInstalled => true;
-        public string CurrentVersion => DockPad.Services.AppInfo.VersionText.TrimStart('v');
-        public string ContentDirectory => System.IO.Path.GetTempPath();
-        public Task<UpdateRelease?> CheckAsync()
-        {
-            var current = Version.Parse(CurrentVersion);
-            var next = new Version(current.Major, current.Minor, current.Build + 1).ToString();
-            return Task.FromResult<UpdateRelease?>(new(next,
-                "Aperçu — données de démonstration\n\n• Mise à jour depuis l’application.\n• Conservation des raccourcis et des liens entrants.\n• Gestion des applications bloquantes.\n\nVos paramètres sont conservés lors du redémarrage.", new object()));
-        }
+        GridCheck.WriteFixture();
+        var service = CreateService(UpdateState.Available);
+        var usage = new UsageViewModel(new UsageService([]), () => new UsageConfig { Enabled = false });
+        var window = new QuickAccessWindow(usage, new FixtureLoad(), updates: service);
+        window.Closed += (_, _) => service.Dispose();
+        return window;
+    }
+
+    private sealed class FixtureLoad : ISystemLoadMonitor
+    {
+        public SystemLoad Sample() => new(null, null);
+        public void Reset() { }
+    }
+
+    public static UpdateBlockersDialog Blockers(bool incomplete = false)
+    {
+        var started = DateTime.Today.AddHours(9).AddMinutes(12).ToFileTimeUtc();
+        UpdateBlocker[] blockers = incomplete ? [
+            new() { Pid = 43244, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
+            new() { Pid = 5004, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Desktop", Started = started, Selected = true },
+            new() { Pid = 17164, Name = "Windows Terminal", Started = started },
+        ] : [
+            new() { Pid = 31200, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
+            new() { Pid = 43244, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
+            new() { Pid = 5004, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Desktop", Started = started, Selected = true },
+            new() { Pid = 17164, Name = "Windows Terminal", Started = started },
+        ];
+        return new UpdateBlockersDialog(System.IO.Path.GetTempPath(), blockers,
+            refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
+            close: (_, _) => Task.FromResult(false), incomplete: incomplete);
+    }
+
+    private sealed class Fixture(UpdateState state) : IUpdateBackend
+    {
+        public bool IsInstalled => state != UpdateState.Unavailable;
+        public string CurrentVersion => "1.31.1";
+        public string ContentDirectory => System.IO.Path.Combine(System.IO.Path.GetTempPath(), "dockpad-update-fixture");
+        public Task<UpdateRelease?> CheckAsync() => Task.FromResult<UpdateRelease?>(state == UpdateState.Idle ? null : new("1.32.0",
+            """
+            ## [1.32.0] — 2026-11-01
+            ### Usage IA
+            La barre verticale à droite de la grille accompagne les **quotas IA**.
+
+            - Quatre styles : **Colonnes**, **Héros**, **Anneaux** et **Réservoir**.
+              - Choisissez la position dans **Paramètres → Usage IA**.
+            - La charge du PC affiche le processeur et la mémoire.
+            ### Mises à jour
+            - Les relais `--mcp` sont regroupés par session.
+            - Les paramètres sont conservés lors du redémarrage.
+            """, new object(), 7_700_000));
         public Task DownloadAsync(UpdateRelease release, Action<int> progress, CancellationToken token)
         {
             progress(100);
             return Task.CompletedTask;
         }
-        public void Apply(UpdateRelease release) => throw new NotSupportedException();
+        public void Apply(UpdateRelease release) => throw new NotSupportedException("Screenshot fixture");
     }
 }
