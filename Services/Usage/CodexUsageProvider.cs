@@ -99,7 +99,9 @@ public sealed class CodexUsageProvider : IUsageProvider
         // fournisseur garde son onglet. Absent du bandeau veut dire « pas installé ».
         if (snapshot.Entries.Count == 0 && snapshot.Quota is null && !Probe().Available) return null;
         var totals = snapshot.Entries.Count == 0 ? UsageAggregator.Empty : UsageAggregator.Aggregate(snapshot.Entries, now);
-        var quota = CodexQuotaReader.Current(snapshot.Quota, now);
+        // Le quota est jugé à l'heure de fin du parcours : Codex en cours d'utilisation écrit des relevés pendant
+        // qu'on lit. Jugé à l'heure du début, un tel relevé passait pour un relevé futur et le quota disparaissait.
+        var quota = CodexQuotaReader.Current(snapshot.Quota, _clock());
         var hasQuota = quota?.Session is not null || quota?.Week is not null;
 
         return new AiUsage

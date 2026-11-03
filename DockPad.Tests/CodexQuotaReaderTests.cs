@@ -221,6 +221,25 @@ public class CodexQuotaReaderTests : IDisposable
         Assert.Empty(usage.QuotaNotice);
     }
 
+    /// <summary>
+    /// Codex en cours d'utilisation écrit un relevé pendant le parcours, qui prend quelques secondes : ce relevé est
+    /// postérieur à l'heure du début de la lecture. Le juger à cette heure le faisait passer pour un relevé futur,
+    /// écarté avec tout le quota — la jauge Codex disparaissait de la barre jusqu'au relevé suivant.
+    /// </summary>
+    [Fact]
+    public async Task Provider_RelevéEcritPendantLeParcours_GardeLeQuota()
+    {
+        Write("sessions", "live", Line(Now.AddSeconds(5), Window(85, 10080, Now.AddDays(3))));
+        var ticks = 0;
+        var provider = new CodexUsageProvider(_home, () => Now.AddSeconds(10 * ticks++).LocalDateTime);
+
+        var usage = await provider.ReadAsync(CancellationToken.None);
+
+        Assert.Equal(85, usage!.Week!.UsedPct);
+        Assert.Null(usage.Week.ObservedAt);
+        Assert.Empty(usage.QuotaNotice);
+    }
+
     [Fact]
     public async Task Provider_HidesExpiredWindowsAndExplainsWhy()
     {
