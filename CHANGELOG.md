@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.33.1] — 2026-11-03
+
+### Corrections
+
+- **Barre Usage IA : le quota Codex ne disparaît plus pendant une session Codex.** Quand Codex travaillait, sa colonne et son point d'alerte pouvaient s'effacer d'un coup jusqu'au relevé suivant : un relevé écrit par Codex pendant la lecture était écarté comme s'il venait du futur.
+
 ## [1.33.0] — 2026-11-01
 
 ### Nouveautés
