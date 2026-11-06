@@ -1,3 +1,4 @@
+using Mue.Wpf;
 using DockPad.Services.UpdateHost;
 using System.Reflection;
 using System.Windows;
@@ -5,7 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using DockPad.Models;
 using DockPad.Services;
-using DockPad.Services.Updates;
+using Mue;
 using DockPad.Services.Usage;
 
 namespace DockPad.Tests;

@@ -1,7 +1,8 @@
+using Mue.Wpf;
 using DockPad.Services.UpdateHost;
 using DockPad;
 using DockPad.Services;
-using DockPad.Services.Updates;
+using Mue;
 using DockPad.Models;
 using DockPad.Services.StreamDock;
 using DockPad.Services.Usage;

@@ -1,6 +1,7 @@
+using Mue.Velopack;
 using System.IO;
 using System.Runtime.InteropServices;
-using DockPad.Services.Updates;
+using Mue;
 
 namespace DockPad.Services.UpdateHost;
 

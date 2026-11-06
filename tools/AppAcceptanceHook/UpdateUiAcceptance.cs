@@ -1,3 +1,5 @@
+using Mue.Wpf;
+using Mue.Velopack;
 using DockPad.Services.UpdateHost;
 using System.Diagnostics;
 using System.Globalization;
@@ -10,7 +12,7 @@ using System.Windows.Media.Imaging;
 using DockPad;
 using DockPad.Services;
 using DockPad.Services.Localization;
-using DockPad.Services.Updates;
+using Mue;
 using Velopack;
 
 // In-process WPF integration tests: exercise framework OnClick (including IsCancel), never call
@@ -122,7 +124,7 @@ internal static class UpdateUiAcceptance
         await Until(() => realService.State == UpdateState.Available, "real package discovered");
         Assert(realService.Release!.Version == FixtureVersion("Next"), "real next version displayed");
         using var blocker = StartMcp();
-        await Until(() => UpdateBlockers.Find(AppContext.BaseDirectory, new DockPadBlockerClassifier()).Any(b => b.Pid == blocker.Id), "real MCP image lock");
+        await Until(() => new WindowsUpdateBlockerFinder().Find(AppContext.BaseDirectory, new DockPadBlockerClassifier()).Any(b => b.Pid == blocker.Id), "real MCP image lock");
         Click(Button(window, "Update_Install"));
         var blocked = await Modal<UpdateBlockersDialog>();
         await Idle();
@@ -164,7 +166,7 @@ internal static class UpdateUiAcceptance
         confirm = await Modal<AppDialog>();
         // Stop before apply to test Retry with a second lock after an explicitly approved kill.
         using var second = StartMcp();
-        await Until(() => UpdateBlockers.Find(AppContext.BaseDirectory, new DockPadBlockerClassifier()).Any(b => b.Pid == second.Id), "second lock");
+        await Until(() => new WindowsUpdateBlockerFinder().Find(AppContext.BaseDirectory, new DockPadBlockerClassifier()).Any(b => b.Pid == second.Id), "second lock");
         Click((Button)confirm.FindName("BtnPrimary"));
         await Until(() => blocker.HasExited && ((Button)blocked.FindName("RetryButton")).IsEnabled, "approved close");
         Assert(!second.HasExited && blocked.IsVisible, "only selected process terminated");

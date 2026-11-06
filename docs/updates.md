@@ -12,29 +12,44 @@ Les profils restent dans `%APPDATA%/DockPad` ou `DOCKPAD_PROFILE_DIR`. Un profil
 
 Le lanceur racine transmet directement les arguments à `current/DockPad.exe`. Les événements d’installation et de redémarrage sont reconnus avant le relais. Le relais courant sort avant l’initialisation Velopack et la construction WPF ; l’entretien des paquets est réservé aux lancements persistants. Pendant l’application de la mise à jour, un marqueur retient les nouveaux lancements à la racine ; leurs arguments restent en mémoire. Les requêtes déjà acceptées mais pas encore traitées sont transférées au lanceur avant la sortie. Le pipe acquitte la prise en charge ; s’il ferme avant l’acquittement, le client utilise son repli. Il s’agit d’une remise au moins une fois, pas d’une transaction garantissant l’absence de doublon dans toute course de fermeture. Le marqueur expire après cinq minutes si l’updater ne revient pas.
 
-## Points d'injection (bibliothèque Mue)
+## Bibliothèque Mue
 
-`Services/Updates` porte les contrats et le moteur de mise à jour : `IUpdateTexts` via
-`UpdateTexts`, `IUpdateLog`, `IUpdateSchedule`, `IUpdateBackend`, `IUpdateBlockerClassifier`,
-`IUpdateBlockerFinder` et `IUpdateDialogHost`. Ce dernier reçoit un propriétaire `object` et un
-jeton d'annulation, sans dépendance WPF. `UpdateServiceOptions` injecte aussi `CanSearch` et
-`TimeProvider` ; les délais restent 20 secondes, 15 minutes et six heures entre recherches.
-`MemoryUpdateSchedule`, `ProgramClassifier` et `FakeUpdateBackend` permettent les fixtures sans
-profil, réseau ni processus réels. `WindowsUpdateBlockerFinder` conserve Restart Manager, WMI
-et le contrôle PID/date de démarrage avant fermeture ; `VelopackLayout` résout les chemins.
+Le moteur, ses contrats et ses tests génériques vivent dans le dépôt
+[Mue](https://github.com/syl-craft/Mue), version **0.1.0** : `Mue` porte le cœur sans WPF ni
+Velopack, `Mue.Velopack` le backend **Velopack 1.2.161** et ses chemins, `Mue.Wpf` les dialogues.
+`Services/Updates` et les deux dialogues locaux n'existent plus dans DockPad.
 
-`Services/UpdateHost` branche ces contrats sur DockPad : localisation au chargement du module,
-journal, réglages persistés, classification MCP, préparation et sortie de l'application.
-`DockPadUpdates.Service` remplace le singleton du moteur. `AppInstallation` et `PendingRelays`
-vivent dans ce dossier ; le constructeur sans paramètre de `UpdatesDialog` est une partie
-de la classe déclarée côté hôte. Les deux dialogues reçoivent leurs dépendances explicitement.
-Seules leurs extensions XAML `{loc:T}` restent à extraire avec la bibliothèque Mue.
+`Services/UpdateHost` conserve les adaptateurs DockPad : `LocUpdateTexts` configure les
+traductions au chargement du module, les clés RESX `Update_*` restent dans DockPad, le journal
+et les réglages restent ceux de l'application. La classification MCP, `AppInstallation`,
+`PendingRelays`, la préparation et la sortie restent aussi dans l'hôte.
+`DockPadUpdates.Service` fournit le moteur ; `DockPadUpdates.CreateDialog()` fournit le dialogue.
+Les appelants qui injectent un moteur de fixture peuvent construire `Mue.Wpf.UpdatesDialog`
+avec leurs dépendances explicites.
 
-`ForcesShutdown` vaut `true` par défaut pour le backend Velopack standard. DockPad le pose à
-`false` avec ses binaires adaptés : les textes existants sont conservés. Un hôte utilisant le
-moteur standard reçoit des avertissements traduits indiquant l'arrêt forcé sans enregistrement.
-`UpdateDependencyGuardTests` interdit les références aux services de l'application depuis le
-code générique et les deux code-behind.
+Les contrats sont `IUpdateTexts`, `IUpdateLog`, `IUpdateSchedule`, `IUpdateBackend`,
+`IUpdateBlockerClassifier`, `IUpdateBlockerFinder` et `IUpdateDialogHost` (propriétaire `object`,
+sans type WPF). `UpdateServiceOptions` injecte `CanSearch` et `TimeProvider` ; les délais
+restent 20 secondes, 15 minutes et six heures entre recherches.
+`WindowsUpdateBlockerFinder` conserve Restart Manager, WMI et le contrôle PID/date avant
+fermeture. `UpdateBlockers` conserve les opérations pures de sélection et d'identité.
+
+Les dialogues `Mue.Wpf` utilisent les mêmes ressources de style de l'application. Leur extension
+`{mue:T}` suit `UpdateTexts.LanguageChanged` ; le convertisseur booléen appartient à la fenêtre.
+`ForcesShutdown` reste `false` pour les binaires adaptés de DockPad et `true` par défaut dans
+le backend standard. `UpdateDependencyGuardTests` interdit la réintroduction des sources
+extraites dans DockPad ; la garde des traductions reconnaît les clés `Update_*` fournies à Mue.
+
+Le flux local est défini par `MueFeed` dans `Directory.Build.props`, par défaut
+`C:\Users\Sylvain\nuget-local`, surchargeable avec `-p:MueFeed=...`. Le script `pack.ps1` du
+dépôt Mue compile, teste et publie les trois paquets. Une version publiée ne s'écrase pas :
+augmenter la version pour éviter un ancien paquet dans le cache NuGet.
+
+Dans `package.yml`, CI extrait `syl-craft/Mue` au tag `v0.1.0`, empaquette vers un dossier
+temporaire du runner et passe ce flux aux tests. La variable `MueFeed` reste disponible pour
+le packaging et les bancs suivants. Les sources Mue temporaires sont retirées avant le build
+DockPad pour ne pas être prises par ses globs. Le dépôt distant et le tag doivent exister
+avant l'exécution de ce workflow.
 
 ## Adaptation native à maintenir
 

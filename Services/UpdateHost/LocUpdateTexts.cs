@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using DockPad.Services.Updates;
+using Mue;
 
 namespace DockPad.Services.UpdateHost;
 

@@ -25,9 +25,14 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// gestes qu'une fenêtre est seule à pouvoir faire — voir <see cref="QuickAccessCommands"/>.
     /// </summary>
     public QuickAccessCommands Commands { get; }
-    private readonly Services.Updates.UpdateService? _updates;
-    public Services.Updates.UpdateService Updates => _updates ?? Services.UpdateHost.DockPadUpdates.Service;
-    public void ShowUpdates() => new UpdatesDialog(Updates, Services.UpdateHost.DockPadUpdates.DialogHost) { Owner = this }.ShowDialog();
+    private readonly Mue.UpdateService? _updates;
+    public Mue.UpdateService Updates => _updates ?? Services.UpdateHost.DockPadUpdates.Service;
+    public void ShowUpdates()
+    {
+        var dialog = Services.UpdateHost.DockPadUpdates.CreateDialog(Updates);
+        dialog.Owner = this;
+        dialog.ShowDialog();
+    }
 
     /// <summary>
     /// Laquelle des deux grilles est affichée. Voir <see cref="TileModeState"/> : le mode Favoris
@@ -117,7 +122,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// ni les vrais fournisseurs ni le vrai processeur.
     /// </summary>
     public QuickAccessWindow(UsageViewModel usage, ISystemLoadMonitor loadMonitor, TimeProvider? time = null,
-        Services.Updates.UpdateService? updates = null)
+        Mue.UpdateService? updates = null)
     {
         _updates = updates;
         ShortcutPage = new ShortcutPageState(Dispatcher);

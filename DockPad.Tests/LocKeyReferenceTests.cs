@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using DockPad.Services.Localization;
-using DockPad.Services.Updates;
+using Mue;
 
 namespace DockPad.Tests;
 
@@ -51,6 +51,9 @@ public class LocKeyReferenceTests
     /// </summary>
     private static readonly string[] DynamicFamilies = ["Key_"];
 
+    // Les traductions Update_ sont fournies à Mue par LocUpdateTexts.
+    private static readonly string[] ExternalFamilies = ["Update_"];
+
     [Fact]
     public void ToutesLesClesCiteesExistentDansLesRessources()
     {
@@ -71,6 +74,7 @@ public class LocKeyReferenceTests
 
         var orphelines = Keys()
             .Where(k => !cited.Contains(k))
+            .Where(k => !ExternalFamilies.Any(f => k.StartsWith(f, StringComparison.Ordinal)))
             .Where(k => !DynamicFamilies.Any(f => k.StartsWith(f, StringComparison.Ordinal)))
             .OrderBy(k => k, StringComparer.Ordinal)
             .ToList();

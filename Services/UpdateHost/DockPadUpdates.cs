@@ -1,4 +1,5 @@
-using DockPad.Services.Updates;
+using Mue.Velopack;
+using Mue;
 
 namespace DockPad.Services.UpdateHost;
 
@@ -19,6 +20,7 @@ public static class DockPadUpdates
         Log = new DockPadUpdateLog(),
         Schedule = new DockPadUpdateSchedule(),
     };
+    public static Mue.Wpf.UpdatesDialog CreateDialog(UpdateService? updates = null) => new(updates ?? Service, DialogHost);
     public static void Stop() => _service?.Dispose();
 }
 
