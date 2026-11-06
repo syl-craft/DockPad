@@ -57,7 +57,7 @@ internal static class UpdateShots
         public void Reset() { }
     }
 
-    public static UpdateBlockersDialog Blockers(bool incomplete = false)
+    public static UpdateBlockersDialog Blockers(bool incomplete = false, bool unavailable = false)
     {
         var started = DateTime.Today.AddHours(9).AddMinutes(12).ToFileTimeUtc();
         UpdateBlocker[] blockers = incomplete ? [
@@ -70,9 +70,10 @@ internal static class UpdateShots
             new() { Pid = 5004, Name = "DockPad", IsRelay = true, ParentName = "Claude Desktop", Started = started, Selected = true },
             new() { Pid = 17164, Name = "Windows Terminal", Started = started },
         ];
-        return new UpdateBlockersDialog(System.IO.Path.GetTempPath(), blockers,
-            host: new DockPadUpdateDialogHost(), forcesShutdown: false, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
-            close: (_, _) => Task.FromResult(false), incomplete: incomplete);
+        if (unavailable) blockers = [new() { Pid = 43244, Name = "DockPad", Started = started, Unavailable = true }];
+        return new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory(System.IO.Path.GetTempPath()), blockers,
+            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
+            close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.StillRunning), incomplete: incomplete);
     }
 
     private sealed class Fixture(UpdateState state) : IUpdateBackend
@@ -80,7 +81,7 @@ internal static class UpdateShots
         public bool IsInstalled => state != UpdateState.Unavailable;
         public string CurrentVersion => "1.31.1";
         public string ContentDirectory => System.IO.Path.Combine(System.IO.Path.GetTempPath(), "dockpad-update-fixture");
-        public Task<UpdateRelease?> CheckAsync() => Task.FromResult<UpdateRelease?>(state == UpdateState.Idle ? null : new("1.32.0",
+        public Task<UpdateRelease?> CheckAsync(CancellationToken token) => Task.FromResult<UpdateRelease?>(state == UpdateState.Idle ? null : new("1.32.0",
             """
             ## [1.32.0] — 2026-11-01
             ### Usage IA

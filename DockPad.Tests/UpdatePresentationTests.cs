@@ -100,7 +100,7 @@ public class UpdatePresentationTests
         public bool IsInstalled => true;
         public string CurrentVersion => "1.31.1";
         public string ContentDirectory => "unused";
-        public Task<UpdateRelease?> CheckAsync() => Task.FromResult<UpdateRelease?>(
+        public Task<UpdateRelease?> CheckAsync(CancellationToken token) => Task.FromResult<UpdateRelease?>(
             new("1.32.0", "## [1.32.0] — 2026-11-01\n- **Change**", new object(), size));
         public Task DownloadAsync(UpdateRelease release, Action<int> progress, CancellationToken token) => throw new NotSupportedException();
         public void Apply(UpdateRelease release) => throw new NotSupportedException();

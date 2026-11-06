@@ -124,7 +124,7 @@ internal static class UpdateUiAcceptance
         await Until(() => realService.State == UpdateState.Available, "real package discovered");
         Assert(realService.Release!.Version == FixtureVersion("Next"), "real next version displayed");
         using var blocker = StartMcp();
-        await Until(() => new WindowsUpdateBlockerFinder().Find(AppContext.BaseDirectory, new DockPadBlockerClassifier()).Any(b => b.Pid == blocker.Id), "real MCP image lock");
+        await Until(() => new WindowsUpdateBlockerFinder().Find(UpdateBlockerQuery.ForDirectory(AppContext.BaseDirectory), new DockPadBlockerClassifier()).Blockers.Any(b => b.Pid == blocker.Id), "real MCP image lock");
         Click(Button(window, "Update_Install"));
         var blocked = await Modal<UpdateBlockersDialog>();
         await Idle();
@@ -166,7 +166,7 @@ internal static class UpdateUiAcceptance
         confirm = await Modal<AppDialog>();
         // Stop before apply to test Retry with a second lock after an explicitly approved kill.
         using var second = StartMcp();
-        await Until(() => new WindowsUpdateBlockerFinder().Find(AppContext.BaseDirectory, new DockPadBlockerClassifier()).Any(b => b.Pid == second.Id), "second lock");
+        await Until(() => new WindowsUpdateBlockerFinder().Find(UpdateBlockerQuery.ForDirectory(AppContext.BaseDirectory), new DockPadBlockerClassifier()).Blockers.Any(b => b.Pid == second.Id), "second lock");
         Click((Button)confirm.FindName("BtnPrimary"));
         await Until(() => blocker.HasExited && ((Button)blocked.FindName("RetryButton")).IsEnabled, "approved close");
         Assert(!second.HasExited && blocked.IsVisible, "only selected process terminated");
@@ -262,7 +262,7 @@ internal static class UpdateUiAcceptance
         public string Mode = "none";
         public string Notes => "Version de test — téléchargement, annulation et reprise.\n" + new string('x', 180);
         public int Applies;
-        public Task<UpdateRelease?> CheckAsync() => Mode == "check-error" ? throw new IOException("fixture offline") : Task.FromResult(Mode == "none" ? null : new UpdateRelease(FixtureVersion("Next"), Notes, new object()));
+        public Task<UpdateRelease?> CheckAsync(CancellationToken token) => Mode == "check-error" ? throw new IOException("fixture offline") : Task.FromResult(Mode == "none" ? null : new UpdateRelease(FixtureVersion("Next"), Notes, new object()));
         public async Task DownloadAsync(UpdateRelease release, Action<int> progress, CancellationToken token)
         {
             if (Mode == "download-error") throw new IOException("fixture download failure");

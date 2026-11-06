@@ -110,9 +110,9 @@
   </Target>
 
   <ItemGroup>
-    <PackageReference Include="Mue" Version="0.1.0" />
-    <PackageReference Include="Mue.Velopack" Version="0.1.0" />
-    <PackageReference Include="Mue.Wpf" Version="0.1.0" />
+    <PackageReference Include="Mue" Version="$(MueVersion)" />
+    <PackageReference Include="Mue.Velopack" Version="$(MueVersion)" />
+    <PackageReference Include="Mue.Wpf" Version="$(MueVersion)" />
     <PackageReference Include="Velopack" Version="1.2.161" />
     <!-- Aligne sur le framework cible (net8.0) et non sur la derniere version : le SDK installe
          est un .NET 10, mais l'application est publiee framework-dependent pour .NET 8. -->

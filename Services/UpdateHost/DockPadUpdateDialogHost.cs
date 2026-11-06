@@ -19,12 +19,18 @@ public sealed class DockPadUpdateDialogHost : IUpdateDialogHost
 
     public DockPadUpdateDialogHost() => Finder = new WindowsUpdateBlockerFinder(Log);
 
-    public async Task<bool> PrepareAsync(object owner, CancellationToken token)
+    public Task<UpdatePreparationCheck> CheckAsync(object owner, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         if (AppInstallation.IsWithin(AppPaths.ProfileRoot, AppInstallation.Root ?? AppContext.BaseDirectory))
             throw new IOException(Loc.T("Update_ProfileInside"));
-        return Application.Current is App app && await app.PrepareForUpdateAsync((Window)owner);
+        return Task.FromResult(new UpdatePreparationCheck(Application.Current is App app && app.CheckForUpdate((Window)owner)));
+    }
+
+    public async Task<bool> PrepareAsync(object owner, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        return Application.Current is App app && await app.PrepareForUpdateAsync((Window)owner, token);
     }
 
     public void BeforeApply()

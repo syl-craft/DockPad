@@ -40,7 +40,7 @@ internal static class Program
     {
         if (args.Length < 3)
         {
-            Console.WriteLine("usage : DialogShot <settings|settings-streamdock|updates|updates-idle|updates-unavailable|updates-checking|updates-available|updates-downloading|updates-ready|updates-preparing|updates-installing|updates-failed|update-blockers|update-blockers-partial|update-indicator|ctxmenu|presets|mcp|usage-bottom|usage-right|usage-off|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en|qps-Ploc> <chemin.png> [onglet]");
+            Console.WriteLine("usage : DialogShot <settings|settings-streamdock|updates|updates-idle|updates-unavailable|updates-checking|updates-available|updates-downloading|updates-ready|updates-preparing|updates-installing|updates-failed|update-blockers|update-blockers-partial|update-blockers-unavailable|update-indicator|ctxmenu|presets|mcp|usage-bottom|usage-right|usage-off|shortcut|entry|inject|inject-failed|inject-files|inject-partial|inject-choice|inject-create|inject-github|inject-github-sent|bindings|grid> <fr|en|qps-Ploc> <chemin.png> [onglet]");
             return;
         }
 
@@ -131,6 +131,7 @@ internal static class Program
             "updates-failed" => UpdateShots.Create(Mue.UpdateState.Failed),
             "update-blockers" => UpdateShots.Blockers(),
             "update-blockers-partial" => UpdateShots.Blockers(incomplete: true),
+            "update-blockers-unavailable" => UpdateShots.Blockers(unavailable: true),
             "update-indicator" => UpdateShots.Indicator(),
             "ctxmenu" => new ContextMenuManagerWindow(),
             "presets" => new PresetsDialog(),

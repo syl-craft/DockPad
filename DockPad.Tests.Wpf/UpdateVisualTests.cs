@@ -19,9 +19,9 @@ public class UpdateVisualTests
     public Task GroupCountHasAVisibleBackgroundInBothThemes(bool dark) => WpfTestHost.Run(() =>
     {
         ThemeService.Apply(dark);
-        var window = new UpdateBlockersDialog("unused", Enumerable.Range(1, 3)
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), Enumerable.Range(1, 3)
             .Select(pid => new UpdateBlocker { Pid = pid, Name = "Editor" }).ToArray(),
-            host: new DockPadUpdateDialogHost(), forcesShutdown: false, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>([]), close: (_, _) => Task.FromResult(false));
+            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>([]), close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.StillRunning));
         try
         {
             Layout(window);
@@ -79,7 +79,7 @@ public class UpdateVisualTests
         public bool IsInstalled => true;
         public string CurrentVersion => "1.31.1";
         public string ContentDirectory => "unused";
-        public Task<UpdateRelease?> CheckAsync() => Task.FromResult<UpdateRelease?>(release ? new("1.32.0", "", new object()) : null);
+        public Task<UpdateRelease?> CheckAsync(CancellationToken token) => Task.FromResult<UpdateRelease?>(release ? new("1.32.0", "", new object()) : null);
         public Task DownloadAsync(UpdateRelease value, Action<int> progress, CancellationToken token) => throw new NotSupportedException();
         public void Apply(UpdateRelease value) => throw new NotSupportedException();
     }

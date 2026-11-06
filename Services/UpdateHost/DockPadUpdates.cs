@@ -13,15 +13,29 @@ public static class DockPadUpdates
         Prerelease = false,
         RestartArgs = ["--update-restarted"],
         FallbackVersion = AppInfo.VersionText,
-        ForcesShutdown = false,
+        ShutdownBehavior = UpdateShutdownBehavior.Refuse,
     };
     public static UpdateServiceOptions ServiceOptions => new()
     {
         Log = new DockPadUpdateLog(),
         Schedule = new DockPadUpdateSchedule(),
+        PendingStore = new FileUpdatePendingStore(AppPaths.UpdatePending),
     };
     public static Mue.Wpf.UpdatesDialog CreateDialog(UpdateService? updates = null) => new(updates ?? Service, DialogHost);
     public static void Stop() => _service?.Dispose();
+
+    public static void VerifyLaunch()
+    {
+        try
+        {
+            var outcome = Service.VerifyLaunch();
+            if (outcome.Result == UpdateLaunchResult.Succeeded)
+                LogService.Info($"Update succeeded: expected {outcome.ExpectedVersion}, current {outcome.CurrentVersion}");
+            else if (outcome.Result == UpdateLaunchResult.RolledBack)
+                LogService.Warn($"Update rolled back: expected {outcome.ExpectedVersion}, current {outcome.CurrentVersion}");
+        }
+        catch (Exception ex) { LogService.Warn(ex, "Cannot verify update launch"); }
+    }
 }
 
 public sealed class DockPadUpdateLog : IUpdateLog

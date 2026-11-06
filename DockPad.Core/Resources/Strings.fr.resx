@@ -2119,4 +2119,7 @@ Cette action est irréversible.</value>
   <data name="Update_IncompleteHelpForced" xml:space="preserve">
     <value>Certains programmes sont encore ouverts. L’installation les arrêtera de force, sans enregistrer leur travail.</value>
   </data>
+  <data name="Update_ProcessUnavailable" xml:space="preserve">
+    <value>informations indisponibles · PID {0}</value>
+  </data>
 </root>

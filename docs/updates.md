@@ -15,7 +15,7 @@ Le lanceur racine transmet directement les arguments à `current/DockPad.exe`. L
 ## Bibliothèque Mue
 
 Le moteur, ses contrats et ses tests génériques vivent dans le dépôt
-[Mue](https://github.com/syl-craft/Mue), version **0.1.0** : `Mue` porte le cœur sans WPF ni
+[Mue](https://github.com/syl-craft/Mue), version **0.2.0** : `Mue` porte le cœur sans WPF ni
 Velopack, `Mue.Velopack` le backend **Velopack 1.2.161** et ses chemins, `Mue.Wpf` les dialogues.
 `Services/Updates` et les deux dialogues locaux n'existent plus dans DockPad.
 
@@ -36,20 +36,54 @@ fermeture. `UpdateBlockers` conserve les opérations pures de sélection et d'id
 
 Les dialogues `Mue.Wpf` utilisent les mêmes ressources de style de l'application. Leur extension
 `{mue:T}` suit `UpdateTexts.LanguageChanged` ; le convertisseur booléen appartient à la fenêtre.
-`ForcesShutdown` reste `false` pour les binaires adaptés de DockPad et `true` par défaut dans
-le backend standard. `UpdateDependencyGuardTests` interdit la réintroduction des sources
+`ShutdownBehavior` vaut `Refuse` pour les binaires adaptés de DockPad. Le backend standard
+choisit `Kill` sur Windows et `AskToQuit` sur macOS. `LatestReleaseOnly` reste désactivé dans DockPad. `UpdateDependencyGuardTests` interdit la réintroduction des sources
 extraites dans DockPad ; la garde des traductions reconnaît les clés `Update_*` fournies à Mue.
 
+`CheckAsync` contrôle le profil et les fenêtres ouvertes sans préparer l'application.
+`PrepareAsync`, appelé une seule fois après résolution et contrôle final des bloqueurs,
+attend `PendingWrites`, retire les secrets du presse-papier puis contrôle de nouveau les fenêtres.
+Reporter ne vide donc plus le presse-papier. Le résumé facultatif de vérification est nul dans
+DockPad : les deux dialogues gardent leur géométrie.
+
+`FileUpdatePendingStore` utilise `AppPaths.UpdatePending` (`update-pending-version` dans le
+profil), distinct du marqueur d'installation `.dockpad-update`. Le démarrage résident appelle
+`VerifyLaunch` et journalise succès ou retour arrière avec les versions attendue et courante.
+`OnRestarted` et `AppInstallation.EndUpdate` conservent leur rôle.
+
+La détection lit chemin et date de démarrage avec un accès Windows limité. Un processus illisible
+signalé par Restart Manager reste bloquant, avec la mention « informations indisponibles » et son PID.
+Le classifieur conserve les exclusions du lanceur stable hors de tous les chemins de la requête.
+
+`LocUpdateTexts.TryGet` permet le repli vers les textes fr/en de Mue pour les clés absentes de DockPad.
+`MueStyleKeys.Missing` est vérifié avec les deux thèmes ; DockPad n'ajoute pas les styles par défaut.
+Le bouton `TxtVersion` reste local : le nouveau `UpdateBadge` impose une cible de 40 px et une
+pastille de 26 px, contrairement à la géométrie actuelle, et son intégration n'a pas de référence
+complète sans mise à jour permettant de garantir l'identité pixel.
+
 Le flux local est défini par `MueFeed` dans `Directory.Build.props`, par défaut
-`C:\Users\Sylvain\nuget-local`, surchargeable avec `-p:MueFeed=...`. Le script `pack.ps1` du
+`C:\Users\Sylvain\nuget-local`, surchargeable avec `-p:MueFeed=...`. `MueVersion` vaut `0.2.0` par défaut et se surcharge avec
+`-p:MueVersion=0.2.0-b2.N` pour les trois références. Le script `pack.ps1` du
 dépôt Mue compile, teste et publie les trois paquets. Une version publiée ne s'écrase pas :
 augmenter la version pour éviter un ancien paquet dans le cache NuGet.
 
-Dans `package.yml`, CI extrait `syl-craft/Mue` au tag `v0.1.0`, empaquette vers un dossier
+Dans `package.yml`, CI extrait `syl-craft/Mue` au tag `v0.2.0`, empaquette vers un dossier
 temporaire du runner et passe ce flux aux tests. La variable `MueFeed` reste disponible pour
 le packaging et les bancs suivants. Les sources Mue temporaires sont retirées avant le build
 DockPad pour ne pas être prises par ses globs. Le dépôt distant et le tag doivent exister
 avant l'exécution de ce workflow.
+
+### Flux de validation des préversions
+
+Dans Mue : `dotnet build Mue.sln -m:4`, puis `dotnet test Mue.sln -m:4 --filter "Category!=RealMachine"`,
+puis `./pack.ps1 -Feed <TMP>/feed -Version 0.2.0-b2.N -SkipTests`. Chaque nouvel empaquetage
+utilise un nouveau numéro, sans écrire dans le flux de production.
+
+Dans DockPad, passer `-p:MueFeed=<TMP>/feed -p:MueVersion=0.2.0-b2.N` au build et aux tests ciblés
+Update/LocKey/Translation/Leet/Resx/Style, puis aux tests WPF Update et à la compilation de DialogShot
+et AppAcceptanceHook. Les tests `RealMachine` restent exécutables hors bac à sable.
+Les 108 captures DialogShot fr/en/qps-Ploc × clair/sombre/bascule sont comparées pixel par pixel
+aux références. `update-blockers-unavailable` est une fixture supplémentaire, hors comparaison.
 
 ## Adaptation native à maintenir
 
