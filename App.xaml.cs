@@ -502,7 +502,7 @@ public partial class App : Application
             AppDialog.Info(Loc.T("Update_CloseDialogs"), Loc.T("Update_Title"), updateDialog);
             return false;
         }
-        await Services.Updates.PendingWrites.CompleteAsync();
+        await Mue.PendingWrites.CompleteAsync();
         Secrets.SecretInjection.ClearClipboardNow();
         return true;
     }

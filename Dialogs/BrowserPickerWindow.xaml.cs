@@ -243,7 +243,7 @@ public partial class BrowserPickerWindow : Window
         // Le décompte d'ouverture automatique est déjà annulé par PreviewMouseDown : sans ça,
         // mettre en favori aurait ouvert le navigateur sous les doigts.
         PendingFavoriteWrite = ApplyFavoriteAsync(BtnFavorite.IsChecked == true);
-        Services.Updates.PendingWrites.Track(PendingFavoriteWrite);
+        Mue.PendingWrites.Track(PendingFavoriteWrite);
     }
 
     private async Task ApplyFavoriteAsync(bool wanted)

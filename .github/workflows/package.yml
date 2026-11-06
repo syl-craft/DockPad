@@ -10,11 +10,26 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Checkout Mue
+        uses: actions/checkout@v4
+        with:
+          repository: syl-craft/Mue
+          ref: v0.1.0
+          path: .mue-source
+      - name: Pack Mue
+        shell: pwsh
+        run: |
+          $feed = Join-Path $env:RUNNER_TEMP 'mue-feed'
+          ./.mue-source/pack.ps1 -Feed $feed -SkipTests
+          "MueFeed=$feed" >> $env:GITHUB_ENV
+          Remove-Item -LiteralPath (Join-Path $env:GITHUB_WORKSPACE '.mue-source') -Recurse -Force
       - name: Test
-        run: dotnet test DockPad.Tests/DockPad.Tests.csproj -c Release
+        run: dotnet test DockPad.Tests/DockPad.Tests.csproj -c Release -m:4 "-p:MueFeed=$env:MueFeed"
       - name: Test (fenetre WPF)
-        run: dotnet test DockPad.Tests.Wpf/DockPad.Tests.Wpf.csproj -c Release
+        run: dotnet test DockPad.Tests.Wpf/DockPad.Tests.Wpf.csproj -c Release -m:4 "-p:MueFeed=$env:MueFeed"
       - name: Build adapted native tools
         shell: pwsh
         run: |

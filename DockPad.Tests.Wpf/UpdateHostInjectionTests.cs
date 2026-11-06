@@ -1,9 +1,10 @@
+using Mue.Wpf;
 using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using DockPad.Services.Localization;
-using DockPad.Services.Updates;
+using Mue;
 
 namespace DockPad.Tests;
 

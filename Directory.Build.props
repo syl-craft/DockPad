@@ -1,4 +1,8 @@
 <Project>
+  <PropertyGroup>
+    <MueFeed Condition="'$(MueFeed)' == ''">C:\Users\Sylvain\nuget-local</MueFeed>
+    <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);$(MueFeed)</RestoreAdditionalProjectSources>
+  </PropertyGroup>
 
   <!--
     Symboles et chemins, pour tous les projets du depot.
