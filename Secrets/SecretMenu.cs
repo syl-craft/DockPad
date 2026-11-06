@@ -79,7 +79,7 @@ public static class SecretMenu
 
     /// <summary>Le chemin réel de l'exécutable en cours — celui que l'entrée doit lancer.</summary>
     private static string ExePath =>
-        Services.Updates.AppInstallation.Executable;
+        Services.UpdateHost.AppInstallation.Executable;
 
     public static void RefreshExisting()
     {

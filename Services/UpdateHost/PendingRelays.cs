@@ -1,6 +1,8 @@
-namespace DockPad.Services.Updates;
+namespace DockPad.Services.UpdateHost;
 
-/// <summary>Accepted requests remain in memory until handled or handed to a stable launcher.</summary>
+/// <summary>
+/// Les requêtes acceptées restent en mémoire jusqu'au traitement ou au transfert au lanceur stable.
+/// </summary>
 public sealed class PendingRelays(Action<Action> schedule, Action<string[]> forward)
 {
     private readonly object _gate = new();
@@ -28,7 +30,7 @@ public sealed class PendingRelays(Action<Action> schedule, Action<string[]> forw
         }
         handle();
     }
-    // Called on the UI thread, so a UI handler cannot be running concurrently.
+    // Appelé sur le thread d'interface, sans gestionnaire d'interface concurrent.
     public void BeginHandoff()
     {
         lock (_gate)

@@ -173,17 +173,17 @@ public partial class App : Application
 
         _trayIcon = CreateTrayIcon();
 
-        if (Services.Updates.AppInstallation.Root is not null)
+        if (Services.UpdateHost.AppInstallation.Root is not null)
         {
             if (Services.SettingsService.LoadAutoStart()) Services.SettingsService.SaveAutoStart(true);
             Services.BrowserRegistrationService.RefreshExisting();
             Secrets.SecretMenu.RefreshExisting();
         }
-        Services.Updates.UpdateService.Current.StartPolling();
+        Services.UpdateHost.DockPadUpdates.Service.StartPolling();
 
         _updateRelays = new(action => Dispatcher.BeginInvoke(action), args =>
         {
-            if (!Services.Updates.AppInstallation.DeferDuringUpdate(args))
+            if (!Services.UpdateHost.AppInstallation.DeferDuringUpdate(args))
                 throw new System.IO.IOException("Update handoff is not active");
         });
         Services.UrlPipeService.StartServer(u =>
@@ -218,7 +218,7 @@ public partial class App : Application
 
     /// <summary>Pipe du clic droit « Injecter les secrets… », jumeau de celui des URL.</summary>
     private static readonly Services.LinePipeService InjectPipe = new(Services.StartupRelay.InjectPipeName);
-    private Services.Updates.PendingRelays? _updateRelays;
+    private Services.UpdateHost.PendingRelays? _updateRelays;
     public void BeginUpdateHandoff() => _updateRelays?.BeginHandoff();
     public void CancelUpdateHandoff() => _updateRelays?.Resume();
 
@@ -480,7 +480,7 @@ public partial class App : Application
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         SystemEvents.SessionSwitch -= OnSessionSwitch;
         StopStreamDockAsync().GetAwaiter().GetResult();
-        Services.Updates.UpdateService.Stop();
+        Services.UpdateHost.DockPadUpdates.Stop();
         // Filet de sortie : un rendu encore dans le presse-papier en est retiré, à condition qu'il
         // s'y trouve toujours — l'utilisateur a pu copier autre chose entre-temps.
         Secrets.SecretInjection.ClearClipboardNow();

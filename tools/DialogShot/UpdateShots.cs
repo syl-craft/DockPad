@@ -1,3 +1,4 @@
+using DockPad.Services.UpdateHost;
 using DockPad;
 using DockPad.Services;
 using DockPad.Services.Updates;
@@ -13,14 +14,15 @@ internal static class UpdateShots
     public static UpdatesDialog Create(UpdateState state = UpdateState.Available)
     {
         var service = CreateService(state);
-        var window = new UpdatesDialog(service);
+        var window = new UpdatesDialog(service, DockPadUpdates.DialogHost);
         window.Closed += (_, _) => service.Dispose();
         return window;
     }
 
     private static UpdateService CreateService(UpdateState state)
     {
-        var service = new UpdateService(new Fixture(state));
+        var schedule = new MemoryUpdateSchedule();
+        var service = new UpdateService(new Fixture(state), new UpdateServiceOptions { Schedule = schedule });
         var previous = SynchronizationContext.Current;
         try
         {
@@ -32,7 +34,7 @@ internal static class UpdateShots
             typeof(UpdateService).GetProperty(nameof(UpdateService.State))?.SetValue(service, state);
             if (state == UpdateState.Downloading)
                 typeof(UpdateService).GetProperty(nameof(UpdateService.Progress))?.SetValue(service, 62);
-            AppSettingsService.Update(s => s.LastUpdateCheck = DateTimeOffset.UtcNow.AddMinutes(-12));
+            schedule.RecordCheck(DateTimeOffset.UtcNow.AddMinutes(-12));
         }
         finally { SynchronizationContext.SetSynchronizationContext(previous); }
         return service;
@@ -58,17 +60,17 @@ internal static class UpdateShots
     {
         var started = DateTime.Today.AddHours(9).AddMinutes(12).ToFileTimeUtc();
         UpdateBlocker[] blockers = incomplete ? [
-            new() { Pid = 43244, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
-            new() { Pid = 5004, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Desktop", Started = started, Selected = true },
+            new() { Pid = 43244, Name = "DockPad", IsRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
+            new() { Pid = 5004, Name = "DockPad", IsRelay = true, ParentName = "Claude Desktop", Started = started, Selected = true },
             new() { Pid = 17164, Name = "Windows Terminal", Started = started },
         ] : [
-            new() { Pid = 31200, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
-            new() { Pid = 43244, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
-            new() { Pid = 5004, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Desktop", Started = started, Selected = true },
+            new() { Pid = 31200, Name = "DockPad", IsRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
+            new() { Pid = 43244, Name = "DockPad", IsRelay = true, ParentName = "Claude Code", Started = started, Selected = true },
+            new() { Pid = 5004, Name = "DockPad", IsRelay = true, ParentName = "Claude Desktop", Started = started, Selected = true },
             new() { Pid = 17164, Name = "Windows Terminal", Started = started },
         ];
         return new UpdateBlockersDialog(System.IO.Path.GetTempPath(), blockers,
-            refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
+            host: new DockPadUpdateDialogHost(), forcesShutdown: false, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
             close: (_, _) => Task.FromResult(false), incomplete: incomplete);
     }
 

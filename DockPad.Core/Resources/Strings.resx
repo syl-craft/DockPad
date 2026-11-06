@@ -2113,4 +2113,10 @@ This cannot be undone.</value>
   <data name="Shortcut_Err_BandColor" xml:space="preserve">
     <value>Invalid band color: use #RRGGBB or an empty value for the type color.</value>
   </data>
+  <data name="Update_BlockedHelpForced" xml:space="preserve">
+    <value>Close programs using the application’s files before continuing. Installation will force any programs still open to stop, without saving their work.</value>
+  </data>
+  <data name="Update_IncompleteHelpForced" xml:space="preserve">
+    <value>Some programs are still open. Installation will force them to stop, without saving their work.</value>
+  </data>
 </root>

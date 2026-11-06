@@ -1,3 +1,4 @@
+using DockPad.Services.UpdateHost;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -34,7 +35,7 @@ internal static class UpdateUiAcceptance
         Click(Button(entry, "Common_Cancel"));
         await Until(() => !entry.IsVisible, "close menu dialog");
         var backend = new ControlledBackend();
-        using var service = new UpdateService(backend);
+        using var service = new UpdateService(backend, DockPadUpdates.ServiceOptions);
         var window = await Open(service);
         await Idle();
         Assert(!Button(window, "Update_Install").IsEnabled, "install disabled before discovery");
@@ -107,7 +108,7 @@ internal static class UpdateUiAcceptance
         }
         Loc.SetCulture(CultureInfo.GetCultureInfo("fr")); ThemeService.Apply(false);
         window.Close();
-        using (var unavailable = new UpdateService(new ControlledBackend { IsInstalled = false }))
+        using (var unavailable = new UpdateService(new ControlledBackend { IsInstalled = false }, DockPadUpdates.ServiceOptions))
         {
             var legacy = await Open(unavailable); await Idle();
             Assert(!Button(legacy, "Update_Check").IsEnabled && Button(legacy, "Update_DownloadLatest").IsVisible, "legacy installation offers download");
@@ -115,13 +116,13 @@ internal static class UpdateUiAcceptance
         }
 
         // The successful path uses actual Velopack packages, through the same buttons.
-        var realService = new UpdateService(new VelopackBackend(new UpdateManager(Path.Combine(root, "feed"))));
+        var realService = new UpdateService(new VelopackBackend(new UpdateManager(Path.Combine(root, "feed")), DockPadUpdates.BackendOptions), DockPadUpdates.ServiceOptions);
         window = await Open(realService);
         Click(Button(window, "Update_Check"));
         await Until(() => realService.State == UpdateState.Available, "real package discovered");
         Assert(realService.Release!.Version == FixtureVersion("Next"), "real next version displayed");
         using var blocker = StartMcp();
-        await Until(() => UpdateBlockers.Find(AppContext.BaseDirectory).Any(b => b.Pid == blocker.Id), "real MCP image lock");
+        await Until(() => UpdateBlockers.Find(AppContext.BaseDirectory, new DockPadBlockerClassifier()).Any(b => b.Pid == blocker.Id), "real MCP image lock");
         Click(Button(window, "Update_Install"));
         var blocked = await Modal<UpdateBlockersDialog>();
         await Idle();
@@ -163,7 +164,7 @@ internal static class UpdateUiAcceptance
         confirm = await Modal<AppDialog>();
         // Stop before apply to test Retry with a second lock after an explicitly approved kill.
         using var second = StartMcp();
-        await Until(() => UpdateBlockers.Find(AppContext.BaseDirectory).Any(b => b.Pid == second.Id), "second lock");
+        await Until(() => UpdateBlockers.Find(AppContext.BaseDirectory, new DockPadBlockerClassifier()).Any(b => b.Pid == second.Id), "second lock");
         Click((Button)confirm.FindName("BtnPrimary"));
         await Until(() => blocker.HasExited && ((Button)blocked.FindName("RetryButton")).IsEnabled, "approved close");
         Assert(!second.HasExited && blocked.IsVisible, "only selected process terminated");
@@ -181,7 +182,7 @@ internal static class UpdateUiAcceptance
     public static async Task VerifyRestartAsync(string root)
     {
         _root = root;
-        using var service = new UpdateService(new VelopackBackend(new UpdateManager(Path.Combine(root, "feed"))));
+        using var service = new UpdateService(new VelopackBackend(new UpdateManager(Path.Combine(root, "feed")), DockPadUpdates.BackendOptions), DockPadUpdates.ServiceOptions);
         var window = await Open(service);
         Click(Button(window, "Update_Check"));
         await Until(() => service.State == UpdateState.Idle && service.Status == Loc.T("Update_UpToDate"), "updated version reports up to date");
@@ -199,7 +200,7 @@ internal static class UpdateUiAcceptance
     }
     private static async Task<UpdatesDialog> Open(UpdateService service)
     {
-        var window = new UpdatesDialog(service) { Owner = Application.Current.MainWindow };
+        var window = new UpdatesDialog(service, DockPadUpdates.DialogHost) { Owner = Application.Current.MainWindow };
         _ = window.Dispatcher.BeginInvoke(new Action(() => window.ShowDialog()));
         await Until(() => window.IsVisible && window.IsLoaded, "update dialog opened modally");
         return window;

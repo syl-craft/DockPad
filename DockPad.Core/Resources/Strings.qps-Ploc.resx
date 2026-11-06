@@ -2113,4 +2113,10 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Shortcut_Err_BandColor" xml:space="preserve">
     <value>C0ul3ur d3 b4nd3 1nv4l1d3 : f0rm4t #RRGGBB 4tt3ndu, 0u v4l3ur v1d3 p0ur l4 c0ul3ur du typ3.</value>
   </data>
+  <data name="Update_BlockedHelpForced" xml:space="preserve">
+    <value>F3rm3z l35 pr0gr4mm35 qu1 ut1l153nt l35 f1ch13r5 d3 l’4ppl1c4t10n 4v4nt d3 c0nt1nu3r. L’1n5t4ll4t10n 4rr3t3r4 d3 f0rc3 l35 pr0gr4mm35 3nc0r3 0uv3rt5, 54n5 3nr3g15tr3r l3ur tr4v41l.</value>
+  </data>
+  <data name="Update_IncompleteHelpForced" xml:space="preserve">
+    <value>C3rt41n5 pr0gr4mm35 50nt 3nc0r3 0uv3rt5. L’1n5t4ll4t10n l35 4rr3t3r4 d3 f0rc3, 54n5 3nr3g15tr3r l3ur tr4v41l.</value>
+  </data>
 </root>

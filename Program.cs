@@ -40,13 +40,13 @@ internal static class Program
             || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("VELOPACK_RESTART"));
         if (!lifecycle)
         {
-            if (Services.Updates.AppInstallation.DeferDuringUpdate(args)) return 0;
+            if (Services.UpdateHost.AppInstallation.DeferDuringUpdate(args)) return 0;
             // Un prédéfini terminal du clic droit : jamais l'application complète.
             if (Services.TerminalLaunch.TryHandle(args)) return 0;
             if (StartupRelay.TryRelay(args)) return 0;
         }
         Velopack.VelopackApp.Build().SetAutoApplyOnStartup(false)
-            .OnRestarted(_ => Services.Updates.AppInstallation.EndUpdate()).Run();
+            .OnRestarted(_ => Services.UpdateHost.AppInstallation.EndUpdate()).Run();
 
         var app = new App();
         app.InitializeComponent();

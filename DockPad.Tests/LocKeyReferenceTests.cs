@@ -32,7 +32,7 @@ public class LocKeyReferenceTests
 {
     /// <summary>Début d'un appel de localisation, en C# comme en XAML.</summary>
     private static readonly Regex CallStart =
-        new(@"Loc\.(?:T|F)\(|\{loc:T\s+", RegexOptions.Compiled);
+        new(@"(?:Loc|UpdateTexts)\.(?:T|F)\(|\{loc:T\s+", RegexOptions.Compiled);
 
     /// <summary>Forme d'une clé : <c>Zone_Element</c>.</summary>
     private static readonly Regex KeyShape =

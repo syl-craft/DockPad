@@ -77,7 +77,7 @@
                                             <TextBlock Text="{Binding Help}" TextWrapping="Wrap" MaxWidth="570" Margin="0,4,0,0" FontSize="12">
                                                 <TextBlock.Style><Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource Brush.WarnTextAlt}"/>
-                                                    <Style.Triggers><DataTrigger Binding="{Binding IsMcpRelay}" Value="True">
+                                                    <Style.Triggers><DataTrigger Binding="{Binding IsRelay}" Value="True">
                                                         <Setter Property="Foreground" Value="{DynamicResource Brush.TextLabel}"/>
                                                     </DataTrigger></Style.Triggers>
                                                 </Style></TextBlock.Style>

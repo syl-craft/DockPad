@@ -26,8 +26,8 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// </summary>
     public QuickAccessCommands Commands { get; }
     private readonly Services.Updates.UpdateService? _updates;
-    public Services.Updates.UpdateService Updates => _updates ?? Services.Updates.UpdateService.Current;
-    public void ShowUpdates() => new UpdatesDialog(Updates) { Owner = this }.ShowDialog();
+    public Services.Updates.UpdateService Updates => _updates ?? Services.UpdateHost.DockPadUpdates.Service;
+    public void ShowUpdates() => new UpdatesDialog(Updates, Services.UpdateHost.DockPadUpdates.DialogHost) { Owner = this }.ShowDialog();
 
     /// <summary>
     /// Laquelle des deux grilles est affichée. Voir <see cref="TileModeState"/> : le mode Favoris
