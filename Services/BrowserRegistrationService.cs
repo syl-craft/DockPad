@@ -21,7 +21,7 @@ public static class BrowserRegistrationService
     private const string UserChoicePath   = @"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice";
 
     private static string ExePath =>
-        Updates.AppInstallation.Executable;
+        UpdateHost.AppInstallation.Executable;
 
     public static void RefreshExisting()
     {

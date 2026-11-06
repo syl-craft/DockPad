@@ -1,3 +1,4 @@
+using DockPad.Services.UpdateHost;
 using System.Windows;
 using System.Windows.Controls;
 using DockPad.Services.Localization;
@@ -12,11 +13,11 @@ public class UpdateDialogTests
     {
         var attempts = new List<(int Pid, bool Force)>();
         UpdateBlocker[] blockers = [
-            new() { Pid = 1, Name = "DockPad", IsMcpRelay = true, ParentName = "Claude Code", Selected = true },
+            new() { Pid = 1, Name = "DockPad", IsRelay = true, ParentName = "Claude Code", Selected = true },
             new() { Pid = 2, Name = "Editor" },
         ];
         var window = new UpdateBlockersDialog("unused", blockers,
-            refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
+            host: new DockPadUpdateDialogHost(), forcesShutdown: false, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
             close: (blocker, force) => { attempts.Add((blocker.Pid, force)); return Task.FromResult(false); });
         var button = (Button)window.FindName("CloseButton");
         var heading = (TextBlock)window.FindName("Heading");
@@ -42,8 +43,8 @@ public class UpdateDialogTests
     {
         var editor = new UpdateBlocker { Pid = 2, Name = "Editor" };
         var window = new UpdateBlockersDialog("unused",
-            [new() { Pid = 1, Name = "DockPad", IsMcpRelay = true }, editor],
-            refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>([editor]), close: (_, _) => Task.FromResult(true));
+            [new() { Pid = 1, Name = "DockPad", IsRelay = true }, editor],
+            host: new DockPadUpdateDialogHost(), forcesShutdown: false, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>([editor]), close: (_, _) => Task.FromResult(true));
         var button = (Button)window.FindName("CloseButton");
 
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -60,7 +61,7 @@ public class UpdateDialogTests
     {
         UpdateBlocker[] blockers = [new() { Pid = 1, Name = "Editor" }, new() { Pid = 2, Name = "Editor" }];
         var window = new UpdateBlockersDialog("unused", blockers,
-            refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers), close: (_, _) => Task.FromResult(false));
+            host: new DockPadUpdateDialogHost(), forcesShutdown: false, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers), close: (_, _) => Task.FromResult(false));
         var button = (Button)window.FindName("CloseButton");
         Assert.False(button.IsEnabled);
         var group = Assert.Single(((ItemsControl)window.FindName("Processes")).Items.Cast<UpdateBlockerGroup>());

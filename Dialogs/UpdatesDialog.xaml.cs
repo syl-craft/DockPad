@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Threading;
-using DockPad.Services;
 using DockPad.Services.Updates;
 
 namespace DockPad;
@@ -15,11 +14,11 @@ public partial class UpdatesDialog : Window
     private bool _preparing;
     private UpdateNotes? _renderedNotes;
     private readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromMinutes(1) };
-    public UpdatesDialog() : this(UpdateService.Current) { }
-    public UpdatesDialog(UpdateService updates)
+    private readonly IUpdateDialogHost _host;
+    public UpdatesDialog(UpdateService updates, IUpdateDialogHost host)
     {
-        InitializeComponent(); _updates = updates; DataContext = updates;
-        Automatic.IsChecked = AppSettingsService.Current.CheckForUpdates;
+        InitializeComponent(); _updates = updates; _host = host; DataContext = updates;
+        Automatic.IsChecked = _updates.Automatic;
         _updates.PropertyChanged += Updates_Changed;
         _clock.Tick += Clock_Tick;
         _clock.Start();
@@ -32,7 +31,7 @@ public partial class UpdatesDialog : Window
         RefreshDisplay();
     }
     private void Automatic_Click(object sender, RoutedEventArgs e) =>
-        AppSettingsService.Update(s => s.CheckForUpdates = Automatic.IsChecked == true);
+        _updates.Automatic = Automatic.IsChecked == true;
     private void Clock_Tick(object? sender, EventArgs e) => LastChecked.GetBindingExpression(TextBlock.TextProperty)?.UpdateTarget();
     private void Updates_Changed(object? sender, PropertyChangedEventArgs e)
     {
@@ -88,13 +87,13 @@ public partial class UpdatesDialog : Window
     {
         var version = (_updates.Release?.Version ?? _updates.CurrentVersion).TrimStart('v');
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-            "https://github.com/syl-craft/DockPad/releases/tag/v" + Uri.EscapeDataString(version)) { UseShellExecute = true });
+            _host.ReleasePage(version)) { UseShellExecute = true });
     }
     private void DownloadLatest_Click(object sender, RoutedEventArgs e) =>
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/syl-craft/DockPad/releases/latest") { UseShellExecute = true });
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(_host.LatestReleasePage) { UseShellExecute = true });
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (_preparing && !App.IsExiting) e.Cancel = true;
+        if (_preparing && !_host.IsExiting) e.Cancel = true;
         if (!e.Cancel) _updates.CancelDownload();
         base.OnClosing(e);
     }
@@ -105,22 +104,19 @@ public partial class UpdatesDialog : Window
         try
         {
             _updates.BeginPreparation();
-            if (AppInstallation.IsWithin(AppPaths.ProfileRoot, AppInstallation.Root ?? _updates.ContentDirectory))
-                throw new IOException(Loc.T("Update_ProfileInside"));
-            if (Application.Current is not App app || !await app.PrepareForUpdateAsync(this)) return;
-            var blockers = await Task.Run(() => UpdateBlockers.Find(_updates.ContentDirectory));
-            if (blockers.Count > 0 && new UpdateBlockersDialog(_updates.ContentDirectory, blockers) { Owner = this }.ShowDialog() != true) return;
-            // A final check improves feedback. The native updater independently refuses any race.
-            if ((await Task.Run(() => UpdateBlockers.Find(_updates.ContentDirectory, enrich: false))).Count > 0)
-                throw new IOException(Loc.T("Update_LockError"));
-            if (!await app.PrepareForUpdateAsync(this)) return;
-            AppInstallation.BeginUpdate();
-            try { app.BeginUpdateHandoff(); _updates.Apply(); }
-            catch { AppInstallation.EndUpdate(); app.CancelUpdateHandoff(); throw; }
-            // Drain accepted relay requests: after the marker they go to the stable launcher.
-            _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(App.Exit));
+            if (!await _host.PrepareAsync(this, System.Threading.CancellationToken.None)) return;
+            var blockers = await Task.Run(() => _host.Finder.Find(_updates.ContentDirectory, _host.Classifier));
+            if (blockers.Count > 0 && new UpdateBlockersDialog(_updates.ContentDirectory, blockers, _host, _updates.ForcesShutdown) { Owner = this }.ShowDialog() != true) return;
+            // Le contrôle final améliore le retour ; le moteur natif décide ensuite du remplacement.
+            if ((await Task.Run(() => _host.Finder.Find(_updates.ContentDirectory, _host.Classifier, enrich: false))).Count > 0)
+                throw new IOException(UpdateTexts.T("Update_LockError"));
+            if (!await _host.PrepareAsync(this, System.Threading.CancellationToken.None)) return;
+            _host.BeforeApply();
+            try { _updates.Apply(); }
+            catch { _host.ApplyFailed(); throw; }
+            _host.ExitAfterApply();
         }
-        catch (Exception ex) { LogService.Warn(ex, "Cannot apply update"); AppDialog.Error(ex.Message, Loc.T("Update_Title"), this); }
+        catch (Exception ex) { _host.Log.Warn(ex, "Cannot apply update"); _host.ShowError(ex.Message, this); }
         finally
         {
             // Sans effet une fois l'outil de mise à jour lancé : l'état est alors Installing.

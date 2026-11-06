@@ -1,3 +1,4 @@
+using DockPad.Services.UpdateHost;
 using System.IO;
 using DockPad.Services.Localization;
 using DockPad.Services.Updates;
@@ -188,11 +189,11 @@ public class UpdateServiceTests
         try
         {
             Assert.Equal("ready", await child.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10)));
-            var blocker = Assert.Single(UpdateBlockers.Find(directory), b => b.Pid == child.Id);
+            var blocker = Assert.Single(UpdateBlockers.Find(directory, new DockPadBlockerClassifier()), b => b.Pid == child.Id);
             Assert.False(await UpdateBlockers.CloseAsync(blocker, force: false));
             Assert.False(child.HasExited);
             Assert.True(await UpdateBlockers.CloseAsync(blocker, force: true));
-            Assert.Empty(UpdateBlockers.Find(directory));
+            Assert.Empty(UpdateBlockers.Find(directory, new DockPadBlockerClassifier()));
         }
         finally
         {

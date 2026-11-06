@@ -2113,4 +2113,10 @@ Cette action est irréversible.</value>
   <data name="Shortcut_Err_BandColor" xml:space="preserve">
     <value>Couleur de bande invalide : format #RRGGBB attendu, ou valeur vide pour la couleur du type.</value>
   </data>
+  <data name="Update_BlockedHelpForced" xml:space="preserve">
+    <value>Fermez les programmes qui utilisent les fichiers de l’application avant de continuer. L’installation arrêtera de force les programmes encore ouverts, sans enregistrer leur travail.</value>
+  </data>
+  <data name="Update_IncompleteHelpForced" xml:space="preserve">
+    <value>Certains programmes sont encore ouverts. L’installation les arrêtera de force, sans enregistrer leur travail.</value>
+  </data>
 </root>

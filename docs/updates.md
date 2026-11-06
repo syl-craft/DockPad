@@ -12,6 +12,30 @@ Les profils restent dans `%APPDATA%/DockPad` ou `DOCKPAD_PROFILE_DIR`. Un profil
 
 Le lanceur racine transmet directement les arguments à `current/DockPad.exe`. Les événements d’installation et de redémarrage sont reconnus avant le relais. Le relais courant sort avant l’initialisation Velopack et la construction WPF ; l’entretien des paquets est réservé aux lancements persistants. Pendant l’application de la mise à jour, un marqueur retient les nouveaux lancements à la racine ; leurs arguments restent en mémoire. Les requêtes déjà acceptées mais pas encore traitées sont transférées au lanceur avant la sortie. Le pipe acquitte la prise en charge ; s’il ferme avant l’acquittement, le client utilise son repli. Il s’agit d’une remise au moins une fois, pas d’une transaction garantissant l’absence de doublon dans toute course de fermeture. Le marqueur expire après cinq minutes si l’updater ne revient pas.
 
+## Points d'injection (bibliothèque Mue)
+
+`Services/Updates` porte les contrats et le moteur de mise à jour : `IUpdateTexts` via
+`UpdateTexts`, `IUpdateLog`, `IUpdateSchedule`, `IUpdateBackend`, `IUpdateBlockerClassifier`,
+`IUpdateBlockerFinder` et `IUpdateDialogHost`. Ce dernier reçoit un propriétaire `object` et un
+jeton d'annulation, sans dépendance WPF. `UpdateServiceOptions` injecte aussi `CanSearch` et
+`TimeProvider` ; les délais restent 20 secondes, 15 minutes et six heures entre recherches.
+`MemoryUpdateSchedule`, `ProgramClassifier` et `FakeUpdateBackend` permettent les fixtures sans
+profil, réseau ni processus réels. `WindowsUpdateBlockerFinder` conserve Restart Manager, WMI
+et le contrôle PID/date de démarrage avant fermeture ; `VelopackLayout` résout les chemins.
+
+`Services/UpdateHost` branche ces contrats sur DockPad : localisation au chargement du module,
+journal, réglages persistés, classification MCP, préparation et sortie de l'application.
+`DockPadUpdates.Service` remplace le singleton du moteur. `AppInstallation` et `PendingRelays`
+vivent dans ce dossier ; le constructeur sans paramètre de `UpdatesDialog` est une partie
+de la classe déclarée côté hôte. Les deux dialogues reçoivent leurs dépendances explicitement.
+Seules leurs extensions XAML `{loc:T}` restent à extraire avec la bibliothèque Mue.
+
+`ForcesShutdown` vaut `true` par défaut pour le backend Velopack standard. DockPad le pose à
+`false` avec ses binaires adaptés : les textes existants sont conservés. Un hôte utilisant le
+moteur standard reçoit des avertissements traduits indiquant l'arrêt forcé sans enregistrement.
+`UpdateDependencyGuardTests` interdit les références aux services de l'application depuis le
+code générique et les deux code-behind.
+
 ## Adaptation native à maintenir
 
 Le moteur de remplacement reste celui de Velopack. Toutefois, la version amont termine de force les processus du dossier d’installation. Cela contredit le consentement demandé pour les sessions MCP/IA. `tools/velopack/no-force-stop.patch` remplace ce comportement par un refus et propage l’erreur avant le remplacement. `stub.rs` évite le détour par `Update.exe` lors de chaque ouverture de lien, attend le marqueur et conserve les flux stdio MCP.

@@ -1,3 +1,4 @@
+using DockPad.Services.UpdateHost;
 using DockPad.Services.Localization;
 using DockPad.Services.Updates;
 
@@ -19,8 +20,8 @@ public class UpdateBlockerGroupsTests
     [InlineData(@"C:\App\current\DockPad.exe", null, false)]
     public void OnlyAnMcpArgumentInAnInstallationImageIdentifiesARelay(string image, string? command, bool expected)
     {
-        var classification = UpdateBlockerGroups.Classify(image, @"C:\App\current", command, "claude.exe", @"C:\bin\claude.exe");
-        Assert.Equal(expected, classification.IsMcpRelay);
+        var classification = new DockPadBlockerClassifier().Classify(new(image, @"C:\App\current", command, "claude.exe", @"C:\bin\claude.exe"));
+        Assert.Equal(expected, classification.IsRelay);
     }
 
     [Theory]
@@ -30,16 +31,16 @@ public class UpdateBlockerGroupsTests
     [InlineData("Editor.exe", @"C:\Programs\Editor.exe", "Editor")]
     public void RelayOwnerUsesTheParentProgram(string name, string path, string expected)
     {
-        Assert.Equal(expected, UpdateBlockerGroups.Classify(@"C:\App\DockPad.exe", @"C:\App", "DockPad.exe --mcp", name, path).Program);
+        Assert.Equal(expected, new DockPadBlockerClassifier().Classify(new(@"C:\App\DockPad.exe", @"C:\App", "DockPad.exe --mcp", name, path)).Program);
     }
 
     [Fact]
     public void MissingParentIsExplicitlyUnknown()
     {
-        var result = UpdateBlockerGroups.Classify(@"C:\App\DockPad.exe", @"C:\App", "DockPad.exe --mcp", null, null);
-        Assert.True(result.IsMcpRelay);
+        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\DockPad.exe", @"C:\App", "DockPad.exe --mcp", null, null));
+        Assert.True(result.IsRelay);
         Assert.Null(result.Program);
-        Assert.Equal(Loc.T("Update_UnknownProgram"), new UpdateBlocker { IsMcpRelay = true }.DisplayName);
+        Assert.Equal(Loc.T("Update_UnknownProgram"), new UpdateBlocker { IsRelay = true }.DisplayName);
     }
 
     [Theory]
@@ -47,16 +48,16 @@ public class UpdateBlockerGroupsTests
     [InlineData(@"C:\Other\DockPad.exe")]
     public void StableLauncherIsSkippedWhenResolvingTheRelayOwner(string launcher)
     {
-        var result = UpdateBlockerGroups.Classify(@"C:\App\current\DockPad.exe", @"C:\App\current",
-            "DockPad.exe --mcp", "DockPad.exe", launcher, "claude.exe", @"C:\bin\claude.exe");
+        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\current\DockPad.exe", @"C:\App\current",
+            "DockPad.exe --mcp", "DockPad.exe", launcher, "claude.exe", @"C:\bin\claude.exe"));
         Assert.Equal("Claude Code", result.Program);
     }
 
     [Fact]
     public void DockPadInsideCurrentIsNotSkippedAsAParent()
     {
-        var result = UpdateBlockerGroups.Classify(@"C:\App\current\DockPad.exe", @"C:\App\current",
-            "DockPad.exe --mcp", "DockPad.exe", @"C:\App\current\DockPad.exe", "claude.exe", @"C:\bin\claude.exe");
+        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\current\DockPad.exe", @"C:\App\current",
+            "DockPad.exe --mcp", "DockPad.exe", @"C:\App\current\DockPad.exe", "claude.exe", @"C:\bin\claude.exe"));
         Assert.Equal("DockPad", result.Program);
     }
 
@@ -67,7 +68,7 @@ public class UpdateBlockerGroupsTests
     [InlineData(@"C:\Programs\Editor.exe", false)]
     [InlineData(null, false)]
     public void StableLauncherOutsideCurrentIsNotAnIndependentBlocker(string? image, bool expected) =>
-        Assert.Equal(expected, UpdateBlockerGroups.IsStableLauncher(image, @"C:\App\current"));
+        Assert.Equal(expected, new DockPadBlockerClassifier().IsIgnored(image, @"C:\App\current"));
 
     [Fact]
     public void WmiFailuresDiscardPartialMetadataInsteadOfBlockingInstallation()
@@ -76,7 +77,7 @@ public class UpdateBlockerGroupsTests
             new System.Management.ManagementException("WMI failed"), new UnauthorizedAccessException(), new InvalidOperationException()];
         foreach (var error in errors)
         {
-            var metadata = UpdateBlockers.ReadProcessMetadata(partial =>
+            var metadata = new WindowsUpdateBlockerFinder().ReadProcessMetadata(partial =>
             {
                 partial[1] = new(2, "DockPad.exe", null, "--mcp");
                 throw error;
@@ -107,15 +108,15 @@ public class UpdateBlockerGroupsTests
     public void RelaysAreGroupedFirstAndProgramsAreGroupedByNameWithoutSelectingThem()
     {
         UpdateBlocker[] processes = [
-            new() { Pid = 1, IsMcpRelay = true, ParentName = "Claude Code", Selected = true },
-            new() { Pid = 2, IsMcpRelay = true, ParentName = "Claude Desktop", Selected = true },
+            new() { Pid = 1, IsRelay = true, ParentName = "Claude Code", Selected = true },
+            new() { Pid = 2, IsRelay = true, ParentName = "Claude Desktop", Selected = true },
             new() { Pid = 3, Name = "Editor" },
             new() { Pid = 4, Name = "editor" },
             new() { Pid = 5, Name = "Terminal" },
         ];
         var groups = UpdateBlockerGroups.Group(processes);
         Assert.Equal(3, groups.Count);
-        Assert.True(groups[0].IsMcpRelay);
+        Assert.True(groups[0].IsRelay);
         Assert.Equal(2, groups[0].Count);
         Assert.True(groups[0].Selected);
         Assert.False(groups[1].Selected);
@@ -132,7 +133,7 @@ public class UpdateBlockerGroupsTests
     {
         foreach (var relay in new[] { false, true })
         {
-            var blocker = new UpdateBlocker { Pid = 42, Started = 100, IsMcpRelay = relay };
+            var blocker = new UpdateBlocker { Pid = 42, Started = 100, IsRelay = relay };
             Assert.False(UpdateBlockers.MatchesIdentity(blocker, started: 200));
             Assert.True(UpdateBlockers.MatchesIdentity(blocker, started: 100));
         }
@@ -141,7 +142,7 @@ public class UpdateBlockerGroupsTests
     [Fact]
     public void OnlyRelaysAreSelectedByDefault()
     {
-        Assert.True(new UpdateBlocker { IsMcpRelay = true }.Selected);
-        Assert.False(new UpdateBlocker { IsMcpRelay = false }.Selected);
+        Assert.True(new UpdateBlocker { IsRelay = true }.Selected);
+        Assert.False(new UpdateBlocker { IsRelay = false }.Selected);
     }
 }

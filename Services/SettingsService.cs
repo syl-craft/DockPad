@@ -59,7 +59,7 @@ public static class SettingsService
 
         if (enabled)
         {
-            var exePath = Updates.AppInstallation.Executable;
+            var exePath = UpdateHost.AppInstallation.Executable;
             key.SetValue(AppName, $"\"{exePath}\"", RegistryValueKind.String);
         }
         else

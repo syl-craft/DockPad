@@ -1,3 +1,4 @@
+using DockPad.Services.UpdateHost;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,7 +20,7 @@ public class UpdateVisualTests
         ThemeService.Apply(dark);
         var window = new UpdateBlockersDialog("unused", Enumerable.Range(1, 3)
             .Select(pid => new UpdateBlocker { Pid = pid, Name = "Editor" }).ToArray(),
-            refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>([]), close: (_, _) => Task.FromResult(false));
+            host: new DockPadUpdateDialogHost(), forcesShutdown: false, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>([]), close: (_, _) => Task.FromResult(false));
         try
         {
             Layout(window);

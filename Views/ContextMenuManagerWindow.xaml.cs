@@ -40,7 +40,7 @@ public partial class ContextMenuManagerWindow : Window
     {
         try
         {
-            Process.Start(new ProcessStartInfo(DockPad.Services.Updates.AppInstallation.Executable)
+            Process.Start(new ProcessStartInfo(DockPad.Services.UpdateHost.AppInstallation.Executable)
             {
                 UseShellExecute = true,
                 Verb = "runas"

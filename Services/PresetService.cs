@@ -296,7 +296,7 @@ public static class PresetService
     private static string LauncherExe =>
         Path.Combine(AppContext.BaseDirectory, "DockPadTerminal.exe") is var launcher && File.Exists(launcher)
             ? launcher
-            : Updates.AppInstallation.Executable;
+            : UpdateHost.AppInstallation.Executable;
 
     /// <summary>
     /// Le logo ChatGPT, extrait <b>une seule fois</b> dans le store d'icônes du profil.

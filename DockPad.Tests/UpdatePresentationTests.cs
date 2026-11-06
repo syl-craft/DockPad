@@ -68,7 +68,7 @@ public class UpdatePresentationTests
         {
             Loc.SetCulture(CultureInfo.GetCultureInfo(language));
             DateTimeOffset? checkedAt = null;
-            using var service = new UpdateService(new PresentationBackend(size: 7_700_000), time => checkedAt = time);
+            using var service = new UpdateService(new PresentationBackend(size: 7_700_000), new UpdateServiceOptions { Schedule = new RecordingSchedule(time => checkedAt = time) });
             Assert.Equal("v1.31.1", service.VersionIndicator);
             await service.CheckAsync();
 
@@ -106,6 +106,13 @@ public class UpdatePresentationTests
             Assert.Equal(expected, Loc.F("Update_CloseCount", count));
         }
         finally { Loc.SetCulture(previous); }
+    }
+
+    private sealed class RecordingSchedule(Action<DateTimeOffset> record) : IUpdateSchedule
+    {
+        public bool Automatic { get; set; }
+        public DateTimeOffset LastCheck { get; private set; }
+        public void RecordCheck(DateTimeOffset at) { LastCheck = at; record(at); }
     }
 
     private sealed class PresentationBackend(long? size) : IUpdateBackend
