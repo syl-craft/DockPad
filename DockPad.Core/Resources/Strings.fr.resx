@@ -2125,4 +2125,46 @@ Cette action est irréversible.</value>
   <data name="Update_ScanIncomplete" xml:space="preserve">
     <value>Détection incomplète : certains processus n&apos;ont pas pu être identifiés.</value>
   </data>
+  <data name="Update_BlockedHelpAskToQuit" xml:space="preserve">
+    <value>L'installation demandera aux programmes encore ouverts de quitter. Ceux qui ne quittent pas risquent d'être interrompus sans enregistrer leur travail.</value>
+  </data>
+  <data name="Update_CloseResult_AccessDenied" xml:space="preserve">
+    <value>Accès refusé</value>
+  </data>
+  <data name="Update_CloseResult_Closed" xml:space="preserve">
+    <value>Fermé</value>
+  </data>
+  <data name="Update_CloseResult_Gone" xml:space="preserve">
+    <value>Déjà terminé</value>
+  </data>
+  <data name="Update_CloseResult_IdentityChanged" xml:space="preserve">
+    <value>Identité du processus modifiée</value>
+  </data>
+  <data name="Update_CloseResult_StillRunning" xml:space="preserve">
+    <value>Encore ouvert</value>
+  </data>
+  <data name="Update_CloseWindow" xml:space="preserve">
+    <value>Fermer</value>
+  </data>
+  <data name="Update_ConfirmHelpAskToQuit" xml:space="preserve">
+    <value>L’installation ferme DockPad. Les programmes qui utiliseraient ses fichiers d’ici là recevront une demande de quitter et pourront être interrompus sans enregistrer leur travail.</value>
+  </data>
+  <data name="Update_ConfirmHelpForced" xml:space="preserve">
+    <value>L’installation ferme DockPad. Les programmes qui utiliseraient ses fichiers d’ici là seront arrêtés de force, sans enregistrer leur travail.</value>
+  </data>
+  <data name="Update_ConfirmInstall" xml:space="preserve">
+    <value>Confirmer et installer</value>
+  </data>
+  <data name="Update_ConfirmTitle" xml:space="preserve">
+    <value>Confirmer l'installation</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>Télécharger</value>
+  </data>
+  <data name="Update_IncompleteHelpAskToQuit" xml:space="preserve">
+    <value>Certains programmes sont encore ouverts. L'installation leur demandera de quitter. Ceux qui ne quittent pas risquent d'être interrompus sans enregistrer leur travail.</value>
+  </data>
+  <data name="Update_InstallIgnoring" xml:space="preserve">
+    <value>Installer sans les fermer</value>
+  </data>
 </root>

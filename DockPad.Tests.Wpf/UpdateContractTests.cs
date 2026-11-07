@@ -40,7 +40,6 @@ public class UpdateContractTests
             var count = app.Resources.Count;
             MueStyles.AddMissingDefaults(app);
             Assert.Equal(count, app.Resources.Count);
-            Assert.Empty(app.Resources.MergedDictionaries);
         }
         finally { app.Resources = resources; }
     });

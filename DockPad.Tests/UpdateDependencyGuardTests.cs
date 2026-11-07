@@ -14,6 +14,11 @@ public class UpdateDependencyGuardTests
         Assert.Equal(Services.Localization.Loc.T("Update_ScanIncomplete"), Mue.UpdateTexts.T("Update_ScanIncomplete"));
     }
 
+    // Sans cette garde, une clé ajoutée par Mue s'afficherait dans sa langue à lui, y compris en 1337.
+    [Fact]
+    public void DockPadProvidesEveryMueText() =>
+        Assert.Empty(Mue.UpdateTextKeys.Missing(new Services.UpdateHost.LocUpdateTexts()));
+
     [Fact]
     public void GenericUpdatesLiveOnlyInMue()
     {

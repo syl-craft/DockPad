@@ -2125,4 +2125,46 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Update_ScanIncomplete" xml:space="preserve">
     <value>D3t3ct10n 1nc0mpl3t3 : c3rt41n5 pr0c355u5 n'0nt p45 pu 3tr3 1d3nt1f135.</value>
   </data>
+  <data name="Update_BlockedHelpAskToQuit" xml:space="preserve">
+    <value>L'1n5t4ll4t10n d3m4nd3r4 4ux pr0gr4mm35 3nc0r3 0uv3rt5 d3 qu1tt3r. C3ux qu1 n3 qu1tt3nt p45 r15qu3nt d'3tr3 1nt3rr0mpu5 54n5 3nr3g15tr3r l3ur tr4v41l.</value>
+  </data>
+  <data name="Update_CloseResult_AccessDenied" xml:space="preserve">
+    <value>4cc35 r3fu53</value>
+  </data>
+  <data name="Update_CloseResult_Closed" xml:space="preserve">
+    <value>F3rm3</value>
+  </data>
+  <data name="Update_CloseResult_Gone" xml:space="preserve">
+    <value>D3j4 t3rm1n3</value>
+  </data>
+  <data name="Update_CloseResult_IdentityChanged" xml:space="preserve">
+    <value>1d3nt1t3 du pr0c355u5 m0d1f133</value>
+  </data>
+  <data name="Update_CloseResult_StillRunning" xml:space="preserve">
+    <value>3nc0r3 0uv3rt</value>
+  </data>
+  <data name="Update_CloseWindow" xml:space="preserve">
+    <value>F3rm3r</value>
+  </data>
+  <data name="Update_ConfirmHelpAskToQuit" xml:space="preserve">
+    <value>L’1n5t4ll4t10n f3rm3 D0ckP4d. L35 pr0gr4mm35 qu1 ut1l153r413nt 535 f1ch13r5 d’1c1 l4 r3c3vr0nt un3 d3m4nd3 d3 qu1tt3r 3t p0urr0nt 3tr3 1nt3rr0mpu5 54n5 3nr3g15tr3r l3ur tr4v41l.</value>
+  </data>
+  <data name="Update_ConfirmHelpForced" xml:space="preserve">
+    <value>L’1n5t4ll4t10n f3rm3 D0ckP4d. L35 pr0gr4mm35 qu1 ut1l153r413nt 535 f1ch13r5 d’1c1 l4 53r0nt 4rr3t35 d3 f0rc3, 54n5 3nr3g15tr3r l3ur tr4v41l.</value>
+  </data>
+  <data name="Update_ConfirmInstall" xml:space="preserve">
+    <value>C0nf1rm3r 3t 1n5t4ll3r</value>
+  </data>
+  <data name="Update_ConfirmTitle" xml:space="preserve">
+    <value>C0nf1rm3r l'1n5t4ll4t10n</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>T3l3ch4rg3r</value>
+  </data>
+  <data name="Update_IncompleteHelpAskToQuit" xml:space="preserve">
+    <value>C3rt41n5 pr0gr4mm35 50nt 3nc0r3 0uv3rt5. L'1n5t4ll4t10n l3ur d3m4nd3r4 d3 qu1tt3r. C3ux qu1 n3 qu1tt3nt p45 r15qu3nt d'3tr3 1nt3rr0mpu5 54n5 3nr3g15tr3r l3ur tr4v41l.</value>
+  </data>
+  <data name="Update_InstallIgnoring" xml:space="preserve">
+    <value>1n5t4ll3r 54n5 l35 f3rm3r</value>
+  </data>
 </root>
