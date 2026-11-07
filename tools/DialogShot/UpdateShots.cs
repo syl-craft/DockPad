@@ -71,8 +71,8 @@ internal static class UpdateShots
             new() { Pid = 17164, Name = "Windows Terminal", Started = started },
         ];
         if (unavailable) blockers = [new() { Pid = 43244, Name = "DockPad", Started = started, Unavailable = true }];
-        return new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory(System.IO.Path.GetTempPath()), blockers,
-            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
+        return new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory(System.IO.Path.GetTempPath()), new(blockers),
+            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult(new UpdateBlockerScan(blockers)),
             close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.StillRunning), incomplete: incomplete);
     }
 

@@ -54,7 +54,7 @@ public class UpdateContractTests
     [InlineData(UpdateShutdownBehavior.AskToQuit, true, "Update_IncompleteHelpAskToQuit")]
     public Task UpdateShutdownTextsFollowAllThreePolicies(UpdateShutdownBehavior behavior, bool incomplete, string key) => WpfTestHost.Run(() =>
     {
-        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), [new() { Selected = true }],
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), new([new() { Selected = true }]),
             new Host(), behavior, incomplete: incomplete);
         try { Assert.Equal(UpdateTexts.T(key), ((TextBlock)window.FindName("HelpText")).Text); }
         finally { window.Close(); }
@@ -68,7 +68,14 @@ public class UpdateContractTests
         var host = new Host { Summary = summary };
         using var service = new UpdateService(new Backend(host.Calls));
         WpfTestHost.PumpUntilCompleted(service.CheckAsync());
-        var window = new UpdatesDialog(service, host);
+        var window = new UpdatesDialog(service, host, dialog =>
+        {
+            Assert.NotNull(summary);
+            Assert.True(((Button)dialog.FindName("CloseButton")).IsEnabled);
+            Assert.Equal(summary, ((TextBlock)dialog.FindName("PreparationSummary")).Text);
+            dialog.Close();
+            return true;
+        });
         try
         {
             Press(window);
@@ -117,7 +124,7 @@ public class UpdateContractTests
         using var service = new UpdateService(new Backend(host.Calls));
         WpfTestHost.PumpUntilCompleted(service.CheckAsync());
         var window = new UpdatesDialog(service, host);
-        var blockers = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), [], host, UpdateShutdownBehavior.Refuse);
+        var blockers = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), new([]), host, UpdateShutdownBehavior.Refuse);
         try
         {
             Assert.Equal(Visibility.Collapsed, ((TextBlock)blockers.FindName("PreparationSummary")).Visibility);

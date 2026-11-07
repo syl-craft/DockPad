@@ -10,6 +10,24 @@ namespace DockPad.Tests;
 public class UpdateDialogTests
 {
     [Fact]
+    public Task UpdateIncompleteScanWarningFollowsRefresh() => WpfTestHost.Run(() =>
+    {
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"),
+            new([new() { Pid = 1, Name = "Editor", Unavailable = true }]), new DockPadUpdateDialogHost(), UpdateShutdownBehavior.Refuse,
+            refresh: () => Task.FromResult(new UpdateBlockerScan([new() { Pid = 1, Name = "Editor" }])));
+        try
+        {
+            var warning = (TextBlock)window.FindName("ScanIncomplete");
+            Assert.Equal(Visibility.Visible, warning.Visibility);
+            Assert.Equal(Loc.T("Update_ScanIncomplete"), warning.Text);
+            Assert.False(((Button)window.FindName("CloseButton")).IsEnabled);
+            ((Button)window.FindName("RetryButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.Equal(Visibility.Collapsed, warning.Visibility);
+        }
+        finally { window.Close(); }
+    });
+
+    [Fact]
     public async Task IncompleteClosureStaysInTheSameWindowAndForceIsExplicit() => await WpfTestHost.Run(() =>
     {
         var attempts = new List<(int Pid, bool Force)>();
@@ -17,8 +35,8 @@ public class UpdateDialogTests
             new() { Pid = 1, Name = "DockPad", IsRelay = true, ParentName = "Claude Code", Selected = true },
             new() { Pid = 2, Name = "Editor" },
         ];
-        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), blockers,
-            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers),
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), new(blockers),
+            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult(new UpdateBlockerScan(blockers)),
             close: (blocker, force) => { attempts.Add((blocker.Pid, force)); return Task.FromResult(UpdateBlockerCloseResult.StillRunning); });
         var button = (Button)window.FindName("CloseButton");
         var heading = (TextBlock)window.FindName("Heading");
@@ -44,8 +62,8 @@ public class UpdateDialogTests
     {
         var editor = new UpdateBlocker { Pid = 2, Name = "Editor" };
         var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"),
-            [new() { Pid = 1, Name = "DockPad", IsRelay = true }, editor],
-            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>([editor]), close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.Closed));
+            new([new() { Pid = 1, Name = "DockPad", IsRelay = true }, editor]),
+            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult(new UpdateBlockerScan([editor])), close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.Closed));
         var button = (Button)window.FindName("CloseButton");
 
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -61,8 +79,8 @@ public class UpdateDialogTests
     public async Task SelectingAGroupUpdatesThePrimaryCountWithoutAConfirmationDialog() => await WpfTestHost.Run(() =>
     {
         UpdateBlocker[] blockers = [new() { Pid = 1, Name = "Editor" }, new() { Pid = 2, Name = "Editor" }];
-        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), blockers,
-            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>(blockers), close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.StillRunning));
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), new(blockers),
+            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult(new UpdateBlockerScan(blockers)), close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.StillRunning));
         var button = (Button)window.FindName("CloseButton");
         Assert.False(button.IsEnabled);
         var group = Assert.Single(((ItemsControl)window.FindName("Processes")).Items.Cast<UpdateBlockerGroup>());

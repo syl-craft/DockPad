@@ -2122,4 +2122,7 @@ This cannot be undone.</value>
   <data name="Update_ProcessUnavailable" xml:space="preserve">
     <value>information unavailable · PID {0}</value>
   </data>
+  <data name="Update_ScanIncomplete" xml:space="preserve">
+    <value>Detection incomplete: some processes could not be identified.</value>
+  </data>
 </root>

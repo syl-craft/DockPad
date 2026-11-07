@@ -2122,4 +2122,7 @@ Cette action est irréversible.</value>
   <data name="Update_ProcessUnavailable" xml:space="preserve">
     <value>informations indisponibles · PID {0}</value>
   </data>
+  <data name="Update_ScanIncomplete" xml:space="preserve">
+    <value>Détection incomplète : certains processus n&apos;ont pas pu être identifiés.</value>
+  </data>
 </root>

@@ -6,6 +6,15 @@ namespace DockPad.Tests;
 public class UpdateDependencyGuardTests
 {
     [Fact]
+    public void DockPadKeepsItsNameTextsAndStrictShutdownPolicy()
+    {
+        Assert.Equal("DockPad", Mue.UpdateTexts.AppName);
+        Assert.Equal(Mue.UpdateShutdownBehavior.Refuse, Services.UpdateHost.DockPadUpdates.BackendOptions.ShutdownBehavior);
+        Assert.Equal(Services.Localization.Loc.T("Update_McpHelp"), Mue.UpdateTexts.T("Update_McpHelp"));
+        Assert.Equal(Services.Localization.Loc.T("Update_ScanIncomplete"), Mue.UpdateTexts.T("Update_ScanIncomplete"));
+    }
+
+    [Fact]
     public void GenericUpdatesLiveOnlyInMue()
     {
         var root = RepoRoot();
