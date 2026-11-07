@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.0] — 2026-11-07
+
+### Nouveautés
+
+- **Mise à jour en ligne de commande, pour un script ou un agent IA.** `current\DockPad.exe update` cherche, télécharge et installe la nouvelle version sans aucune fenêtre ; `--check` se contente de chercher, `--json` répond par un seul objet JSON, `--restart` relance DockPad après l'installation. Si DockPad est ouvert, la commande s'arrête et liste ce qui bloque ; avec `--close-blockers`, elle lui demande de quitter (il refuse tant qu'une fenêtre autre que la grille est ouverte) et arrête les relais MCP, comme la fenêtre Mises à jour. Le code de sortie dit ce qui s'est passé : 0 à jour ou installé, 10 nouvelle version disponible, 20 bloqué, 22 installation manuelle sans mises à jour, 1 erreur.
+- **Moteur de mise à jour partagé.** La recherche, le téléchargement, la détection des programmes qui bloquent et la fenêtre Mises à jour viennent désormais de [Mue](https://github.com/syl-craft/Mue), une bibliothèque commune à DockPad et à d'autres applications. La fenêtre et son comportement ne changent pas.
+
 ## [1.33.1] — 2026-11-03
 
 ### Corrections
