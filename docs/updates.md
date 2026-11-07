@@ -131,10 +131,13 @@ $dockpad = "$env:LOCALAPPDATA\DockPad\current\DockPad.exe"   # ou le dossier cho
 La commande tourne dans son propre processus (`UpdateCli`, avant le relais d'instance de `Program.cs`), avec
 `DockPadCommandHost` : pas de fenêtre à vérifier, profil hors du dossier d'installation exigé. L'instance ouverte
 compte parmi les bloqueurs (code 20). Avec `--close-blockers`, `ResidentClosingFinder` lui demande de quitter par le
-tube d'affichage (`StartupRelay.QuitRequest`, qu'aucun argument de lancement ne produit) ; elle refuse tant qu'une
-fenêtre autre que la grille est ouverte, comme la fenêtre de mise à jour. Les relais MCP sont arrêtés par le chercheur
-de Mue, comme dans la fenêtre. Le marqueur `.dockpad-update` n'est posé qu'avec `--restart` : sans relancement,
-personne ne le retirerait et le lanceur retiendrait le prochain lancement jusqu'à cinq minutes.
+tube d'affichage. La demande (`StartupRelay.QuitRequest`) nomme le PID vérifié, et aucun argument de lancement ne la
+produit. L'instance refuse tant qu'une fenêtre autre que la grille est ouverte, comme la fenêtre de mise à jour, et
+attend ses écritures en cours avant de quitter ; seule sa sortie fait foi, pas l'accusé du tube. Les relais MCP sont
+arrêtés par le chercheur de Mue, comme dans la fenêtre. Le marqueur `.dockpad-update` n'est posé qu'avec `--restart` :
+sans relancement, personne ne le retirerait et le lanceur retiendrait le prochain lancement jusqu'à cinq minutes. Sans
+lui, un DockPad lancé pendant la copie fait refuser la mise à jour par l'updater adapté (`no-force-stop.patch`) : la
+version installée reste intacte, la commande peut être relancée.
 
 Sortie : redirigée, elle est écrite en UTF-8 ; sinon `AttachConsole` rattache la console du parent (une WinExe n'en a
 pas). Ne jamais s'attacher quand la sortie est redirigée : la console remplacerait la redirection.

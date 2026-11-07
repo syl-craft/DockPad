@@ -31,15 +31,22 @@ public static class UpdateCli
 
     public static int Run(string[] args)
     {
-        AppPaths.Initialize("DockPad");
-        LogService.Init();
-        Localization.Loc.SetCulture(Localization.Loc.Parse(SettingsService.LoadLanguage()));
         var options = args[1..];
         var output = OpenOutput();
         try
         {
+            AppPaths.Initialize("DockPad");
+            LogService.Init();
+            Localization.Loc.SetCulture(Localization.Loc.Parse(SettingsService.LoadLanguage()));
             var host = new DockPadCommandHost(restart: options.Contains("--restart"));
             return UpdateCommand.RunAsync(DockPadUpdates.Service, host, options, output).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            // Mue rend toujours un rapport ; une erreur avant lui (profil, réglages) en mérite un aussi.
+            LogService.Error(ex, "Cannot start the command-line update");
+            WriteStartupError(output, options.Contains("--json"), ex.Message);
+            return UpdateCommand.Failed;
         }
         finally
         {
@@ -47,6 +54,17 @@ public static class UpdateCli
             DockPadUpdates.Stop();
             LogService.Shutdown();
         }
+    }
+
+    // Mêmes clés que le rapport de Mue.
+    public static void WriteStartupError(TextWriter output, bool json, string message)
+    {
+        if (!json) { output.WriteLine(message); return; }
+        output.WriteLine(System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = "error", current = AppInfo.VersionText, available = (string?)null, summary = (string?)null,
+            blockers = Array.Empty<object>(), message,
+        }));
     }
 
     // Une WinExe n'a pas de console. S'y attacher alors que la sortie est redirigée remplacerait la redirection, et le
@@ -130,8 +148,8 @@ public sealed class ResidentClosingFinder(IUpdateBlockerFinder inner) : IUpdateB
         {
             using var process = Process.GetProcessById(blocker.Pid);
             if (!UpdateBlockers.MatchesIdentity(blocker, process.StartTime.ToFileTimeUtc())) return UpdateBlockerCloseResult.IdentityChanged;
-            if (!new LinePipeService(StartupRelay.ShowPipeName).TrySendSilently(StartupRelay.QuitRequest, 2000))
-                return UpdateBlockerCloseResult.StillRunning;
+            // L'accusé de réception peut se perdre si l'instance ferme déjà son tube : seule sa sortie fait foi.
+            new LinePipeService(StartupRelay.ShowPipeName).TrySendSilently(StartupRelay.QuitRequest(blocker.Pid), 2000);
             // L'arrêt du Stream Dock et des tubes prend plus que les deux secondes d'une fenêtre ordinaire.
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
             timeout.CancelAfter(TimeSpan.FromSeconds(10));

@@ -25,7 +25,28 @@ public class UpdateCliTests
     public void NoLaunchArgumentAsksTheResidentToQuit(string arg)
     {
         var plan = StartupRelay.Plan([arg]);
-        Assert.NotEqual(StartupRelay.QuitRequest, plan?.Payload);
+        Assert.False(StartupRelay.IsAnyQuitRequest(plan?.Payload ?? ""));
+    }
+
+    // Une instance qui aurait repris le tube après la vérification du PID ignore une demande qui ne la nomme pas.
+    [Fact]
+    public void AQuitRequestOnlyReachesTheInstanceItNames()
+    {
+        Assert.True(StartupRelay.IsQuitRequest(StartupRelay.QuitRequest(42), 42));
+        Assert.False(StartupRelay.IsQuitRequest(StartupRelay.QuitRequest(42), 43));
+        Assert.True(StartupRelay.IsAnyQuitRequest(StartupRelay.QuitRequest(43)));
+        Assert.False(StartupRelay.IsAnyQuitRequest(StartupRelay.ShowRequest));
+    }
+
+    [Fact]
+    public void AStartupErrorStillWritesOneJsonReport()
+    {
+        var output = new System.IO.StringWriter();
+        UpdateCli.WriteStartupError(output, json: true, "profil illisible");
+        using var report = System.Text.Json.JsonDocument.Parse(output.ToString());
+        Assert.Equal("error", report.RootElement.GetProperty("status").GetString());
+        Assert.Equal("profil illisible", report.RootElement.GetProperty("message").GetString());
+        Assert.Equal(0, report.RootElement.GetProperty("blockers").GetArrayLength());
     }
 
     [Fact]

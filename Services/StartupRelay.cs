@@ -54,7 +54,13 @@ public static class StartupRelay
     /// Demande de quitter, envoyée par <c>DockPad.exe update --close-blockers</c>. <see cref="Plan"/> ne la produit
     /// jamais : aucun argument de lancement ne fait quitter l'instance résidente.
     /// </summary>
-    public const string QuitRequest = "quit-for-update";
+    /// <remarks>
+    /// Elle nomme le PID vérifié par la commande : une instance qui aurait repris le tube entre-temps l'ignore.
+    /// </remarks>
+    public static string QuitRequest(int pid) => QuitPrefix + pid;
+    public static bool IsQuitRequest(string line, int pid) => line == QuitRequest(pid);
+    public static bool IsAnyQuitRequest(string line) => line.StartsWith(QuitPrefix, StringComparison.Ordinal);
+    private const string QuitPrefix = "quit-for-update:";
 
     /// <summary>Nom du mutex d'instance unique, posé par <c>App</c> et lu ici.</summary>
     public const string SingleInstanceMutex = TerminalRequest.SingleInstanceMutex;
