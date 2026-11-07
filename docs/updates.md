@@ -114,6 +114,41 @@ Le workflow manuel `package.yml` réalise ces opérations et conserve des artefa
 
 Publier dans une même release stable GitHub le Setup, le Portable ZIP, les paquets `full`/`delta` et `releases.win.json` produits ensemble. Le feed doit être publié seulement lorsque tous ses fichiers sont disponibles. Pour des deltas, conserver les paquets précédents dans le répertoire de sortie avant le packaging. Le client conserve la vérification des hashes et le repli vers le paquet complet de Velopack.
 
+## Publier une version depuis le PC
+
+Le dépôt est public et sert de flux : la release GitHub porte les fichiers d'installation et de mise à jour. Sur
+`master` bumpé (`chore: bump version x.y.z`) **et déjà poussé**, dans PowerShell 7 :
+
+```powershell
+pwsh -NoProfile -File tools/velopack/publish.ps1 -DryRun   # tout, sauf l'envoi
+pwsh -NoProfile -File tools/velopack/publish.ps1           # publie, en latest
+pwsh -NoProfile -File tools/velopack/publish.ps1 -Draft    # s'arrête au brouillon vérifié
+```
+
+Le script vérifie, sans rien écrire : version de `DockPad.csproj` et section du `CHANGELOG.md`, paquets Mue de
+`MueVersion` dans `nuget-local`, binaires natifs adaptés, `gh` authentifié, `HEAD == origin/master`, tag `vX.Y.Z`
+absent en local et sur origin. Il fabrique ensuite **depuis le commit seul** (`git archive`) dans le dossier neuf
+`release/publication/X.Y.Z` : les modifications locales et les fichiers non suivis n'entrent jamais dans un paquet.
+Il lance `DockPad.Tests` et `DockPad.Tests.Wpf` en Release (`-SkipTests` pour s'en passer), télécharge le paquet
+précédent depuis GitHub pour le delta, puis appelle `pack.ps1`. Une erreur de lecture de GitHub arrête tout : elle
+ne vaut jamais « première release ».
+
+Fichiers publiés, contrôlés avant tout envoi : `releases.win.json` (qui doit référencer exactement le full et le
+delta de la version, tailles et SHA1 compris), `assets.win.json`, `RELEASES`, `DockPad-win-Setup.exe`,
+`DockPad-X.Y.Z-win-x64-Setup.exe`, `DockPad-win-Portable.zip`, les paquets full et delta, et `SHA256SUMS.txt`
+(format des releases précédentes : `empreinte *nom`, LF). Les notes reprennent la section du CHANGELOG sous le titre
+`## DockPad X.Y.Z` ; `-Title` ajoute un sous-titre au nom de la release.
+
+Sans `-DryRun`, le script demande de taper la version, crée le tag annoté sur le commit, pousse **l'objet tag
+capturé** et le vérifie avec `ls-remote`, crée la release en **brouillon** avec tous les fichiers, compare la liste
+exacte des noms et tailles, puis seulement la passe en latest et vérifie la latest observée. Le flux
+`releases.win.json` n'est donc jamais public sans ses paquets. `release/publication/X.Y.Z/publication-state.json`
+garde les étapes atteintes ; un dossier existant est refusé : l'examiner (tag distant, brouillon) avant de le
+supprimer et de relancer. Le script ne supprime jamais de tag ni de release distants.
+
+`-Version` n'est accepté qu'avec `-DryRun`, pour essayer la chaîne sur une version sans tag ni section de CHANGELOG.
+Le workflow `package.yml` reste un contrôle manuel non signé ; il ne publie rien.
+
 ## WinGet — NIN-8, NIN-9 et NIN-6
 
 L’identité durable est `packId=DockPad`, titre `DockPad`, éditeur `syl-craft`. L’entrée de désinstallation HKCU utilise `DockPad`, avec une `DisplayVersion` égale à la version du paquet. Une mise à jour intégrée met cette entrée à jour aussi, permettant à WinGet de reconnaître la version installée.
