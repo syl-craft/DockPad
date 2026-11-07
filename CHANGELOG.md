@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.34.2] — 2026-11-07
+
+### Nouveautés
+
+- **Indicateur de version plus lisible.** En bas à gauche de la fenêtre principale, la version s'affiche dans une pastille à contour fin, dans la police de l'interface, même quand DockPad est à jour ; elle réagit au survol et ouvre toujours la fenêtre Mises à jour. Quand une nouvelle version attend, la pastille bleue « v1.34.1 → 1.34.2 » garde ses couleurs. La barre du bas garde sa hauteur.
+
 ## [1.34.1] — 2026-11-07
 
 ### Nouveautés
