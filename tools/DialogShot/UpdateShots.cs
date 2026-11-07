@@ -41,10 +41,10 @@ internal static class UpdateShots
         return service;
     }
 
-    public static QuickAccessWindow Indicator()
+    public static QuickAccessWindow Indicator(UpdateState state = UpdateState.Available)
     {
         GridCheck.WriteFixture();
-        var service = CreateService(UpdateState.Available);
+        var service = CreateService(state);
         var usage = new UsageViewModel(new UsageService([]), () => new UsageConfig { Enabled = false });
         var window = new QuickAccessWindow(usage, new FixtureLoad(), updates: service);
         window.Closed += (_, _) => service.Dispose();
