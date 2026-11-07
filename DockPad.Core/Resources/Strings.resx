@@ -2125,4 +2125,46 @@ This cannot be undone.</value>
   <data name="Update_ScanIncomplete" xml:space="preserve">
     <value>Detection incomplete: some processes could not be identified.</value>
   </data>
+  <data name="Update_BlockedHelpAskToQuit" xml:space="preserve">
+    <value>The installer will ask programs that are still open to quit. Programs that do not quit may be interrupted without saving their work.</value>
+  </data>
+  <data name="Update_CloseResult_AccessDenied" xml:space="preserve">
+    <value>Access denied</value>
+  </data>
+  <data name="Update_CloseResult_Closed" xml:space="preserve">
+    <value>Closed</value>
+  </data>
+  <data name="Update_CloseResult_Gone" xml:space="preserve">
+    <value>Already exited</value>
+  </data>
+  <data name="Update_CloseResult_IdentityChanged" xml:space="preserve">
+    <value>Process identity changed</value>
+  </data>
+  <data name="Update_CloseResult_StillRunning" xml:space="preserve">
+    <value>Still running</value>
+  </data>
+  <data name="Update_CloseWindow" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Update_ConfirmHelpAskToQuit" xml:space="preserve">
+    <value>Installing closes DockPad. Programs that start using its files in the meantime will be asked to quit and may be interrupted without saving their work.</value>
+  </data>
+  <data name="Update_ConfirmHelpForced" xml:space="preserve">
+    <value>Installing closes DockPad. Programs that start using its files in the meantime will be forced to stop, without saving their work.</value>
+  </data>
+  <data name="Update_ConfirmInstall" xml:space="preserve">
+    <value>Confirm and install</value>
+  </data>
+  <data name="Update_ConfirmTitle" xml:space="preserve">
+    <value>Confirm installation</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="Update_IncompleteHelpAskToQuit" xml:space="preserve">
+    <value>Some programs are still open. The installer will ask them to quit. Programs that do not quit may be interrupted without saving their work.</value>
+  </data>
+  <data name="Update_InstallIgnoring" xml:space="preserve">
+    <value>Install without closing them</value>
+  </data>
 </root>
