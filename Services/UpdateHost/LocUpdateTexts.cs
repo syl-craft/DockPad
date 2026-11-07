@@ -6,6 +6,13 @@ namespace DockPad.Services.UpdateHost;
 
 public sealed class LocUpdateTexts : IUpdateTexts
 {
+    private static readonly System.Resources.ResourceManager Resources = new("DockPad.Resources.Strings", typeof(Loc).Assembly);
+    public bool TryGet(string key, out string text)
+    {
+        var value = Resources.GetString(key, Loc.Current);
+        text = value ?? "";
+        return value != null;
+    }
     public string T(string key) => Loc.T(key);
     public string F(string key, params object?[] args) => Loc.F(key, args);
     public CultureInfo Formatting => Loc.Formatting;

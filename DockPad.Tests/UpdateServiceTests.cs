@@ -12,7 +12,7 @@ public class UpdateServiceTests
         public bool IsInstalled => true;
         public string CurrentVersion => "1.0.0";
         public string ContentDirectory => Path.GetTempPath();
-        public Task<UpdateRelease?> CheckAsync() =>
+        public Task<UpdateRelease?> CheckAsync(CancellationToken token) =>
             Task.FromResult<UpdateRelease?>(new("2.0.0", "Release notes", new object()));
         public Task DownloadAsync(UpdateRelease release, Action<int> progress, CancellationToken token)
         {
@@ -67,6 +67,7 @@ public class UpdateServiceTests
         Assert.Equal(["first", "fourth"], handled);
     }
     [Fact]
+    [Trait("Category", "RealMachine")]
     public async Task RestartManagerFindsExternalLockAndRequiresExplicitForce()
     {
         var directory = Path.Combine(Path.GetTempPath(), "dockpad-lock-test-" + Guid.NewGuid());
@@ -86,11 +87,11 @@ public class UpdateServiceTests
         try
         {
             Assert.Equal("ready", await child.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10)));
-            var blocker = Assert.Single(new WindowsUpdateBlockerFinder().Find(directory, new DockPadBlockerClassifier()), b => b.Pid == child.Id);
-            Assert.False(await new WindowsUpdateBlockerFinder().CloseAsync(blocker, force: false));
+            var blocker = Assert.Single(new WindowsUpdateBlockerFinder().Find(UpdateBlockerQuery.ForDirectory(directory), new DockPadBlockerClassifier()).Blockers, b => b.Pid == child.Id);
+            Assert.False(await new WindowsUpdateBlockerFinder().CloseAsync(blocker, force: false) == UpdateBlockerCloseResult.Closed);
             Assert.False(child.HasExited);
-            Assert.True(await new WindowsUpdateBlockerFinder().CloseAsync(blocker, force: true));
-            Assert.Empty(new WindowsUpdateBlockerFinder().Find(directory, new DockPadBlockerClassifier()));
+            Assert.True(await new WindowsUpdateBlockerFinder().CloseAsync(blocker, force: true) == UpdateBlockerCloseResult.Closed);
+            Assert.Empty(new WindowsUpdateBlockerFinder().Find(UpdateBlockerQuery.ForDirectory(directory), new DockPadBlockerClassifier()).Blockers);
         }
         finally
         {

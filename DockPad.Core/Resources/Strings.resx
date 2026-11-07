@@ -2119,4 +2119,7 @@ This cannot be undone.</value>
   <data name="Update_IncompleteHelpForced" xml:space="preserve">
     <value>Some programs are still open. Installation will force them to stop, without saving their work.</value>
   </data>
+  <data name="Update_ProcessUnavailable" xml:space="preserve">
+    <value>information unavailable · PID {0}</value>
+  </data>
 </root>

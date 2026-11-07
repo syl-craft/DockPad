@@ -80,8 +80,8 @@ public class UpdateHostInjectionTests
     public Task BlockerHelpFollowsTheShutdownPolicy(bool forced, bool incomplete, string key) => WpfTestHost.Run(() =>
     {
         var previous = Loc.Current;
-        var window = new UpdateBlockersDialog("unused", [new() { Pid = 42, Selected = true }],
-            new Host([]), forcesShutdown: forced, incomplete: incomplete);
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), [new() { Pid = 42, Selected = true }],
+            new Host([]), shutdownBehavior: forced ? UpdateShutdownBehavior.Kill : UpdateShutdownBehavior.Refuse, incomplete: incomplete);
         try
         {
             foreach (var language in new[] { "fr", "en", "qps-Ploc" })
@@ -100,7 +100,7 @@ public class UpdateHostInjectionTests
         var calls = new List<string>();
         var blocker = new UpdateBlocker { Pid = 42, Started = 100, Selected = true };
         var host = new Host(calls) { Blockers = [blocker] };
-        var window = new UpdateBlockersDialog("unused", [blocker], host, forcesShutdown: false);
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), [blocker], host, shutdownBehavior: UpdateShutdownBehavior.Refuse);
         try
         {
             ((Button)window.FindName("CloseButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -126,6 +126,7 @@ public class UpdateHostInjectionTests
         public bool IsExiting => false;
         public string ReleasePage(string version) => "https://example.test/" + version;
         public string LatestReleasePage => "https://example.test/latest";
+        public async Task<UpdatePreparationCheck> CheckAsync(object owner, CancellationToken token) => new(await PrepareAsync(owner, token));
         public Task<bool> PrepareAsync(object owner, CancellationToken token)
         {
             Assert.Same(Owner, owner);
@@ -143,20 +144,21 @@ public class UpdateHostInjectionTests
             calls.Add("error");
             Completed.TrySetResult();
         }
-        public IReadOnlyList<UpdateBlocker> Find(string directory, IUpdateBlockerClassifier classifier, bool enrich = true)
+        public UpdateBlockerScan Find(UpdateBlockerQuery query, IUpdateBlockerClassifier classifier, bool enrich = true)
         {
+            var directory = Assert.Single(query.Paths);
             Assert.Equal("unused", directory);
             Assert.Same(Classifier, classifier);
             calls.Add(enrich ? "find" : "find-final");
             if (ClosedBlocker != null) Completed.TrySetResult();
-            return Blockers;
+            return new(Blockers);
         }
-        public Task<bool> CloseAsync(UpdateBlocker blocker, bool force)
+        public Task<UpdateBlockerCloseResult> CloseAsync(UpdateBlocker blocker, bool force, CancellationToken token = default)
         {
             Assert.False(force);
             ClosedBlocker = blocker;
             calls.Add("close");
-            return Task.FromResult(false);
+            return Task.FromResult(UpdateBlockerCloseResult.StillRunning);
         }
     }
 
@@ -165,7 +167,7 @@ public class UpdateHostInjectionTests
         public bool IsInstalled => true;
         public string CurrentVersion => "1.0.0";
         public string ContentDirectory => "unused";
-        public Task<UpdateRelease?> CheckAsync() => Task.FromResult<UpdateRelease?>(new("2.0.0", "", new object()));
+        public Task<UpdateRelease?> CheckAsync(CancellationToken token) => Task.FromResult<UpdateRelease?>(new("2.0.0", "", new object()));
         public Task DownloadAsync(UpdateRelease release, Action<int> progress, CancellationToken token)
         {
             calls.Add("download");

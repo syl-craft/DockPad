@@ -11,7 +11,7 @@ public class UpdateInjectionTests
     [Fact]
     public void BackendsDefaultToForcedShutdown()
     {
-        Assert.False(DockPadUpdates.BackendOptions.ForcesShutdown);
+        Assert.False(DockPadUpdates.BackendOptions.ShutdownBehavior != UpdateShutdownBehavior.Refuse);
     }
 
     [Fact]

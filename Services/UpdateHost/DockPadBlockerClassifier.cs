@@ -7,18 +7,18 @@ namespace DockPad.Services.UpdateHost;
 
 public sealed class DockPadBlockerClassifier : IUpdateBlockerClassifier
 {
-    public bool IsIgnored(string? image, string directory) =>
+    public bool IsIgnored(string? image, UpdateBlockerQuery query) =>
         !string.IsNullOrEmpty(image) && Path.GetFileName(image).Equals("DockPad.exe", StringComparison.OrdinalIgnoreCase)
-        && !VelopackLayout.IsWithin(image, directory);
+        && !query.Contains(image);
 
     public UpdateBlockerClassification Classify(UpdateBlockerContext context)
     {
-        var (image, directory, commandLine, parentName, parentPath, grandparentName, grandparentPath) = context;
-        var relay = image.Length > 0 && VelopackLayout.IsWithin(image, directory)
+        var (image, query, commandLine, parentName, parentPath, grandparentName, grandparentPath) = context;
+        var relay = image.Length > 0 && query.Contains(image)
             && commandLine != null && HasMcpArgument(commandLine);
         if (!relay) return new(false, Path.GetFileNameWithoutExtension(image));
         // Le lanceur Velopack attend l'enfant current/ : le client MCP est son propre parent.
-        if (IsIgnored(parentPath, directory))
+        if (IsIgnored(parentPath, query))
         {
             parentName = grandparentName;
             parentPath = grandparentPath;

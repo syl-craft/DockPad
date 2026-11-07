@@ -20,7 +20,7 @@ public class UpdateBlockerGroupsTests
     [InlineData(@"C:\App\current\DockPad.exe", null, false)]
     public void OnlyAnMcpArgumentInAnInstallationImageIdentifiesARelay(string image, string? command, bool expected)
     {
-        var classification = new DockPadBlockerClassifier().Classify(new(image, @"C:\App\current", command, "claude.exe", @"C:\bin\claude.exe"));
+        var classification = new DockPadBlockerClassifier().Classify(new(image, UpdateBlockerQuery.ForDirectory(@"C:\App\current"), command, "claude.exe", @"C:\bin\claude.exe"));
         Assert.Equal(expected, classification.IsRelay);
     }
 
@@ -31,13 +31,13 @@ public class UpdateBlockerGroupsTests
     [InlineData("Editor.exe", @"C:\Programs\Editor.exe", "Editor")]
     public void RelayOwnerUsesTheParentProgram(string name, string path, string expected)
     {
-        Assert.Equal(expected, new DockPadBlockerClassifier().Classify(new(@"C:\App\DockPad.exe", @"C:\App", "DockPad.exe --mcp", name, path)).Program);
+        Assert.Equal(expected, new DockPadBlockerClassifier().Classify(new(@"C:\App\DockPad.exe", UpdateBlockerQuery.ForDirectory(@"C:\App"), "DockPad.exe --mcp", name, path)).Program);
     }
 
     [Fact]
     public void MissingParentIsExplicitlyUnknown()
     {
-        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\DockPad.exe", @"C:\App", "DockPad.exe --mcp", null, null));
+        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\DockPad.exe", UpdateBlockerQuery.ForDirectory(@"C:\App"), "DockPad.exe --mcp", null, null));
         Assert.True(result.IsRelay);
         Assert.Null(result.Program);
         Assert.Equal(Loc.T("Update_UnknownProgram"), new UpdateBlocker { IsRelay = true }.DisplayName);
@@ -48,7 +48,7 @@ public class UpdateBlockerGroupsTests
     [InlineData(@"C:\Other\DockPad.exe")]
     public void StableLauncherIsSkippedWhenResolvingTheRelayOwner(string launcher)
     {
-        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\current\DockPad.exe", @"C:\App\current",
+        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\current\DockPad.exe", UpdateBlockerQuery.ForDirectory(@"C:\App\current"),
             "DockPad.exe --mcp", "DockPad.exe", launcher, "claude.exe", @"C:\bin\claude.exe"));
         Assert.Equal("Claude Code", result.Program);
     }
@@ -56,7 +56,7 @@ public class UpdateBlockerGroupsTests
     [Fact]
     public void DockPadInsideCurrentIsNotSkippedAsAParent()
     {
-        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\current\DockPad.exe", @"C:\App\current",
+        var result = new DockPadBlockerClassifier().Classify(new(@"C:\App\current\DockPad.exe", UpdateBlockerQuery.ForDirectory(@"C:\App\current"),
             "DockPad.exe --mcp", "DockPad.exe", @"C:\App\current\DockPad.exe", "claude.exe", @"C:\bin\claude.exe"));
         Assert.Equal("DockPad", result.Program);
     }
@@ -68,7 +68,7 @@ public class UpdateBlockerGroupsTests
     [InlineData(@"C:\Programs\Editor.exe", false)]
     [InlineData(null, false)]
     public void StableLauncherOutsideCurrentIsNotAnIndependentBlocker(string? image, bool expected) =>
-        Assert.Equal(expected, new DockPadBlockerClassifier().IsIgnored(image, @"C:\App\current"));
+        Assert.Equal(expected, new DockPadBlockerClassifier().IsIgnored(image, UpdateBlockerQuery.ForDirectory(@"C:\App\current")));
 
     [Theory]
     [InlineData("fr", 0, "09:12")]

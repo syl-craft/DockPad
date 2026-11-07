@@ -179,6 +179,7 @@ public partial class App : Application
             Services.BrowserRegistrationService.RefreshExisting();
             Secrets.SecretMenu.RefreshExisting();
         }
+        Services.UpdateHost.DockPadUpdates.VerifyLaunch();
         Services.UpdateHost.DockPadUpdates.Service.StartPolling();
 
         _updateRelays = new(action => Dispatcher.BeginInvoke(action), args =>
@@ -494,7 +495,7 @@ public partial class App : Application
         base.OnExit(e);
     }
 
-    public async System.Threading.Tasks.Task<bool> PrepareForUpdateAsync(Window updateDialog)
+    public bool CheckForUpdate(Window updateDialog)
     {
         var open = Windows.Cast<Window>().Where(w => w != _mainWindow && w != updateDialog).ToArray();
         if (open.Length > 0)
@@ -502,9 +503,14 @@ public partial class App : Application
             AppDialog.Info(Loc.T("Update_CloseDialogs"), Loc.T("Update_Title"), updateDialog);
             return false;
         }
-        await Mue.PendingWrites.CompleteAsync();
-        Secrets.SecretInjection.ClearClipboardNow();
         return true;
+    }
+
+    public async System.Threading.Tasks.Task<bool> PrepareForUpdateAsync(Window updateDialog, CancellationToken token = default)
+    {
+        await Mue.PendingWrites.CompleteAsync().WaitAsync(token);
+        Secrets.SecretInjection.ClearClipboardNow();
+        return CheckForUpdate(updateDialog);
     }
 
     private WinForms.NotifyIcon CreateTrayIcon()

@@ -92,4 +92,5 @@ public static class AppPaths
 
     /// <summary>Chemin d'un fichier du profil (ex. AppPaths.File("browsers.json")).</summary>
     public static string File(string name) => Path.Combine(ProfileRoot, name);
+    public static string UpdatePending => File("update-pending-version");
 }
