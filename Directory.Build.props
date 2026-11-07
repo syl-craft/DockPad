@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <MueVersion Condition="'$(MueVersion)' == ''">0.5.0</MueVersion>
+    <MueVersion Condition="'$(MueVersion)' == ''">0.6.0</MueVersion>
     <MueFeed Condition="'$(MueFeed)' == ''">C:\Users\Sylvain\nuget-local</MueFeed>
     <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);$(MueFeed)</RestoreAdditionalProjectSources>
   </PropertyGroup>
