@@ -19,8 +19,8 @@ Mue 0.4.0 : DockPad conserve `Refuse` et un `Summary` nul, donc ni confirmation 
 dans ses trois RESX, 1337 comprise ; `UpdateDependencyGuardTests` échoue si Mue ajoute une clé que DockPad n'a pas.
 Mue 0.4.1 corrige seulement le cas d'une appli qui n'appelle pas `VelopackApp.Run` ; DockPad l'appelle
 (`Program.cs`), rien ne change pour lui.
-Mue 0.5.0 ajoute `UpdateCommand`, la mise à jour en ligne de commande, sans changer la fenêtre. DockPad ne la
-branche pas encore : son hôte de mise à jour suppose l'instance WPF ouverte.
+Mue 0.5.0 ajoute `UpdateCommand`, la mise à jour en ligne de commande, sans changer la fenêtre : voir
+« Ligne de commande » ci-dessous.
 
 Le moteur, ses contrats et ses tests génériques vivent dans le dépôt
 [Mue](https://github.com/syl-craft/Mue), version **0.5.0** : `Mue` porte le cœur sans WPF ni
@@ -115,6 +115,32 @@ conservées. Ces métadonnées ne constituent pas une signature numérique.
 Le workflow manuel `package.yml` réalise ces opérations et conserve des artefacts **non signés**, sans publier de release. Le script de packaging lit la version du projet ; une branche de feature ne modifie pas cette version. Pour la production, passer `-RequireSigned`, `-CertificateThumbprint` et `-SignTemplate` à `pack.ps1` avec la commande de signature qui reste à finaliser dans NIN-9. Le modèle Velopack remplace `{{file}}` par le fichier à signer. Signer les binaires embarqués et le Setup final, puis calculer les hashes. Les signatures et les hashes sont vérifiés avant que le script annonce une réussite. Voir la [préparation SignPath et ses prérequis externes](code-signing.md).
 
 Publier dans une même release stable GitHub le Setup, le Portable ZIP, les paquets `full`/`delta` et `releases.win.json` produits ensemble. Le feed doit être publié seulement lorsque tous ses fichiers sont disponibles. Pour des deltas, conserver les paquets précédents dans le répertoire de sortie avant le packaging. Le client conserve la vérification des hashes et le repli vers le paquet complet de Velopack.
+
+## Ligne de commande
+
+Pour un script ou un agent IA, `DockPad.exe update` met à jour sans fenêtre (`UpdateCommand` de Mue) : options
+`--check`, `--yes`, `--close-blockers`, `--restart`, `--json`, codes de sortie du README de Mue. Le lanceur stable
+rend la main sans attendre, sauf en MCP : appeler **`current\DockPad.exe`** pour obtenir le code et la sortie.
+
+```powershell
+$dockpad = "$env:LOCALAPPDATA\DockPad\current\DockPad.exe"   # ou le dossier choisi à l'installation
+& $dockpad update --check --json | Out-String                  # code 10 si une version attend
+& $dockpad update --close-blockers --restart --json | Out-String
+```
+
+La commande tourne dans son propre processus (`UpdateCli`, avant le relais d'instance de `Program.cs`), avec
+`DockPadCommandHost` : pas de fenêtre à vérifier, profil hors du dossier d'installation exigé. L'instance ouverte
+compte parmi les bloqueurs (code 20). Avec `--close-blockers`, `ResidentClosingFinder` lui demande de quitter par le
+tube d'affichage. La demande (`StartupRelay.QuitRequest`) nomme le PID vérifié, et aucun argument de lancement ne la
+produit. L'instance refuse tant qu'une fenêtre autre que la grille est ouverte, comme la fenêtre de mise à jour, et
+attend ses écritures en cours avant de quitter ; seule sa sortie fait foi, pas l'accusé du tube. Les relais MCP sont
+arrêtés par le chercheur de Mue, comme dans la fenêtre. Le marqueur `.dockpad-update` n'est posé qu'avec `--restart` :
+sans relancement, personne ne le retirerait et le lanceur retiendrait le prochain lancement jusqu'à cinq minutes. Sans
+lui, un DockPad lancé pendant la copie fait refuser la mise à jour par l'updater adapté (`no-force-stop.patch`) : la
+version installée reste intacte, la commande peut être relancée.
+
+Sortie : redirigée, elle est écrite en UTF-8 ; sinon `AttachConsole` rattache la console du parent (une WinExe n'en a
+pas). Ne jamais s'attacher quand la sortie est redirigée : la console remplacerait la redirection.
 
 ## Publier une version depuis le PC
 
