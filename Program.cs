@@ -40,6 +40,12 @@ internal static class Program
             || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("VELOPACK_RESTART"));
         if (!lifecycle)
         {
+            // Jamais relayée : l'instance ouverte compte parmi les programmes qui bloquent la mise à jour.
+            if (Services.UpdateHost.UpdateCli.Handles(args))
+            {
+                Velopack.VelopackApp.Build().SetAutoApplyOnStartup(false).Run();
+                return Services.UpdateHost.UpdateCli.Run(args);
+            }
             if (Services.UpdateHost.AppInstallation.DeferDuringUpdate(args)) return 0;
             // Un prédéfini terminal du clic droit : jamais l'application complète.
             if (Services.TerminalLaunch.TryHandle(args)) return 0;

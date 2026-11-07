@@ -13,9 +13,11 @@ public sealed class DockPadUpdateDialogHost : IUpdateDialogHost
     public IUpdateBlockerClassifier Classifier { get; } = new DockPadBlockerClassifier();
     public IUpdateBlockerFinder Finder { get; }
     public bool IsExiting => App.IsExiting;
-    public string LatestReleasePage => "https://github.com/syl-craft/DockPad/releases/latest";
-    public string ReleasePage(string version) =>
+    public const string LatestRelease = "https://github.com/syl-craft/DockPad/releases/latest";
+    public static string Release(string version) =>
         "https://github.com/syl-craft/DockPad/releases/tag/v" + Uri.EscapeDataString(version.TrimStart('v'));
+    public string LatestReleasePage => LatestRelease;
+    public string ReleasePage(string version) => Release(version);
 
     public DockPadUpdateDialogHost() => Finder = new WindowsUpdateBlockerFinder(Log);
 

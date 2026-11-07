@@ -50,6 +50,12 @@ public static class StartupRelay
     /// <summary>La seule charge utile que le tube d'affichage transporte.</summary>
     public const string ShowRequest = "show";
 
+    /// <summary>
+    /// Demande de quitter, envoyée par <c>DockPad.exe update --close-blockers</c>. <see cref="Plan"/> ne la produit
+    /// jamais : aucun argument de lancement ne fait quitter l'instance résidente.
+    /// </summary>
+    public const string QuitRequest = "quit-for-update";
+
     /// <summary>Nom du mutex d'instance unique, posé par <c>App</c> et lu ici.</summary>
     public const string SingleInstanceMutex = TerminalRequest.SingleInstanceMutex;
 

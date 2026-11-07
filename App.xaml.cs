@@ -195,7 +195,11 @@ public partial class App : Application
 
         // La demande d'affichage passe par le meme geste que le raccourci global : un seul point,
         // et le bandeau se rafraichit comme il doit.
-        ShowPipe.StartServer(_ => Dispatcher.BeginInvoke(() => _mainWindow.BringToFront()));
+        ShowPipe.StartServer(line => Dispatcher.BeginInvoke(() =>
+        {
+            if (line == Services.StartupRelay.QuitRequest) QuitForUpdate();
+            else _mainWindow.BringToFront();
+        }));
 
         // Un prédéfini terminal du clic droit, relayé par le processus court : lancé d'ici, déjà chaud.
         // Jamais depuis une instance élevée : le tube ferait lancer n'importe quelle commande en admin.
@@ -504,6 +508,19 @@ public partial class App : Application
             return false;
         }
         return true;
+    }
+
+    // Même règle que la fenêtre de mise à jour : une fenêtre ouverte peut porter une saisie, l'instance reste alors
+    // ouverte et la commande répond « bloqué ».
+    private void QuitForUpdate()
+    {
+        if (Windows.Cast<Window>().Where(w => w != _mainWindow).Any())
+        {
+            Services.LogService.Info("Command-line update: quit refused, a window is open");
+            return;
+        }
+        Services.LogService.Info("Command-line update: quitting");
+        Exit();
     }
 
     public async System.Threading.Tasks.Task<bool> PrepareForUpdateAsync(Window updateDialog, CancellationToken token = default)
