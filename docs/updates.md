@@ -14,8 +14,10 @@ Le lanceur racine transmet directement les arguments à `current/DockPad.exe`. L
 
 ## Bibliothèque Mue
 
+Mue 0.3.0 : DockPad conserve `Refuse` et un `Summary` nul, donc ni confirmation ni Ignorer ; ses textes et son rendu restent inchangés pour un scan complet.
+
 Le moteur, ses contrats et ses tests génériques vivent dans le dépôt
-[Mue](https://github.com/syl-craft/Mue), version **0.2.0** : `Mue` porte le cœur sans WPF ni
+[Mue](https://github.com/syl-craft/Mue), version **0.3.0** : `Mue` porte le cœur sans WPF ni
 Velopack, `Mue.Velopack` le backend **Velopack 1.2.161** et ses chemins, `Mue.Wpf` les dialogues.
 `Services/Updates` et les deux dialogues locaux n'existent plus dans DockPad.
 
@@ -62,12 +64,12 @@ pastille de 26 px, contrairement à la géométrie actuelle, et son intégration
 complète sans mise à jour permettant de garantir l'identité pixel.
 
 Le flux local est défini par `MueFeed` dans `Directory.Build.props`, par défaut
-`C:\Users\Sylvain\nuget-local`, surchargeable avec `-p:MueFeed=...`. `MueVersion` vaut `0.2.0` par défaut et se surcharge avec
-`-p:MueVersion=0.2.0-b2.N` pour les trois références. Le script `pack.ps1` du
+`C:\Users\Sylvain\nuget-local`, surchargeable avec `-p:MueFeed=...`. `MueVersion` vaut `0.3.0` par défaut et se surcharge avec
+`-p:MueVersion=0.3.0-b3.N` pour les trois références. Le script `pack.ps1` du
 dépôt Mue compile, teste et publie les trois paquets. Une version publiée ne s'écrase pas :
 augmenter la version pour éviter un ancien paquet dans le cache NuGet.
 
-Dans `package.yml`, CI extrait `syl-craft/Mue` au tag `v0.2.0`, empaquette vers un dossier
+Dans `package.yml`, CI extrait `syl-craft/Mue` au tag `v0.3.0`, empaquette vers un dossier
 temporaire du runner et passe ce flux aux tests. La variable `MueFeed` reste disponible pour
 le packaging et les bancs suivants. Les sources Mue temporaires sont retirées avant le build
 DockPad pour ne pas être prises par ses globs. Le dépôt distant et le tag doivent exister
@@ -76,14 +78,14 @@ avant l'exécution de ce workflow.
 ### Flux de validation des préversions
 
 Dans Mue : `dotnet build Mue.sln -m:4`, puis `dotnet test Mue.sln -m:4 --filter "Category!=RealMachine"`,
-puis `./pack.ps1 -Feed <TMP>/feed -Version 0.2.0-b2.N -SkipTests`. Chaque nouvel empaquetage
+puis `./pack.ps1 -Feed <TMP>/feed -Version 0.3.0-b3.N -SkipTests`. Chaque nouvel empaquetage
 utilise un nouveau numéro, sans écrire dans le flux de production.
 
-Dans DockPad, passer `-p:MueFeed=<TMP>/feed -p:MueVersion=0.2.0-b2.N` au build et aux tests ciblés
+Dans DockPad, passer `-p:MueFeed=<TMP>/feed -p:MueVersion=0.3.0-b3.N` au build et aux tests ciblés
 Update/LocKey/Translation/Leet/Resx/Style, puis aux tests WPF Update et à la compilation de DialogShot
 et AppAcceptanceHook. Les tests `RealMachine` restent exécutables hors bac à sable.
 Les 108 captures DialogShot fr/en/qps-Ploc × clair/sombre/bascule sont comparées pixel par pixel
-aux références. `update-blockers-unavailable` est une fixture supplémentaire, hors comparaison.
+aux références. `update-blockers-incomplete` est une fixture supplémentaire, hors comparaison.
 
 ## Adaptation native à maintenir
 

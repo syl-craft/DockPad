@@ -2122,4 +2122,7 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Update_ProcessUnavailable" xml:space="preserve">
     <value>1nf0rm4t10n5 1nd15p0n1bl35 · P1D {0}</value>
   </data>
+  <data name="Update_ScanIncomplete" xml:space="preserve">
+    <value>D3t3ct10n 1nc0mpl3t3 : c3rt41n5 pr0c355u5 n'0nt p45 pu 3tr3 1d3nt1f135.</value>
+  </data>
 </root>

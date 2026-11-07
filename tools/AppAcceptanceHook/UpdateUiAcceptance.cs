@@ -34,13 +34,13 @@ internal static class UpdateUiAcceptance
         _ = main.Dispatcher.BeginInvoke(new Action(() => main.Commands.OpenUpdates.Execute(null)));
         var entry = await Modal<UpdatesDialog>();
         Assert(entry.Owner == main && ReferenceEquals(entry.DataContext, main.Updates), "application command opens shared update dialog");
-        Click(Button(entry, "Common_Cancel"));
+        entry.Close();
         await Until(() => !entry.IsVisible, "close menu dialog");
         var backend = new ControlledBackend();
         using var service = new UpdateService(backend, DockPadUpdates.ServiceOptions);
         var window = await Open(service);
         await Idle();
-        Assert(!Button(window, "Update_Install").IsEnabled, "install disabled before discovery");
+        Assert(service.Presentation.Primary != UpdateAction.Install, "install unavailable before discovery");
         var automatic = (CheckBox)window.FindName("Automatic");
         automatic.IsChecked = true; Click(automatic);
         Assert(AppSettingsService.Current.CheckForUpdates, "automatic checks enabled and saved");
@@ -54,28 +54,31 @@ internal static class UpdateUiAcceptance
         backend.Mode = "check-error";
         Click(Button(window, "Update_Check"));
         await Until(() => service.State == UpdateState.Failed, "offline check");
-        Assert(Button(window, "Update_Check").IsEnabled, "offline retry enabled");
+        Assert(Button(window, "Update_Retry").IsEnabled, "offline retry enabled");
         backend.Mode = "cancel";
-        Click(Button(window, "Update_Check"));
+        Click(Button(window, "Update_Retry"));
         await Until(() => service.State == UpdateState.Available, "available after retry");
-        Assert(Texts(window).Contains(backend.Notes), "release notes rendered");
-        Click(Button(window, "Update_Install"));
+        Assert(((StackPanel)window.FindName("NotesBlocks")).Children.Count > 0, "release notes rendered");
+        Click((Button)window.FindName("InstallButton"));
         await Until(() => service.Progress == 42, "download progress");
-        Assert(!Button(window, "Update_Check").IsEnabled && !Button(window, "Update_Install").IsEnabled, "busy buttons disabled");
+        Assert(!((Button)window.FindName("InstallButton")).IsEnabled && service.Presentation.Secondary == UpdateAction.Stop, "download can only be stopped");
         var progress = Descendants<ProgressBar>(window).Single();
         Assert(progress.IsVisible && progress.Value == 42, "progress binding visible");
         Capture(window, "download-fr");
-        Click(Button(window, "Common_Cancel"));
+        Click(Button(window, "Update_Stop"));
         await Until(() => service.State == UpdateState.Available, "cancel download");
-        Assert(!window.IsVisible && backend.Applies == 0, "cancel closes without applying");
+        Assert(window.IsVisible && backend.Applies == 0, "stop preserves window without applying");
+        window.Close();
 
         window = await Open(service);
         backend.Mode = "download-error";
-        Click(Button(window, "Update_Install"));
+        Click((Button)window.FindName("InstallButton"));
         await Until(() => service.State == UpdateState.Failed, "download failure");
-        Assert(Button(window, "Update_Install").IsEnabled, "download retry enabled");
+        Assert(Button(window, "Update_Retry").IsEnabled, "download retry enabled");
         backend.Mode = "apply-error";
-        Click(Button(window, "Update_Install"));
+        Click(Button(window, "Update_Retry"));
+        await Until(() => service.State == UpdateState.Available, "available after download failure" );
+        Click((Button)window.FindName("InstallButton"));
         var error = await Modal<AppDialog>();
         Assert(Texts(error).Any(t => t.Contains("fixture apply failure")), "apply error displayed");
         Click((Button)error.FindName("BtnPrimary"));
@@ -87,7 +90,7 @@ internal static class UpdateUiAcceptance
         var editor = new Window { Title = "Fixture unsaved editor", Width = 200, Height = 100 };
         editor.Show();
         var applies = backend.Applies;
-        Click(Button(window, "Update_Install"));
+        Click((Button)window.FindName("InstallButton"));
         error = await Modal<AppDialog>();
         Assert(Texts(error).Contains(Loc.T("Update_CloseDialogs")), "open editor warning");
         Click((Button)error.FindName("BtnPrimary"));
@@ -113,7 +116,7 @@ internal static class UpdateUiAcceptance
         using (var unavailable = new UpdateService(new ControlledBackend { IsInstalled = false }, DockPadUpdates.ServiceOptions))
         {
             var legacy = await Open(unavailable); await Idle();
-            Assert(!Button(legacy, "Update_Check").IsEnabled && Button(legacy, "Update_DownloadLatest").IsVisible, "legacy installation offers download");
+            Assert(unavailable.Presentation.Primary != UpdateAction.Install && Button(legacy, "Update_DownloadLatest").IsVisible, "legacy installation offers download");
             legacy.Close();
         }
 
@@ -125,50 +128,42 @@ internal static class UpdateUiAcceptance
         Assert(realService.Release!.Version == FixtureVersion("Next"), "real next version displayed");
         using var blocker = StartMcp();
         await Until(() => new WindowsUpdateBlockerFinder().Find(UpdateBlockerQuery.ForDirectory(AppContext.BaseDirectory), new DockPadBlockerClassifier()).Blockers.Any(b => b.Pid == blocker.Id), "real MCP image lock");
-        Click(Button(window, "Update_Install"));
+        Click((Button)window.FindName("InstallButton"));
         var blocked = await Modal<UpdateBlockersDialog>();
         await Idle();
-        var list = (ListBox)blocked.FindName("Processes");
-        Assert(list.Items.Cast<UpdateBlocker>().Any(b => b.Pid == blocker.Id), "blocking PID listed");
-        Assert(!list.Items.Cast<UpdateBlocker>().Any(b => b.Selected), "no process selected by default");
+        var list = (ItemsControl)blocked.FindName("Processes");
+        var group = list.Items.Cast<UpdateBlockerGroup>().Where(g => g.Processes.Where(b => b.Pid == blocker.Id).Any()).Single();
+        Assert(group.IsRelay && group.Selected == true, "MCP relay group selected by default");
+        group.Selected = false;
+        Assert(!((Button)blocked.FindName("CloseButton")).IsEnabled, "Refuse cannot ignore an unchecked group");
+        Assert(((TextBlock)blocked.FindName("PreparationSummary")).Visibility == Visibility.Collapsed, "DockPad has no preparation summary");
         blocked.Width = blocked.MinWidth; blocked.Height = blocked.MinHeight;
         await Idle();
-        var pathText = Descendants<TextBlock>(list).Single(t => t.Text == list.Items.Cast<UpdateBlocker>().Single(b => b.Pid == blocker.Id).File);
-        Assert(pathText.ActualHeight > 20 && pathText.ActualWidth < list.ActualWidth, "long process path wraps at minimum width");
-        Click((Button)blocked.FindName("CloseButton"));
-        await Idle();
-        Assert(!blocker.HasExited, "empty selection does not kill");
         Capture(blocked, "blockers-fr");
         Click(Button(blocked, "Update_Postpone"));
         await Until(() => !blocked.IsVisible, "postpone");
         Assert(!blocker.HasExited && realService.State == UpdateState.Ready, "postpone preserves process and download");
 
-        Click(Button(window, "Update_Install"));
+        Click((Button)window.FindName("InstallButton"));
         blocked = await Modal<UpdateBlockersDialog>();
         await Idle();
-        list = (ListBox)blocked.FindName("Processes");
-        var check = Descendants<CheckBox>(list).Single(c => c.DataContext is UpdateBlocker b && b.Pid == blocker.Id);
-        check.IsChecked = true; Click(check);
-        Assert(list.Items.Cast<UpdateBlocker>().Single(b => b.Pid == blocker.Id).Selected, "process selection binding");
         Click((Button)blocked.FindName("CloseButton"));
-        var confirm = await Modal<AppDialog>();
-        Assert(Texts(confirm).Any(t => t.Contains(blocker.Id.ToString())), "force prompt names PID");
-        Capture(confirm, "force-confirm-fr");
-        Click((Button)confirm.FindName("BtnSecondary"));
-        await Until(() => ((Button)blocked.FindName("CloseButton")).IsEnabled, "decline force");
-        Assert(!blocker.HasExited && blocked.IsVisible, "declining force preserves process");
-        // Rescanning rebuilds the list: selection must be explicit again.
-        list = (ListBox)blocked.FindName("Processes");
-        await Idle();
-        check = Descendants<CheckBox>(list).Single(c => c.DataContext is UpdateBlocker b && b.Pid == blocker.Id);
-        check.IsChecked = true; Click(check);
+        await Until(() => ((Border)blocked.FindName("ForceWarning")).IsVisible && ((Button)blocked.FindName("CloseButton")).IsEnabled, "soft close leaves explicit force choice");
+        var remaining = (ItemsControl)blocked.FindName("RemainingProcesses");
+        Assert(remaining.Items.Cast<UpdateBlocker>().Where(b => b.Pid == blocker.Id).Any(), "remaining list names the selected PID");
+        Capture(blocked, "force-confirm-fr");
+        Click(Button(blocked, "Update_Postpone"));
+        await Until(() => !blocked.IsVisible, "decline force");
+        Assert(!blocker.HasExited, "declining force preserves process");
+
+        Click((Button)window.FindName("InstallButton"));
+        blocked = await Modal<UpdateBlockersDialog>();
         Click((Button)blocked.FindName("CloseButton"));
-        confirm = await Modal<AppDialog>();
-        // Stop before apply to test Retry with a second lock after an explicitly approved kill.
+        await Until(() => ((Border)blocked.FindName("ForceWarning")).IsVisible && ((Button)blocked.FindName("CloseButton")).IsEnabled, "force offered again");
         using var second = StartMcp();
-        await Until(() => new WindowsUpdateBlockerFinder().Find(UpdateBlockerQuery.ForDirectory(AppContext.BaseDirectory), new DockPadBlockerClassifier()).Blockers.Any(b => b.Pid == second.Id), "second lock");
-        Click((Button)confirm.FindName("BtnPrimary"));
-        await Until(() => blocker.HasExited && ((Button)blocked.FindName("RetryButton")).IsEnabled, "approved close");
+        await Until(() => new WindowsUpdateBlockerFinder().Find(UpdateBlockerQuery.ForDirectory(AppContext.BaseDirectory), new DockPadBlockerClassifier()).Blockers.Where(b => b.Pid == second.Id).Any(), "second lock");
+        Click((Button)blocked.FindName("CloseButton"));
+        await Until(() => blocker.HasExited && ((Button)blocked.FindName("RetryButton")).IsEnabled, "approved force close");
         Assert(!second.HasExited && blocked.IsVisible, "only selected process terminated");
         second.StandardInput.Close();
         await Until(() => second.HasExited, "external lock released normally");
@@ -188,7 +183,7 @@ internal static class UpdateUiAcceptance
         var window = await Open(service);
         Click(Button(window, "Update_Check"));
         await Until(() => service.State == UpdateState.Idle && service.Status == Loc.T("Update_UpToDate"), "updated version reports up to date");
-        Assert(service.CurrentVersion == FixtureVersion("Next") && !Button(window, "Update_Install").IsEnabled, "restart UI shows new version without reinstall");
+        Assert(service.CurrentVersion == FixtureVersion("Next") && service.Presentation.Primary != UpdateAction.Install, "restart UI shows new version without reinstall");
         Assert(((CheckBox)window.FindName("Automatic")).IsChecked == false, "automatic preference survives restart");
         window.Close();
     }

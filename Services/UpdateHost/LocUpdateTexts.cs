@@ -24,5 +24,9 @@ public sealed class LocUpdateTexts : IUpdateTexts
 
     // Les getters des modèles lisent les textes avant tout démarrage, y compris dans les tests et les outils.
     [ModuleInitializer]
-    internal static void Initialize() => UpdateTexts.Configure(new LocUpdateTexts());
+    internal static void Initialize()
+    {
+        UpdateTexts.AppName = "DockPad";
+        UpdateTexts.Configure(new LocUpdateTexts());
+    }
 }

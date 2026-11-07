@@ -19,9 +19,9 @@ public class UpdateVisualTests
     public Task GroupCountHasAVisibleBackgroundInBothThemes(bool dark) => WpfTestHost.Run(() =>
     {
         ThemeService.Apply(dark);
-        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), Enumerable.Range(1, 3)
-            .Select(pid => new UpdateBlocker { Pid = pid, Name = "Editor" }).ToArray(),
-            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult<IReadOnlyList<UpdateBlocker>>([]), close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.StillRunning));
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), new(Enumerable.Range(1, 3)
+            .Select(pid => new UpdateBlocker { Pid = pid, Name = "Editor" }).ToArray()),
+            host: new DockPadUpdateDialogHost(), shutdownBehavior: UpdateShutdownBehavior.Refuse, refresh: () => Task.FromResult(new UpdateBlockerScan([])), close: (_, _) => Task.FromResult(UpdateBlockerCloseResult.StillRunning));
         try
         {
             Layout(window);

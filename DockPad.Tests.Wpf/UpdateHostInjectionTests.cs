@@ -80,7 +80,7 @@ public class UpdateHostInjectionTests
     public Task BlockerHelpFollowsTheShutdownPolicy(bool forced, bool incomplete, string key) => WpfTestHost.Run(() =>
     {
         var previous = Loc.Current;
-        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), [new() { Pid = 42, Selected = true }],
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), new([new() { Pid = 42, Selected = true }]),
             new Host([]), shutdownBehavior: forced ? UpdateShutdownBehavior.Kill : UpdateShutdownBehavior.Refuse, incomplete: incomplete);
         try
         {
@@ -100,7 +100,7 @@ public class UpdateHostInjectionTests
         var calls = new List<string>();
         var blocker = new UpdateBlocker { Pid = 42, Started = 100, Selected = true };
         var host = new Host(calls) { Blockers = [blocker] };
-        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), [blocker], host, shutdownBehavior: UpdateShutdownBehavior.Refuse);
+        var window = new UpdateBlockersDialog(UpdateBlockerQuery.ForDirectory("unused"), new([blocker]), host, shutdownBehavior: UpdateShutdownBehavior.Refuse);
         try
         {
             ((Button)window.FindName("CloseButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
