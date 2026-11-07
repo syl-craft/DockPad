@@ -39,7 +39,7 @@ public class UpdateVisualTests
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public Task FooterHoverIsDecoratedOnlyWhenAReleaseExists(bool release, bool dark) => WpfTestHost.Run(() =>
+    public Task FooterBadgeAnswersHoverInEveryState(bool release, bool dark) => WpfTestHost.Run(() =>
     {
         ThemeService.Apply(dark);
         var usage = new UsageViewModel(new UsageService([]), () => new UsageConfig { Enabled = false });
@@ -56,12 +56,9 @@ public class UpdateVisualTests
                 as DependencyPropertyKey ?? throw new InvalidOperationException("WPF mouse-over key not found");
             button.SetValue(hoverKey, true);
             var after = Assert.IsType<SolidColorBrush>(badge.Background).Color;
-            if (release)
-            {
-                Assert.True(button.Padding.Left >= 9 && button.Padding.Right >= 9);
-                Assert.NotEqual(before, after);
-            }
-            else Assert.Equal(before, after);
+            // Mue 0.6.2 : la pastille ouvre la fenêtre dans tous les états, elle répond donc au survol même au repos.
+            Assert.True(button.Padding.Left >= 9 && button.Padding.Right >= 9);
+            Assert.NotEqual(before, after);
         }
         finally { window.DetachFromStatics(); window.Close(); ThemeService.Apply(false); }
     });
