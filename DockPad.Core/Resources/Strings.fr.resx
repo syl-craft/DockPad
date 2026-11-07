@@ -2161,6 +2161,9 @@ Cette action est irréversible.</value>
   <data name="Update_Download" xml:space="preserve">
     <value>Télécharger</value>
   </data>
+  <data name="Update_Credit" xml:space="preserve">
+    <value>Mises à jour par Mue</value>
+  </data>
   <data name="Update_IncompleteHelpAskToQuit" xml:space="preserve">
     <value>Certains programmes sont encore ouverts. L'installation leur demandera de quitter. Ceux qui ne quittent pas risquent d'être interrompus sans enregistrer leur travail.</value>
   </data>

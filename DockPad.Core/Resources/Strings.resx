@@ -2161,6 +2161,9 @@ This cannot be undone.</value>
   <data name="Update_Download" xml:space="preserve">
     <value>Download</value>
   </data>
+  <data name="Update_Credit" xml:space="preserve">
+    <value>Updates by Mue</value>
+  </data>
   <data name="Update_IncompleteHelpAskToQuit" xml:space="preserve">
     <value>Some programs are still open. The installer will ask them to quit. Programs that do not quit may be interrupted without saving their work.</value>
   </data>
