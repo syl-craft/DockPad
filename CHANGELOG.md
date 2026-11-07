@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.34.1] — 2026-11-07
+
+### Nouveautés
+
+- **Crédit « Mises à jour par Mue » dans la fenêtre Mises à jour.** En bas à gauche, une petite plume et un lien mènent au projet [Mue](https://github.com/syl-craft/Mue), la bibliothèque qui gère désormais les mises à jour de DockPad. La fenêtre garde sa taille : la zone des notes de version raccourcit d'une ligne.
+
 ## [1.34.0] — 2026-11-07
 
 ### Nouveautés
