@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.34.3] — 2026-11-07
+
+### Corrections
+
+- **Pastille de version lisible au clic.** Quand DockPad est à jour, un clic sur la pastille en bas à gauche lui donnait un fond trop proche de son texte, illisible en contraste élevé : elle garde maintenant un fond clair et prend un contour bleu pendant l'appui.
+
 ## [1.34.2] — 2026-11-07
 
 ### Nouveautés
