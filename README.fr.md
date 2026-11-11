@@ -6,6 +6,8 @@ Application WPF (.NET 8, x64) de **barre de lancement rapide** avec gestion du m
 
 [Télécharger la dernière version](https://github.com/syl-craft/DockPad/releases/latest) · [Historique des versions](CHANGELOG.md)
 
+[![Soutenir sur Ko-fi](https://img.shields.io/badge/Ko--fi-Soutenir-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/sylcraft)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/01-launcher-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/01-launcher-light.gif" alt="Démonstration : raccourci global, lancement d'une tuile, pages et recherche" width="960">

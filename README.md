@@ -6,6 +6,8 @@ A WPF application (.NET 8, x64): a **quick launch bar** for Windows, with a mana
 
 [Download the latest version](https://github.com/syl-craft/DockPad/releases/latest) · [Release history](CHANGELOG.md)
 
+[![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/sylcraft)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/01-launcher-dark.gif">
   <img src="https://raw.githubusercontent.com/syl-craft/DockPad-media/main/videos/01-launcher-light.gif" alt="Demo: global hotkey, launching a tile, pages and search" width="960">
