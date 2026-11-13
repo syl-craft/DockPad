@@ -20,6 +20,10 @@
     <!-- Point d'entrée explicite : voir Program.cs. Le Main engendré par WPF commence par
          construire l'Application, ce qui interdit tout raccourci de démarrage. -->
     <StartupObject>DockPad.Program</StartupObject>
+    <!-- release\ reçoit les paquets et, sous publication\X.Y.Z\source, une copie entière du dépôt
+         faite par publish.ps1 : sans cette exclusion, le glob du SDK compile ces copies dans l'app
+         et le build casse dès la première publication. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);release\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
