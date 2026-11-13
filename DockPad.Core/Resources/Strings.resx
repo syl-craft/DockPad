@@ -2170,4 +2170,34 @@ This cannot be undone.</value>
   <data name="Update_InstallIgnoring" xml:space="preserve">
     <value>Install without closing them</value>
   </data>
+  <data name="UsageHover_Alert" xml:space="preserve">
+    <value>Alert threshold reached</value>
+  </data>
+  <data name="UsageHover_InDays" xml:space="preserve">
+    <value>in {0} d {1} h</value>
+  </data>
+  <data name="UsageHover_InHours" xml:space="preserve">
+    <value>in {0} h {1:00} min</value>
+  </data>
+  <data name="UsageHover_InMinutes" xml:space="preserve">
+    <value>in {0} min</value>
+  </data>
+  <data name="UsageHover_OpenPage" xml:space="preserve">
+    <value>Open usage page ↗</value>
+  </data>
+  <data name="UsageHover_Other" xml:space="preserve">
+    <value>{0}  {1} %</value>
+  </data>
+  <data name="UsageHover_OtherReset" xml:space="preserve">
+    <value>{0}  {1} % · {2}</value>
+  </data>
+  <data name="UsageHover_Remaining" xml:space="preserve">
+    <value>{0} % remaining</value>
+  </data>
+  <data name="UsageHover_Session" xml:space="preserve">
+    <value>5 h session</value>
+  </data>
+  <data name="UsageHover_Stale" xml:space="preserve">
+    <value>Reading from {0:ddd d MMM HH:mm}: may underestimate</value>
+  </data>
 </root>

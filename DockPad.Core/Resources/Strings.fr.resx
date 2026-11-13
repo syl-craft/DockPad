@@ -2170,4 +2170,34 @@ Cette action est irréversible.</value>
   <data name="Update_InstallIgnoring" xml:space="preserve">
     <value>Installer sans les fermer</value>
   </data>
+  <data name="UsageHover_Alert" xml:space="preserve">
+    <value>Seuil d’alerte atteint</value>
+  </data>
+  <data name="UsageHover_InDays" xml:space="preserve">
+    <value>dans {0} j {1} h</value>
+  </data>
+  <data name="UsageHover_InHours" xml:space="preserve">
+    <value>dans {0} h {1:00}</value>
+  </data>
+  <data name="UsageHover_InMinutes" xml:space="preserve">
+    <value>dans {0} min</value>
+  </data>
+  <data name="UsageHover_OpenPage" xml:space="preserve">
+    <value>Ouvrir la page de consommation ↗</value>
+  </data>
+  <data name="UsageHover_Other" xml:space="preserve">
+    <value>{0}  {1} %</value>
+  </data>
+  <data name="UsageHover_OtherReset" xml:space="preserve">
+    <value>{0}  {1} % · {2}</value>
+  </data>
+  <data name="UsageHover_Remaining" xml:space="preserve">
+    <value>{0} % {0:plural:restant|restants}</value>
+  </data>
+  <data name="UsageHover_Session" xml:space="preserve">
+    <value>session 5 h</value>
+  </data>
+  <data name="UsageHover_Stale" xml:space="preserve">
+    <value>Relevé du {0:ddd d MMM HH\hmm} : peut sous-estimer</value>
+  </data>
 </root>

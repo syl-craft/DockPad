@@ -115,6 +115,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
     public UsageGaugeItem? SessionGauge { get; private set; }
     public UsageGaugeItem? WeekGauge { get; private set; }
+    public UsageHoverCard? NoticeHoverCard { get; private set; }
 
     /// <summary>
     /// Notice du fournisseur affichée lorsque le quota est indisponible.
@@ -476,15 +477,17 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
     private void BuildGauges(AiUsage? selected)
     {
-        SessionGauge = Gauge(LabelOf(selected?.Session, slotLabel: Loc.T("Usage_Gauge_Session")), selected?.Session);
-        WeekGauge = Gauge(LabelOf(selected?.Week, slotLabel: Loc.T("Usage_Gauge_Week")), selected?.Week);
+        SessionGauge = Gauge(LabelOf(selected?.Session, slotLabel: Loc.T("Usage_Gauge_Session")), selected?.Session, selected);
+        WeekGauge = Gauge(LabelOf(selected?.Week, slotLabel: Loc.T("Usage_Gauge_Week")), selected?.Week, selected);
+        NoticeHoverCard = selected is { Session: null, Week: null, QuotaNotice.Length: > 0 }
+            ? UsageHoverCard.Create(selected, null, _config.AlertThreshold, _clock()) : null;
     }
 
     /// <summary>Le libellé fourni par le fournisseur, sinon celui du créneau.</summary>
     private static string LabelOf(UsageWindow? window, string slotLabel) =>
         window?.Label is { Length: > 0 } label ? label : slotLabel;
 
-    private UsageGaugeItem Gauge(string label, UsageWindow? window)
+    private UsageGaugeItem Gauge(string label, UsageWindow? window, AiUsage? usage)
     {
         if (window is null)
         {
@@ -493,6 +496,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
         return new UsageGaugeItem
         {
+            HoverCard = usage == null ? null : UsageHoverCard.Create(usage, window, _config.AlertThreshold, _clock(),
+                UsageFormat.GaugeColor(window.UsedPct, _config.AlertThreshold)),
             Label = label,
             HasQuota = true,
             UsedPct = window.UsedPct,
@@ -501,7 +506,8 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             ResetTooltip = window.ResetsAt is null
                 ? ""
                 : Loc.F("Usage_Reset_Tooltip", UsageFormat.Reset(window.ResetsAt, _clock())),
-            Color = UsageFormat.GaugeColor(window.UsedPct, _config.AlertThreshold),
+            Color = window.ObservedAt != null ? UsageBarViewModel.StaleColor
+                : UsageFormat.GaugeColor(window.UsedPct, _config.AlertThreshold),
             // Le libellé est court par choix, mais « 62 % session » ne dit pas si le chiffre est le
             // consommé ou le restant. L'infobulle lève le doute sans coûter de place.
             Tooltip = window.ObservedAt is { } observed
@@ -554,7 +560,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                      nameof(IsVisible), nameof(ShowTabs), nameof(SoloProviderId), nameof(SoloName), nameof(SoloGlyph),
                      nameof(SoloAccent), nameof(IsDemo), nameof(SessionGauge), nameof(WeekGauge),
                      nameof(UsageUrl), nameof(HasUsageUrl),
-                     nameof(QuotaNotice), nameof(QuotaNoticeTooltip), nameof(HasQuotaNotice),
+                     nameof(QuotaNotice), nameof(QuotaNoticeTooltip), nameof(HasQuotaNotice), nameof(NoticeHoverCard),
                      nameof(UsageUrlTooltip),
                      nameof(Snapshots), nameof(Config), nameof(EligibleIds), nameof(IsAutoActive),
                  })

@@ -31,6 +31,7 @@ public sealed record BarLogo(string ProviderId, string Glyph, string Color, bool
 public sealed record BarColumn(string Label, string Text, double Fraction, string Color, string Tooltip,
     string Glyph = "", bool IsWarning = false, string ProviderId = "")
 {
+    public UsageHoverCard? HoverCard { get; init; }
     public string NumberText { get; init; } = "";
     public string NumberBrushKey { get; init; } = "";
 }
@@ -42,6 +43,7 @@ public sealed record BarColumn(string Label, string Text, double Fraction, strin
 public sealed record BarRing(string Label, string Text, double Fraction, string Color, string Tooltip,
     string ProviderId = "", bool IsEmpty = false, bool IsWarning = false) : INotifyPropertyChanged
 {
+    public UsageHoverCard? HoverCard { get; init; }
     public string Text { get; private set; } = Text;
     public double Fraction { get; private set; } = Fraction;
     public string Tooltip { get; private set; } = Tooltip;
@@ -59,11 +61,11 @@ public sealed record BarRing(string Label, string Text, double Fraction, string 
         && Label == other.Label && Text == other.Text && Fraction == other.Fraction && Color == other.Color
         && Tooltip == other.Tooltip && ProviderId == other.ProviderId && IsEmpty == other.IsEmpty
         && IsWarning == other.IsWarning && NumberText == other.NumberText
-        && NumberBrushKey == other.NumberBrushKey && Selection == other.Selection;
+        && NumberBrushKey == other.NumberBrushKey && Selection == other.Selection && HoverCard == other.HoverCard;
 
     public override int GetHashCode() => HashCode.Combine(
         HashCode.Combine(Label, Text, Fraction, Color, Tooltip, ProviderId, IsEmpty, IsWarning),
-        NumberText, NumberBrushKey, Selection);
+        NumberText, NumberBrushKey, Selection, HoverCard);
 
     /// <summary>Une mesure ne remplace pas l'anneau lié à un bouton, son focus et son infobulle.</summary>
     internal void UpdateLoad(string text, double fraction, string tooltip, string numberText)
@@ -82,7 +84,10 @@ public sealed record BarRing(string Label, string Text, double Fraction, string 
 /// Une ligne du style Héros : une fenêtre de l'IA mise en avant, ou la fenêtre la plus consommée d'un autre fournisseur.
 /// </summary>
 public sealed record BarHeroRow(string ProviderId, string Glyph, string Label, string Text, double Fraction,
-    string Color, string Tooltip, bool IsWarning = false);
+    string Color, string Tooltip, bool IsWarning = false)
+{
+    public UsageHoverCard? HoverCard { get; init; }
+}
 
 /// <summary>
 /// La carte de l'IA mise en avant. En panne de quota : IsWarning, NoticeTitle, et aucun chiffre.
@@ -91,6 +96,7 @@ public sealed record BarHeroCard(string ProviderId, string Glyph, string Name, s
     double Fraction, string Color, string ResetText, bool IsWarning, string NoticeTitle, string Tooltip,
     BarHeroRow? SecondWindow)
 {
+    public UsageHoverCard? HoverCard { get; init; }
     /// <summary>« ↻ 19h30 », ou vide quand la remise à zéro est inconnue.</summary>
     public string ResetLabel { get; init; } = "";
 }
@@ -114,7 +120,10 @@ public sealed record BarRings(BarRing? Outer, BarRing? Inner, string CenterText,
 /// </summary>
 public sealed record BarReservoir(bool HasLevel, double Level, string LevelText, string Label, string Color,
     string Tooltip,
-    IReadOnlyList<BarRing> Dots);
+    IReadOnlyList<BarRing> Dots)
+{
+    public UsageHoverCard? HoverCard { get; init; }
+}
 
 /// <summary>
 /// Charge du PC. Un processeur inconnu s'écrit « — » et laisse un trou (null) dans sa série.

@@ -103,6 +103,84 @@ public class UsageBarViewModelTests
     private static Task<Rig> BuildAsync(UsageConfig config, params AiUsage[] usages) =>
         BuildAsync(config, (SystemLoad?)null, usages);
 
+    [Fact]
+    public async Task Cartes_ToutesLesJaugesDeQuota_ChargeSansCarte()
+    {
+        var rig = await BuildAsync(ConfigFor("claude", "codex"), Usage("claude"), Usage("codex"));
+        using var bar = rig.Bar;
+        Assert.All(bar.Columns.Where(column => column.ProviderId.Length > 0), column => Assert.NotNull(column.HoverCard));
+        Assert.All(bar.Columns.Where(column => column.ProviderId.Length == 0), column => Assert.Null(column.HoverCard));
+        Assert.NotNull(Some(bar.HeroCard).HoverCard);
+        Assert.NotNull(Some(Some(bar.HeroCard).SecondWindow).HoverCard);
+        Assert.All(bar.HeroRows, row => Assert.NotNull(row.HoverCard));
+        Assert.NotNull(Some(Some(bar.Rings).Outer).HoverCard);
+        Assert.NotNull(Some(Some(bar.Rings).Inner).HoverCard);
+        Assert.All(Some(bar.Rings).Others, ring => Assert.NotNull(ring.HoverCard));
+        Assert.NotNull(Some(bar.Reservoir).HoverCard);
+        Assert.All(Some(bar.Reservoir).Dots.Where(ring => ring.ProviderId.Length > 0), ring => Assert.NotNull(ring.HoverCard));
+        Assert.All(bar.LoadRings, ring => Assert.Null(ring.HoverCard));
+        Assert.NotNull(Some(rig.Usage.SessionGauge).HoverCard);
+        Assert.NotNull(Some(rig.Usage.WeekGauge).HoverCard);
+
+        bar.PickGauge(new BarGauge("", BarGaugeKind.Cpu));
+        Assert.Null(Some(Some(bar.FeaturedGauge).Ring).HoverCard);
+        Assert.Null(Some(bar.Reservoir).HoverCard);
+        Assert.Null(Some(Some(bar.Rings).Outer).HoverCard);
+        rig.Usage.Stop();
+        rig.Feed.Stop();
+    }
+
+    [Fact]
+    public async Task Cartes_Notice_PresenteDansLesQuatreStylesEtLeBandeau()
+    {
+        var rig = await BuildAsync(ConfigFor("codex"), Usage("codex", null, null, notice: "Quota indisponible"));
+        using var bar = rig.Bar;
+        Assert.NotNull(bar.Columns[0].HoverCard);
+        Assert.NotNull(Some(bar.HeroCard).HoverCard);
+        Assert.NotNull(Some(Some(bar.Rings).Outer).HoverCard);
+        Assert.NotNull(Some(bar.Reservoir).HoverCard);
+        Assert.NotNull(rig.Usage.NoticeHoverCard);
+        rig.Usage.Stop();
+        rig.Feed.Stop();
+    }
+
+    [Fact]
+    public void Anneau_CarteDifferente_EntreDansEgaliteEtHash()
+    {
+        var first = new BarRing("", "", 0, "", "")
+        {
+            HoverCard = UsageHoverCard.Create(Usage("codex", usageUrl: "https://example.com/one"), null, 15, Now),
+        };
+        var second = first with { HoverCard = Some(first.HoverCard) with { UsageUrl = "https://example.com/two" } };
+        Assert.NotEqual(first, second);
+        Assert.Equal(2, new HashSet<BarRing> { first, second }.Count);
+        Assert.Equal(first.GetHashCode(), (first with { }).GetHashCode());
+    }
+
+    [Fact]
+    public async Task Carte_ReleveChangeSansChangerLesChiffres_RemplaceLaColonneEtLaPastille()
+    {
+        Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("fr"));
+        var config = ConfigFor("codex");
+        var provider = new StubProvider(Usage("codex", usageUrl: "https://example.com/one"));
+        var usage = new UsageViewModel(new UsageService([provider]), () => config, () => Now);
+        await usage.RefreshAsync();
+        var feed = new SystemLoadFeed(new FakeSystemLoadMonitor(), new ManualTimeProvider(), publishOn: null);
+        using var bar = new UsageBarViewModel(usage, feed, () => Now);
+        var column = bar.Columns[0];
+        var dot = Some(bar.Reservoir).Dots[0];
+        provider.Snapshot = Usage("codex", usageUrl: "https://example.com/two");
+
+        await usage.RefreshAsync();
+
+        Assert.NotSame(column, bar.Columns[0]);
+        Assert.NotSame(dot, Some(bar.Reservoir).Dots[0]);
+        Assert.Equal("https://example.com/two", Some(bar.Columns[0].HoverCard).UsageUrl);
+        Assert.Equal("https://example.com/two", Some(Some(bar.Reservoir).Dots[0].HoverCard).UsageUrl);
+        usage.Stop();
+        feed.Stop();
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

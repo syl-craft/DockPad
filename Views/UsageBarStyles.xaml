@@ -88,6 +88,7 @@
 
     <Style x:Key="BarEnlargeButton" TargetType="Button" BasedOn="{StaticResource BarGaugeButton}">
         <Setter Property="IsEnabled" Value="{Binding CanEnlarge}"/>
+        <Setter Property="views:UsageHover.Card" Value="{Binding HoverCard}"/>
         <Setter Property="ToolTip" Value="{Binding EnlargeTooltip}"/>
         <Setter Property="AutomationProperties.Name" Value="{Binding EnlargeTooltip}"/>
         <Style.Triggers>
@@ -251,7 +252,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Grid Background="Transparent" ToolTip="{Binding Tooltip}" AutomationProperties.Name="{Binding Tooltip}">
+                    <Grid Background="Transparent" ToolTip="{Binding Tooltip}" AutomationProperties.Name="{Binding Tooltip}" views:UsageHover.Card="{Binding HoverCard}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
@@ -278,7 +279,7 @@
          traité par UsageBar, qui lit le modèle de la ligne. -->
     <DataTemplate x:Key="BarHeroRowTemplate">
         <Button Style="{StaticResource BarFlatButton}" Height="20"
-                ToolTip="{Binding Tooltip}" AutomationProperties.Name="{Binding Tooltip}">
+                ToolTip="{Binding Tooltip}" AutomationProperties.Name="{Binding Tooltip}" views:UsageHover.Card="{Binding HoverCard}">
             <Grid Margin="3,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -300,7 +301,7 @@
     <!-- La seconde fenêtre de la carte : de l'information, pas un geste. Elle n'est pas un bouton, donc elle ne change
          pas d'IA mise en avant et ne suspend pas l'Auto. -->
     <DataTemplate x:Key="BarHeroSecondRow">
-        <Grid Height="20" Background="Transparent" ToolTip="{Binding Tooltip}" AutomationProperties.Name="{Binding Tooltip}">
+        <Grid Height="20" Background="Transparent" ToolTip="{Binding Tooltip}" AutomationProperties.Name="{Binding Tooltip}" views:UsageHover.Card="{Binding HoverCard}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -330,7 +331,7 @@
             <Border Grid.Row="0" Style="{StaticResource VisibleWithHeroCard}"
                     Background="{DynamicResource Brush.SurfaceCard}" BorderBrush="{DynamicResource Brush.Border}"
                     BorderThickness="1" CornerRadius="6" Padding="4,7" Margin="0,0,0,8"
-                    ToolTip="{Binding HeroCard.Tooltip}" AutomationProperties.Name="{Binding HeroCard.Tooltip}">
+                    ToolTip="{Binding HeroCard.Tooltip}" AutomationProperties.Name="{Binding HeroCard.Tooltip}" views:UsageHover.Card="{Binding HeroCard.HoverCard}">
                 <StackPanel>
                     <views:ProviderIcon Width="18" Height="18" HorizontalAlignment="Center"
                                         ProviderId="{Binding HeroCard.ProviderId}" Glyph="{Binding HeroCard.Glyph}"
@@ -434,13 +435,13 @@
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Style="{StaticResource VisibleWithRings}" HorizontalAlignment="Center">
-                <Grid Width="74" Height="74" Background="Transparent" ToolTip="{Binding Rings.Outer.Tooltip}"
+                <Grid Width="74" Height="74" Background="Transparent" ToolTip="{Binding Rings.Outer.Tooltip}" views:UsageHover.Card="{Binding Rings.Outer.HoverCard}"
                       AutomationProperties.Name="{Binding Rings.Outer.Tooltip}">
                     <Ellipse Stroke="{DynamicResource Brush.SeparatorStrong}" StrokeThickness="5"/>
                     <views:RingArc Width="74" Height="74" StrokeThickness="5" Fraction="{Binding Rings.Outer.Fraction}"
                                    Stroke="{Binding Rings.Outer.Color, Converter={StaticResource BarBrush}}"/>
                     <Grid Width="50" Height="50" Background="Transparent" Style="{StaticResource VisibleWithInnerRing}"
-                          ToolTip="{Binding Rings.Inner.Tooltip}">
+                          ToolTip="{Binding Rings.Inner.Tooltip}" AutomationProperties.Name="{Binding Rings.Inner.Tooltip}" views:UsageHover.Card="{Binding Rings.Inner.HoverCard}">
                         <Ellipse Stroke="{DynamicResource Brush.SeparatorStrong}" StrokeThickness="4"/>
                         <views:RingArc Width="50" Height="50" StrokeThickness="4" Fraction="{Binding Rings.Inner.Fraction}"
                                        Stroke="{Binding Rings.Inner.Color, Converter={StaticResource BarBrush}}"/>
@@ -512,7 +513,7 @@
             <Border Grid.Row="0" Style="{StaticResource VisibleWithTank}" Margin="0,0,0,8" CornerRadius="8"
                     BorderThickness="1" BorderBrush="{DynamicResource Brush.Border}"
                     Background="{DynamicResource Brush.SurfaceMuted}" ClipToBounds="True"
-                    ToolTip="{Binding Reservoir.Tooltip}" AutomationProperties.Name="{Binding Reservoir.Tooltip}">
+                    ToolTip="{Binding Reservoir.Tooltip}" AutomationProperties.Name="{Binding Reservoir.Tooltip}" views:UsageHover.Card="{Binding Reservoir.HoverCard}">
                 <Grid>
                     <views:FractionBar IsVertical="True" FillOpacity="0.4" Fraction="{Binding Reservoir.Level}"
                                        Fill="{Binding Reservoir.Color, Converter={StaticResource BarBrush}}"/>

@@ -107,6 +107,134 @@ public class UsageBarViewTests
         Descendants<ItemsControl>(bar).Where(items => ReferenceEquals(items.ItemsSource, source)).First();
 
     [Theory]
+    [InlineData(SideStripStyle.Columns)]
+    [InlineData(SideStripStyle.HeroStack)]
+    [InlineData(SideStripStyle.Rings)]
+    [InlineData(SideStripStyle.Reservoir)]
+    public Task Cartes_LiaisonsDesTroisQuotasDansChaqueStyle(SideStripStyle style) => WpfTestHost.Run(() =>
+    {
+        var rig = Build(style);
+        try
+        {
+            var cards = Descendants<FrameworkElement>(rig.Control)
+                .Select(UsageHover.GetCard).OfType<UsageHoverCard>().ToList();
+            Assert.Equal(3, cards.Count);
+            Assert.Equal(2, cards.Where(card => card.ProviderId == "claude").Count());
+            Assert.Contains(cards, card => card.ProviderId == "codex");
+        }
+        finally
+        {
+            rig.Model.Dispose();
+            rig.Feed.Stop();
+            rig.Usage.Stop();
+        }
+    });
+
+    [Fact]
+    public Task Cartes_Bandeau_LiaisonsDesDeuxJauges() => WpfTestHost.Run(() =>
+    {
+        var rig = Build(SideStripStyle.Columns);
+        try
+        {
+            var panel = new UsagePanel { DataContext = rig.Usage };
+            panel.Measure(new Size(698, 90));
+            panel.Arrange(new Rect(0, 0, 698, 90));
+            panel.UpdateLayout();
+            var cards = Descendants<FrameworkElement>(panel).Select(UsageHover.GetCard).OfType<UsageHoverCard>().ToList();
+            Assert.Equal(2, cards.Count);
+            Assert.All(cards, card => Assert.Equal("claude", card.ProviderId));
+        }
+        finally
+        {
+            rig.Model.Dispose();
+            rig.Feed.Stop();
+            rig.Usage.Stop();
+        }
+    });
+
+    private static ToolTipEventArgs RaiseTooltip(FrameworkElement element)
+    {
+        var args = Activator.CreateInstance(typeof(ToolTipEventArgs),
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic,
+            binder: null, args: [true], culture: null) as ToolTipEventArgs
+            ?? throw new InvalidOperationException("Cannot create tooltip event arguments.");
+        element.RaiseEvent(args);
+        return args;
+    }
+
+    [Fact]
+    public Task Carte_Vue_LongNomEtChangementDeTheme() => WpfTestHost.Run(() =>
+    {
+        var previousTheme = ThemeService.CurrentIsDark;
+        var previousCulture = Loc.Current;
+        try
+        {
+            Loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("fr"));
+            var quota = new UsageWindow { UsedPct = 85, ResetsAt = Now.AddHours(2).AddMinutes(5), Label = "Gemini" };
+            var usage = new AiUsage
+            {
+                ProviderId = "codex", Name = "Assistant de programmation internationale", Glyph = "X", AccentColor = "#123456",
+                Session = quota, Week = new UsageWindow { UsedPct = 15, ResetsAt = Now.AddDays(4).AddHours(23) },
+                UsageUrl = "https://example.com/usage",
+            };
+            var card = UsageHoverCard.Create(usage, quota, 15, Now);
+            var view = new UsageHoverCardView { DataContext = card };
+            Brush? previousBackground = null;
+            foreach (var dark in new[] { false, true })
+            {
+                ThemeService.Apply(dark);
+                WpfTestHost.Flush();
+                view.Measure(new Size(250, double.PositiveInfinity));
+                view.Arrange(new Rect(new Point(), view.DesiredSize));
+                view.UpdateLayout();
+                Assert.Equal(250, view.ActualWidth);
+                var border = Assert.IsType<Border>(view.Content);
+                Assert.Same(Application.Current.FindResource("Brush.SurfaceCard"), border.Background);
+                if (previousBackground != null) Assert.NotSame(previousBackground, border.Background);
+                previousBackground = border.Background;
+                var texts = Descendants<TextBlock>(view).Select(text => text.Text).ToList();
+                Assert.Contains(card.Header, texts);
+                Assert.Contains(card.ResetRelative, texts);
+                Assert.Contains(card.Note, texts);
+            }
+        }
+        finally
+        {
+            ThemeService.Apply(previousTheme);
+            Loc.SetCulture(previousCulture);
+        }
+    });
+
+    [Fact]
+    public Task Cartes_InfobullesDesTextesEnfantsSupprimees_ChargeConservee() => WpfTestHost.Run(() =>
+    {
+        var rig = Build(SideStripStyle.Columns);
+        try
+        {
+            var quotaText = Descendants<TextBlock>(rig.Control)
+                .Where(text => text.DataContext is BarColumn { ProviderId.Length: > 0 }).First();
+            var loadText = Descendants<TextBlock>(rig.Control)
+                .Where(text => text.DataContext is BarColumn { ProviderId.Length: 0 }).First();
+            Assert.True(RaiseTooltip(quotaText).Handled);
+            Assert.False(RaiseTooltip(loadText).Handled);
+
+            var panel = new UsagePanel { DataContext = rig.Usage };
+            panel.Measure(new Size(698, 90));
+            panel.Arrange(new Rect(0, 0, 698, 90));
+            panel.UpdateLayout();
+            var gaugeText = Descendants<TextBlock>(panel)
+                .Where(text => text.DataContext is UsageGaugeItem && text.ToolTip != null).First();
+            Assert.True(RaiseTooltip(gaugeText).Handled);
+        }
+        finally
+        {
+            rig.Model.Dispose();
+            rig.Feed.Stop();
+            rig.Usage.Stop();
+        }
+    });
+
+    [Theory]
     [InlineData(SideStripStyle.Reservoir)]
     [InlineData(SideStripStyle.Rings)]
     public Task PetiteJauge_BoutonAccessible_ChoisitLaFenetre(SideStripStyle style) => WpfTestHost.Run(() =>

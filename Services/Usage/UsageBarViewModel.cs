@@ -360,9 +360,11 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
 
     private static string NoticeTooltipOf(AiUsage usage)
     {
-        var notice = Loc.F("UsageBar_Logo_Notice", usage.Name, usage.QuotaNotice);
-        return usage.QuotaNoticeNote.Length > 0 ? notice + "\n" + usage.QuotaNoticeNote : notice;
+        return UsageHoverCard.NoticeTooltipOf(usage);
     }
+
+    private UsageHoverCard HoverCardOf(AiUsage usage, UsageWindow? window = null) =>
+        UsageHoverCard.Create(usage, window, _usage.Config.AlertThreshold, _clock());
 
     /// <summary>
     /// Met <paramref name="target"/> d'accord avec <paramref name="source"/> en ne touchant que ce qui diffère : un élément
@@ -478,7 +480,8 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         if (focus == null) return null;
 
         var warning = new BarRing(NoticeTitleOf(focus), WarningGlyph, 0, UsageFormat.High,
-            NoticeTooltipOf(focus), focus.ProviderId, IsWarning: true) { NumberText = WarningGlyph };
+            NoticeTooltipOf(focus), focus.ProviderId, IsWarning: true)
+            { NumberText = WarningGlyph, HoverCard = HoverCardOf(focus) };
         return new BarFeaturedGauge(warning, focus.Glyph, Shorten(focus.Name, CardNameMax), "", focus.UsageUrl);
     }
 
@@ -494,13 +497,14 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         if (focus != null && focusViews.Count == 0)
         {
             columns.Add(new BarColumn(NoticeTitleOf(focus), WarningGlyph, 0, UsageFormat.High, NoticeTooltipOf(focus),
-                focus.Glyph, IsWarning: true, ProviderId: focus.ProviderId) { NumberText = WarningGlyph });
+                focus.Glyph, IsWarning: true, ProviderId: focus.ProviderId)
+                { NumberText = WarningGlyph, HoverCard = HoverCardOf(focus) });
         }
 
         columns.AddRange(views.Take(QuotaColumnCount - columns.Count).Select(view =>
             new BarColumn(Shorten(ShortLabelOf(view), ColumnLabelMax), PercentOf(view.Window.UsedPct), FractionOf(view),
                 ColorOf(view), TooltipOf(view), view.Usage.Glyph, ProviderId: view.Usage.ProviderId)
-            { NumberText = NumberText(view.Window.UsedPct) }));
+            { NumberText = NumberText(view.Window.UsedPct), HoverCard = HoverCardOf(view.Usage, view.Window) }));
         return columns;
     }
 
@@ -512,7 +516,8 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         if (focusViews.Count == 0)
         {
             return new BarHeroCard(focus.ProviderId, focus.Glyph, name, "", WarningGlyph, 0, UsageFormat.High, "",
-                IsWarning: true, NoticeTitleOf(focus), NoticeTooltipOf(focus), SecondWindow: null);
+                IsWarning: true, NoticeTitleOf(focus), NoticeTooltipOf(focus), SecondWindow: null)
+                { HoverCard = HoverCardOf(focus) };
         }
 
         var top = focusViews[0];
@@ -522,6 +527,7 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
             UsageFormat.Reset(top.Window.ResetsAt, _clock()), IsWarning: false, "", TooltipOf(top), second)
         {
             ResetLabel = ResetLabelOf(top.Window),
+            HoverCard = HoverCardOf(top.Usage, top.Window),
         };
     }
 
@@ -533,7 +539,8 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
 
     private BarHeroRow HeroRowOf(WindowView view) =>
         new(view.Usage.ProviderId, view.Usage.Glyph, Shorten(ShortLabelOf(view), RowLabelMax),
-            PercentOf(view.Window.UsedPct), FractionOf(view), ColorOf(view), TooltipOf(view));
+            PercentOf(view.Window.UsedPct), FractionOf(view), ColorOf(view), TooltipOf(view))
+            { HoverCard = HoverCardOf(view.Usage, view.Window) };
 
     /// <summary>
     /// Un autre fournisseur : sa fenêtre la plus consommée, ou un avertissement s'il n'a que sa notice.
@@ -545,7 +552,7 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         if (top != null) return HeroRowOf(top) with { Label = name };
 
         return new BarHeroRow(usage.ProviderId, usage.Glyph, name, WarningGlyph, 0, UsageFormat.High,
-            NoticeTooltipOf(usage), IsWarning: true);
+            NoticeTooltipOf(usage), IsWarning: true) { HoverCard = HoverCardOf(usage) };
     }
 
     // --- Anneaux
@@ -556,7 +563,7 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
         if (focusViews.Count == 0)
         {
             var warning = new BarRing(NoticeTitleOf(focus), WarningGlyph, 0, UsageFormat.High, NoticeTooltipOf(focus), focus.ProviderId,
-                IsWarning: true) { NumberText = WarningGlyph };
+                IsWarning: true) { NumberText = WarningGlyph, HoverCard = HoverCardOf(focus) };
             return new BarRings(warning, null, WarningGlyph, others) { Legend = warning.Label, LegendTooltip = warning.Tooltip };
         }
 
@@ -581,7 +588,8 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
     private BarRing RingOf(WindowView view) =>
         new(Shorten(ShortLabelOf(view), RingLabelMax), PercentOf(view.Window.UsedPct), FractionOf(view),
             ColorOf(view), TooltipOf(view), view.Usage.ProviderId)
-            { NumberText = NumberText(view.Window.UsedPct), Selection = SelectionOf(view) };
+            { NumberText = NumberText(view.Window.UsedPct), Selection = SelectionOf(view),
+                HoverCard = HoverCardOf(view.Usage, view.Window) };
 
     private static BarGauge SelectionOf(WindowView view) => new(view.Usage.ProviderId,
         view.Gauge.WindowKind == UsageWindowKind.Session ? BarGaugeKind.Session : BarGaugeKind.Week);
@@ -618,6 +626,6 @@ public sealed class UsageBarViewModel : INotifyPropertyChanged, IDisposable
             return new BarReservoir(false, 0, "", "", StaleColor, "", dots);
         var ring = FeaturedGauge.Ring;
         return new BarReservoir(ring.IsWarning == false, ring.Fraction, ring.Text,
-            ring.IsWarning ? ring.Label : "", ring.Color, ring.Tooltip, dots);
+            ring.IsWarning ? ring.Label : "", ring.Color, ring.Tooltip, dots) { HoverCard = ring.HoverCard };
     }
 }

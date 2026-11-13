@@ -64,6 +64,7 @@ public sealed class UsageMetric
 /// <summary>Une jauge de quota.</summary>
 public sealed class UsageGaugeItem
 {
+    public DockPad.Services.Usage.UsageHoverCard? HoverCard { get; init; }
     public required string Label { get; init; }
 
     /// <summary>

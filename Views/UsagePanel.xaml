@@ -146,7 +146,8 @@
                  vaudrait 0 par défaut et afficherait « 0 % session », soit une mesure affirmée là
                  où il n'y a pas de donnée. Un vide ne prétend rien. Cas courant au démarrage, avant
                  que la première lecture ait abouti. -->
-            <Grid Visibility="{Binding HasQuota, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid Visibility="{Binding HasQuota, Converter={StaticResource BoolToVisibilityConverter}}" Background="Transparent"
+                  views:UsageHover.Card="{Binding HoverCard}" AutomationProperties.Name="{Binding HoverCard.AccessibleText}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -288,7 +289,8 @@
                            FontFamily="Segoe UI Symbol, Segoe UI Emoji, Segoe UI"
                            TextTrimming="CharacterEllipsis"
                            Text="{Binding QuotaNotice, StringFormat=⚠ {0}}"
-                           ToolTip="{Binding QuotaNoticeTooltip}"
+                           ToolTip="{Binding QuotaNoticeTooltip}" views:UsageHover.Card="{Binding NoticeHoverCard}"
+                           AutomationProperties.Name="{Binding NoticeHoverCard.AccessibleText}"
                            Visibility="{Binding HasQuotaNotice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                 <!-- La pastille du fournisseur, à droite de la ligne haute, ouvre sa page officielle.

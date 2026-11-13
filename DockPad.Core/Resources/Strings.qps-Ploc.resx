@@ -2170,4 +2170,34 @@ C3tt3 4ct10n 35t 1rr3v3r51bl3.</value>
   <data name="Update_InstallIgnoring" xml:space="preserve">
     <value>1n5t4ll3r 54n5 l35 f3rm3r</value>
   </data>
+  <data name="UsageHover_Alert" xml:space="preserve">
+    <value>53u1l d’4l3rt3 4tt31nt</value>
+  </data>
+  <data name="UsageHover_InDays" xml:space="preserve">
+    <value>d4n5 {0} j {1} h</value>
+  </data>
+  <data name="UsageHover_InHours" xml:space="preserve">
+    <value>d4n5 {0} h {1:00}</value>
+  </data>
+  <data name="UsageHover_InMinutes" xml:space="preserve">
+    <value>d4n5 {0} m1n</value>
+  </data>
+  <data name="UsageHover_OpenPage" xml:space="preserve">
+    <value>0uvr1r l4 p4g3 d3 c0n50mm4t10n ↗</value>
+  </data>
+  <data name="UsageHover_Other" xml:space="preserve">
+    <value>{0}  {1} %</value>
+  </data>
+  <data name="UsageHover_OtherReset" xml:space="preserve">
+    <value>{0}  {1} % · {2}</value>
+  </data>
+  <data name="UsageHover_Remaining" xml:space="preserve">
+    <value>{0} % {0:plural:restant|restants}</value>
+  </data>
+  <data name="UsageHover_Session" xml:space="preserve">
+    <value>535510n 5 h</value>
+  </data>
+  <data name="UsageHover_Stale" xml:space="preserve">
+    <value>R3l3v3 du {0:ddd d MMM HH\hmm} : p3ut 50u5-35t1m3r</value>
+  </data>
 </root>
