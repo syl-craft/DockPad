@@ -77,9 +77,10 @@ public class UpdateContractTests
         });
         try
         {
-            Press(window);
-            WpfTestHost.PumpUntilCompleted(host.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+            PressAndWait(window);
+            Assert.Null(host.Error);
             Assert.Equal(new[] { "download", "check", "find", "final", "prepare", "before", "apply", "exit" }, host.Calls);
+            Assert.Equal(UpdateState.Installing, service.State);
             var text = (TextBlock)window.FindName("PreparationSummary");
             Assert.Equal(summary ?? "", text.Text);
             Assert.Equal(summary == null ? Visibility.Collapsed : Visibility.Visible, text.Visibility);
@@ -101,17 +102,14 @@ public class UpdateContractTests
             Assert.Equal(host.Summary, ((TextBlock)dialog.FindName("PreparationSummary")).Text);
             Assert.Equal(Visibility.Visible, ((TextBlock)dialog.FindName("PreparationSummary")).Visibility);
             dialog.Close();
-            host.Completed.SetResult();
             return answer;
         });
         try
         {
-            Press(window);
-            WpfTestHost.PumpUntilCompleted(host.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5)));
-            WpfTestHost.Flush();
+            PressAndWait(window);
+            Assert.Null(host.Error);
             Assert.Equal(new[] { "download", "check", "find", "blockers" }, host.Calls);
             Assert.Equal(UpdateState.Ready, service.State);
-            service.CancelPreparation();
         }
         finally { window.Close(); }
     });
@@ -127,10 +125,10 @@ public class UpdateContractTests
         try
         {
             Assert.Equal(Visibility.Collapsed, ((TextBlock)blockers.FindName("PreparationSummary")).Visibility);
-            Press(window);
-            WpfTestHost.PumpUntilCompleted(host.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5)));
-            WpfTestHost.Flush();
+            PressAndWait(window);
+            Assert.Null(host.Error);
             Assert.Equal(new[] { "download", "check" }, host.Calls);
+            Assert.Equal(UpdateState.Ready, service.State);
             var text = (TextBlock)window.FindName("PreparationSummary");
             Assert.Equal(host.Summary, text.Text);
             typeof(UpdateService).GetProperty(nameof(UpdateService.State))?.SetValue(service, UpdateState.Idle);
@@ -167,7 +165,45 @@ public class UpdateContractTests
         window.Close();
     });
 
-    private static void Press(UpdatesDialog window) => ((Button)window.FindName("InstallButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+    private static void PressAndWait(UpdatesDialog window)
+    {
+        var previous = SynchronizationContext.Current ?? throw new InvalidOperationException("WPF context is missing");
+        var operation = new InstallOperationContext(previous);
+        SynchronizationContext.SetSynchronizationContext(operation);
+        try { ((Button)window.FindName("InstallButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+            operation.OperationCompleted();
+        }
+        WpfTestHost.PumpUntilCompleted(operation.Completed.Task.WaitAsync(TimeSpan.FromSeconds(20)));
+    }
+
+    /// <summary>
+    /// Le clic est async void : ses rappels précèdent le finally qui rend la main à l'utilisateur.
+    /// Le contexte compte les opérations jusqu'à leur vraie fin, y compris les clics async void imbriqués de Mue.
+    /// </summary>
+    private sealed class InstallOperationContext(SynchronizationContext dispatcher) : SynchronizationContext
+    {
+        // Cette première opération garde le contexte ouvert jusqu'au retour synchrone de RaiseEvent.
+        private int _operations = 1;
+        public TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public override void OperationStarted() => Interlocked.Increment(ref _operations);
+        public override void OperationCompleted()
+        {
+            if (Interlocked.Decrement(ref _operations) == 0) Completed.TrySetResult();
+        }
+        public override SynchronizationContext CreateCopy() => this;
+        public override void Post(SendOrPostCallback callback, object? state) => dispatcher.Post(value => Invoke(callback, value), state);
+        public override void Send(SendOrPostCallback callback, object? state) => dispatcher.Send(value => Invoke(callback, value), state);
+        private void Invoke(SendOrPostCallback callback, object? state)
+        {
+            var previous = Current;
+            SetSynchronizationContext(this);
+            try { callback(state); }
+            finally { SetSynchronizationContext(previous); }
+        }
+    }
 
     private sealed class BadgeCommand(Action execute) : System.Windows.Input.ICommand
     {
@@ -179,7 +215,7 @@ public class UpdateContractTests
     private sealed class Host : IUpdateDialogHost, IUpdateBlockerFinder
     {
         public List<string> Calls { get; } = [];
-        public TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public string? Error { get; private set; }
         public bool CanContinue { get; init; } = true;
         public string? Summary { get; init; }
         public IReadOnlyList<UpdateBlocker> Blockers { get; init; } = [];
@@ -192,14 +228,13 @@ public class UpdateContractTests
         public Task<UpdatePreparationCheck> CheckAsync(object owner, CancellationToken token)
         {
             Calls.Add("check");
-            if (!CanContinue) Completed.TrySetResult();
             return Task.FromResult(new UpdatePreparationCheck(CanContinue, Summary));
         }
         public Task<bool> PrepareAsync(object owner, CancellationToken token) { Calls.Add("prepare"); return Task.FromResult(true); }
         public void BeforeApply() => Calls.Add("before");
         public void ApplyFailed() => Calls.Add("failed");
-        public void ExitAfterApply() { Calls.Add("exit"); Completed.TrySetResult(); }
-        public void ShowError(string message, object owner) => Completed.TrySetException(new Exception(message));
+        public void ExitAfterApply() => Calls.Add("exit");
+        public void ShowError(string message, object owner) => Error = message;
         public UpdateBlockerScan Find(UpdateBlockerQuery query, IUpdateBlockerClassifier classifier, bool enrich = true)
         { Calls.Add(enrich ? "find" : "final"); return new(Blockers); }
         public Task<UpdateBlockerCloseResult> CloseAsync(UpdateBlocker blocker, bool force, CancellationToken token = default) =>

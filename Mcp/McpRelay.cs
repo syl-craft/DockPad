@@ -22,6 +22,10 @@ public static class McpRelay
             .WithStdioServerTransport()
             .WithToolsFromAssembly();
 
+        // Le SDK 2.1.0 arrête déjà le host à la fin de la session stdio. Le client peut toutefois
+        // mourir sans fermer le tube : son premier ancêtre hors lanceurs fournit l'autre signal.
+        builder.Services.AddHostedService<McpClientLifetime>();
+
         await builder.Build().RunAsync();
     }
 }
