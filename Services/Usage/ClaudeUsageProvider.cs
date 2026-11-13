@@ -17,6 +17,7 @@ namespace DockPad.Services.Usage;
 public sealed class ClaudeUsageProvider : IUsageProvider
 {
     private readonly string _home;
+    private readonly ClaudeTranscriptIndex _transcripts = new();
     private readonly ClaudeLimitsClient _limits;
     private readonly Func<DateTime> _clock;
 
@@ -124,7 +125,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         // Task.Run : la lecture parcourt des centaines de fichiers (mesuré 2 s sur un profil réel).
         // Sans elle, tout ce travail s'exécute sur le thread d'interface avant le premier await,
         // et la fenêtre gèle à chaque affichage puis à chaque rafraîchissement.
-        var totals = await Task.Run(() => ReadTotals(now), ct).ConfigureAwait(false);
+        var totals = await Task.Run(() => ReadTotals(now, ct), ct).ConfigureAwait(false);
 
         // Détecté mais inactif sur la période : un instantané à zéro plutôt que rien, pour que le
         // fournisseur garde son onglet. Absent du bandeau veut dire « pas installé ».
@@ -155,13 +156,14 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         };
     }
 
-    private UsageAggregator.UsageTotals? ReadTotals(DateTime now)
+    private UsageAggregator.UsageTotals? ReadTotals(DateTime now, CancellationToken ct)
     {
         try
         {
-            var entries = ClaudeUsageReader.Read(_home, UsageWindows.ScanStart(now));
+            var entries = _transcripts.Read(_home, UsageWindows.ScanStart(now), ct);
             return entries.Count == 0 ? null : ClaudeUsageReader.Aggregate(entries, now);
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             LogService.Warn(ex, "Lecture de la consommation Claude Code");

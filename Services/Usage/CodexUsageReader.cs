@@ -114,6 +114,7 @@ public static class CodexUsageReader
     /// </remarks>
     public static Snapshot ReadSnapshot(string home, DateTime since, DateTime quotaSince, CancellationToken token = default)
     {
+        token.ThrowIfCancellationRequested();
         var oldestUseful = since < quotaSince ? since : quotaSince;
         var entries = new List<UsageAggregator.UsageEntry>();
         CodexQuotaSnapshot? quota = null;
@@ -123,7 +124,7 @@ public static class CodexUsageReader
             if (!Directory.Exists(root)) continue;
 
             IEnumerable<string> files;
-            try { files = Directory.EnumerateFiles(root, "rollout-*.jsonl", SearchOption.AllDirectories); }
+            try { files = Directory.GetFiles(root, "rollout-*.jsonl", SearchOption.AllDirectories).OrderBy(file => file, StringComparer.OrdinalIgnoreCase); }
             catch (Exception ex) { LogService.Warn(ex, $"Énumération des sessions Codex ({root})"); continue; }
 
             foreach (var file in files)
@@ -142,6 +143,7 @@ public static class CodexUsageReader
             }
         }
 
+        token.ThrowIfCancellationRequested();
         return new Snapshot(entries, quota);
     }
 
@@ -192,7 +194,7 @@ public static class CodexUsageReader
     /// fois. <c>output_tokens</c> inclut déjà le raisonnement, on n'ajoute donc pas
     /// <c>reasoning_output_tokens</c>.
     /// </remarks>
-    private static UsageAggregator.UsageEntry? ParseLine(string line, string file, int index, string model)
+    internal static UsageAggregator.UsageEntry? ParseLine(string line, string file, int index, string model)
     {
         try
         {
@@ -235,7 +237,7 @@ public static class CodexUsageReader
     }
 
     /// <summary>Le modèle d'une ligne <c>turn_context</c>, ou <c>null</c>.</summary>
-    private static string? TurnModel(string line)
+    internal static string? TurnModel(string line)
     {
         try
         {

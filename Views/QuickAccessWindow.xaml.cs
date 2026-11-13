@@ -39,6 +39,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
     /// est un détour, il se repose quand la fenêtre est rangée et rien n'est écrit sur le disque.
     /// </summary>
     private readonly TileModeState _mode = new();
+    private readonly FolderMenuCache _folderMenu = new();
 
     /// <summary>Les deux fichiers de la grille affichée — tout passe par là, lecture et écriture.</summary>
     private TileFiles Files => TileStore.FilesFor(_mode.Target);
@@ -127,6 +128,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         _updates = updates;
         ShortcutPage = new ShortcutPageState(Dispatcher);
         InitializeComponent();
+        Loaded += (_, _) => { _ = _folderMenu.RefreshAsync(); };
         _hintOverlay = new TileHintOverlay(HintOverlay);
 
         Commands = new QuickAccessCommands(this);
@@ -1221,9 +1223,10 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
 
     private void BuildFolderContextMenuSection(ContextMenu menu, string folderPath)
     {
-        var entries = RegistryService.LoadForTarget(ContextMenuTarget.FolderBackground)
-            .Where(e => !string.IsNullOrEmpty(e.Command))
-            .ToList();
+        IReadOnlyList<FolderMenuEntry> entries;
+        try { entries = _folderMenu.ReadyEntries ?? FolderMenuCache.LoadEntries(); }
+        // Le menu courant garde son instantané ; le suivant verra aussi les changements faits hors de DockPad.
+        finally { _ = _folderMenu.RefreshAsync(); }
 
         if (entries.Count == 0) return;
 
@@ -1233,7 +1236,7 @@ public partial class QuickAccessWindow : Window, IQuickAccessView
         {
             var item = new MenuItem { Header = e.DisplayName };
 
-            var icon = IconStoreService.LoadImage(e.IconPath);
+            var icon = e.Icon;
             if (icon != null)
                 item.Icon = new Image { Source = icon, Width = 16, Height = 16, Stretch = Stretch.Uniform };
 

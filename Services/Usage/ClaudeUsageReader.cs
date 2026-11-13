@@ -52,7 +52,7 @@ public static class ClaudeUsageReader
             if (!Directory.Exists(root)) continue;
 
             IEnumerable<string> files;
-            try { files = Directory.EnumerateFiles(root, "*.jsonl", SearchOption.AllDirectories); }
+            try { files = Directory.GetFiles(root, "*.jsonl", SearchOption.AllDirectories).OrderBy(file => file, StringComparer.OrdinalIgnoreCase); }
             catch (Exception ex) { LogService.Warn(ex, $"Énumération des transcripts Claude ({root})"); continue; }
 
             foreach (var file in files)
@@ -100,8 +100,9 @@ public static class ClaudeUsageReader
     /// Tolérant par construction : la dernière ligne d'un fichier en cours d'écriture est un JSON
     /// tronqué, et ce n'est pas une anomalie à signaler.
     /// </summary>
-    private static UsageAggregator.UsageEntry? ParseLine(string line)
+    internal static UsageAggregator.UsageEntry? ParseLine(string line)
     {
+        if (!line.Contains("\"assistant\"", StringComparison.Ordinal)) return null;
         try
         {
             using var doc = JsonDocument.Parse(line);

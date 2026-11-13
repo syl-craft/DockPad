@@ -14,6 +14,7 @@ namespace DockPad.Services.Usage;
 public sealed class CodexUsageProvider : IUsageProvider
 {
     private readonly string _home;
+    private readonly CodexTranscriptIndex _transcripts = new();
     private readonly Func<DateTime> _clock;
 
     public string Id => "codex";
@@ -84,7 +85,7 @@ public sealed class CodexUsageProvider : IUsageProvider
         {
             try
             {
-                return CodexUsageReader.ReadSnapshot(_home, UsageWindows.ScanStart(now),
+                return _transcripts.ReadSnapshot(_home, UsageWindows.ScanStart(now),
                     quotaSince: now - CodexQuotaReader.LongestWindow, ct);
             }
             catch (OperationCanceledException) { throw; }

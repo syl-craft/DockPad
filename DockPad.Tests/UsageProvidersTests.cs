@@ -143,7 +143,7 @@ public class ClaudeUsageProviderTests : IDisposable
                 },
             },
         });
-        File.WriteAllText(Path.Combine(ProjectsDir(), "a.jsonl"), line);
+        File.WriteAllText(Path.Combine(ProjectsDir(), "a.jsonl"), line + "\n");
     }
 
     private sealed class StubHandler(HttpStatusCode status, string body) : HttpMessageHandler
@@ -363,13 +363,14 @@ public class ClaudeUsageProviderTests : IDisposable
     [Fact]
     public async Task ReadAsync_EchecPassagerPuisPerime_DegradeParPaliers()
     {
-        WriteTranscript(10, DateTime.UtcNow.AddMinutes(-5));
+        var clock = new[] { new DateTime(2026, 8, 21, 14, 0, 0) };
+        // Le transcript et le fournisseur partagent la même journée, quelle que soit la date du test.
+        WriteTranscript(10, clock[0].ToUniversalTime().AddMinutes(-5));
         WriteCredentials();
 
         var handler = new SequenceHandler(
             (HttpStatusCode.OK, QuotaBody),
             (HttpStatusCode.TooManyRequests, ""));
-        var clock = new[] { new DateTime(2026, 8, 21, 14, 0, 0) };
         var provider = new ClaudeUsageProvider(_home, new HttpClient(handler), () => clock[0]);
 
         var premier = await provider.ReadAsync(CancellationToken.None);

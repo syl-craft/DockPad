@@ -1,11 +1,16 @@
 using System.Collections.Generic;
 using Microsoft.Win32;
+using System.Threading;
 using DockPad.Models;
 
 namespace DockPad.Services;
 
 public static class RegistryService
 {
+    private static long _menuVersion;
+    internal static long MenuVersion => Interlocked.Read(ref _menuVersion);
+    internal static void InvalidateMenus() => Interlocked.Increment(ref _menuVersion);
+
     public static List<ContextMenuEntry> LoadAll()
     {
         var entries = new List<ContextMenuEntry>();
@@ -54,6 +59,13 @@ public static class RegistryService
 
     public static void Save(ContextMenuEntry entry)
     {
+        try { SaveEntry(entry); }
+        // Une écriture partielle avant une erreur peut déjà avoir changé le menu.
+        finally { InvalidateMenus(); }
+    }
+
+    private static void SaveEntry(ContextMenuEntry entry)
+    {
         string basePath = ContextMenuEntry.GetRegistryPath(entry.Target);
         string entryPath = $@"{basePath}\{entry.RegistryKey}";
 
@@ -86,6 +98,12 @@ public static class RegistryService
             : RegistryValueKind.String;
 
     public static void Delete(ContextMenuEntry entry)
+    {
+        try { DeleteEntry(entry); }
+        finally { InvalidateMenus(); }
+    }
+
+    private static void DeleteEntry(ContextMenuEntry entry)
     {
         string basePath = ContextMenuEntry.GetRegistryPath(entry.Target);
         string entryPath = $@"{basePath}\{entry.RegistryKey}";
