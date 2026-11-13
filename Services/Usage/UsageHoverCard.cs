@@ -82,5 +82,5 @@ public sealed record UsageHoverCard
 
     private static string LabelOf(AiUsage usage, UsageWindow window) => window.Label.Length > 0
         ? window.Label
-        : Loc.T(ReferenceEquals(window, usage.Session) ? "UsageHover_Session" : "Usage_Gauge_Week");
+        : ReferenceEquals(window, usage.Session) ? Loc.T("UsageHover_Session") : Loc.T("Usage_Gauge_Week");
 }
