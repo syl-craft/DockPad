@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.35.0] — 2026-11-13
+
+### Nouveautés
+
+- **Barre Usage IA : carte de détail au survol des jauges.** Dans les quatre styles de la barre de droite et dans le bandeau du bas, survoler une jauge de quota ouvre une carte à la place de l'infobulle texte : l'IA et la fenêtre (session ou semaine), le pourcentage consommé en grand et le restant, l'heure de remise à zéro et le temps qu'il reste avant (« dans 38 min »), l'autre fenêtre de la même IA, et la mention d'un relevé ancien ou d'une alerte. La carte reste ouverte quand la souris passe dessus : son lien **Ouvrir la page de consommation ↗** mène à la page de l'IA, sans changer l'IA mise en avant. Au clavier, Tab atteint le lien et Échap ferme la carte. Le processeur et la mémoire gardent leur infobulle.
+
+### Corrections
+
+- **DockPad ne consomme plus de processeur en continu.** Chaque minute, la barre Usage IA relisait en entier les journaux de Claude Code et de Codex depuis le début du mois, plusieurs Go sur un poste très utilisé : jusqu'à un cœur et demi occupé en permanence, et des menus qui se figeaient par moments. DockPad ne lit plus que ce qui a été ajouté depuis la minute précédente ; les totaux affichés sont les mêmes.
+- **Le menu clic droit d'une tuile dossier s'ouvre sans attendre.** Ses entrées et leurs icônes sont préparées à l'avance, et suivent toujours les changements faits dans le gestionnaire de menu contextuel.
+- **Dans le bandeau du bas, une jauge dont le relevé est ancien passe en gris**, comme dans la barre de droite.
+
 ## [1.34.3] — 2026-11-07
 
 ### Corrections
