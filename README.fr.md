@@ -278,6 +278,10 @@ Le **coût** n'est calculé que pour Claude, à partir des tarifs publics, et af
 
 Un fournisseur **Démo** est fourni, masqué par défaut : il sert aux captures de documentation et permet d'essayer le changement d'onglet. Les chiffres de démonstration portent toujours un badge « démo ».
 
+Le bandeau peut aussi se placer **à droite de la grille** : dans les réglages, **Position** → **À droite** en fait une barre verticale de la largeur d'une tuile, en quatre styles — **Colonnes**, **Héros**, **Anneaux** et **Réservoir** — avec la charge du processeur et de la mémoire. Le survol d'une jauge de quota, dans la barre comme dans le bandeau, ouvre une carte de détail : la fenêtre, le pourcentage consommé et restant, l'heure de remise à zéro et le temps qu'il reste avant, l'autre fenêtre du même assistant, et un lien **Ouvrir la page de consommation ↗**. La carte reste ouverte quand la souris passe dessus ; Tab atteint le lien et Échap la ferme.
+
+![Carte de détail au survol d'une jauge de quota de la barre à droite](docs/screenshots/usage-bar-hover.png)
+
 Réglages via **☰ Menu → Paramètres → 📊 Usage IA** : afficher ou masquer le bandeau, seuil d'alerte des jauges, affichage du coût, fournisseur affiché à l'ouverture, et détection des assistants installés (**↻ Redétecter**, jamais en tâche de fond).
 
 ![Configuration de l'Usage IA](docs/screenshots/usage-config.png)

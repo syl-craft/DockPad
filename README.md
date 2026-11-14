@@ -292,6 +292,15 @@ invented amount.
 A **Demo** provider is included, hidden by default: it is used for documentation captures and lets
 you try tab switching. Demo figures always carry a “demo” badge.
 
+The panel can also sit **on the right of the grid**: in the settings, **Position** → **Right** turns it
+into a vertical bar the width of a tile, in four styles — **Columns**, **Hero**, **Rings** and
+**Reservoir** — with the CPU and memory load. Hovering a quota gauge, in the bar or in the panel,
+opens a detail card: the window, the percentage used and remaining, the reset time and how long
+until then, the other window of the same assistant, and an **Open usage page ↗** link. The card
+stays open while the pointer moves onto it; Tab reaches the link and Escape closes it.
+
+![Detail card over a quota gauge of the bar on the right](docs/screenshots/usage-bar-hover.png)
+
 Settings in **☰ Menu → Settings → 📊 AI usage**: show or hide the panel, gauge alert threshold, cost
 display, provider shown on opening, and detection of the installed assistants (**↻ Detect again**,
 never in the background).
