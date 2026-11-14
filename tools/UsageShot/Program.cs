@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -221,7 +221,53 @@ internal static partial class Program
             root.UpdateLayout();
         }
 
-        Save(root, width, height, outPath, "window");
+        Save(root, width, height, outPath, "window", overlay: barStyle == null ? null : HoverOverlay(root, width, height));
+    }
+
+    /// <summary>
+    /// La carte de survol d'une jauge, posée à sa gauche, pour <c>DOCKPAD_SHOT_HOVER</c> = <c>claude:0</c>
+    /// (fournisseur, puis rang de la jauge dans la barre), ou <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// La vraie carte est un <c>Popup</c> : une fenêtre à part, absente du rendu de la fenêtre. La capture la
+    /// dessine donc par-dessus, du côté où WPF la retourne quand la barre touche le bord droit de l'écran.
+    /// </remarks>
+    private static FrameworkElement? HoverOverlay(FrameworkElement root, double width, double height)
+    {
+        var hover = Environment.GetEnvironmentVariable("DOCKPAD_SHOT_HOVER");
+        if (hover?.Split(':') is not [var providerId, var rank] || !int.TryParse(rank, out var index)) return null;
+
+        // La barre seule : le bandeau du bas, replié mais présent, porte aussi des cartes, à la position (0, 0).
+        var target = Descendants(root)
+            .Where(element => element.ActualWidth > 0 && UsageHover.GetCard(element)?.ProviderId == providerId)
+            .ElementAtOrDefault(index)
+            ?? throw new ArgumentException($"Aucune jauge de quota « {hover} » dans la barre");
+
+        var view = new UsageHoverCardView { DataContext = UsageHover.GetCard(target) };
+        view.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        var origin = target.TransformToAncestor(root).Transform(new Point(0, 0));
+        var size = view.DesiredSize;
+        var left = Math.Max(8, origin.X - size.Width - 6);
+        var top = Math.Clamp(origin.Y, 8, Math.Max(8, height - size.Height - 8));
+        // Dans un Canvas de la taille de la fenêtre : RenderTargetBitmap ignore le décalage d'un élément racine.
+        var canvas = new Canvas { Width = width, Height = height };
+        Canvas.SetLeft(view, left);
+        Canvas.SetTop(view, top);
+        canvas.Children.Add(view);
+        canvas.Measure(new Size(width, height));
+        canvas.Arrange(new Rect(0, 0, width, height));
+        canvas.UpdateLayout();
+        return canvas;
+    }
+
+    private static IEnumerable<FrameworkElement> Descendants(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is FrameworkElement element) yield return element;
+            foreach (var nested in Descendants(child)) yield return nested;
+        }
     }
 
     // --- Barre à droite : fixture à valeurs fixes (Claude 62 % et 44 %, Codex 27 %, Antigravity 88 % et 18 %)
@@ -765,7 +811,8 @@ internal static partial class Program
     /// <summary>Basculer le theme APRES construction, comme le fait l'utilisateur.</summary>
     private static bool _switchAfterBuild;
 
-    private static void Save(Visual visual, double width, double height, string outPath, string target, bool quiet = false)
+    private static void Save(Visual visual, double width, double height, string outPath, string target, bool quiet = false,
+                             Visual? overlay = null)
     {
         if (_switchAfterBuild)
         {
@@ -795,6 +842,7 @@ internal static partial class Program
         }
 
         rtb.Render(visual);
+        if (overlay != null) rtb.Render(overlay);
 
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(rtb));
